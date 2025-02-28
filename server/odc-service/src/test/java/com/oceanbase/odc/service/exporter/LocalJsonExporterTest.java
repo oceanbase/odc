@@ -18,17 +18,12 @@ package com.oceanbase.odc.service.exporter;
 import static com.oceanbase.odc.common.security.EncryptAlgorithm.AES;
 
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.oceanbase.odc.common.security.PasswordUtils;
 import com.oceanbase.odc.service.exporter.impl.JsonExtractor;
@@ -38,7 +33,6 @@ import com.oceanbase.odc.service.exporter.model.ExportConstants;
 import com.oceanbase.odc.service.exporter.model.ExportProperties;
 import com.oceanbase.odc.service.exporter.model.ExportRowDataAppender;
 import com.oceanbase.odc.service.exporter.model.ExportRowDataReader;
-import com.oceanbase.odc.service.exporter.model.ExportedData;
 import com.oceanbase.odc.service.exporter.model.ExportedFile;
 
 import lombok.AllArgsConstructor;
@@ -48,28 +42,37 @@ import lombok.NoArgsConstructor;
 public class LocalJsonExporterTest {
 
     @Test
-    public void test_archive_full_data_map() throws Exception {
+    public void test_extract_metadata() throws Exception {
         LocalJsonExporter archiver = new LocalJsonExporter();
-        Map<String, String> map = new HashMap<>();
-        map.put("test", "test");
         ExportProperties metadata = new ExportProperties();
-        metadata.put(ExportConstants.FILE_PATH, ".");
-        metadata.put(ExportConstants.FILE_NAME, "test2");
-        String secret = new BCryptPasswordEncoder().encode(PasswordUtils.random());
-        ExportedFile exportedFile = archiver.archiveFullData(map, metadata, secret);
-        try (JsonExtractor jsonExtractor = JsonExtractor.buildJsonExtractor(exportedFile, ".");) {
-            ExportedData<Map<String, String>> mapExportedData =
-                    jsonExtractor.extractFullData(new TypeReference<ExportedData<Map<String, String>>>() {});
-            Assert.assertEquals(mapExportedData.getData(), map);
+        metadata.putTransientProperties(ExportConstants.FILE_PATH, "./");
+        metadata.putTransientProperties(ExportConstants.FILE_NAME, "test2");
+        metadata.put("TEST", "test");
+        metadata.put("TEST2", 123456);
+        ExportedFile build = null;
+        try (ExportRowDataAppender testRowDataExportRowDataAppender =
+                archiver.buildRowDataAppender(metadata)) {
+            testRowDataExportRowDataAppender.append(new TestEncryptable("1", "1"));
+            testRowDataExportRowDataAppender.append(new TestEncryptable("2", "2"));
+            testRowDataExportRowDataAppender.append(new TestEncryptable("3", "3"));
+            build = testRowDataExportRowDataAppender.build();
         }
+        try (JsonExtractor extractor = JsonExtractor.buildJsonExtractor(build, ".");
+                ExportRowDataReader<JsonNode> rowDataReader = extractor.getRowDataReader()) {
+            ExportProperties metaData = rowDataReader.getMetaData();
+            Assert.assertEquals(metaData.getValue("TEST"), "test");
+            Assert.assertEquals(metaData.getValue("TEST2"), 123456);
+            Assert.assertNull(metaData.getValue(ExportConstants.FILE_PATH));
+        }
+        FileUtils.deleteQuietly(build.getFile());
     }
 
     @Test
     public void test_archive_rowData() throws Exception {
         LocalJsonExporter archiver = new LocalJsonExporter();
         ExportProperties metadata = new ExportProperties();
-        metadata.put(ExportConstants.FILE_PATH, "./");
-        metadata.put(ExportConstants.FILE_NAME, "test2");
+        metadata.putTransientProperties(ExportConstants.FILE_PATH, "./");
+        metadata.putTransientProperties(ExportConstants.FILE_NAME, "test2");
         ExportedFile build = null;
         try (ExportRowDataAppender testRowDataExportRowDataAppender =
                 archiver.buildRowDataAppender(metadata)) {
@@ -85,15 +88,15 @@ public class LocalJsonExporterTest {
             Assert.assertEquals(rowDataReader.readRow(TestEncryptable.class), new TestEncryptable("3", "3"));
             Assert.assertNull(rowDataReader.readRow(TestEncryptable.class));
         }
-        FileUtils.deleteQuietly(build.toFile());
+        FileUtils.deleteQuietly(build.getFile());
     }
 
     @Test
     public void test_archive_rowData_encrypt() throws Exception {
         LocalJsonExporter archiver = new LocalJsonExporter();
         ExportProperties metadata = new ExportProperties();
-        metadata.put(ExportConstants.FILE_PATH, "./");
-        metadata.put(ExportConstants.FILE_NAME, "test2");
+        metadata.putTransientProperties(ExportConstants.FILE_PATH, "./");
+        metadata.putTransientProperties(ExportConstants.FILE_NAME, "test2");
         ExportedFile build = null;
         String secret = new BCryptPasswordEncoder().encode(PasswordUtils.random());
         try (ExportRowDataAppender testRowDataExportRowDataAppender =
@@ -110,15 +113,15 @@ public class LocalJsonExporterTest {
             Assert.assertEquals(rowDataReader.readRow(TestEncryptable.class), new TestEncryptable("3", "3"));
             Assert.assertNull(rowDataReader.readRow(TestEncryptable.class));
         }
-        FileUtils.deleteQuietly(build.toFile());
+        FileUtils.deleteQuietly(build.getFile());
     }
 
     @Test
     public void test_archive_rowData_encrypt_signature() throws Exception {
         LocalJsonExporter archiver = new LocalJsonExporter();
         ExportProperties metadata = new ExportProperties();
-        metadata.put(ExportConstants.FILE_PATH, "./");
-        metadata.put(ExportConstants.FILE_NAME, "test2");
+        metadata.putTransientProperties(ExportConstants.FILE_PATH, "./");
+        metadata.putTransientProperties(ExportConstants.FILE_NAME, "test2");
         ExportedFile build = null;
         String secret = new BCryptPasswordEncoder().encode(PasswordUtils.random());
         System.out.println(secret);
@@ -133,16 +136,15 @@ public class LocalJsonExporterTest {
         try (Extractor<JsonNode> extractor = JsonExtractor.buildJsonExtractor(build, ".");) {
             Assert.assertTrue(extractor.checkSignature());
         }
-        FileUtils.deleteQuietly(build.toFile());
-
+        FileUtils.deleteQuietly(build.getFile());
     }
 
     @Test
     public void test_archive_rowData_With_file() throws Exception {
         LocalJsonExporter archiver = new LocalJsonExporter();
         ExportProperties metadata = new ExportProperties();
-        metadata.put(ExportConstants.FILE_PATH, "./");
-        metadata.put(ExportConstants.FILE_NAME, "test4");
+        metadata.putTransientProperties(ExportConstants.FILE_PATH, "./");
+        metadata.putTransientProperties(ExportConstants.FILE_NAME, "test4");
         ExportedFile build = null;
         String secret = new BCryptPasswordEncoder().encode(PasswordUtils.random());
         System.out.println(secret);
@@ -155,8 +157,7 @@ public class LocalJsonExporterTest {
 
             File file = new File("./test2.zip");
             file.createNewFile();
-            testRowDataExportRowDataAppender.addAdditionFile("test2.zip",
-                    Files.newInputStream(Paths.get("./test2.zip")));
+            testRowDataExportRowDataAppender.addAdditionFile("test2.zip", file);
             build = testRowDataExportRowDataAppender.build();
         }
         try (Extractor<JsonNode> extractor = JsonExtractor.buildJsonExtractor(build, ".");) {
@@ -165,7 +166,7 @@ public class LocalJsonExporterTest {
             Assert.assertTrue(file.exists());
             Assert.assertTrue(extractor.checkSignature());
         }
-        FileUtils.deleteQuietly(build.toFile());
+        FileUtils.deleteQuietly(build.getFile());
         FileUtils.deleteQuietly(new File("./test2.zip"));
 
     }
@@ -174,11 +175,10 @@ public class LocalJsonExporterTest {
     public void test_archive_rowData_encrypt_signature_incroct_secret() throws Exception {
         LocalJsonExporter archiver = new LocalJsonExporter();
         ExportProperties metadata = new ExportProperties();
-        metadata.put(ExportConstants.FILE_PATH, "./");
-        metadata.put(ExportConstants.FILE_NAME, "test2");
+        metadata.putTransientProperties(ExportConstants.FILE_PATH, "./");
+        metadata.putTransientProperties(ExportConstants.FILE_NAME, "test2");
         ExportedFile build = null;
         String secret = new BCryptPasswordEncoder().encode(PasswordUtils.random());
-        System.out.println(secret);
         try (ExportRowDataAppender testRowDataExportRowDataAppender =
                 archiver.buildRowDataAppender(metadata,
                         secret)) {
@@ -187,21 +187,21 @@ public class LocalJsonExporterTest {
             testRowDataExportRowDataAppender.append(new TestEncryptable("3", "3"));
             build = testRowDataExportRowDataAppender.build();
         }
-        ExportedFile exportedFile = ExportedFile.fromFile(build.toFile(),
-                new BCryptPasswordEncoder().encode(PasswordUtils.random()));
+        ExportedFile exportedFile = new ExportedFile(build.getFile(),
+                new BCryptPasswordEncoder().encode(PasswordUtils.random()), true);
 
         try (Extractor<JsonNode> extractor = JsonExtractor.buildJsonExtractor(exportedFile, ".");) {
             Assert.assertFalse(extractor.checkSignature());
         }
-        FileUtils.deleteQuietly(build.toFile());
+        FileUtils.deleteQuietly(build.getFile());
     }
 
     @Test
     public void test_archive_FullData_encrypt_signature() throws Exception {
         LocalJsonExporter archiver = new LocalJsonExporter();
         ExportProperties metadata = new ExportProperties();
-        metadata.put(ExportConstants.FILE_PATH, "./");
-        metadata.put(ExportConstants.FILE_NAME, "test2");
+        metadata.putTransientProperties(ExportConstants.FILE_PATH, "./");
+        metadata.putTransientProperties(ExportConstants.FILE_NAME, "test2");
         ExportedFile build = null;
         try (
                 ExportRowDataAppender testRowDataExportRowDataAppender =
@@ -215,7 +215,7 @@ public class LocalJsonExporterTest {
         try (JsonExtractor extractor = JsonExtractor.buildJsonExtractor(build, ".")) {
             Assert.assertTrue(extractor.checkSignature());
         }
-        FileUtils.deleteQuietly(build.toFile());
+        FileUtils.deleteQuietly(build.getFile());
 
 
     }

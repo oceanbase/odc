@@ -17,14 +17,6 @@ package com.oceanbase.odc.service.exporter.model;
 
 import java.io.File;
 
-import javax.annotation.Nullable;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.service.exporter.streamprovider.ExportedDataStreamProvider;
-import com.oceanbase.odc.service.exporter.streamprovider.FileStreamProvider;
-import com.oceanbase.odc.service.exporter.streamprovider.RemoteUriStreamProvider;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -35,20 +27,7 @@ import lombok.ToString.Exclude;
 @NoArgsConstructor
 public class ExportedFile {
 
-    public static final String LOCAL_FILE = "local";
-    public static final String REMOTE_FILE = "remote";
-
-    /**
-     * Local, Remote
-     */
-    private String fileType;
-
-    /**
-     * Local path or download url
-     */
-    private String uri;
-
-    private String fileName;
+    private File file;
 
     /**
      * AES secret， null means decrypt data
@@ -56,36 +35,12 @@ public class ExportedFile {
     @Exclude
     private String secret;
 
-    private boolean checkConfigJsonSignature;
+    private boolean checkConfigJsonSignature=true;
 
-    @JsonIgnore
-    private transient ExportedDataStreamProvider provider;
+    public ExportedFile(File file, String secret) {
+        this.file = file;
+        this.secret = secret;
 
-    public static ExportedFile fromRemoteUrl(String remoteUrl, @Nullable String secret) {
-        ExportedFile exportedFile = new ExportedFile();
-        exportedFile.setUri(remoteUrl);
-        exportedFile.setCheckConfigJsonSignature(secret != null);
-        exportedFile.setFileType(REMOTE_FILE);
-        ExportedDataStreamProvider provider = new RemoteUriStreamProvider(remoteUrl);
-        exportedFile.setProvider(provider);
-        exportedFile.setSecret(secret);
-        return exportedFile;
     }
 
-    public static ExportedFile fromFile(File file, @Nullable String secret) {
-        ExportedFile exportedFile = new ExportedFile();
-        exportedFile.setFileType(LOCAL_FILE);
-        exportedFile.setFileName(file.getName());
-        exportedFile.setCheckConfigJsonSignature(secret != null);
-        exportedFile.setUri(file.getPath());
-        ExportedDataStreamProvider provider = new FileStreamProvider(file);
-        exportedFile.setProvider(provider);
-        exportedFile.setSecret(secret);
-        return exportedFile;
-    }
-
-    public File toFile() {
-        Verify.equals(fileType, LOCAL_FILE, "file type not supported");
-        return new File(uri);
-    }
 }

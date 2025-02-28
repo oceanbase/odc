@@ -19,13 +19,8 @@ import java.io.IOException;
 
 import com.oceanbase.odc.service.exporter.model.ExportProperties;
 import com.oceanbase.odc.service.exporter.model.ExportRowDataAppender;
-import com.oceanbase.odc.service.exporter.model.ExportedFile;
 
 public interface Exporter {
-
-    ExportedFile archiveFullData(Object data, ExportProperties metaData, String encryptKey) throws Exception;
-
-    ExportedFile archiveFullData(Object data, ExportProperties metaData) throws Exception;
 
     ExportRowDataAppender buildRowDataAppender(ExportProperties metaData,
             String encryptKey) throws IOException;

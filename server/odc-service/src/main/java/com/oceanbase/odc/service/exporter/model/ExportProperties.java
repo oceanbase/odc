@@ -19,22 +19,27 @@ import static com.oceanbase.odc.service.exporter.model.ExportConstants.ARCHIVE_T
 import static com.oceanbase.odc.service.exporter.model.ExportConstants.CREATE_TIME;
 import static com.oceanbase.odc.service.exporter.model.ExportConstants.FILE_NAME;
 import static com.oceanbase.odc.service.exporter.model.ExportConstants.FILE_PATH;
-import static com.oceanbase.odc.service.exporter.model.ExportConstants.FILE_ZIP_SUFFER;
+import static com.oceanbase.odc.service.exporter.model.ExportConstants.FILE_ZIP_EXTENSION;
+import static com.oceanbase.odc.service.exporter.model.ExportConstants.GIT_BRANCH;
+import static com.oceanbase.odc.service.exporter.model.ExportConstants.GIT_COMMIT_ID;
 import static com.oceanbase.odc.service.exporter.model.ExportConstants.ODC_VERSION;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.UUID;
 
 import org.springframework.boot.info.BuildProperties;
+import org.springframework.boot.info.GitProperties;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -53,6 +58,10 @@ public class ExportProperties extends LinkedHashMap<String, Object> {
         return (String) getValue(ODC_VERSION);
     }
 
+    public String acquireGitCommit() {
+        return (String) getValue(GIT_COMMIT_ID);
+    }
+
     public String acquireCreateTime() {
         return (String) getValue(CREATE_TIME);
     }
@@ -65,16 +74,12 @@ public class ExportProperties extends LinkedHashMap<String, Object> {
         return (String) getValue(FILE_PATH);
     }
 
-    public String acquireFileUrl() {
-        return (String) getValue(FILE_PATH) + File.separator + (String) get(FILE_NAME);
-    }
-
     public String acquireZipFileUrl() {
-        String fileName = (String) get(FILE_NAME);
+        String fileName = (String) getValue(FILE_NAME);
         if (!fileName.contains(".")) {
             fileName = fileName + ".zip";
         } else {
-            Verify.verify(fileName.endsWith(FILE_ZIP_SUFFER), "Not zip file");
+            Verify.verify(fileName.endsWith(FILE_ZIP_EXTENSION), "Not zip file");
         }
         return (String) getValue(FILE_PATH) + File.separator + fileName;
     }
@@ -83,11 +88,7 @@ public class ExportProperties extends LinkedHashMap<String, Object> {
         return (String) getValue(FILE_PATH) + File.separator + "config.json";
     }
 
-    public String acquireConfigTxtFileUrl() {
-        return (String) getValue(FILE_PATH) + File.separator + "config.txt";
-    }
-
-    public void addDefaultMetaData(String defaultArchivePath) {
+    public void addDefaultMetaData() {
         if (this.acquireOdcVersion() == null) {
             try {
                 BuildProperties buildProperties = SpringContextUtil.getBean(BuildProperties.class);
@@ -97,15 +98,34 @@ public class ExportProperties extends LinkedHashMap<String, Object> {
                 log.warn("Failed to load build properties", e);
             }
         }
-        putIfAbsent(ExportConstants.CREATE_TIME, new Date());
-        addDefaultTransientProperties(defaultArchivePath);
-
+        if (this.acquireGitCommit() == null) {
+            try {
+                GitProperties gitProperties = SpringContextUtil.getBean(GitProperties.class);
+                putIfAbsent(GIT_COMMIT_ID, gitProperties.getCommitId());
+                putIfAbsent(GIT_BRANCH, gitProperties.getBranch());
+            } catch (Exception e) {
+                log.warn("Failed to load git properties", e);
+            }
+        }
+        if (this.acquireCreateTime() == null) {
+            putIfAbsent(ExportConstants.CREATE_TIME, new Date());
+        }
     }
 
-    public void addDefaultTransientProperties(String defaultArchivePath) {
-        // FilePath does not need to be persisted
+    @SneakyThrows
+    public void addFilePathProperties(String defaultArchivePath) {
+        File path = new File(defaultArchivePath);
+        if (!path.exists()) {
+            path.mkdirs();
+        }
+        Path randomDir = Files.createTempDirectory(new File(defaultArchivePath).toPath(), "exportFile-");
+        // FilePath does not need to be persisted to metadata
         transientProperties.putIfAbsent(ExportConstants.FILE_PATH,
-                defaultArchivePath + File.separator + UUID.randomUUID());
+                randomDir.toString());
+    }
+
+    public void putTransientProperties(String key, Object value) {
+        transientProperties.put(key, value);
     }
 
     public Object getValue(String key) {

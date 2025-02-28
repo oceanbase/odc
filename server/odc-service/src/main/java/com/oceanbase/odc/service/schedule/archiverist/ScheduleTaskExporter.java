@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.schedule.archiverist;
 
-import static com.oceanbase.odc.service.common.util.OdcFileUtil.createFileWithDirectories;
 import static com.oceanbase.odc.service.exporter.model.ExportConstants.ARCHIVE_TYPE;
 import static com.oceanbase.odc.service.exporter.model.ExportConstants.FILE_NAME;
 import static com.oceanbase.odc.service.exporter.model.ExportConstants.SCHEDULE_ARCHIVE_TYPE;
@@ -120,7 +119,7 @@ public class ScheduleTaskExporter {
         ExportProperties deepClone = JsonUtils.fromJson(JsonUtils.toJson(exportProperties),
                 ExportProperties.class);
         deepClone.put(FILE_NAME, entry.getKey().name());
-        deepClone.addDefaultTransientProperties(exportConfiguration.getDefaultArchivePath());
+        deepClone.addFilePathProperties(exportConfiguration.getDefaultArchivePath());
         exportProperties.put("taskType", entry.getKey());
         return deepClone;
     }
@@ -128,7 +127,8 @@ public class ScheduleTaskExporter {
     private ExportProperties generateArchiveProperties() {
         ExportProperties exportProperties = new ExportProperties();
         exportProperties.put(ARCHIVE_TYPE, SCHEDULE_ARCHIVE_TYPE);
-        exportProperties.addDefaultMetaData(exportConfiguration.getDefaultArchivePath());
+        exportProperties.addDefaultMetaData();
+        exportProperties.addFilePathProperties(exportConfiguration.getDefaultArchivePath());
         scheduleExportFacade.adapt(exportProperties);
         return exportProperties;
     }
@@ -137,10 +137,10 @@ public class ScheduleTaskExporter {
         String filePath = exportProperties.acquireFilePath();
         String outputFileName = filePath + File.separator + buildMergedZipName();
         File outputFile = new File(outputFileName);
-        createFileWithDirectories(outputFile);
-        List<File> fs = files.stream().map(ExportedFile::toFile).collect(Collectors.toList());
+        List<File> fs = files.stream().map(ExportedFile::getFile).collect(Collectors.toList());
         FileZipper.mergeToZipFile(fs, outputFile);
-        return ExportedFile.fromFile(outputFile, encryptKey);
+        FileZipper.deleteQuietly(fs);
+        return new ExportedFile(outputFile, encryptKey);
     }
 
 

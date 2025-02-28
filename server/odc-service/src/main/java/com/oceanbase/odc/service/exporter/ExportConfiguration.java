@@ -27,7 +27,7 @@ import lombok.Data;
 @Data
 public class ExportConfiguration {
 
-    @Value("${odc.server.archive.default-path:.}")
+    @Value("${odc.server.archive.default-path:./data/export}")
     private String defaultArchivePath;
 
     @Bean

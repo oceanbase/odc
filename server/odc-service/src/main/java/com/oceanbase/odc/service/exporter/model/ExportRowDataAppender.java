@@ -16,8 +16,8 @@
 package com.oceanbase.odc.service.exporter.model;
 
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 
 public interface ExportRowDataAppender extends Closeable {
 
@@ -25,7 +25,7 @@ public interface ExportRowDataAppender extends Closeable {
 
     void append(Encryptable encryptable) throws IOException;
 
-    void addAdditionFile(String fileName, InputStream inputStream) throws IOException;
+    void addAdditionFile(String fileName, File fromFile) throws IOException;
 
     ExportedFile build() throws Exception;
 

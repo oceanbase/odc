@@ -26,10 +26,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Base64;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import javax.annotation.Nullable;
 import javax.crypto.Mac;
@@ -38,19 +35,16 @@ import javax.crypto.spec.SecretKeySpec;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.MoreObjects;
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.security.EncryptAlgorithm;
+import com.oceanbase.odc.common.util.FileZipper;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
 import com.oceanbase.odc.service.exporter.Extractor;
 import com.oceanbase.odc.service.exporter.model.Encryptable;
 import com.oceanbase.odc.service.exporter.model.ExportProperties;
 import com.oceanbase.odc.service.exporter.model.ExportRowDataReader;
-import com.oceanbase.odc.service.exporter.model.ExportedData;
 import com.oceanbase.odc.service.exporter.model.ExportedFile;
 
 import lombok.Getter;
@@ -74,49 +68,24 @@ public class JsonExtractor implements Extractor<JsonNode> {
 
         // Create a temporary file to save the InputStream contents
         File tempZipFile = File.createTempFile("tempZip", ".zip", randomDir.toFile());
-        tempZipFile.deleteOnExit();
         jsonExtractor.tempFilePath = randomDir.toFile().getPath();
 
         // Write the InputStream to the temporary zip file
         try (FileOutputStream fos = new FileOutputStream(tempZipFile);
-                InputStream inputStream = exportedFile.getProvider().getInputStream()) {
+                InputStream inputStream = Files.newInputStream(exportedFile.getFile().toPath())) {
             byte[] buffer = new byte[1024];
             int len;
             while ((len = inputStream.read(buffer)) != -1) {
                 fos.write(buffer, 0, len);
             }
         }
-        // Unzip the temporary file into the random directory
-        try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(tempZipFile.toPath()))) {
-            ZipEntry entry;
-            while ((entry = zis.getNextEntry()) != null) {
-                Path entryPath = randomDir.resolve(entry.getName());
-
-                if (entry.isDirectory()) {
-                    Files.createDirectories(entryPath);
-                } else {
-                    if (entryPath.getParent() != null) {
-                        Files.createDirectories(entryPath.getParent());
-                    }
-                    Files.copy(zis, entryPath, StandardCopyOption.REPLACE_EXISTING);
-                }
-                zis.closeEntry();
-            }
-        }
+        FileZipper.unzipFileToPath(tempZipFile, randomDir);
+        File configJson = getConfigJson(jsonExtractor.tempFilePath);
+        Verify.notNull(configJson, "Invalid file format, lack of config json.");
         log.info("Files extracted to: {}", randomDir.toAbsolutePath());
-        File file = MoreObjects.firstNonNull(getConfigTxt(jsonExtractor.tempFilePath),
-                getConfigJson(jsonExtractor.tempFilePath));
-        jsonExtractor.exportedFile = ExportedFile.fromFile(file, exportedFile.getSecret());
+        jsonExtractor.exportedFile = new ExportedFile(configJson, exportedFile.getSecret(),
+                exportedFile.isCheckConfigJsonSignature());
         return jsonExtractor;
-    }
-
-    public static File getConfigTxt(String path) {
-        File configTxt = new File(path, "config.txt");
-        if (configTxt.exists() && configTxt.isFile()) {
-            return configTxt;
-        } else {
-            return null;
-        }
     }
 
     public static File getConfigJson(String path) {
@@ -208,13 +177,6 @@ public class JsonExtractor implements Extractor<JsonNode> {
         OdcFileUtil.deleteFiles(new File(tempFilePath));
     }
 
-    public <D> ExportedData<D> extractFullData(TypeReference<ExportedData<D>> typeReference)
-            throws Exception {
-        try (InputStream inputStream = exportedFile.getProvider().getInputStream()) {
-            String decryptedString = decrypt(inputStream, exportedFile.getSecret());
-            return JsonUtils.fromJson(decryptedString, typeReference);
-        }
-    }
 
     public ExportRowDataReader<JsonNode> getRowDataReader() throws Exception {
         JsonFactory jsonFactory = new JsonFactory();
@@ -280,7 +242,7 @@ public class JsonExtractor implements Extractor<JsonNode> {
         return stringBuilder.toString();
     }
 
-    public static class JsonRowDataReader implements ExportRowDataReader<JsonNode> {
+    private final static class JsonRowDataReader implements ExportRowDataReader<JsonNode> {
 
         private final ExportProperties metadata;
         private final JsonParser jsonParser;

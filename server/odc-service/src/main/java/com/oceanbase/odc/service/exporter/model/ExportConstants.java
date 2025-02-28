@@ -21,6 +21,11 @@ public final class ExportConstants {
 
     public static final String ODC_VERSION = "odcVersion";
     public static final String CREATE_TIME = "createTime";
+    public static final String GIT_COMMIT_ID = "gitCommitId";
+    public static final String GIT_BRANCH = "gitBranch";
+
+
+
     public static final String ARCHIVE_TYPE = "archiveType";
 
     public static final String SCHEDULE_ARCHIVE_TYPE = "scheduleArchive";
@@ -31,5 +36,6 @@ public final class ExportConstants {
     public static final String FILE_NAME = "fileName";
     public static final String FILE_PATH = "filePath";
 
-    public static final String FILE_ZIP_SUFFER = ".zip";
+
+    public static final String FILE_ZIP_EXTENSION = ".zip";
 }

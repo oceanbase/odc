@@ -17,9 +17,7 @@ package com.oceanbase.odc.service.exporter;
 
 import java.io.Closeable;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.service.exporter.model.ExportRowDataReader;
-import com.oceanbase.odc.service.exporter.model.ExportedData;
 import com.oceanbase.odc.service.exporter.model.ExportedFile;
 
 public interface Extractor<R> extends Closeable {
@@ -27,9 +25,6 @@ public interface Extractor<R> extends Closeable {
     boolean checkSignature();
 
     ExportedFile getExportedFile();
-
-    <D> ExportedData<D> extractFullData(TypeReference<ExportedData<D>> typeReference)
-            throws Exception;
 
     ExportRowDataReader<R> getRowDataReader() throws Exception;
 }

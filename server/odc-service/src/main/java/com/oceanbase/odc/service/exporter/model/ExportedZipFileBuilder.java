@@ -27,34 +27,32 @@ import java.util.zip.ZipOutputStream;
 import javax.annotation.Nullable;
 
 import com.oceanbase.odc.core.shared.Verify;
-import com.oceanbase.odc.service.common.util.OdcFileUtil;
 
-public class ExportedZipFileFactory {
+public class ExportedZipFileBuilder {
 
     private final File configFile;
 
-    private final Map<String, InputStream> additionFiles;
+    private final Map<String, File> additionFiles;
 
-    public ExportedZipFileFactory(File configFile, Map<String, InputStream> additionFiles) {
+    public ExportedZipFileBuilder(File configFile, Map<String, File> additionFiles) {
+        Verify.notNull(configFile, "configFile");
         this.configFile = configFile;
         this.additionFiles = additionFiles;
     }
 
     public ExportedFile build(String outputZipFileName, @Nullable String secret) throws IOException {
-        Verify.notNull(configFile, "configFile");
         try (FileOutputStream fos = new FileOutputStream(outputZipFileName);
                 ZipOutputStream zos = new ZipOutputStream(fos)) {
             try (InputStream configInputStream = Files.newInputStream(configFile.toPath())) {
                 addFileToZip("config.json", configInputStream, zos);
-                OdcFileUtil.deleteFiles(configFile);
             }
             if (additionFiles != null) {
-                for (Map.Entry<String, InputStream> entry : additionFiles.entrySet()) {
-                    addFileToZip(entry.getKey(), entry.getValue(), zos);
+                for (Map.Entry<String, File> entry : additionFiles.entrySet()) {
+                    addFileToZip(entry.getKey(), Files.newInputStream(entry.getValue().toPath()), zos);
                 }
             }
         }
-        return ExportedFile.fromFile(new File(outputZipFileName), secret);
+        return new ExportedFile(new File(outputZipFileName), secret);
     }
 
     private void addFileToZip(String fileName, InputStream inputStream, ZipOutputStream zos) throws IOException {

@@ -18,8 +18,14 @@ package com.oceanbase.odc.common.util;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.Collection;
 import java.util.List;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.io.FileUtils;
@@ -48,9 +54,32 @@ public final class FileZipper {
                 }
             }
         }
+    }
 
+    public static void deleteQuietly(Collection<File> files) {
         for (File file : files) {
             FileUtils.deleteQuietly(file);
+        }
+    }
+
+
+    public static void unzipFileToPath(File tempZipFile, Path randomDir) throws IOException {
+        // Unzip the temporary file into the random directory
+        try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(tempZipFile.toPath()))) {
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                Path entryPath = randomDir.resolve(entry.getName());
+
+                if (entry.isDirectory()) {
+                    Files.createDirectories(entryPath);
+                } else {
+                    if (entryPath.getParent() != null) {
+                        Files.createDirectories(entryPath.getParent());
+                    }
+                    Files.copy(zis, entryPath, StandardCopyOption.REPLACE_EXISTING);
+                }
+                zis.closeEntry();
+            }
         }
     }
 }
