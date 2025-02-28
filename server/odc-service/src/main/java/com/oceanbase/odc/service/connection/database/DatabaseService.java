@@ -106,6 +106,7 @@ import com.oceanbase.odc.service.connection.database.model.TransferDatabasesReq;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionSyncErrorReason;
 import com.oceanbase.odc.service.connection.model.ConnectionSyncResult;
+import com.oceanbase.odc.service.connection.model.InnerQueryConnectionParams;
 import com.oceanbase.odc.service.db.DBSchemaService;
 import com.oceanbase.odc.service.db.schema.DBSchemaSyncTaskManager;
 import com.oceanbase.odc.service.db.schema.GlobalSearchProperties;
@@ -338,8 +339,13 @@ public class DatabaseService {
             specs = specs.and(DatabaseSpecs.projectIdEquals(params.getProjectId()));
         }
 
-        Set<Long> orDataSourceIds = connectionService.innerGetIdsIfAnyOfNameTenantCluster(params.getDataSourceName(),
-                params.getTenantName(), params.getClusterName());
+        InnerQueryConnectionParams innerQueryConnectionParams = InnerQueryConnectionParams
+                .builder()
+                .dataSourceName(params.getDataSourceName())
+                .tenantName(params.getTenantName())
+                .clusterName(params.getClusterName())
+                .build();
+        Set<Long> orDataSourceIds = connectionService.innerGetIdsIfAnyOfCondition(innerQueryConnectionParams);
         if (Objects.nonNull(params.getDataSourceId())) {
             specs = specs.and(DatabaseSpecs.connectionIdEquals(params.getDataSourceId()));
         }

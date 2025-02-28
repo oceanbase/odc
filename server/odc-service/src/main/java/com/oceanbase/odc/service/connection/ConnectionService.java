@@ -32,7 +32,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.persistence.EntityManager;
 import javax.validation.Valid;
@@ -109,6 +108,7 @@ import com.oceanbase.odc.service.connection.database.DatabaseSyncManager;
 import com.oceanbase.odc.service.connection.event.UpsertDatasourceEvent;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.connection.model.InnerQueryConnectionParams;
 import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
 import com.oceanbase.odc.service.connection.model.QueryConnectionParams;
 import com.oceanbase.odc.service.connection.ssl.ConnectionSSLAdaptor;
@@ -852,20 +852,16 @@ public class ConnectionService {
         return innerList(params, Pageable.unpaged()).toList();
     }
 
-    public Set<Long> innerGetIdsIfAnyOfNameTenantCluster(String dataSourceName, String tenantName,
-            String clusterName) {
-        long conditionCount = Stream.of(dataSourceName, tenantName, clusterName).filter(StringUtils::isNotBlank)
-                .count();
-        if (conditionCount == 0L || conditionCount >= 2L) {
-            return Collections.emptySet();
-        }
+    public Set<Long> innerGetIdsIfAnyOfCondition(@NotNull InnerQueryConnectionParams params) {
         Specification<ConnectionEntity> spec;
-        if (StringUtils.isNotBlank(dataSourceName)) {
-            spec = Specification.where(ConnectionSpecs.nameLike(dataSourceName));
-        } else if (StringUtils.isNotBlank(tenantName)) {
-            spec = Specification.where(ConnectionSpecs.tenantNameLike(tenantName));
+        if (StringUtils.isNotBlank(params.getDataSourceName())) {
+            spec = Specification.where(ConnectionSpecs.nameLike(params.getDataSourceName()));
+        } else if (StringUtils.isNotBlank(params.getTenantName())) {
+            spec = Specification.where(ConnectionSpecs.tenantNameLike(params.getTenantName()));
+        } else if (StringUtils.isNotBlank(params.getClusterName())) {
+            spec = Specification.where(ConnectionSpecs.clusterNameLike(params.getClusterName()));
         } else {
-            spec = Specification.where(ConnectionSpecs.clusterNameLike(clusterName));
+            return Collections.emptySet();
         }
         return this.repository.findAll(spec, Pageable.unpaged()).stream().map(ConnectionEntity::getId)
                 .collect(Collectors.toSet());
