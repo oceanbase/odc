@@ -232,6 +232,10 @@ COSINE
     : C O S I N E
     ;
 
+ENABLE_MACRO_BLOCK_BLOOM_FILTER
+    : E N A B L E '_' M A C R O '_' B L O C K '_' B L O O M '_' F I L T E R
+    ;
+
 DECORRELATE
     : D E C O R R E L A T E
     ;

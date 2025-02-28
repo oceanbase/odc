@@ -1366,6 +1366,7 @@ table_option
     | UNION COMP_EQ? LeftParen table_list? RightParen
     | INSERT_METHOD COMP_EQ? merge_insert_types
     | ORGANIZATION COMP_EQ? index_or_heap
+    | ENABLE_MACRO_BLOCK_BLOOM_FILTER COMP_EQ? BOOL_VALUE
     ;
 
 merge_insert_types
@@ -4785,6 +4786,7 @@ unreserved_keyword_normal
     | ENABLE
     | ENABLE_ARBITRATION_SERVICE
     | ENABLE_EXTENDED_ROWID
+    | ENABLE_MACRO_BLOCK_BLOOM_FILTER
     | ENCODING
     | ENCRYPTED
     | ENCRYPTION

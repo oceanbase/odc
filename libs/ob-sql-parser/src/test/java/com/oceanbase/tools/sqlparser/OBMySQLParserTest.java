@@ -67,15 +67,43 @@ public class OBMySQLParserTest {
         SQLParser parser = new OBMySQLParser();
         Statement actual = parser
                 .parse(new StringReader("create table create_table_with_option_demo (c1 int) ORGANIZATION HEAP;"));
-        Assert.assertEquals("ORGANIZATION HEAP",((CreateTable) actual).getTableOptions().getText());
+        Assert.assertEquals("ORGANIZATION HEAP", ((CreateTable) actual).getTableOptions().getText());
     }
 
     @Test
     public void parse_CreateTableOrganizationIndex() {
         SQLParser parser = new OBMySQLParser();
         Statement actual = parser
-            .parse(new StringReader("create table create_table_with_option_demo (c1 int) ORGANIZATION INDEX;"));
-        Assert.assertEquals("ORGANIZATION INDEX",((CreateTable) actual).getTableOptions().getText());
+                .parse(new StringReader("create table create_table_with_option_demo (c1 int) ORGANIZATION INDEX;"));
+        Assert.assertEquals("ORGANIZATION INDEX", ((CreateTable) actual).getTableOptions().getText());
+    }
+
+    @Test
+    public void parse_enableMacroBlockBloomFilterEqualsFalse_parseSucceed() {
+        SQLParser parser = new OBMySQLParser();
+        Statement actual = parser
+                .parse(new StringReader("CREATE TABLE `test_date` (\n" +
+                        "  `a` date NOT NULL,\n" +
+                        "  `b` date DEFAULT NULL\n" +
+                        ") ORGANIZATION INDEX DEFAULT CHARSET = utf8mb4 ROW_FORMAT = DYNAMIC COMPRESSION = 'zstd_1.3.8' REPLICA_NUM = 1 BLOCK_SIZE = 16384 USE_BLOOM_FILTER = TRUE ENABLE_MACRO_BLOCK_BLOOM_FILTER = FALSE TABLET_SIZE = 134217728 PCTFREE = 0\n"
+                        +
+                        " partition by range columns(a)\n" +
+                        "(partition `p_2022_11` values less than ('2022-11-01'))"));
+        Assert.assertNotNull(actual);
+    }
+
+    @Test
+    public void parse_enableMacroBlockBloomFilterEqualsTrue_parseSucceed() {
+        SQLParser parser = new OBMySQLParser();
+        Statement actual = parser
+                .parse(new StringReader("CREATE TABLE `test_date` (\n" +
+                        "  `a` date NOT NULL,\n" +
+                        "  `b` date DEFAULT NULL\n" +
+                        ") ORGANIZATION INDEX DEFAULT CHARSET = utf8mb4 ROW_FORMAT = DYNAMIC COMPRESSION = 'zstd_1.3.8' REPLICA_NUM = 1 BLOCK_SIZE = 16384 USE_BLOOM_FILTER = TRUE ENABLE_MACRO_BLOCK_BLOOM_FILTER = TRUE TABLET_SIZE = 134217728 PCTFREE = 0\n"
+                        +
+                        " partition by range columns(a)\n" +
+                        "(partition `p_2022_11` values less than ('2022-11-01'))"));
+        Assert.assertNotNull(actual);
     }
 
     @Test
