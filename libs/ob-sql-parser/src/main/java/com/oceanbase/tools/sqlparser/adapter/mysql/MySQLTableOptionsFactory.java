@@ -249,7 +249,7 @@ public class MySQLTableOptionsFactory extends OBParserBaseVisitor<TableOptions>
         } else if (ctx.ORGANIZATION() != null) {
             target.setOrganization(ctx.index_or_heap().getText());
         } else if (ctx.ENABLE_MACRO_BLOCK_BLOOM_FILTER() != null) {
-            target.setEnableMacroBlockBloomFilter(new Boolean(ctx.BOOL_VALUE().getText()));
+            target.setEnableMacroBlockBloomFilter(Boolean.valueOf(ctx.BOOL_VALUE().getText()));
         }
         return target;
     }
