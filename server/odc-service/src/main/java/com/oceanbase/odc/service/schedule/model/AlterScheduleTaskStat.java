@@ -100,10 +100,13 @@ public class AlterScheduleTaskStat {
 
     public void count(@NonNull FlowStatus flowInstanceStatus) {
         switch (flowInstanceStatus) {
-            case PRE_CHECK_FAILED:
+            case REJECTED:
+            case APPROVAL_EXPIRED:
+            case WAIT_FOR_EXECUTION_EXPIRED:
             case EXECUTION_ABNORMAL:
             case EXECUTION_FAILED:
-            case ROLLBACK_FAILED:
+            case EXECUTION_EXPIRED:
+            case PRE_CHECK_FAILED:
                 this.addFailedExecutionCount();
                 break;
             case COMPLETED:
@@ -111,6 +114,7 @@ public class AlterScheduleTaskStat {
                 this.addSuccessExecutionCount();
                 break;
             case CREATED:
+            case APPROVING:
             case WAIT_FOR_EXECUTION:
             case WAIT_FOR_CONFIRM:
                 this.addWaitingExecutionCount();
