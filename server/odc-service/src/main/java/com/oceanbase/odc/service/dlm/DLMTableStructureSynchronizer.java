@@ -95,6 +95,8 @@ public class DLMTableStructureSynchronizer {
                     Collections.singletonList(srcTableName)).get(srcTableName);
             DBTable tgtTable = tgtAccessor.getTables(tgtConfig.getDefaultSchema(),
                     Collections.singletonList(tgtTableName)).get(tgtTableName);
+            StringUtils.quoteColumnDefaultValuesForMySQLCopied(srcTable);
+            StringUtils.quoteColumnDefaultValuesForMySQLCopied(tgtTable);
             DBTableStructureComparator comparator = new DBTableStructureComparator(tgtTableEditor,
                     tgtConfig.getType().getDialectType(), srcConfig.getDefaultSchema(), tgtConfig.getDefaultSchema());
             List<String> changeSqlScript = new LinkedList<>();
@@ -156,7 +158,7 @@ public class DLMTableStructureSynchronizer {
             if (!tables.containsKey(tempTableName)) {
                 DBTable srcTable = tables.get(srcTableName);
                 srcTable.setName(tempTableName);
-                adaptDBTable(srcTable);
+                StringUtils.quoteColumnDefaultValuesForMySQLCopied(srcTable);
                 DBTableEditor tableEditor = getDBTableEditor(srcConfig.getType(), srcDbVersion);
                 String createTableDdl = tableEditor.generateCreateObjectDDL(srcTable);
                 log.info("Start to create temporary table,ddl={}", createTableDdl);
@@ -222,16 +224,6 @@ public class DLMTableStructureSynchronizer {
 
     private static boolean isMySQLVersionLessThan570(String version) {
         return VersionUtils.isLessThan(version, "5.7.0");
-    }
-
-    private static void adaptDBTable(DBTable dbTable) {
-        dbTable.getColumns().forEach(o -> {
-            if (!o.getNullable()) {
-                if (StringUtils.isWhitespace(o.getDefaultValue())) {
-                    o.setDefaultValue("'" + o.getDefaultValue() + "'");
-                }
-            }
-        });
     }
 
 }
