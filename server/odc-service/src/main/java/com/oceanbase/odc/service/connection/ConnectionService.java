@@ -108,6 +108,7 @@ import com.oceanbase.odc.service.connection.database.DatabaseSyncManager;
 import com.oceanbase.odc.service.connection.event.UpsertDatasourceEvent;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.connection.model.InnerQueryConnectionParams;
 import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
 import com.oceanbase.odc.service.connection.model.QueryConnectionParams;
 import com.oceanbase.odc.service.connection.ssl.ConnectionSSLAdaptor;
@@ -849,6 +850,21 @@ public class ConnectionService {
     @SkipAuthorize("odc internal usage")
     public List<ConnectionConfig> listSkipPermissionCheck(@NotNull QueryConnectionParams params) {
         return innerList(params, Pageable.unpaged()).toList();
+    }
+
+    public Set<Long> innerGetIdsIfAnyOfCondition(@NotNull InnerQueryConnectionParams params) {
+        Specification<ConnectionEntity> spec;
+        if (StringUtils.isNotBlank(params.getDataSourceName())) {
+            spec = Specification.where(ConnectionSpecs.nameLike(params.getDataSourceName()));
+        } else if (StringUtils.isNotBlank(params.getTenantName())) {
+            spec = Specification.where(ConnectionSpecs.tenantNameLike(params.getTenantName()));
+        } else if (StringUtils.isNotBlank(params.getClusterName())) {
+            spec = Specification.where(ConnectionSpecs.clusterNameLike(params.getClusterName()));
+        } else {
+            return Collections.emptySet();
+        }
+        return this.repository.findAll(spec, Pageable.unpaged()).stream().map(ConnectionEntity::getId)
+                .collect(Collectors.toSet());
     }
 
     private Page<ConnectionConfig> innerList(@NotNull QueryConnectionParams params, @NotNull Pageable pageable) {
