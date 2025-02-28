@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.metadb.schedule;
 
+import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -22,6 +24,7 @@ import java.util.Set;
 import javax.transaction.Transactional;
 import javax.validation.constraints.NotNull;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -114,4 +117,13 @@ public interface ScheduleTaskRepository extends JpaRepository<ScheduleTaskEntity
         return findAll(specification, pageable);
     }
 
+    default List<ScheduleTaskEntity> findByJobGroupInAndCreateTimeBetween(Collection<String> jobGroups, Date startTime,
+            Date endTime) {
+        Specification<ScheduleTaskEntity> specification =
+                Specification.where(ScheduleTaskSpecs.createTimeBetween(startTime, endTime));
+        if (CollectionUtils.isNotEmpty(jobGroups)) {
+            specification = specification.and(OdcJpaRepository.in(ScheduleTaskEntity_.jobGroup, jobGroups));
+        }
+        return findAll(specification);
+    }
 }

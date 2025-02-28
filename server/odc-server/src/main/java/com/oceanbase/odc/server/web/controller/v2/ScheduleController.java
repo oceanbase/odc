@@ -44,6 +44,7 @@ import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.ChangeScheduleResp;
 import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
 import com.oceanbase.odc.service.schedule.model.OperationType;
+import com.oceanbase.odc.service.schedule.model.QueryAlterScheduleStatParams;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleParams;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleTaskParams;
 import com.oceanbase.odc.service.schedule.model.Schedule;
@@ -56,6 +57,7 @@ import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskListOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
+import com.oceanbase.odc.service.schedule.model.SingleAlterScheduleStat;
 import com.oceanbase.odc.service.schedule.model.UpdateScheduleReq;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
@@ -282,5 +284,18 @@ public class ScheduleController {
     public SuccessResponse<RateLimitConfiguration> updateLimiterConfig(@PathVariable Long id,
             @RequestBody RateLimitConfiguration limiterConfig) {
         return Responses.single(scheduleService.updateDlmRateLimit(id, limiterConfig));
+    }
+
+    @RequestMapping(value = "/alterScheduleStat", method = RequestMethod.GET)
+    public SuccessResponse<List<SingleAlterScheduleStat>> getAlterScheduleStat(
+            @RequestParam(required = false, name = "types") Set<ScheduleType> types,
+            @RequestParam(required = false, name = "startTime") Date startTime,
+            @RequestParam(required = false, name = "endTime") Date endTime) {
+        QueryAlterScheduleStatParams req = QueryAlterScheduleStatParams.builder()
+                .scheduleTypes(types)
+                .startTime(startTime)
+                .endTime(endTime)
+                .build();
+        return Responses.success(scheduleService.listAlterScheduleStat(req));
     }
 }

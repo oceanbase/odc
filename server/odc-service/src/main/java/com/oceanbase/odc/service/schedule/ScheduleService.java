@@ -20,6 +20,8 @@ import static com.oceanbase.odc.core.alarm.AlarmEventNames.SCHEDULING_IGNORE;
 
 import java.io.File;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -30,10 +32,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotNull;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
 import org.quartz.CronTrigger;
 import org.quartz.JobDataMap;
@@ -49,19 +53,22 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.util.CollectionUtils;
 
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Sets;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -76,6 +83,7 @@ import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.schedule.LatestTaskMappingEntity;
 import com.oceanbase.odc.metadb.schedule.LatestTaskMappingRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
+import com.oceanbase.odc.metadb.schedule.ScheduleEntity_;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
@@ -91,8 +99,11 @@ import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
+import com.oceanbase.odc.service.flow.FlowInstanceService;
+import com.oceanbase.odc.service.flow.FlowInstanceService.FlowInstanceState;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
+import com.oceanbase.odc.service.flow.model.InnerQueryFlowInstanceParams;
 import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.UserService;
@@ -107,12 +118,14 @@ import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigSelector;
 import com.oceanbase.odc.service.schedule.factory.ScheduleResponseMapperFactory;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 import com.oceanbase.odc.service.schedule.flowtask.ApprovalFlowClient;
+import com.oceanbase.odc.service.schedule.model.AlterScheduleTaskStat;
 import com.oceanbase.odc.service.schedule.model.ChangeQuartJobParam;
 import com.oceanbase.odc.service.schedule.model.ChangeScheduleResp;
 import com.oceanbase.odc.service.schedule.model.CreateQuartzJobParam;
 import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
 import com.oceanbase.odc.service.schedule.model.OperationType;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
+import com.oceanbase.odc.service.schedule.model.QueryAlterScheduleStatParams;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleParams;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleTaskParams;
 import com.oceanbase.odc.service.schedule.model.Schedule;
@@ -131,6 +144,7 @@ import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailRespHist;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskListOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
+import com.oceanbase.odc.service.schedule.model.SingleAlterScheduleStat;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
 import com.oceanbase.odc.service.schedule.model.UpdateScheduleReq;
@@ -142,6 +156,7 @@ import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 
+import cn.hutool.core.util.ObjectUtil;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -231,6 +246,9 @@ public class ScheduleService {
     private ScheduleDescriptionGenerator descriptionGenerator;
     @Autowired
     private TransactionTemplate txTemplate;
+    @Autowired
+    @Lazy
+    private FlowInstanceService flowInstanceService;
 
     private final ScheduleMapper scheduleMapper = ScheduleMapper.INSTANCE;
 
@@ -1021,6 +1039,184 @@ public class ScheduleService {
         return scheduleEntityOptional.orElseThrow(() -> new NotFoundException(ResourceType.ODC_SCHEDULE, "id", id));
     }
 
+    public List<SingleAlterScheduleStat> listAlterScheduleStat(@NonNull QueryAlterScheduleStatParams params) {
+        if (authenticationFacade.currentOrganization().getType() == OrganizationType.INDIVIDUAL) {
+            throw new UnsupportedException("Individual space is not supported");
+        }
+        Set<Long> joinedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
+        if (CollectionUtils.isEmpty(joinedProjectIds)) {
+            return Collections.emptyList();
+        }
+
+        List<ScheduleType> supportedScheduleTypes = Arrays.asList(ScheduleType.SQL_PLAN, ScheduleType.PARTITION_PLAN,
+                ScheduleType.DATA_DELETE, ScheduleType.DATA_ARCHIVE);
+        params.setScheduleTypes(ObjectUtil.defaultIfNull(params.getScheduleTypes(), Collections.emptySet()));
+        params.getScheduleTypes().retainAll(supportedScheduleTypes);
+        if (CollectionUtils.isEmpty(params.getScheduleTypes())) {
+            return Collections.emptyList();
+        }
+
+        Specification<ScheduleEntity> scheduleSpec = Specification
+                .where(OdcJpaRepository.in(ScheduleEntity_.projectId, joinedProjectIds))
+                .and(OdcJpaRepository.eq(ScheduleEntity_.organizationId, authenticationFacade.currentOrganizationId()))
+                .and(OdcJpaRepository.in(ScheduleEntity_.type, params.getScheduleTypes()))
+                .and(OdcJpaRepository.eq(ScheduleEntity_.status, ScheduleStatus.ENABLED));
+        if (params.getStartTime() != null || params.getEndTime() != null) {
+            scheduleSpec = scheduleSpec.and(
+                    OdcJpaRepository.between(ScheduleEntity_.createTime, params.getStartTime(), params.getEndTime()));
+        }
+        List<ScheduleEntity> schedules = filterAlterSchedules(scheduleRepository.findAll(scheduleSpec));
+
+        if (CollectionUtils.isEmpty(schedules)) {
+            return Collections.emptyList();
+        }
+
+        Map<ScheduleType, AlterScheduleTaskStat> scheduleType2TaskStats = listAlterScheduleTaskStat(params).stream()
+                .collect(Collectors.toMap(AlterScheduleTaskStat::getType, Function.identity()));
+
+        final List<SingleAlterScheduleStat> scheduleStats = new ArrayList<>();
+        Map<ScheduleType, List<ScheduleEntity>> scheduleType2ScheduleEntities =
+                schedules.stream().collect(Collectors.groupingBy(ScheduleEntity::getType));
+
+        scheduleType2ScheduleEntities.forEach((type, scheduleList) -> {
+            SingleAlterScheduleStat singleAlterScheduleStat = SingleAlterScheduleStat.init(type);
+            AlterScheduleTaskStat scheduleTaskStat =
+                    scheduleType2TaskStats.getOrDefault(type, AlterScheduleTaskStat.init(type));
+            singleAlterScheduleStat.getTaskStat().merge(scheduleTaskStat);
+            scheduleType2TaskStats.remove(type);
+            scheduleStats.add(singleAlterScheduleStat.setSuccessEnabledCount(scheduleList.size()));
+        });
+        for (AlterScheduleTaskStat remainAlterScheduleTaskStat : scheduleType2TaskStats.values()) {
+            SingleAlterScheduleStat stat = SingleAlterScheduleStat.init(remainAlterScheduleTaskStat.getType());
+            stat.getTaskStat().merge(remainAlterScheduleTaskStat);
+            scheduleStats.add(stat);
+        }
+        return scheduleStats;
+    }
+
+    private List<ScheduleEntity> filterAlterSchedules(List<ScheduleEntity> schedules) {
+        if (CollectionUtils.isEmpty(schedules)) {
+            return Collections.emptyList();
+        }
+        return schedules.stream().filter(s -> {
+            TriggerConfig triggerConfig = JsonUtils.fromJson(s.getTriggerConfigJson(), TriggerConfig.class);
+            return triggerConfig != null && triggerConfig.getTriggerStrategy() != TriggerStrategy.START_NOW
+                    && triggerConfig.getTriggerStrategy() != TriggerStrategy.START_AT;
+        }).collect(Collectors.toList());
+    }
+
+    private Set<Long> filterAlterScheduleIdsByIds(Set<Long> scheduleIds) {
+        if (CollectionUtils.isEmpty(scheduleIds)) {
+            return Collections.emptySet();
+        }
+        Set<Long> joinedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
+        if (CollectionUtils.isEmpty(joinedProjectIds)) {
+            return Collections.emptySet();
+        }
+        return filterAlterSchedules(scheduleRepository.findByIdInAndProjectIdIn(scheduleIds, joinedProjectIds)).stream()
+                .map(ScheduleEntity::getId).collect(Collectors.toSet());
+    }
+
+    private List<AlterScheduleTaskStat> listAlterScheduleTaskStatWithTaskFramework(
+            @NonNull QueryAlterScheduleStatParams params) {
+        /**
+         * ODC 4.3.4 only {@link ScheduleType.DATA_DELETE} and {@link ScheduleType.DATA_ARCHIVE} is used to
+         * taskFramework
+         */
+        List<ScheduleTaskEntity> scheduleTasks = scheduleTaskRepository.findByJobGroupInAndCreateTimeBetween(
+                params.getScheduleTypes().stream().map(Enum::name).collect(
+                        Collectors.toSet()),
+                params.getStartTime(), params.getEndTime());
+
+        Set<Long> scheduleIds = scheduleTasks.stream()
+                .map(s -> Long.valueOf(s.getJobName())).collect(Collectors.toSet());
+
+        Set<Long> alterScheduleIds = filterAlterScheduleIdsByIds(scheduleIds);
+        Map<String, List<ScheduleTaskEntity>> jobGroup2AlterScheduleTasks = scheduleTasks.stream()
+                .filter(s -> alterScheduleIds.contains(Long.valueOf(s.getJobName())))
+                .collect(Collectors.groupingBy(ScheduleTaskEntity::getJobGroup));
+
+        final List<AlterScheduleTaskStat> alterScheduleTaskStats = new ArrayList<>();
+        jobGroup2AlterScheduleTasks.forEach((jobGroup, scheduleTasksWithSameJobGroup) -> {
+            AlterScheduleTaskStat stat = AlterScheduleTaskStat.init(ScheduleType.valueOf(jobGroup));
+            for (ScheduleTaskEntity scheduleTaskEntity : scheduleTasksWithSameJobGroup) {
+                if (TaskStatus.RUNNING.equals(scheduleTaskEntity.getStatus())) {
+                    stat.addExecutingCount();
+                } else if (TaskStatus.FAILED.equals(scheduleTaskEntity.getStatus())) {
+                    stat.addFailedExecutionCount();
+                } else if (TaskStatus.DONE.equals(scheduleTaskEntity.getStatus())) {
+                    stat.addSuccessExecutionCount();
+                } else if (TaskStatus.PREPARING.equals(scheduleTaskEntity.getStatus())) {
+                    stat.addWaitingExecutionCount();
+                }
+            }
+            alterScheduleTaskStats.add(stat);
+        });
+        return alterScheduleTaskStats;
+    }
+
+    private List<AlterScheduleTaskStat> listAlterScheduleTaskStatWithoutTaskFramework(
+            @NonNull QueryAlterScheduleStatParams params) {
+        /**
+         * ODC 4.3.4 only {@link ScheduleType.SQL_PLAN} and {@link ScheduleType.PARTITION_PLAN} isn't used
+         * to taskFramework
+         */
+        InnerQueryFlowInstanceParams innerQueryFlowInstanceParams = InnerQueryFlowInstanceParams.builder()
+                .taskTypes(Sets.newHashSet(TaskType.ASYNC, TaskType.PARTITION_PLAN))
+                .startTime(params.getStartTime())
+                .endTime(params.getEndTime())
+                .build();
+
+        List<FlowInstanceState> flowInstanceStates = flowInstanceService.listAlterScheduleSubTaskStates(
+                innerQueryFlowInstanceParams);
+        if (CollectionUtils.isEmpty(flowInstanceStates)) {
+            return Collections.emptyList();
+        }
+        final List<AlterScheduleTaskStat> alterScheduleTaskStats = new ArrayList<>();
+        Map<TaskType, List<FlowInstanceState>> taskType2FlowInstanceState = flowInstanceStates.stream().collect(
+                Collectors.groupingBy(FlowInstanceState::getTaskType));
+        taskType2FlowInstanceState.forEach((taskType, instanceStates) -> {
+            AlterScheduleTaskStat stat;
+            switch (taskType) {
+                case ASYNC:
+                    stat = AlterScheduleTaskStat.init(ScheduleType.SQL_PLAN);
+                    break;
+                case PARTITION_PLAN:
+                    stat = AlterScheduleTaskStat.init(ScheduleType.PARTITION_PLAN);
+                    break;
+                default:
+                    throw new UnsupportedException("Unsupported task type: " + taskType);
+            }
+            for (FlowInstanceState instanceState : instanceStates) {
+                if (FlowStatus.EXECUTION_FAILED == instanceState.getStatus()) {
+                    stat.addFailedExecutionCount();
+                } else if (FlowStatus.EXECUTION_SUCCEEDED == instanceState.getStatus()) {
+                    stat.addSuccessExecutionCount();
+                } else if (FlowStatus.WAIT_FOR_EXECUTION == instanceState.getStatus()) {
+                    stat.addWaitingExecutionCount();
+                } else if (FlowStatus.EXECUTING == instanceState.getStatus()) {
+                    stat.addExecutingCount();
+                }
+            }
+            alterScheduleTaskStats.add(stat);
+        });
+        return alterScheduleTaskStats;
+    }
+
+    private List<AlterScheduleTaskStat> listAlterScheduleTaskStat(@NonNull QueryAlterScheduleStatParams params) {
+        /**
+         * {@link ScheduleType.DATA_DELETE} and {@link ScheduleType.DATA_ARCHIVE} {@link TaskType.ASYNC} and
+         * {@link TaskType.PARTITION_PLAN}
+         */
+        Set<Long> joinedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
+        if (CollectionUtils.isEmpty(joinedProjectIds)) {
+            return Collections.emptyList();
+        }
+        List<AlterScheduleTaskStat> statsWithTaskFramework = listAlterScheduleTaskStatWithTaskFramework(params);
+        List<AlterScheduleTaskStat> statsWithoutTaskFramework = listAlterScheduleTaskStatWithoutTaskFramework(params);
+        statsWithTaskFramework.addAll(statsWithoutTaskFramework);
+        return statsWithTaskFramework;
+    }
 
     private Trigger nullSafeGetScheduleTrigger(ScheduleEntity schedule) throws SchedulerException {
         Trigger trigger = getScheduleTrigger(schedule);
