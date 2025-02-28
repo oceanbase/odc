@@ -76,8 +76,10 @@ public class OBOracleSQLParserTest {
                         "  \"HIRE_DATE\" DATE,\n" +
                         "  \"SALARY\" NUMBER(10,2),\n" +
                         "  PRIMARY KEY (\"EMPLOYEE_ID\")\n" +
-                        ") COMPRESS FOR ARCHIVE REPLICA_NUM = 1 BLOCK_SIZE = 16384 USE_BLOOM_FILTER = FALSE ENABLE_MACRO_BLOCK_BLOOM_FILTER = FALSE TABLET_SIZE = 134217728 PCTFREE = 0 "));
-        Assert.assertNotNull(actual);
+                        ") COMPRESS FOR ARCHIVE REPLICA_NUM = 1 BLOCK_SIZE = 16384 USE_BLOOM_FILTER = FALSE " +
+                        "ENABLE_MACRO_BLOCK_BLOOM_FILTER = FALSE TABLET_SIZE = 134217728 PCTFREE = 0 "));
+        Assert.assertEquals(new Boolean("false"),
+                ((CreateTable) actual).getTableOptions().getEnableMacroBlockBloomFilter());
     }
 
     @Test
@@ -91,8 +93,10 @@ public class OBOracleSQLParserTest {
                         "  \"HIRE_DATE\" DATE,\n" +
                         "  \"SALARY\" NUMBER(10,2),\n" +
                         "  PRIMARY KEY (\"EMPLOYEE_ID\")\n" +
-                        ") COMPRESS FOR ARCHIVE REPLICA_NUM = 1 BLOCK_SIZE = 16384 USE_BLOOM_FILTER = FALSE ENABLE_MACRO_BLOCK_BLOOM_FILTER = TRUE TABLET_SIZE = 134217728 PCTFREE = 0 "));
-        Assert.assertNotNull(actual);
+                        ") COMPRESS FOR ARCHIVE REPLICA_NUM = 1 BLOCK_SIZE = 16384 USE_BLOOM_FILTER = FALSE " +
+                        "ENABLE_MACRO_BLOCK_BLOOM_FILTER = TRUE TABLET_SIZE = 134217728 PCTFREE = 0 "));
+        Assert.assertEquals(new Boolean("true"),
+                ((CreateTable) actual).getTableOptions().getEnableMacroBlockBloomFilter());
     }
 
     @Test
