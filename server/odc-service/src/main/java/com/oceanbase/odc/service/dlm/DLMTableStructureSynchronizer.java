@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import javax.sql.DataSource;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -94,6 +95,8 @@ public class DLMTableStructureSynchronizer {
                     Collections.singletonList(srcTableName)).get(srcTableName);
             DBTable tgtTable = tgtAccessor.getTables(tgtConfig.getDefaultSchema(),
                     Collections.singletonList(tgtTableName)).get(tgtTableName);
+            StringUtils.quoteColumnDefaultValuesForMySQLCopied(srcTable);
+            StringUtils.quoteColumnDefaultValuesForMySQLCopied(tgtTable);
             DBTableStructureComparator comparator = new DBTableStructureComparator(tgtTableEditor,
                     tgtConfig.getType().getDialectType(), srcConfig.getDefaultSchema(), tgtConfig.getDefaultSchema());
             List<String> changeSqlScript = new LinkedList<>();
@@ -155,8 +158,10 @@ public class DLMTableStructureSynchronizer {
             if (!tables.containsKey(tempTableName)) {
                 DBTable srcTable = tables.get(srcTableName);
                 srcTable.setName(tempTableName);
+                StringUtils.quoteColumnDefaultValuesForMySQLCopied(srcTable);
                 DBTableEditor tableEditor = getDBTableEditor(srcConfig.getType(), srcDbVersion);
                 String createTableDdl = tableEditor.generateCreateObjectDDL(srcTable);
+                log.info("Start to create temporary table,ddl={}", createTableDdl);
                 try (Connection conn = sourceDs.getConnection();
                         PreparedStatement ps = conn.prepareStatement(createTableDdl)) {
                     ps.execute();
