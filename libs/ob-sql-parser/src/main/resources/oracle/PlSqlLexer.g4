@@ -2375,6 +2375,6 @@ SPACES: [ \t\r\n]+ -> channel(HIDDEN);
 fragment NEWLINE_EOF    : NEWLINE | EOF;
 fragment QUESTION_MARK  : '?';
 fragment SIMPLE_LETTER  : [A-Z\u4e00-\u9fa5];
-fragment FLOAT_FRAGMENT : UNSIGNED_INTEGER* '.'? UNSIGNED_INTEGER+;
+fragment FLOAT_FRAGMENT : UNSIGNED_INTEGER ('.' UNSIGNED_INTEGER*)? | '.' UNSIGNED_INTEGER+;
 fragment NEWLINE        : '\r'? '\n';
 fragment SPACE          : [ \t];

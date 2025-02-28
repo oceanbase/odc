@@ -1399,4 +1399,19 @@ public class PLParserTest {
         Assert.assertEquals(SqlType.SET_SESSION, result.getSqlType());
         Assert.assertEquals(DBObjectType.OTHERS, result.getDbObjectType());
     }
+
+    @Test
+    public void test_parse_oracle_pl_with_float() {
+        String pl = "create or replace function TEST_FUNC1 return varchar2 as ret varchar2(4000);\n"
+                    + "    begin\n"
+                    + "        if (nvl(test1, 0) not between .12 and 34.) then\n"
+                    + "            raise('For must be between .and 4000');\n"
+                    + "    end if;\n"
+                    + "    return upper(ret);\n"
+                    + "end test_func1;\n"
+                    + "/";
+        ParseOraclePLResult result = PLParser.parseOracle(pl);
+        Assert.assertEquals(1, result.getFunctionList().size());
+        Assert.assertEquals("TEST_FUNC1", result.getFunctionList().get(0).name());
+    }
 }
