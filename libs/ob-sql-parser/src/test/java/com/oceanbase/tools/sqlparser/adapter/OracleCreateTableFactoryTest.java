@@ -84,7 +84,7 @@ public class OracleCreateTableFactoryTest {
                 "ENABLE_MACRO_BLOCK_BLOOM_FILTER = FALSE TABLET_SIZE = 134217728 PCTFREE = 0 ");
         StatementFactory<CreateTable> factory = new OracleCreateTableFactory(context);
         CreateTable actual = factory.generate();
-        Assert.assertEquals(new Boolean("false"),
+        Assert.assertEquals(Boolean.FALSE,
                 actual.getTableOptions().getEnableMacroBlockBloomFilter());
     }
 
@@ -101,7 +101,7 @@ public class OracleCreateTableFactoryTest {
                 "ENABLE_MACRO_BLOCK_BLOOM_FILTER = TRUE TABLET_SIZE = 134217728 PCTFREE = 0 ");
         StatementFactory<CreateTable> factory = new OracleCreateTableFactory(context);
         CreateTable actual = factory.generate();
-        Assert.assertEquals(new Boolean("true"),
+        Assert.assertEquals(Boolean.TRUE,
                 actual.getTableOptions().getEnableMacroBlockBloomFilter());
     }
 

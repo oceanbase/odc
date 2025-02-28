@@ -103,7 +103,7 @@ public class MySQLCreateTableFactoryTest {
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
         Assert.assertEquals("INDEX", actual.getTableOptions().getOrganization());
-        Assert.assertEquals(new Boolean("false"),
+        Assert.assertEquals(Boolean.FALSE,
                 actual.getTableOptions().getEnableMacroBlockBloomFilter());
     }
 
@@ -121,7 +121,7 @@ public class MySQLCreateTableFactoryTest {
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
         Assert.assertEquals("INDEX", actual.getTableOptions().getOrganization());
-        Assert.assertEquals(new Boolean("true"),
+        Assert.assertEquals(Boolean.TRUE,
                 actual.getTableOptions().getEnableMacroBlockBloomFilter());
     }
 
