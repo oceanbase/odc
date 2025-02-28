@@ -227,8 +227,8 @@ public class DLMTableStructureSynchronizer {
     private static void adaptDBTable(DBTable dbTable) {
         dbTable.getColumns().forEach(o -> {
             if (!o.getNullable()) {
-                if (StringUtils.isEmpty(o.getDefaultValue())) {
-                    o.setDefaultValue("''");
+                if (StringUtils.isWhitespace(o.getDefaultValue())) {
+                    o.setDefaultValue("'" + o.getDefaultValue() + "'");
                 }
             }
         });
