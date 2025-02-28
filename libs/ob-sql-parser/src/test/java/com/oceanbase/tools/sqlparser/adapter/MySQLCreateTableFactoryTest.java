@@ -15,7 +15,6 @@
  */
 package com.oceanbase.tools.sqlparser.adapter;
 
-import java.io.StringReader;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collections;
@@ -23,9 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.oceanbase.tools.sqlparser.OBMySQLParser;
-import com.oceanbase.tools.sqlparser.SQLParser;
-import com.oceanbase.tools.sqlparser.statement.Statement;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -76,55 +72,57 @@ import com.oceanbase.tools.sqlparser.statement.select.SelectBody;
 public class MySQLCreateTableFactoryTest {
 
     @Test
-    public void parse_CreateTableOrganizationHeap() {
-        Create_table_stmtContext context = getCreateTableContext("create table create_table_with_option_demo (c1 int) ORGANIZATION HEAP;");
+    public void generate_CreateTableOrganizationHeap_generateSucceed() {
+        Create_table_stmtContext context =
+                getCreateTableContext("create table create_table_with_option_demo (c1 int) ORGANIZATION HEAP;");
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
         Assert.assertEquals("HEAP", actual.getTableOptions().getOrganization());
     }
 
     @Test
-    public void parse_CreateTableOrganizationIndex() {
-        Create_table_stmtContext context = getCreateTableContext("create table create_table_with_option_demo (c1 int) ORGANIZATION INDEX;");
+    public void generate_CreateTableOrganizationIndex_generateSucceed() {
+        Create_table_stmtContext context =
+                getCreateTableContext("create table create_table_with_option_demo (c1 int) ORGANIZATION INDEX;");
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
-        Assert.assertEquals("INDEX",  actual.getTableOptions().getOrganization());
+        Assert.assertEquals("INDEX", actual.getTableOptions().getOrganization());
     }
 
     @Test
-    public void parse_enableMacroBlockBloomFilterEqualsFalse_parseSucceed() {
+    public void generate_enableMacroBlockBloomFilterEqualsFalse_generateSucceed() {
         Create_table_stmtContext context = getCreateTableContext("CREATE TABLE `test_date` (\n" +
-            "  `a` date NOT NULL,\n" +
-            "  `b` date DEFAULT NULL\n" +
-            ") ORGANIZATION INDEX DEFAULT CHARSET = utf8mb4 ROW_FORMAT = DYNAMIC COMPRESSION = 'zstd_1.3.8' "
-            +
-            "REPLICA_NUM = 1 BLOCK_SIZE = 16384 USE_BLOOM_FILTER = TRUE ENABLE_MACRO_BLOCK_BLOOM_FILTER = FALSE "
-            +
-            "TABLET_SIZE = 134217728 PCTFREE = 0 partition by range columns(a)\n" +
-            "(partition `p_2022_11` values less than ('2022-11-01'))");
+                "  `a` date NOT NULL,\n" +
+                "  `b` date DEFAULT NULL\n" +
+                ") ORGANIZATION INDEX DEFAULT CHARSET = utf8mb4 ROW_FORMAT = DYNAMIC COMPRESSION = 'zstd_1.3.8' "
+                +
+                "REPLICA_NUM = 1 BLOCK_SIZE = 16384 USE_BLOOM_FILTER = TRUE ENABLE_MACRO_BLOCK_BLOOM_FILTER = FALSE "
+                +
+                "TABLET_SIZE = 134217728 PCTFREE = 0 partition by range columns(a)\n" +
+                "(partition `p_2022_11` values less than ('2022-11-01'))");
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
         Assert.assertEquals("INDEX", actual.getTableOptions().getOrganization());
         Assert.assertEquals(new Boolean("false"),
-           actual.getTableOptions().getEnableMacroBlockBloomFilter());
+                actual.getTableOptions().getEnableMacroBlockBloomFilter());
     }
 
     @Test
-    public void parse_enableMacroBlockBloomFilterEqualsTrue_parseSucceed() {
+    public void generate_enableMacroBlockBloomFilterEqualsTrue_generateSucceed() {
         Create_table_stmtContext context = getCreateTableContext("CREATE TABLE `test_date` (\n" +
-            "  `a` date NOT NULL,\n" +
-            "  `b` date DEFAULT NULL\n" +
-            ") ORGANIZATION INDEX DEFAULT CHARSET = utf8mb4 ROW_FORMAT = DYNAMIC COMPRESSION = 'zstd_1.3.8' "
-            +
-            "REPLICA_NUM = 1 BLOCK_SIZE = 16384 USE_BLOOM_FILTER = TRUE ENABLE_MACRO_BLOCK_BLOOM_FILTER = TRUE "
-            +
-            "TABLET_SIZE = 134217728 PCTFREE = 0 partition by range columns(a)\n" +
-            "(partition `p_2022_11` values less than ('2022-11-01'))");
+                "  `a` date NOT NULL,\n" +
+                "  `b` date DEFAULT NULL\n" +
+                ") ORGANIZATION INDEX DEFAULT CHARSET = utf8mb4 ROW_FORMAT = DYNAMIC COMPRESSION = 'zstd_1.3.8' "
+                +
+                "REPLICA_NUM = 1 BLOCK_SIZE = 16384 USE_BLOOM_FILTER = TRUE ENABLE_MACRO_BLOCK_BLOOM_FILTER = TRUE "
+                +
+                "TABLET_SIZE = 134217728 PCTFREE = 0 partition by range columns(a)\n" +
+                "(partition `p_2022_11` values less than ('2022-11-01'))");
         StatementFactory<CreateTable> factory = new MySQLCreateTableFactory(context);
         CreateTable actual = factory.generate();
-        Assert.assertEquals("INDEX",  actual.getTableOptions().getOrganization());
+        Assert.assertEquals("INDEX", actual.getTableOptions().getOrganization());
         Assert.assertEquals(new Boolean("true"),
-            actual.getTableOptions().getEnableMacroBlockBloomFilter());
+                actual.getTableOptions().getEnableMacroBlockBloomFilter());
     }
 
     @Test
