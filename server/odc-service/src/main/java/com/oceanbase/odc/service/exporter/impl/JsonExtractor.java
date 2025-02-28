@@ -27,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Base64;
+import java.util.LinkedHashMap;
 
 import javax.annotation.Nullable;
 import javax.crypto.Mac;
@@ -35,6 +36,7 @@ import javax.crypto.spec.SecretKeySpec;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oceanbase.odc.common.security.EncryptAlgorithm;
@@ -121,7 +123,7 @@ public class JsonExtractor implements Extractor<JsonNode> {
             }
 
             String signature = null;
-            ExportProperties metadata = null;
+            LinkedHashMap<String, Object> metadata = null;
 
             while (jsonParser.nextToken() != JsonToken.END_OBJECT) {
                 String fieldName = jsonParser.getCurrentName();
@@ -132,7 +134,8 @@ public class JsonExtractor implements Extractor<JsonNode> {
                         signature = jsonParser.getValueAsString();
                         break;
                     case "metadata":
-                        metadata = objectMapper.readValue(jsonParser, ExportProperties.class);
+                        metadata = objectMapper.readValue(jsonParser,
+                                new TypeReference<LinkedHashMap<String, Object>>() {});
                         mac.update(
                                 ("metadata" + objectMapper.writeValueAsString(metadata))
                                         .getBytes(StandardCharsets.UTF_8));
@@ -201,7 +204,11 @@ public class JsonExtractor implements Extractor<JsonNode> {
                 throw new IllegalStateException("Expected metadata to be an Object");
             }
 
-            ExportProperties metadata = objectMapper.readValue(jsonParser, ExportProperties.class);
+
+            LinkedHashMap<String, Object> metadata = objectMapper.readValue(jsonParser,
+                    new TypeReference<LinkedHashMap<String, Object>>() {});
+
+            ExportProperties properties = new ExportProperties(metadata, null);
 
             jsonParser.nextToken(); // Move to next field after metadata
             if (!"data".equals(jsonParser.getCurrentName())) {
@@ -212,7 +219,7 @@ public class JsonExtractor implements Extractor<JsonNode> {
             if (jsonToken != JsonToken.START_ARRAY) {
                 throw new IllegalStateException("Expected data to be an Array");
             }
-            return new JsonRowDataReader(metadata, jsonParser, objectMapper, exportedFile.getSecret(), tempFilePath);
+            return new JsonRowDataReader(properties, jsonParser, objectMapper, exportedFile.getSecret(), tempFilePath);
         }
     }
 

@@ -36,23 +36,40 @@ import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.info.GitProperties;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.google.common.base.MoreObjects;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 
+import lombok.Getter;
+import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * Ensure that the keys are in the same order before and after serialization, so use linkedHashMap
- */
 @Slf4j
-public class ExportProperties extends LinkedHashMap<String, Object> {
+@Getter
+public class ExportProperties {
 
+    /**
+     * Ensure that the keys are in the same order before and after serialization, so use linkedHashMap
+     */
+    private final LinkedHashMap<String, Object> metaData;
     /**
      * runtime Properties，no need to add a metaData field
      */
     @JsonIgnore
-    private transient Map<String, Object> transientProperties = new HashMap<>();
+    private final transient Map<String, Object> transientProperties;
+
+    public ExportProperties(@NonNull LinkedHashMap<String, Object> metaData, Map<String, Object> transientProperties) {
+        this.metaData = metaData;
+        this.transientProperties = MoreObjects.firstNonNull(transientProperties, new HashMap<>());
+    }
+
+    public ExportProperties() {
+        this.metaData = new LinkedHashMap<>();
+        this.transientProperties = new HashMap<>();
+    }
 
     public String acquireOdcVersion() {
         return (String) getValue(ODC_VERSION);
@@ -93,7 +110,7 @@ public class ExportProperties extends LinkedHashMap<String, Object> {
             try {
                 BuildProperties buildProperties = SpringContextUtil.getBean(BuildProperties.class);
                 String version = buildProperties.getVersion();
-                this.put(ExportConstants.ODC_VERSION, version);
+                metaData.put(ExportConstants.ODC_VERSION, version);
             } catch (Exception e) {
                 log.warn("Failed to load build properties", e);
             }
@@ -101,14 +118,14 @@ public class ExportProperties extends LinkedHashMap<String, Object> {
         if (this.acquireGitCommit() == null) {
             try {
                 GitProperties gitProperties = SpringContextUtil.getBean(GitProperties.class);
-                putIfAbsent(GIT_COMMIT_ID, gitProperties.getCommitId());
-                putIfAbsent(GIT_BRANCH, gitProperties.getBranch());
+                metaData.putIfAbsent(GIT_COMMIT_ID, gitProperties.getCommitId());
+                metaData.putIfAbsent(GIT_BRANCH, gitProperties.getBranch());
             } catch (Exception e) {
                 log.warn("Failed to load git properties", e);
             }
         }
         if (this.acquireCreateTime() == null) {
-            putIfAbsent(ExportConstants.CREATE_TIME, new Date());
+            metaData.putIfAbsent(ExportConstants.CREATE_TIME, new Date());
         }
     }
 
@@ -124,16 +141,30 @@ public class ExportProperties extends LinkedHashMap<String, Object> {
                 randomDir.toString());
     }
 
+    public void putToMetaData(String key, Object value) {
+        metaData.put(key, value);
+    }
+
     public void putTransientProperties(String key, Object value) {
         transientProperties.put(key, value);
     }
 
     public Object getValue(String key) {
-        Object o = get(key);
+        Object o = metaData.get(key);
         if (o == null) {
             return transientProperties.get(key);
         }
         return o;
+    }
+
+    public ExportProperties deepClone() {
+        LinkedHashMap<String, Object> metadata = JsonUtils.fromJson(JsonUtils.toJson(this.getMetaData()),
+                new TypeReference<LinkedHashMap<String, Object>>() {});
+        HashMap<String, Object> transientProperties =
+                JsonUtils.fromJson(JsonUtils.toJson(this.getTransientProperties()),
+                        new TypeReference<HashMap<String, Object>>() {});
+        // Ensure all archive file in same path
+        return new ExportProperties(metadata, transientProperties);
     }
 
 

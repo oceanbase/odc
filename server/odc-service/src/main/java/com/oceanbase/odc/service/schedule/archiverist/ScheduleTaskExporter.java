@@ -116,17 +116,17 @@ public class ScheduleTaskExporter {
     private ExportProperties generateTypeProperties(Entry<ScheduleType, List<ScheduleEntity>> entry,
             ExportProperties exportProperties) {
         // Ensure all archive file in same path
-        ExportProperties deepClone = JsonUtils.fromJson(JsonUtils.toJson(exportProperties),
-                ExportProperties.class);
-        deepClone.put(FILE_NAME, entry.getKey().name());
+        ExportProperties deepClone = exportProperties.deepClone();
+
+        deepClone.putToMetaData(FILE_NAME, entry.getKey().name());
         deepClone.addFilePathProperties(exportConfiguration.getDefaultArchivePath());
-        exportProperties.put("taskType", entry.getKey());
+        exportProperties.putToMetaData("taskType", entry.getKey());
         return deepClone;
     }
 
     private ExportProperties generateArchiveProperties() {
         ExportProperties exportProperties = new ExportProperties();
-        exportProperties.put(ARCHIVE_TYPE, SCHEDULE_ARCHIVE_TYPE);
+        exportProperties.putToMetaData(ARCHIVE_TYPE, SCHEDULE_ARCHIVE_TYPE);
         exportProperties.addDefaultMetaData();
         exportProperties.addFilePathProperties(exportConfiguration.getDefaultArchivePath());
         scheduleExportFacade.adapt(exportProperties);

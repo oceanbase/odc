@@ -47,8 +47,8 @@ public class LocalJsonExporterTest {
         ExportProperties metadata = new ExportProperties();
         metadata.putTransientProperties(ExportConstants.FILE_PATH, "./");
         metadata.putTransientProperties(ExportConstants.FILE_NAME, "test2");
-        metadata.put("TEST", "test");
-        metadata.put("TEST2", 123456);
+        metadata.putToMetaData("TEST", "test");
+        metadata.putToMetaData("TEST2", 123456);
         ExportedFile build = null;
         try (ExportRowDataAppender testRowDataExportRowDataAppender =
                 archiver.buildRowDataAppender(metadata)) {

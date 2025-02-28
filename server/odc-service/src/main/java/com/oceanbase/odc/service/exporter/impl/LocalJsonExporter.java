@@ -61,7 +61,7 @@ public class LocalJsonExporter implements Exporter {
         JsonGenerator generator = jsonFactory.createGenerator(file, JsonEncoding.UTF8);
         generator.writeStartObject();
         generator.writeFieldName("metadata");
-        objectMapper.writeValue(generator, metaData);
+        objectMapper.writeValue(generator, metaData.getMetaData());
         generator.writeArrayFieldStart("data");
         return new JsonArchiverRowDataAppender(objectMapper, generator, metaData, encryptKey);
     }
@@ -79,10 +79,10 @@ public class LocalJsonExporter implements Exporter {
         private Mac mac;
 
         public JsonArchiverRowDataAppender(ObjectMapper objectMapper, JsonGenerator jsonGenerator,
-                ExportProperties metaData, @Nullable String encryptKey) {
+                ExportProperties properties, @Nullable String encryptKey) {
             this.objectMapper = objectMapper;
             this.jsonGenerator = jsonGenerator;
-            this.metaData = metaData;
+            this.metaData = properties;
             this.encryptKey = encryptKey;
             if (encryptKey != null) {
                 try {
@@ -91,7 +91,8 @@ public class LocalJsonExporter implements Exporter {
                     mac.init(secretKeySpec);
                     this.mac = mac;
                     mac.update(
-                            ("metadata" + objectMapper.writeValueAsString(metaData)).getBytes(StandardCharsets.UTF_8));
+                            ("metadata" + objectMapper.writeValueAsString(properties.getMetaData()))
+                                    .getBytes(StandardCharsets.UTF_8));
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
