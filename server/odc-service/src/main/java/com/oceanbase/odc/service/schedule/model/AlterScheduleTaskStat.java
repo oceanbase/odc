@@ -15,6 +15,11 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
+import com.oceanbase.odc.core.shared.constant.FlowStatus;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+
 import cn.hutool.core.util.ObjectUtil;
 import lombok.Builder;
 import lombok.Data;
@@ -36,9 +41,19 @@ public class AlterScheduleTaskStat {
     private Integer failedExecutionCount;
     private Integer waitingExecutionCount;
     private Integer executingCount;
+    private Integer otherCount;
 
     public static AlterScheduleTaskStat init(@NonNull ScheduleType type) {
         return empty().setType(type);
+    }
+
+    public static AlterScheduleTaskStat init(@NonNull TaskType type) {
+        if (type == TaskType.ASYNC) {
+            return empty().setType(ScheduleType.SQL_PLAN);
+        } else if (type == TaskType.PARTITION_PLAN) {
+            return empty().setType(ScheduleType.PARTITION_PLAN);
+        }
+        throw new UnsupportedException("Unsupported task type: " + type);
     }
 
     public void merge(AlterScheduleTaskStat stat) {
@@ -49,6 +64,7 @@ public class AlterScheduleTaskStat {
         this.failedExecutionCount += ObjectUtil.defaultIfNull(stat.getFailedExecutionCount(), 0);
         this.waitingExecutionCount += ObjectUtil.defaultIfNull(stat.getWaitingExecutionCount(), 0);
         this.executingCount += ObjectUtil.defaultIfNull(stat.getExecutingCount(), 0);
+        this.otherCount += ObjectUtil.defaultIfNull(stat.getOtherCount(), 0);
     }
 
     public static AlterScheduleTaskStat empty() {
@@ -57,7 +73,55 @@ public class AlterScheduleTaskStat {
                 .failedExecutionCount(0)
                 .waitingExecutionCount(0)
                 .executingCount(0)
+                .otherCount(0)
                 .build();
+    }
+
+    public void count(@NonNull TaskStatus scheduleTaskStatus) {
+        switch (scheduleTaskStatus) {
+            case PREPARING:
+                this.addWaitingExecutionCount();
+                break;
+            case RUNNING:
+                this.addExecutingCount();
+                break;
+            case ABNORMAL:
+            case FAILED:
+                this.addFailedExecutionCount();
+                break;
+            case DONE:
+                this.addSuccessExecutionCount();
+                break;
+            default:
+                this.addOtherCount();
+                break;
+        }
+    }
+
+    public void count(@NonNull FlowStatus flowInstanceStatus) {
+        switch (flowInstanceStatus) {
+            case PRE_CHECK_FAILED:
+            case EXECUTION_ABNORMAL:
+            case EXECUTION_FAILED:
+            case ROLLBACK_FAILED:
+                this.addFailedExecutionCount();
+                break;
+            case COMPLETED:
+            case EXECUTION_SUCCEEDED:
+                this.addSuccessExecutionCount();
+                break;
+            case CREATED:
+            case WAIT_FOR_EXECUTION:
+            case WAIT_FOR_CONFIRM:
+                this.addWaitingExecutionCount();
+                break;
+            case EXECUTING:
+                this.addExecutingCount();
+                break;
+            default:
+                this.addOtherCount();
+                break;
+        }
     }
 
     public void addSuccessExecutionCount() {
@@ -74,5 +138,9 @@ public class AlterScheduleTaskStat {
 
     public void addExecutingCount() {
         this.executingCount = ObjectUtil.defaultIfNull(this.getExecutingCount(), 0) + 1;
+    }
+
+    public void addOtherCount() {
+        this.otherCount = ObjectUtil.defaultIfNull(this.getOtherCount(), 0) + 1;
     }
 }

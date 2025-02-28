@@ -68,7 +68,6 @@ import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
-import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -1140,15 +1139,7 @@ public class ScheduleService {
         jobGroup2AlterScheduleTasks.forEach((jobGroup, scheduleTasksWithSameJobGroup) -> {
             AlterScheduleTaskStat stat = AlterScheduleTaskStat.init(ScheduleType.valueOf(jobGroup));
             for (ScheduleTaskEntity scheduleTaskEntity : scheduleTasksWithSameJobGroup) {
-                if (TaskStatus.RUNNING.equals(scheduleTaskEntity.getStatus())) {
-                    stat.addExecutingCount();
-                } else if (TaskStatus.FAILED.equals(scheduleTaskEntity.getStatus())) {
-                    stat.addFailedExecutionCount();
-                } else if (TaskStatus.DONE.equals(scheduleTaskEntity.getStatus())) {
-                    stat.addSuccessExecutionCount();
-                } else if (TaskStatus.PREPARING.equals(scheduleTaskEntity.getStatus())) {
-                    stat.addWaitingExecutionCount();
-                }
+                stat.count(scheduleTaskEntity.getStatus());
             }
             alterScheduleTaskStats.add(stat);
         });
@@ -1176,27 +1167,9 @@ public class ScheduleService {
         Map<TaskType, List<FlowInstanceState>> taskType2FlowInstanceState = flowInstanceStates.stream().collect(
                 Collectors.groupingBy(FlowInstanceState::getTaskType));
         taskType2FlowInstanceState.forEach((taskType, instanceStates) -> {
-            AlterScheduleTaskStat stat;
-            switch (taskType) {
-                case ASYNC:
-                    stat = AlterScheduleTaskStat.init(ScheduleType.SQL_PLAN);
-                    break;
-                case PARTITION_PLAN:
-                    stat = AlterScheduleTaskStat.init(ScheduleType.PARTITION_PLAN);
-                    break;
-                default:
-                    throw new UnsupportedException("Unsupported task type: " + taskType);
-            }
+            AlterScheduleTaskStat stat = AlterScheduleTaskStat.init(taskType);
             for (FlowInstanceState instanceState : instanceStates) {
-                if (FlowStatus.EXECUTION_FAILED == instanceState.getStatus()) {
-                    stat.addFailedExecutionCount();
-                } else if (FlowStatus.EXECUTION_SUCCEEDED == instanceState.getStatus()) {
-                    stat.addSuccessExecutionCount();
-                } else if (FlowStatus.WAIT_FOR_EXECUTION == instanceState.getStatus()) {
-                    stat.addWaitingExecutionCount();
-                } else if (FlowStatus.EXECUTING == instanceState.getStatus()) {
-                    stat.addExecutingCount();
-                }
+                stat.count(instanceState.getStatus());
             }
             alterScheduleTaskStats.add(stat);
         });
