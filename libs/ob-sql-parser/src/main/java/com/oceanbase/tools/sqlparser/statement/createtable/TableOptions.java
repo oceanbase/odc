@@ -345,7 +345,7 @@ public class TableOptions extends BaseOptions {
             builder.append(" INSERT_METHOD=").append(this.insertMethod);
         }
         if (this.organization != null) {
-            builder.append(" ORGANIZATION").append(this.organization);
+            builder.append(" ORGANIZATION=").append(this.organization);
         }
         if (this.enableMacroBlockBloomFilter != null) {
             builder.append(" ENABLE_MACRO_BLOCK_BLOOM_FILTER=").append(

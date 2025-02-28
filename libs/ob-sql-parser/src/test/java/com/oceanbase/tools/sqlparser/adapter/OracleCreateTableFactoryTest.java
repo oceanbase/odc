@@ -15,6 +15,7 @@
  */
 package com.oceanbase.tools.sqlparser.adapter;
 
+import java.io.StringReader;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collections;
@@ -22,6 +23,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.oceanbase.tools.sqlparser.OBOracleSQLParser;
+import com.oceanbase.tools.sqlparser.SQLParser;
+import com.oceanbase.tools.sqlparser.statement.Statement;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -70,6 +74,40 @@ import com.oceanbase.tools.sqlparser.statement.select.oracle.FetchType;
  * @since ODC_release_4.1.0
  */
 public class OracleCreateTableFactoryTest {
+
+    @Test
+    public void parse_enableMacroBlockBloomFilterEqualsFalse_parseSucceed() {
+        Create_table_stmtContext context = getCreateTableContext("CREATE TABLE \"EMPLOYEES\" (\n" +
+            "  \"EMPLOYEE_ID\" NUMBER(10),\n" +
+            "  \"FIRST_NAME\" VARCHAR2(50),\n" +
+            "  \"LAST_NAME\" VARCHAR2(50),\n" +
+            "  \"HIRE_DATE\" DATE,\n" +
+            "  \"SALARY\" NUMBER(10,2),\n" +
+            "  PRIMARY KEY (\"EMPLOYEE_ID\")\n" +
+            ") COMPRESS FOR ARCHIVE REPLICA_NUM = 1 BLOCK_SIZE = 16384 USE_BLOOM_FILTER = FALSE " +
+            "ENABLE_MACRO_BLOCK_BLOOM_FILTER = FALSE TABLET_SIZE = 134217728 PCTFREE = 0 ");
+        StatementFactory<CreateTable> factory = new OracleCreateTableFactory(context);
+        CreateTable actual = factory.generate();
+        Assert.assertEquals(new Boolean("false"),
+            actual.getTableOptions().getEnableMacroBlockBloomFilter());
+    }
+
+    @Test
+    public void parse_enableMacroBlockBloomFilterEqualsTrue_parseSucceed() {
+        Create_table_stmtContext context = getCreateTableContext("CREATE TABLE \"EMPLOYEES\" (\n" +
+            "  \"EMPLOYEE_ID\" NUMBER(10),\n" +
+            "  \"FIRST_NAME\" VARCHAR2(50),\n" +
+            "  \"LAST_NAME\" VARCHAR2(50),\n" +
+            "  \"HIRE_DATE\" DATE,\n" +
+            "  \"SALARY\" NUMBER(10,2),\n" +
+            "  PRIMARY KEY (\"EMPLOYEE_ID\")\n" +
+            ") COMPRESS FOR ARCHIVE REPLICA_NUM = 1 BLOCK_SIZE = 16384 USE_BLOOM_FILTER = FALSE " +
+            "ENABLE_MACRO_BLOCK_BLOOM_FILTER = TRUE TABLET_SIZE = 134217728 PCTFREE = 0 ");
+        StatementFactory<CreateTable> factory = new OracleCreateTableFactory(context);
+        CreateTable actual = factory.generate();
+        Assert.assertEquals(new Boolean("true"),
+            actual.getTableOptions().getEnableMacroBlockBloomFilter());
+    }
 
     @Test
     public void generate_onlyColumnDefExists_generateSucceed() {
