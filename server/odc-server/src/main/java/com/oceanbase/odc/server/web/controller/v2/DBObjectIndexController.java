@@ -68,5 +68,12 @@ public class DBObjectIndexController {
         return Responses.success(dbSchemaIndexService.syncDatabaseObjects(req));
     }
 
+    @ApiOperation(value = "syncCurrentUserVisibleDatabases",
+            notes = "Sync all databases visible to the current user")
+    @RequestMapping(value = "/syncAll", method = RequestMethod.POST)
+    public SuccessResponse<Boolean> syncCurrentUserVisibleDatabases() {
+        return Responses.success(dbSchemaIndexService.syncCurrentUserVisibleDatabases());
+    }
+
 
 }
