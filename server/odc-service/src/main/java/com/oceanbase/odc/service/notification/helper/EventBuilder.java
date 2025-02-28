@@ -226,8 +226,9 @@ public class EventBuilder {
             String dbNames =
                     parameter.getDatabases().stream().map(ApplyDatabase::getName).collect(Collectors.joining(","));
             Set<Long> databaseIds = parameter.getDatabases().stream().map(e -> e.getId()).collect(Collectors.toSet());
-            String dbRemarks = databaseService.listBasicSkipPermissionCheckByIds(databaseIds).stream().map(Database::getDatabaseRemark).collect(
-                Collectors.joining(","));
+            String dbRemarks = databaseService.listBasicSkipPermissionCheckByIds(databaseIds).stream()
+                    .map(Database::getDatabaseRemark).collect(
+                            Collectors.joining(","));
             labels.putIfNonNull(DATABASE_NAME, dbNames);
             labels.putIfNonNull(DATABASE_REMARK, dbRemarks);
             projectId = parameter.getProject().getId();
@@ -252,16 +253,17 @@ public class EventBuilder {
             MultipleDatabaseChangeParameters parameter =
                     JsonUtils.fromJson(task.getParametersJson(), MultipleDatabaseChangeParameters.class);
             projectId = parameter.getProjectId();
-            List<Database> databases = databaseService.listBasicSkipPermissionCheckByIds(parameter.getDatabases().stream().map(
-                DatabaseChangeDatabase::getId).collect(Collectors.toSet()));
+            List<Database> databases =
+                    databaseService.listBasicSkipPermissionCheckByIds(parameter.getDatabases().stream().map(
+                            DatabaseChangeDatabase::getId).collect(Collectors.toSet()));
             labels.putIfNonNull(DATABASE_NAME, parameter.getDatabases().stream()
                     .map(database -> String.format("【%s】%s", database.getEnvironment() == null ? ""
                             : database.getEnvironment().getName(), database.getName()))
                     .collect(Collectors.joining(",")));
             labels.putIfNonNull(DATABASE_REMARK, databases.stream()
-                .map(database -> String.format("【%s】%s", database.getEnvironment() == null ? ""
-                    : database.getEnvironment().getName(), database.getDatabaseRemark()))
-                .collect(Collectors.joining(",")));
+                    .map(database -> String.format("【%s】%s", database.getEnvironment() == null ? ""
+                            : database.getEnvironment().getName(), database.getDatabaseRemark()))
+                    .collect(Collectors.joining(",")));
             labels.putIfNonNull(PROJECT_ID, projectId);
         } else if (task.getTaskType() == TaskType.ALTER_SCHEDULE) {
             AlterScheduleParameters parameter = JsonUtils.fromJson(task.getParametersJson(),

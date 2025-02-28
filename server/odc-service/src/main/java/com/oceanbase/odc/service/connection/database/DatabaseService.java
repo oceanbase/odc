@@ -511,6 +511,7 @@ public class DatabaseService {
             return false;
         }
         checkTransferable(entities, req);
+        checkIfCanAddDatabaseRemark(req.getProjectId());
         Set<Long> databaseIds = entities.stream().map(DatabaseEntity::getId).collect(Collectors.toSet());
         databaseRepository.setProjectIdByIdIn(req.getProjectId(), databaseIds);
         deleteDatabaseRelatedPermissionByIds(databaseIds);
@@ -913,18 +914,12 @@ public class DatabaseService {
 
     @SkipAuthorize("internal authorized")
     @Transactional(rollbackFor = Exception.class)
-    public boolean modifyDatabaseRemark(@NotNull Long databaseId, @NotNull @Size(min = 1,max = 100) String remark) {
+    public boolean modifyDatabaseRemark(@NotNull Long databaseId, @NotNull @Size(min = 1, max = 100) String remark) {
         DatabaseEntity db = databaseRepository.findById(databaseId).orElseThrow(
-            () -> new NotFoundException(ErrorCodes.NotFound, new Object[] {"Database", "ID", databaseId},
-                "Database: " + databaseId + " does not exist"));
+                () -> new NotFoundException(ErrorCodes.NotFound, new Object[] {"Database", "ID", databaseId},
+                        "Database: " + databaseId + " does not exist"));
         PreConditions.notNull(db.getProjectId(), "Project", "No projects have been added to the database");
-        try {
-            projectPermissionValidator.checkProjectRole(db.getProjectId(),
-                Arrays.asList(ResourceRoleName.OWNER, ResourceRoleName.DBA));
-        }catch (Exception e) {
-            log.warn("Failed to update database remark due to user does not have permission to complete this operation，databaseId={}",databaseId, e);
-            return false;
-        }
+        checkIfCanAddDatabaseRemark(db.getProjectId());
         db.setDatabaseRemark(remark);
         databaseRepository.setDatabaseRemarkById(databaseId, remark);
         return true;
@@ -945,6 +940,16 @@ public class DatabaseService {
         if (!isProjectMember && !canUpdateDataSource) {
             throw new AccessDeniedException("invalid projectId or dataSourceId");
         }
+    }
+
+    private void checkIfCanAddDatabaseRemark(@NonNull Long projectId) {
+        Project project = projectService.getBasicSkipPermissionCheck(projectId);
+        if (!(project.getCreator() != null
+                && Objects.equals(authenticationFacade.currentUserId(), project.getCreator().getId()))) {
+            projectPermissionValidator.checkProjectRole(projectId,
+                    Arrays.asList(ResourceRoleName.OWNER, ResourceRoleName.DBA));
+        }
+        throw new AccessDeniedException(ErrorCodes.AccessDenied, "Cannot add database remark");
     }
 
     private void checkTransferable(@NonNull Collection<DatabaseEntity> databases, @NonNull TransferDatabasesReq req) {
