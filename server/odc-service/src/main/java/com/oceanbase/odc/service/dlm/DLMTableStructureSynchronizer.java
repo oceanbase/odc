@@ -157,6 +157,7 @@ public class DLMTableStructureSynchronizer {
                 srcTable.setName(tempTableName);
                 DBTableEditor tableEditor = getDBTableEditor(srcConfig.getType(), srcDbVersion);
                 String createTableDdl = tableEditor.generateCreateObjectDDL(srcTable);
+                log.info("Start to create temporary table,ddl={}",createTableDdl);
                 try (Connection conn = sourceDs.getConnection();
                         PreparedStatement ps = conn.prepareStatement(createTableDdl)) {
                     ps.execute();
