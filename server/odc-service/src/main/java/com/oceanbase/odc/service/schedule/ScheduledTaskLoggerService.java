@@ -33,8 +33,10 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.lang.Holder;
+import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
@@ -50,6 +52,7 @@ import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.constants.JobAttributeKeyConstants;
+import com.oceanbase.odc.service.task.constants.JobExecutorUrls;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
@@ -57,8 +60,8 @@ import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
 import com.oceanbase.odc.service.task.schedule.JobCredentialProvider;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.util.CloudObjectStorageServiceBuilder;
+import com.oceanbase.odc.service.task.util.HttpClientUtils;
 import com.oceanbase.odc.service.task.util.JobUtils;
-import com.oceanbase.odc.service.task.util.TaskExecutorClient;
 
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.core.util.ObjectUtil;
@@ -97,13 +100,11 @@ public class ScheduledTaskLoggerService {
     private JobDispatchChecker jobDispatchChecker;
 
     @Autowired
-    private TaskExecutorClient taskExecutorClient;
-
-    @Autowired
     private ScheduleLogProperties loggerProperty;
 
     @Autowired
     private JobCredentialProvider jobCredentialProvider;
+
 
     private final ConcurrentHashMap<ObjectStorageConfiguration, CloudObjectStorageService> cloudObjectServiceMap =
             new ConcurrentHashMap<>();
@@ -200,7 +201,7 @@ public class ScheduledTaskLoggerService {
                 if (log.isDebugEnabled()) {
                     log.debug("job: {} is not finished, try to get log from remote pod.", jobEntity.getId());
                 }
-                String logContent = taskExecutorClient.getLogContent(jobEntity.getExecutorEndpoint(), jobId, level);
+                String logContent = getLogContent(jobEntity.getExecutorEndpoint(), jobId, level);
                 logContentConsumer.accept(logContent);
                 return;
             }
@@ -319,5 +320,29 @@ public class ScheduledTaskLoggerService {
                 jobCredentialProvider.getCloudObjectStorageCredential(jobContext);
         return cloudObjectServiceMap.computeIfAbsent(objectStorageConfiguration,
                 k -> CloudObjectStorageServiceBuilder.build(objectStorageConfiguration));
+    }
+
+    public String getLogContent(@NonNull String executorEndpoint, @NonNull Long jobId, @NonNull OdcTaskLogLevel level) {
+        String url = new StringBuilder(executorEndpoint)
+                .append(String.format(JobExecutorUrls.QUERY_LOG, jobId))
+                .append("?logType=" + level.getName())
+                .append("&fetchMaxLine=" + loggerProperty.getMaxLines())
+                .append("&fetchMaxByteSize=" + loggerProperty.getMaxSize()).toString();
+        try {
+            SuccessResponse<String> response =
+                    HttpClientUtils.request("GET", url,
+                            new TypeReference<SuccessResponse<String>>() {});
+            if (response != null && response.getSuccessful()) {
+                return response.getData();
+            } else {
+                return String.format("Get log content failed, jobId=%s, response=%s",
+                        jobId, JsonUtils.toJson(response));
+            }
+        } catch (IOException e) {
+            // Occur io timeout when pod deleted manual
+            log.warn("Query log from executor occur error, executorEndpoint={}, jobId={}, causeMessage={}",
+                    executorEndpoint, jobId, ExceptionUtils.getRootCauseReason(e));
+            return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"jobId", jobId});
+        }
     }
 }

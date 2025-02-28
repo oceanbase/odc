@@ -68,4 +68,6 @@ public class JobConstants {
 
     public static final Integer JOB_POD_DEFAULT_LISTEN_PORT = 8080;
 
+    public static final Integer JOB_POD_DEFAULT_SUPERVISOR_LISTEN_PORT = 9999;
+
 }

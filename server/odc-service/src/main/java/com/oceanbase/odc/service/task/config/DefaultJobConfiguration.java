@@ -26,6 +26,8 @@ import com.oceanbase.odc.service.resource.ResourceManager;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.dispatch.JobDispatcher;
 import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
+import com.oceanbase.odc.service.task.resource.SupervisorAgentAllocator;
+import com.oceanbase.odc.service.task.resource.manager.TaskResourceManager;
 import com.oceanbase.odc.service.task.schedule.JobCredentialProvider;
 import com.oceanbase.odc.service.task.schedule.StartJobRateLimiter;
 import com.oceanbase.odc.service.task.schedule.TaskFrameworkDisabledHandler;
@@ -33,6 +35,7 @@ import com.oceanbase.odc.service.task.schedule.provider.HostUrlProvider;
 import com.oceanbase.odc.service.task.schedule.provider.JobImageNameProvider;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.service.TransactionManager;
+import com.oceanbase.odc.service.task.supervisor.TaskSupervisorJobCaller;
 import com.oceanbase.odc.service.task.util.TaskExecutorClient;
 
 import lombok.Getter;
@@ -59,7 +62,11 @@ public abstract class DefaultJobConfiguration implements JobConfiguration {
 
     protected JobDispatcher jobDispatcher;
 
+    protected TaskSupervisorJobCaller taskSupervisorJobCaller;
+
     protected Scheduler daemonScheduler;
+
+    protected Scheduler taskSupervisorScheduler;
 
     protected ResourceManager resourceManager;
 
@@ -84,4 +91,9 @@ public abstract class DefaultJobConfiguration implements JobConfiguration {
     protected HostProperties hostProperties;
 
     protected JobCredentialProvider jobCredentialProvider;
+
+    protected TaskResourceManager taskResourceManager;
+
+    protected SupervisorAgentAllocator supervisorAgentAllocator;
+
 }
