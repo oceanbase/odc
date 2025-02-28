@@ -70,7 +70,7 @@ public class DBObjectIndexController {
 
     @ApiOperation(value = "syncCurrentUserVisibleDatabases",
             notes = "Sync all databases visible to the current user")
-    @RequestMapping(value = "/sync/currentUser", method = RequestMethod.POST)
+    @RequestMapping(value = "/syncAll", method = RequestMethod.POST)
     public SuccessResponse<Boolean> syncCurrentUserVisibleDatabases() {
         return Responses.success(dbSchemaIndexService.syncCurrentUserVisibleDatabases());
     }
