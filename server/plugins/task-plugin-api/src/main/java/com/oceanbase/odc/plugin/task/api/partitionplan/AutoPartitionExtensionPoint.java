@@ -48,6 +48,8 @@ public interface AutoPartitionExtensionPoint extends ExtensionPoint {
 
     String unquoteIdentifier(@NonNull String identifier);
 
+    String unquoteValue(@NonNull String value);
+
     List<DataType> getPartitionKeyDataTypes(@NonNull Connection connection,
             @NonNull DBTable table) throws IOException, SQLException;
 
