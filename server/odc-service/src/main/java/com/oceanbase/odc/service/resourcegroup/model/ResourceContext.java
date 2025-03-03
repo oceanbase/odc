@@ -37,7 +37,7 @@ public class ResourceContext {
 
     public enum ResourceIdExtractRule {
         ALL("*"),
-        CREATOR("creator");
+        CREATOR("CREATOR");
 
         private final String rule;
 

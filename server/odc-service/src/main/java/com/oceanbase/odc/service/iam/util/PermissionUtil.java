@@ -49,8 +49,8 @@ public class PermissionUtil {
         for (Map.Entry<String, Set<String>> entry : identifier2Actions.entrySet()) {
             ResourceContext resourceContext = ResourceContextUtil.parseFromResourceIdentifier(entry.getKey());
             permissionConfigs.add(new PermissionConfig(String.valueOf(
-                Objects.isNull(resourceContext.getId()) ? resourceContext.getIdExtractRule().getRule()
-                    : resourceContext.getId()),
+                    Objects.isNull(resourceContext.getId()) ? resourceContext.getIdExtractRule().getRule()
+                            : resourceContext.getId()),
                     ResourceType.valueOf(resourceContext.getField()), new ArrayList<>(entry.getValue())));
         }
         return permissionConfigs;
@@ -72,9 +72,9 @@ public class PermissionUtil {
             ResourceContext resourceContext = ResourceContextUtil.parseFromResourceIdentifier(entry.getKey());
             // Separately extract the permission configuration with "create" for resource management permissions
             if (entry.getValue().contains("create") && entry.getValue().size() > 1) {
-                permissionConfigs.add(new PermissionConfig( String.valueOf(
-                    Objects.isNull(resourceContext.getId()) ? resourceContext.getIdExtractRule().getRule()
-                        : resourceContext.getId()),
+                permissionConfigs.add(new PermissionConfig(String.valueOf(
+                        Objects.isNull(resourceContext.getId()) ? resourceContext.getIdExtractRule().getRule()
+                                : resourceContext.getId()),
                         ResourceType.valueOf(resourceContext.getField()), Collections.singletonList("create")));
                 entry.getValue().remove("create");
             }

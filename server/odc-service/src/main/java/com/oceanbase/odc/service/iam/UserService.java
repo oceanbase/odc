@@ -485,7 +485,7 @@ public class UserService {
 
         for (User user : users) {
             user.setResourceManagementPermissions(
-                resourcePermissionExtractor.aggregateResourceManagementPermissions(managementPermissions));
+                    resourcePermissionExtractor.aggregateResourceManagementPermissions(managementPermissions));
             user.setSystemOperationPermissions(resourcePermissionExtractor.aggregatePermissions(operationPermissions));
         }
     }

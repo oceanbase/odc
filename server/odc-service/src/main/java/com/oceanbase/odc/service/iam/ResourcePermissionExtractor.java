@@ -107,7 +107,6 @@ public class ResourcePermissionExtractor {
                 action.add(permissionEntity.getAction());
             }
         }
-
         List<PermissionConfig> aggregated = new ArrayList<>();
         for (Map.Entry<String, Set<String>> entry : identifier2Actions.entrySet()) {
             Set<String> actions = entry.getValue();
@@ -122,15 +121,13 @@ public class ResourcePermissionExtractor {
 
     public List<PermissionConfig> aggregateResourceManagementPermissions(List<PermissionEntity> permissionEntities) {
         Map<String, Set<String>> identifier2Actions = new HashMap<>();
-
         for (PermissionEntity permissionEntity : permissionEntities) {
             if (Objects.nonNull(permissionEntity)) {
                 Set<String> action = identifier2Actions.computeIfAbsent(permissionEntity.getResourceIdentifier(),
-                    e -> new HashSet<>());
+                        e -> new HashSet<>());
                 action.add(permissionEntity.getAction());
             }
         }
-
         List<PermissionConfig> aggregated = new ArrayList<>();
         for (Map.Entry<String, Set<String>> entry : identifier2Actions.entrySet()) {
             Set<String> actions = entry.getValue();
@@ -138,11 +135,12 @@ public class ResourcePermissionExtractor {
             for (SecurityResource resource : resources) {
                 // Separately extract the permission configuration with "create" for resource management permissions
                 if (entry.getValue().contains("create") && entry.getValue().size() > 1) {
-                    aggregated.add(new PermissionConfig("*", ResourceType.valueOf(resource.resourceType()), Collections.singletonList("create")));
+                    aggregated.add(new PermissionConfig("*", ResourceType.valueOf(resource.resourceType()),
+                            Collections.singletonList("create")));
                     entry.getValue().remove("create");
                 }
                 aggregated.add(new PermissionConfig(String.valueOf(resource.resourceId()),
-                    ResourceType.valueOf(resource.resourceType()), new ArrayList<>(actions)));
+                        ResourceType.valueOf(resource.resourceType()), new ArrayList<>(actions)));
             }
         }
         return aggregated;

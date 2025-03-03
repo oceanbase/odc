@@ -407,7 +407,7 @@ public class RoleService {
                 }
             }
             role.setResourceManagementPermissions(
-                resourcePermissionExtractor.aggregateResourceManagementPermissions(managementPermissions));
+                    PermissionUtil.aggregateResourceManagementPermissions(managementPermissions));
             role.setSystemOperationPermissions(resourcePermissionExtractor.aggregatePermissions(operationPermissions));
         }
     }
