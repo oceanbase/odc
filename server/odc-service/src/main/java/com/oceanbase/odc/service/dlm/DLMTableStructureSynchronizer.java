@@ -95,8 +95,12 @@ public class DLMTableStructureSynchronizer {
                     Collections.singletonList(srcTableName)).get(srcTableName);
             DBTable tgtTable = tgtAccessor.getTables(tgtConfig.getDefaultSchema(),
                     Collections.singletonList(tgtTableName)).get(tgtTableName);
-            StringUtils.quoteColumnDefaultValuesForMySQLCopied(srcTable);
-            StringUtils.quoteColumnDefaultValuesForMySQLCopied(tgtTable);
+            if (srcTable != null) {
+                StringUtils.quoteColumnDefaultValuesForMySQLCopied(srcTable);
+            }
+            if (tgtTable != null) {
+                StringUtils.quoteColumnDefaultValuesForMySQLCopied(tgtTable);
+            }
             DBTableStructureComparator comparator = new DBTableStructureComparator(tgtTableEditor,
                     tgtConfig.getType().getDialectType(), srcConfig.getDefaultSchema(), tgtConfig.getDefaultSchema());
             List<String> changeSqlScript = new LinkedList<>();
