@@ -553,9 +553,9 @@ public class FlowInstanceService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public FlowInstanceDetailResp cancelWithoutPermission(@NotNull Long id, Boolean skipApproveAuth) {
+    public FlowInstanceDetailResp cancelWithoutPermission(@NotNull Long id) {
         FlowInstance flowInstance = mapFlowInstanceWithoutPermissionCheck(id, flowInst -> flowInst);
-        return cancel(flowInstance, skipApproveAuth);
+        return cancel(flowInstance, true);
     }
 
     public Map<Long, FlowStatus> getStatus(Set<Long> ids) {
