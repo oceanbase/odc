@@ -24,22 +24,22 @@ import lombok.experimental.Accessors;
  * @Author: ysj
  * @Date: 2025/2/24 16:12
  * @Since: 4.3.4
- * @Description: Is used to collect statistics on Alter Schedule and its Schedule tasks, Ref
+ * @Description: Is used to collect statistics on Alter Schedule Task and its subTasks, Ref
  *               {@link ScheduleType}
  */
 @Data
 @Builder
 @Accessors(chain = true)
-public class SingleAlterScheduleStat {
+public class SingleAlterScheduleTaskStat {
     private ScheduleType type;
     private Integer successEnabledCount;
-    private AlterScheduleTaskStat taskStat;
+    private AlterScheduleSubTaskStat taskStat;
 
-    public static SingleAlterScheduleStat init(@NonNull ScheduleType type) {
-        return SingleAlterScheduleStat.builder()
+    public static SingleAlterScheduleTaskStat init(@NonNull ScheduleType type) {
+        return SingleAlterScheduleTaskStat.builder()
                 .type(type)
                 .successEnabledCount(0)
-                .taskStat(AlterScheduleTaskStat.init(type))
+                .taskStat(AlterScheduleSubTaskStat.init(type))
                 .build();
     }
 }

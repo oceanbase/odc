@@ -57,7 +57,7 @@ import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskListOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
-import com.oceanbase.odc.service.schedule.model.SingleAlterScheduleStat;
+import com.oceanbase.odc.service.schedule.model.SingleAlterScheduleTaskStat;
 import com.oceanbase.odc.service.schedule.model.UpdateScheduleReq;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
@@ -287,7 +287,7 @@ public class ScheduleController {
     }
 
     @RequestMapping(value = "/alterScheduleStat", method = RequestMethod.GET)
-    public SuccessResponse<List<SingleAlterScheduleStat>> getAlterScheduleStat(
+    public SuccessResponse<List<SingleAlterScheduleTaskStat>> getAlterScheduleStat(
             @RequestParam(required = false, name = "types") Set<ScheduleType> types,
             @RequestParam(required = false, name = "startTime") Date startTime,
             @RequestParam(required = false, name = "endTime") Date endTime) {
@@ -296,6 +296,6 @@ public class ScheduleController {
                 .startTime(startTime)
                 .endTime(endTime)
                 .build();
-        return Responses.success(scheduleService.listAlterScheduleStat(req));
+        return Responses.success(scheduleService.listAlterScheduleTaskStat(req));
     }
 }

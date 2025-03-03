@@ -1341,6 +1341,13 @@ public class FlowInstanceService {
                 new BeanPropertyRowMapper<>(ServiceTaskInstanceEntity.class));
     }
 
+    /**
+     * This query is actually a problem, currently can not be based on the type of ASYNC subtask to
+     * reverse the parent task is a AlterSchedule or MultiDatabaseChange. If the parent task is a
+     * AlterSchedule, In this case, parent_instance_id in the flow_instance table stores the id of
+     * schedule_schedule. In the case of MultiDatabaseChange, the id of the flow_instance table is
+     * stored. The two tables may be identical
+     */
     public List<FlowInstanceState> listAlterScheduleSubTaskStates(@NonNull InnerQueryFlowInstanceParams params) {
         Set<Long> joinedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
         if (CollectionUtils.isEmpty(joinedProjectIds)) {
@@ -1368,9 +1375,9 @@ public class FlowInstanceService {
 
         /**
          * Check the {@link FlowInstanceEntity#getId()} in the flow_instance table based on
-         * {@link FlowInstanceEntity#getParentInstanceId()} to determine whether the task is a periodic
-         * task. The same parent_instance_id must correspond to the id of at least one flow_instance table.
-         * Query the id of the earliest parent_instance_id to check whether it is a alterSchedule task
+         * {@link FlowInstanceEntity#getParentInstanceId()} to determine whether the task is AlterSchedule.
+         * The same parent_instance_id must correspond to the id of at least one flow_instance table. Query
+         * the id of the earliest parent_instance_id to check whether it is a AlterSchedule task
          */
         List<FlowInstanceProjection> parentFlowInstances =
                 flowInstanceRepository.findEarliestInstancesByIdInAndParentInstanceIdIn(taskFlowInstanceIds,
@@ -1411,6 +1418,7 @@ public class FlowInstanceService {
                         Collectors.toMap(ServiceTaskInstanceEntity::getFlowInstanceId,
                                 ServiceTaskInstanceEntity::getTaskType));
         if (flowInstanceId2FlowStatus.isEmpty() || flowInstanceId2TaskType.isEmpty()) {
+            log.warn("The List flow instance states is abnormal");
             return Collections.emptyList();
         }
         final List<FlowInstanceState> flowInstanceStates = new ArrayList<>();

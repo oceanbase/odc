@@ -35,7 +35,7 @@ import lombok.experimental.Accessors;
 @Data
 @Builder
 @Accessors(chain = true)
-public class AlterScheduleTaskStat {
+public class AlterScheduleSubTaskStat {
     private ScheduleType type;
     private Integer successExecutionCount;
     private Integer failedExecutionCount;
@@ -43,11 +43,11 @@ public class AlterScheduleTaskStat {
     private Integer executingCount;
     private Integer otherCount;
 
-    public static AlterScheduleTaskStat init(@NonNull ScheduleType type) {
+    public static AlterScheduleSubTaskStat init(@NonNull ScheduleType type) {
         return empty().setType(type);
     }
 
-    public static AlterScheduleTaskStat init(@NonNull TaskType type) {
+    public static AlterScheduleSubTaskStat init(@NonNull TaskType type) {
         if (type == TaskType.ASYNC) {
             return empty().setType(ScheduleType.SQL_PLAN);
         } else if (type == TaskType.PARTITION_PLAN) {
@@ -56,7 +56,7 @@ public class AlterScheduleTaskStat {
         throw new UnsupportedException("Unsupported task type: " + type);
     }
 
-    public void merge(AlterScheduleTaskStat stat) {
+    public void merge(AlterScheduleSubTaskStat stat) {
         if (stat == null || stat.getType() != type) {
             return;
         }
@@ -67,8 +67,8 @@ public class AlterScheduleTaskStat {
         this.otherCount += ObjectUtil.defaultIfNull(stat.getOtherCount(), 0);
     }
 
-    public static AlterScheduleTaskStat empty() {
-        return AlterScheduleTaskStat.builder()
+    public static AlterScheduleSubTaskStat empty() {
+        return AlterScheduleSubTaskStat.builder()
                 .successExecutionCount(0)
                 .failedExecutionCount(0)
                 .waitingExecutionCount(0)

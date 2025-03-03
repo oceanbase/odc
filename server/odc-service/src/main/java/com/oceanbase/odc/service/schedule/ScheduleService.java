@@ -117,7 +117,7 @@ import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigSelector;
 import com.oceanbase.odc.service.schedule.factory.ScheduleResponseMapperFactory;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 import com.oceanbase.odc.service.schedule.flowtask.ApprovalFlowClient;
-import com.oceanbase.odc.service.schedule.model.AlterScheduleTaskStat;
+import com.oceanbase.odc.service.schedule.model.AlterScheduleSubTaskStat;
 import com.oceanbase.odc.service.schedule.model.ChangeQuartJobParam;
 import com.oceanbase.odc.service.schedule.model.ChangeScheduleResp;
 import com.oceanbase.odc.service.schedule.model.CreateQuartzJobParam;
@@ -143,7 +143,7 @@ import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailRespHist;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskListOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
-import com.oceanbase.odc.service.schedule.model.SingleAlterScheduleStat;
+import com.oceanbase.odc.service.schedule.model.SingleAlterScheduleTaskStat;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
 import com.oceanbase.odc.service.schedule.model.UpdateScheduleReq;
@@ -1038,7 +1038,7 @@ public class ScheduleService {
         return scheduleEntityOptional.orElseThrow(() -> new NotFoundException(ResourceType.ODC_SCHEDULE, "id", id));
     }
 
-    public List<SingleAlterScheduleStat> listAlterScheduleStat(@NonNull QueryAlterScheduleStatParams params) {
+    public List<SingleAlterScheduleTaskStat> listAlterScheduleTaskStat(@NonNull QueryAlterScheduleStatParams params) {
         if (authenticationFacade.currentOrganization().getType() == OrganizationType.INDIVIDUAL) {
             throw new UnsupportedException("Individual space is not supported");
         }
@@ -1047,10 +1047,14 @@ public class ScheduleService {
             return Collections.emptyList();
         }
 
-        List<ScheduleType> supportedScheduleTypes = Arrays.asList(ScheduleType.SQL_PLAN, ScheduleType.PARTITION_PLAN,
-                ScheduleType.DATA_DELETE, ScheduleType.DATA_ARCHIVE);
+        /**
+         * Currently, only the following statistics alter schedule types are supported
+         */
+        List<ScheduleType> supportedAlterScheduleTypes =
+                Arrays.asList(ScheduleType.SQL_PLAN, ScheduleType.PARTITION_PLAN,
+                        ScheduleType.DATA_DELETE, ScheduleType.DATA_ARCHIVE);
         params.setScheduleTypes(ObjectUtil.defaultIfNull(params.getScheduleTypes(), Collections.emptySet()));
-        params.getScheduleTypes().retainAll(supportedScheduleTypes);
+        params.getScheduleTypes().retainAll(supportedAlterScheduleTypes.stream().filter(Objects::nonNull).collect(Collectors.toSet()));
         if (CollectionUtils.isEmpty(params.getScheduleTypes())) {
             return Collections.emptyList();
         }
@@ -1058,8 +1062,10 @@ public class ScheduleService {
         Specification<ScheduleEntity> scheduleSpec = Specification
                 .where(OdcJpaRepository.in(ScheduleEntity_.projectId, joinedProjectIds))
                 .and(OdcJpaRepository.eq(ScheduleEntity_.organizationId, authenticationFacade.currentOrganizationId()))
-                .and(OdcJpaRepository.in(ScheduleEntity_.type, params.getScheduleTypes()))
                 .and(OdcJpaRepository.eq(ScheduleEntity_.status, ScheduleStatus.ENABLED));
+        if (CollectionUtils.isNotEmpty(params.getScheduleTypes())) {
+            scheduleSpec = scheduleSpec.and(OdcJpaRepository.in(ScheduleEntity_.type, params.getScheduleTypes()));
+        }
         if (params.getStartTime() != null || params.getEndTime() != null) {
             scheduleSpec = scheduleSpec.and(
                     OdcJpaRepository.between(ScheduleEntity_.createTime, params.getStartTime(), params.getEndTime()));
@@ -1070,23 +1076,24 @@ public class ScheduleService {
             return Collections.emptyList();
         }
 
-        Map<ScheduleType, AlterScheduleTaskStat> scheduleType2TaskStats = listAlterScheduleTaskStat(params).stream()
-                .collect(Collectors.toMap(AlterScheduleTaskStat::getType, Function.identity()));
+        Map<ScheduleType, AlterScheduleSubTaskStat> scheduleType2TaskStats =
+                listAlterScheduleSubTaskStat(params).stream()
+                        .collect(Collectors.toMap(AlterScheduleSubTaskStat::getType, Function.identity()));
 
-        final List<SingleAlterScheduleStat> scheduleStats = new ArrayList<>();
+        final List<SingleAlterScheduleTaskStat> scheduleStats = new ArrayList<>();
         Map<ScheduleType, List<ScheduleEntity>> scheduleType2ScheduleEntities =
                 schedules.stream().collect(Collectors.groupingBy(ScheduleEntity::getType));
 
         scheduleType2ScheduleEntities.forEach((type, scheduleList) -> {
-            SingleAlterScheduleStat singleAlterScheduleStat = SingleAlterScheduleStat.init(type);
-            AlterScheduleTaskStat scheduleTaskStat =
-                    scheduleType2TaskStats.getOrDefault(type, AlterScheduleTaskStat.init(type));
-            singleAlterScheduleStat.getTaskStat().merge(scheduleTaskStat);
+            SingleAlterScheduleTaskStat singleAlterScheduleStat = SingleAlterScheduleTaskStat.init(type);
+            AlterScheduleSubTaskStat scheduleSubTaskStat =
+                    scheduleType2TaskStats.getOrDefault(type, AlterScheduleSubTaskStat.init(type));
+            singleAlterScheduleStat.getTaskStat().merge(scheduleSubTaskStat);
             scheduleType2TaskStats.remove(type);
             scheduleStats.add(singleAlterScheduleStat.setSuccessEnabledCount(scheduleList.size()));
         });
-        for (AlterScheduleTaskStat remainAlterScheduleTaskStat : scheduleType2TaskStats.values()) {
-            SingleAlterScheduleStat stat = SingleAlterScheduleStat.init(remainAlterScheduleTaskStat.getType());
+        for (AlterScheduleSubTaskStat remainAlterScheduleTaskStat : scheduleType2TaskStats.values()) {
+            SingleAlterScheduleTaskStat stat = SingleAlterScheduleTaskStat.init(remainAlterScheduleTaskStat.getType());
             stat.getTaskStat().merge(remainAlterScheduleTaskStat);
             scheduleStats.add(stat);
         }
@@ -1116,7 +1123,7 @@ public class ScheduleService {
                 .map(ScheduleEntity::getId).collect(Collectors.toSet());
     }
 
-    private List<AlterScheduleTaskStat> listAlterScheduleTaskStatWithTaskFramework(
+    private List<AlterScheduleSubTaskStat> listAlterScheduleSubTaskStatWithTaskFramework(
             @NonNull QueryAlterScheduleStatParams params) {
         /**
          * ODC 4.3.4 only {@link ScheduleType.DATA_DELETE} and {@link ScheduleType.DATA_ARCHIVE} is used to
@@ -1135,9 +1142,9 @@ public class ScheduleService {
                 .filter(s -> alterScheduleIds.contains(Long.valueOf(s.getJobName())))
                 .collect(Collectors.groupingBy(ScheduleTaskEntity::getJobGroup));
 
-        final List<AlterScheduleTaskStat> alterScheduleTaskStats = new ArrayList<>();
+        final List<AlterScheduleSubTaskStat> alterScheduleTaskStats = new ArrayList<>();
         jobGroup2AlterScheduleTasks.forEach((jobGroup, scheduleTasksWithSameJobGroup) -> {
-            AlterScheduleTaskStat stat = AlterScheduleTaskStat.init(ScheduleType.valueOf(jobGroup));
+            AlterScheduleSubTaskStat stat = AlterScheduleSubTaskStat.init(ScheduleType.valueOf(jobGroup));
             for (ScheduleTaskEntity scheduleTaskEntity : scheduleTasksWithSameJobGroup) {
                 stat.count(scheduleTaskEntity.getStatus());
             }
@@ -1146,11 +1153,11 @@ public class ScheduleService {
         return alterScheduleTaskStats;
     }
 
-    private List<AlterScheduleTaskStat> listAlterScheduleTaskStatWithoutTaskFramework(
+    private List<AlterScheduleSubTaskStat> listAlterScheduleSubTaskStatWithoutTaskFramework(
             @NonNull QueryAlterScheduleStatParams params) {
         /**
          * ODC 4.3.4 only {@link ScheduleType.SQL_PLAN} and {@link ScheduleType.PARTITION_PLAN} isn't used
-         * to taskFramework
+         * to taskFramework, and the subtask type of {@link ScheduleType.SQL_PLAN} is {@link TaskType.ASYNC}
          */
         InnerQueryFlowInstanceParams innerQueryFlowInstanceParams = InnerQueryFlowInstanceParams.builder()
                 .taskTypes(Sets.newHashSet(TaskType.ASYNC, TaskType.PARTITION_PLAN))
@@ -1163,11 +1170,11 @@ public class ScheduleService {
         if (CollectionUtils.isEmpty(flowInstanceStates)) {
             return Collections.emptyList();
         }
-        final List<AlterScheduleTaskStat> alterScheduleTaskStats = new ArrayList<>();
+        final List<AlterScheduleSubTaskStat> alterScheduleTaskStats = new ArrayList<>();
         Map<TaskType, List<FlowInstanceState>> taskType2FlowInstanceState = flowInstanceStates.stream().collect(
                 Collectors.groupingBy(FlowInstanceState::getTaskType));
         taskType2FlowInstanceState.forEach((taskType, instanceStates) -> {
-            AlterScheduleTaskStat stat = AlterScheduleTaskStat.init(taskType);
+            AlterScheduleSubTaskStat stat = AlterScheduleSubTaskStat.init(taskType);
             for (FlowInstanceState instanceState : instanceStates) {
                 stat.count(instanceState.getStatus());
             }
@@ -1176,7 +1183,7 @@ public class ScheduleService {
         return alterScheduleTaskStats;
     }
 
-    private List<AlterScheduleTaskStat> listAlterScheduleTaskStat(@NonNull QueryAlterScheduleStatParams params) {
+    private List<AlterScheduleSubTaskStat> listAlterScheduleSubTaskStat(@NonNull QueryAlterScheduleStatParams params) {
         /**
          * {@link ScheduleType.DATA_DELETE} and {@link ScheduleType.DATA_ARCHIVE} {@link TaskType.ASYNC} and
          * {@link TaskType.PARTITION_PLAN}
@@ -1185,8 +1192,9 @@ public class ScheduleService {
         if (CollectionUtils.isEmpty(joinedProjectIds)) {
             return Collections.emptyList();
         }
-        List<AlterScheduleTaskStat> statsWithTaskFramework = listAlterScheduleTaskStatWithTaskFramework(params);
-        List<AlterScheduleTaskStat> statsWithoutTaskFramework = listAlterScheduleTaskStatWithoutTaskFramework(params);
+        List<AlterScheduleSubTaskStat> statsWithTaskFramework = listAlterScheduleSubTaskStatWithTaskFramework(params);
+        List<AlterScheduleSubTaskStat> statsWithoutTaskFramework =
+                listAlterScheduleSubTaskStatWithoutTaskFramework(params);
         statsWithTaskFramework.addAll(statsWithoutTaskFramework);
         return statsWithTaskFramework;
     }

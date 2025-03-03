@@ -35,7 +35,6 @@ import lombok.experimental.Accessors;
 @Builder
 public class InnerQueryFlowInstanceParams {
 
-    private Set<Long> parentInstanceIds;
     private Set<TaskType> taskTypes;
     private Date startTime;
     private Date endTime;
