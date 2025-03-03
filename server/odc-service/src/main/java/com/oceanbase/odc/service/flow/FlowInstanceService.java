@@ -547,9 +547,15 @@ public class FlowInstanceService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public FlowInstanceDetailResp cancel(@NotNull Long id, Boolean skipAuth) {
+    public FlowInstanceDetailResp cancelWithWritePermission(@NotNull Long id, Boolean skipApproveAuth) {
         FlowInstance flowInstance = mapFlowInstanceWithWritePermission(id, flowInst -> flowInst);
-        return cancel(flowInstance, skipAuth);
+        return cancel(flowInstance, skipApproveAuth);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public FlowInstanceDetailResp cancelWithoutPermission(@NotNull Long id, Boolean skipApproveAuth) {
+        FlowInstance flowInstance = mapFlowInstanceWithoutPermissionCheck(id, flowInst -> flowInst);
+        return cancel(flowInstance, skipApproveAuth);
     }
 
     public Map<Long, FlowStatus> getStatus(Set<Long> ids) {
