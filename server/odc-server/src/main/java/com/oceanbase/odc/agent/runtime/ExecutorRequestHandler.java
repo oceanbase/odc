@@ -30,6 +30,7 @@ import com.oceanbase.odc.service.task.executor.TaskResult;
 import com.oceanbase.odc.service.task.executor.logger.LogBiz;
 import com.oceanbase.odc.service.task.executor.logger.LogBizImpl;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
+import com.oceanbase.odc.service.task.net.RequestHandler;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
@@ -42,7 +43,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.2.4
  */
 @Slf4j
-class ExecutorRequestHandler {
+class ExecutorRequestHandler implements RequestHandler<SuccessResponse<Object>> {
 
     private final Pattern queryLogUrlPattern = Pattern.compile(String.format(JobExecutorUrls.QUERY_LOG, "([0-9]+)"));
     private final Pattern stopTaskPattern = Pattern.compile(String.format(JobExecutorUrls.STOP_TASK, "([0-9]+)"));
@@ -86,7 +87,7 @@ class ExecutorRequestHandler {
             if (matcher.find()) {
                 JobIdentity ji = getJobIdentity(matcher);
                 TaskRuntimeInfo runtimeInfo = ThreadPoolTaskExecutor.getInstance().getTaskRuntimeInfo(ji);
-                boolean result = runtimeInfo.getTaskContainer().modify(JobUtils.fromJsonToMap(requestData));
+                boolean result = runtimeInfo.getTaskContainer().modifyTask(JobUtils.fromJsonToMap(requestData));
                 return Responses.ok(result);
             }
 
@@ -109,9 +110,14 @@ class ExecutorRequestHandler {
 
             return Responses.single("invalid request, uri-mapping(" + uri + ") not found.");
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            return Responses.single("request error:" + ExceptionUtils.getRootCauseReason(e));
+            return processException(e);
         }
+    }
+
+    @Override
+    public SuccessResponse<Object> processException(Throwable e) {
+        log.error(e.getMessage(), e);
+        return Responses.single("request error:" + ExceptionUtils.getRootCauseReason(e));
     }
 
     private static JobIdentity getJobIdentity(Matcher matcher) {
