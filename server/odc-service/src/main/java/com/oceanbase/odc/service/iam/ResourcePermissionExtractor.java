@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.iam;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -22,8 +23,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -37,10 +40,12 @@ import com.oceanbase.odc.core.shared.PermissionConfiguration;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.metadb.iam.PermissionEntity;
 import com.oceanbase.odc.metadb.resourcegroup.ResourceGroupConnectionRepository;
 import com.oceanbase.odc.metadb.resourcegroup.ResourceGroupRepository;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.auth.DefaultPermissionProvider;
+import com.oceanbase.odc.service.iam.model.PermissionConfig;
 import com.oceanbase.odc.service.iam.util.ResourceContextUtil;
 import com.oceanbase.odc.service.resourcegroup.ResourceGroup;
 import com.oceanbase.odc.service.resourcegroup.model.ResourceContext;
@@ -66,6 +71,8 @@ public class ResourcePermissionExtractor {
     private ResourceGroupRepository resourceGroupRepository;
     @Autowired
     private ResourceGroupConnectionRepository resourceGroupConnectionRepository;
+    @Autowired
+    private ResourceIdExtractRuleHandlerFactory ruleHandlerFactory;
 
     public List<Permission> getResourcePermissions(List<? extends PermissionConfiguration> entities) {
         Map<String, Set<String>> identifier2Actions = new HashMap<>();
@@ -90,18 +97,76 @@ public class ResourcePermissionExtractor {
         return permissions;
     }
 
+
+    public List<PermissionConfig> aggregatePermissions(List<PermissionEntity> permissionEntities) {
+        Map<String, Set<String>> identifier2Actions = new HashMap<>();
+        for (PermissionEntity permissionEntity : permissionEntities) {
+            if (Objects.nonNull(permissionEntity)) {
+                Set<String> action = identifier2Actions.computeIfAbsent(permissionEntity.getResourceIdentifier(),
+                        e -> new HashSet<>());
+                action.add(permissionEntity.getAction());
+            }
+        }
+
+        List<PermissionConfig> aggregated = new ArrayList<>();
+        for (Map.Entry<String, Set<String>> entry : identifier2Actions.entrySet()) {
+            Set<String> actions = entry.getValue();
+            List<SecurityResource> resources = getResourcesByIdentifier(entry.getKey(), new HashMap<>());
+            for (SecurityResource resource : resources) {
+                aggregated.add(new PermissionConfig(String.valueOf(resource.resourceId()),
+                        ResourceType.valueOf(resource.resourceType()), new ArrayList<>(actions)));
+            }
+        }
+        return aggregated;
+    }
+
+    public List<PermissionConfig> aggregateResourceManagementPermissions(List<PermissionEntity> permissionEntities) {
+        Map<String, Set<String>> identifier2Actions = new HashMap<>();
+
+        for (PermissionEntity permissionEntity : permissionEntities) {
+            if (Objects.nonNull(permissionEntity)) {
+                Set<String> action = identifier2Actions.computeIfAbsent(permissionEntity.getResourceIdentifier(),
+                    e -> new HashSet<>());
+                action.add(permissionEntity.getAction());
+            }
+        }
+
+        List<PermissionConfig> aggregated = new ArrayList<>();
+        for (Map.Entry<String, Set<String>> entry : identifier2Actions.entrySet()) {
+            Set<String> actions = entry.getValue();
+            List<SecurityResource> resources = getResourcesByIdentifier(entry.getKey(), new HashMap<>());
+            for (SecurityResource resource : resources) {
+                // Separately extract the permission configuration with "create" for resource management permissions
+                if (entry.getValue().contains("create") && entry.getValue().size() > 1) {
+                    aggregated.add(new PermissionConfig("*", ResourceType.valueOf(resource.resourceType()), Collections.singletonList("create")));
+                    entry.getValue().remove("create");
+                }
+                aggregated.add(new PermissionConfig(String.valueOf(resource.resourceId()),
+                    ResourceType.valueOf(resource.resourceType()), new ArrayList<>(actions)));
+            }
+        }
+        return aggregated;
+    }
+
     public List<SecurityResource> getResourcesByIdentifier(@NonNull String identifier,
             @NonNull Map<ResourceIdentifier, List<ResourceIdentifier>> resourceGroupCache) {
         ResourceContext rootContext = ResourceContextUtil.parseFromResourceIdentifier(identifier);
         List<ResourceContext> contexts = new LinkedList<>();
         getContexts(contexts, rootContext, resourceGroupCache);
-        return contexts.stream().map(context -> {
-            if (context.getId() == null) {
-                return new DefaultSecurityResource("*", context.getField());
-            }
-            return new DefaultSecurityResource(String.valueOf(context.getId()), context.getField());
-        }).collect(Collectors.toList());
+        return contexts.stream()
+                .flatMap(context -> {
+                    if (context.getId() == null) {
+                        // it should be extracted by rules
+                        return ruleHandlerFactory.getHandler(context.getIdExtractRule())
+                                .handle(context, authenticationFacade)
+                                .stream();
+                    }
+                    // return the single id
+                    return Stream.of(new DefaultSecurityResource(String.valueOf(context.getId()), context.getField()));
+                })
+                .collect(Collectors.toList());
     }
+
 
     private void getContexts(List<ResourceContext> contexts, ResourceContext root,
             Map<ResourceIdentifier, List<ResourceIdentifier>> resourceGroupCache) {

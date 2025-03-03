@@ -182,6 +182,9 @@ public class UserService {
     @Autowired
     private UserOrganizationRepository userOrganizationRepository;
 
+    @Autowired
+    private ResourcePermissionExtractor resourcePermissionExtractor;
+
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final List<Consumer<PasswordChangeEvent>> postPasswordChangeHooks = new ArrayList<>();
     private final List<Consumer<UserDeleteEvent>> postUserDeleteHooks = new ArrayList<>();
@@ -482,8 +485,8 @@ public class UserService {
 
         for (User user : users) {
             user.setResourceManagementPermissions(
-                    PermissionUtil.aggregateResourceManagementPermissions(managementPermissions));
-            user.setSystemOperationPermissions(PermissionUtil.aggregatePermissions(operationPermissions));
+                resourcePermissionExtractor.aggregateResourceManagementPermissions(managementPermissions));
+            user.setSystemOperationPermissions(resourcePermissionExtractor.aggregatePermissions(operationPermissions));
         }
     }
 

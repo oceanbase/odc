@@ -48,7 +48,9 @@ public class PermissionUtil {
         }
         for (Map.Entry<String, Set<String>> entry : identifier2Actions.entrySet()) {
             ResourceContext resourceContext = ResourceContextUtil.parseFromResourceIdentifier(entry.getKey());
-            permissionConfigs.add(new PermissionConfig(resourceContext.getId(),
+            permissionConfigs.add(new PermissionConfig(String.valueOf(
+                Objects.isNull(resourceContext.getId()) ? resourceContext.getIdExtractRule().getRule()
+                    : resourceContext.getId()),
                     ResourceType.valueOf(resourceContext.getField()), new ArrayList<>(entry.getValue())));
         }
         return permissionConfigs;
@@ -58,6 +60,7 @@ public class PermissionUtil {
             List<PermissionEntity> permissionEntities) {
         List<PermissionConfig> permissionConfigs = new ArrayList<>();
         Map<String, Set<String>> identifier2Actions = new HashMap<>();
+
         for (PermissionEntity permissionEntity : permissionEntities) {
             if (Objects.nonNull(permissionEntity)) {
                 Set<String> action = identifier2Actions.computeIfAbsent(permissionEntity.getResourceIdentifier(),
@@ -69,26 +72,19 @@ public class PermissionUtil {
             ResourceContext resourceContext = ResourceContextUtil.parseFromResourceIdentifier(entry.getKey());
             // Separately extract the permission configuration with "create" for resource management permissions
             if (entry.getValue().contains("create") && entry.getValue().size() > 1) {
-                permissionConfigs.add(new PermissionConfig(resourceContext.getId(),
+                permissionConfigs.add(new PermissionConfig( String.valueOf(
+                    Objects.isNull(resourceContext.getId()) ? resourceContext.getIdExtractRule().getRule()
+                        : resourceContext.getId()),
                         ResourceType.valueOf(resourceContext.getField()), Collections.singletonList("create")));
                 entry.getValue().remove("create");
             }
-            permissionConfigs.add(new PermissionConfig(resourceContext.getId(),
+            permissionConfigs.add(new PermissionConfig(
+                    String.valueOf(
+                            Objects.isNull(resourceContext.getId()) ? resourceContext.getIdExtractRule().getRule()
+                                    : resourceContext.getId()),
                     ResourceType.valueOf(resourceContext.getField()), new ArrayList<>(entry.getValue())));
         }
         return permissionConfigs;
-    }
-
-    public static boolean isConnectionAccessPermission(PermissionEntity permission) {
-        if (Objects.isNull(permission)) {
-            return false;
-        }
-        if (PermissionType.PUBLIC_RESOURCE == permission.getType()) {
-            String action = permission.getAction();
-            Set<String> validActions = new HashSet<>(Arrays.asList("connect", "readonlyconnect", "apply"));
-            return validActions.contains(action);
-        }
-        return false;
     }
 
     public static boolean isResourceManagementPermission(PermissionEntity permission) {

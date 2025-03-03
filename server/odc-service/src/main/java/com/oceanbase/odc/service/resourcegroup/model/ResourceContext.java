@@ -28,5 +28,34 @@ import lombok.Data;
 public class ResourceContext {
     private String field;
     private Long id;
+    /**
+     * only works when id is null. 'all' means all resource ids(*); 'creator' means creator's resource
+     * ids
+     */
+    private ResourceIdExtractRule idExtractRule;
     private List<ResourceContext> subContexts;
+
+    public enum ResourceIdExtractRule {
+        ALL("*"),
+        CREATOR("creator");
+
+        private final String rule;
+
+        ResourceIdExtractRule(String rule) {
+            this.rule = rule;
+        }
+
+        public String getRule() {
+            return rule;
+        }
+
+        public static ResourceIdExtractRule fromString(String rule) {
+            for (ResourceIdExtractRule r : ResourceIdExtractRule.values()) {
+                if (r.getRule().equalsIgnoreCase(rule)) {
+                    return r;
+                }
+            }
+            throw new IllegalArgumentException("No constant with rule " + rule + " found");
+        }
+    }
 }
