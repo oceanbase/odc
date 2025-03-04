@@ -48,6 +48,8 @@ public enum ResourceType implements Translatable {
     ODC_FILE,
     ODC_RESOURCE_GROUP,
     ODC_SYSTEM_CONFIG,
+    ODC_ORGANIZATION_CONFIG,
+
     ODC_ASYNC_SQL_RESULT,
     ODC_FLOW_INSTANCE,
     ODC_FLOW_APPROVAL_INSTANCE,
