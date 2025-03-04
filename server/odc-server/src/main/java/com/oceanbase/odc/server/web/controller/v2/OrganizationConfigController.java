@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.server.web.controller.v2;
 
 import java.util.List;
@@ -47,7 +46,7 @@ public class OrganizationConfigController {
      * @return configuration meta listResponse
      */
     @ApiOperation(value = "listConfigurationMetas",
-        notes = "list all organization configuration metas")
+            notes = "list all organization configuration metas")
     @RequestMapping(value = "/configurationMetas", method = RequestMethod.GET)
     public ListResponse<ConfigurationMeta> listConfigurationMetas() {
         throw new NotImplementedException("not implemented");
@@ -60,7 +59,7 @@ public class OrganizationConfigController {
      * @return configuration listResponse
      */
     @ApiOperation(value = "listCurrentOrganizationConfigs",
-        notes = "get organization configuration in present organization")
+            notes = "get organization configuration in present organization")
     @RequestMapping(value = "/configurations", method = RequestMethod.GET)
     public ListResponse<Configuration> listCurrentOrganizationConfigs(Long organizationId) {
         throw new NotImplementedException("not implemented");
@@ -73,7 +72,7 @@ public class OrganizationConfigController {
      * @return configuration listResponse
      */
     @ApiOperation(value = "updateOrganizationConfigs",
-        notes = "batch update organization configurations in present organization")
+            notes = "batch update organization configurations in present organization")
     @RequestMapping(value = "/configurations", method = RequestMethod.PATCH)
     public ListResponse<Configuration> updateOrganizationConfigs(@RequestBody List<Configuration> configurations) {
         throw new NotImplementedException("not implemented");
@@ -87,10 +86,10 @@ public class OrganizationConfigController {
      * @return configuration success response
      */
     @ApiOperation(value = "updateOrganizationConfig",
-        notes = "update organization configuration in present organization")
+            notes = "update organization configuration in present organization")
     @RequestMapping(value = "/configurations/{key:[A-Za-z0-9.]+}", method = RequestMethod.PUT)
     public SuccessResponse<Configuration> updateOrganizationConfig(@PathVariable("key") String key,
-        @RequestBody Configuration configuration) {
+            @RequestBody Configuration configuration) {
         throw new NotImplementedException("not implemented");
     }
 
@@ -100,7 +99,7 @@ public class OrganizationConfigController {
      * @return configuration listResponse
      */
     @ApiOperation(value = "listDefaultOrganizationConfigs",
-        notes = "get default configurations in present organization")
+            notes = "get default configurations in present organization")
     @RequestMapping(value = "/default/configurations", method = RequestMethod.GET)
     public ListResponse<Configuration> listDefaultOrganizationConfigs() {
         throw new NotImplementedException("not implemented");
