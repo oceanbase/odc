@@ -96,10 +96,10 @@ public class DLMTableStructureSynchronizer {
             DBTable tgtTable = tgtAccessor.getTables(tgtConfig.getDefaultSchema(),
                     Collections.singletonList(tgtTableName)).get(tgtTableName);
             if (srcTable != null) {
-                StringUtils.quoteColumnDefaultValuesForMySQL(srcTable);
+                StringUtils.quoteColumnDefaultValuesForMySQLCopied(srcTable);
             }
             if (tgtTable != null) {
-                StringUtils.quoteColumnDefaultValuesForMySQL(tgtTable);
+                StringUtils.quoteColumnDefaultValuesForMySQLCopied(tgtTable);
             }
             DBTableStructureComparator comparator = new DBTableStructureComparator(tgtTableEditor,
                     tgtConfig.getType().getDialectType(), srcConfig.getDefaultSchema(), tgtConfig.getDefaultSchema());
@@ -162,7 +162,7 @@ public class DLMTableStructureSynchronizer {
             if (!tables.containsKey(tempTableName)) {
                 DBTable srcTable = tables.get(srcTableName);
                 srcTable.setName(tempTableName);
-                StringUtils.quoteColumnDefaultValuesForMySQL(srcTable);
+                StringUtils.quoteColumnDefaultValuesForMySQLCopied(srcTable);
                 DBTableEditor tableEditor = getDBTableEditor(srcConfig.getType(), srcDbVersion);
                 String createTableDdl = tableEditor.generateCreateObjectDDL(srcTable);
                 log.info("Start to create temporary table,ddl={}", createTableDdl);

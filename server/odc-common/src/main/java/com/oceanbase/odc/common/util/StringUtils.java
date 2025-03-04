@@ -199,6 +199,22 @@ public abstract class StringUtils extends org.apache.commons.lang3.StringUtils {
         }
     }
 
+    // do not ignore default value of empty string
+    public static void quoteColumnDefaultValuesForMySQLCopied(DBTable table) {
+        if (!CollectionUtils.isEmpty(table.getColumns())) {
+            table.getColumns().forEach(column -> {
+                String defaultValue = column.getDefaultValue();
+                if (StringUtils.isNotEmpty(defaultValue)) {
+                    if (!isDefaultValueBuiltInFunction(column) && !DataTypeUtil.isBitType(column.getTypeName())) {
+                        column.setDefaultValue("'".concat(defaultValue.replace("'", "''")).concat("'"));
+                    }
+                } else if (!column.getNullable() && DataTypeUtil.isStringType(column.getTypeName())) {
+                    column.setDefaultValue("''");
+                }
+            });
+        }
+    }
+
     /**
      * Check whether the data_default contain built in function. Any of the synonyms for
      * CURRENT_TIMESTAMP have the same meaning as CURRENT_TIMESTAMP. These are CURRENT_TIMESTAMP(),
