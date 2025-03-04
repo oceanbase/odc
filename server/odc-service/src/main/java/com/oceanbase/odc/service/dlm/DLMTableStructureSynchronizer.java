@@ -23,11 +23,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
+
+import org.springframework.util.CollectionUtils;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.common.util.StringUtils;
@@ -44,6 +47,8 @@ import com.oceanbase.odc.service.structurecompare.model.DBObjectComparisonResult
 import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
+import com.oceanbase.tools.dbbrowser.model.datatype.DataTypeUtil;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.util.VersionUtils;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
@@ -228,6 +233,28 @@ public class DLMTableStructureSynchronizer {
 
     private static boolean isMySQLVersionLessThan570(String version) {
         return VersionUtils.isLessThan(version, "5.7.0");
+    }
+
+    private static void quoteColumnDefaultValuesForMySQLCopied(DBTable table) {
+        if (!CollectionUtils.isEmpty(table.getColumns())) {
+            table.getColumns().forEach(column -> {
+                String defaultValue = column.getDefaultValue();
+                if (StringUtils.isNotEmpty(defaultValue)) {
+                    if (!isDefaultValueBuiltInFunction(column) && !DataTypeUtil.isBitType(column.getTypeName())) {
+                        column.setDefaultValue("'".concat(defaultValue.replace("'", "''")).concat("'"));
+                    }
+                } else if (!column.getNullable() && DataTypeUtil.isStringType(column.getTypeName())) {
+                    column.setDefaultValue("''");
+                }
+            });
+        }
+    }
+
+    private static boolean isDefaultValueBuiltInFunction(DBTableColumn column) {
+        return com.oceanbase.tools.dbbrowser.util.StringUtils.isEmpty(column.getDefaultValue())
+                || (!DataTypeUtil.isStringType(column.getTypeName())
+                        && column.getDefaultValue().trim().toUpperCase(Locale.getDefault())
+                                .startsWith("CURRENT_TIMESTAMP"));
     }
 
 }

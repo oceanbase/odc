@@ -208,7 +208,7 @@ public abstract class StringUtils extends org.apache.commons.lang3.StringUtils {
                     if (!isDefaultValueBuiltInFunction(column) && !DataTypeUtil.isBitType(column.getTypeName())) {
                         column.setDefaultValue("'".concat(defaultValue.replace("'", "''")).concat("'"));
                     }
-                } else if (!column.getNullable() && DataTypeUtil.isStringType(column.getTypeName())) {
+                } else if (!column.getNullable()) {
                     column.setDefaultValue("''");
                 }
             });
