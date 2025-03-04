@@ -101,10 +101,10 @@ public class DLMTableStructureSynchronizer {
             DBTable tgtTable = tgtAccessor.getTables(tgtConfig.getDefaultSchema(),
                     Collections.singletonList(tgtTableName)).get(tgtTableName);
             if (srcTable != null) {
-                StringUtils.quoteColumnDefaultValuesForMySQLCopied(srcTable);
+                quoteColumnDefaultValuesForMySQL(srcTable);
             }
             if (tgtTable != null) {
-                StringUtils.quoteColumnDefaultValuesForMySQLCopied(tgtTable);
+                quoteColumnDefaultValuesForMySQL(tgtTable);
             }
             DBTableStructureComparator comparator = new DBTableStructureComparator(tgtTableEditor,
                     tgtConfig.getType().getDialectType(), srcConfig.getDefaultSchema(), tgtConfig.getDefaultSchema());
@@ -167,7 +167,7 @@ public class DLMTableStructureSynchronizer {
             if (!tables.containsKey(tempTableName)) {
                 DBTable srcTable = tables.get(srcTableName);
                 srcTable.setName(tempTableName);
-                StringUtils.quoteColumnDefaultValuesForMySQLCopied(srcTable);
+                quoteColumnDefaultValuesForMySQL(srcTable);
                 DBTableEditor tableEditor = getDBTableEditor(srcConfig.getType(), srcDbVersion);
                 String createTableDdl = tableEditor.generateCreateObjectDDL(srcTable);
                 log.info("Start to create temporary table,ddl={}", createTableDdl);
@@ -235,7 +235,7 @@ public class DLMTableStructureSynchronizer {
         return VersionUtils.isLessThan(version, "5.7.0");
     }
 
-    private static void quoteColumnDefaultValuesForMySQLCopied(DBTable table) {
+    private static void quoteColumnDefaultValuesForMySQL(DBTable table) {
         if (!CollectionUtils.isEmpty(table.getColumns())) {
             table.getColumns().forEach(column -> {
                 String defaultValue = column.getDefaultValue();
