@@ -155,6 +155,7 @@ import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -1054,7 +1055,8 @@ public class ScheduleService {
                 Arrays.asList(ScheduleType.SQL_PLAN, ScheduleType.PARTITION_PLAN,
                         ScheduleType.DATA_DELETE, ScheduleType.DATA_ARCHIVE);
         params.setScheduleTypes(ObjectUtil.defaultIfNull(params.getScheduleTypes(), Collections.emptySet()));
-        params.getScheduleTypes().retainAll(supportedAlterScheduleTypes.stream().filter(Objects::nonNull).collect(Collectors.toSet()));
+        params.getScheduleTypes()
+                .retainAll(supportedAlterScheduleTypes.stream().filter(Objects::nonNull).collect(Collectors.toSet()));
         if (CollectionUtils.isEmpty(params.getScheduleTypes())) {
             return Collections.emptyList();
         }
@@ -1076,7 +1078,7 @@ public class ScheduleService {
             return Collections.emptyList();
         }
 
-        Map<ScheduleType, AlterScheduleSubTaskStat> scheduleType2TaskStats =
+        Map<ScheduleType, AlterScheduleSubTaskStat> scheduleType2SubTaskStats =
                 listAlterScheduleSubTaskStat(params).stream()
                         .collect(Collectors.toMap(AlterScheduleSubTaskStat::getType, Function.identity()));
 
@@ -1087,14 +1089,15 @@ public class ScheduleService {
         scheduleType2ScheduleEntities.forEach((type, scheduleList) -> {
             SingleAlterScheduleTaskStat singleAlterScheduleStat = SingleAlterScheduleTaskStat.init(type);
             AlterScheduleSubTaskStat scheduleSubTaskStat =
-                    scheduleType2TaskStats.getOrDefault(type, AlterScheduleSubTaskStat.init(type));
+                    scheduleType2SubTaskStats.getOrDefault(type, AlterScheduleSubTaskStat.init(type));
             singleAlterScheduleStat.getTaskStat().merge(scheduleSubTaskStat);
-            scheduleType2TaskStats.remove(type);
-            scheduleStats.add(singleAlterScheduleStat.setSuccessEnabledCount(scheduleList.size()));
+            singleAlterScheduleStat.setSuccessEnabledCount(scheduleList.size());
+            scheduleStats.add(singleAlterScheduleStat);
+            scheduleType2SubTaskStats.remove(type);
         });
-        for (AlterScheduleSubTaskStat remainAlterScheduleTaskStat : scheduleType2TaskStats.values()) {
-            SingleAlterScheduleTaskStat stat = SingleAlterScheduleTaskStat.init(remainAlterScheduleTaskStat.getType());
-            stat.getTaskStat().merge(remainAlterScheduleTaskStat);
+        for (AlterScheduleSubTaskStat remainSubTaskStat : scheduleType2SubTaskStats.values()) {
+            SingleAlterScheduleTaskStat stat = SingleAlterScheduleTaskStat.init(remainSubTaskStat.getType());
+            stat.getTaskStat().merge(remainSubTaskStat);
             scheduleStats.add(stat);
         }
         return scheduleStats;
@@ -1192,9 +1195,10 @@ public class ScheduleService {
         if (CollectionUtils.isEmpty(joinedProjectIds)) {
             return Collections.emptyList();
         }
-        List<AlterScheduleSubTaskStat> statsWithTaskFramework = listAlterScheduleSubTaskStatWithTaskFramework(params);
-        List<AlterScheduleSubTaskStat> statsWithoutTaskFramework =
-                listAlterScheduleSubTaskStatWithoutTaskFramework(params);
+        List<AlterScheduleSubTaskStat> statsWithTaskFramework =
+                CollUtil.defaultIfEmpty(listAlterScheduleSubTaskStatWithTaskFramework(params), new ArrayList<>());
+        List<AlterScheduleSubTaskStat> statsWithoutTaskFramework = CollUtil.defaultIfEmpty(
+                listAlterScheduleSubTaskStatWithoutTaskFramework(params), Collections.emptyList());
         statsWithTaskFramework.addAll(statsWithoutTaskFramework);
         return statsWithTaskFramework;
     }
