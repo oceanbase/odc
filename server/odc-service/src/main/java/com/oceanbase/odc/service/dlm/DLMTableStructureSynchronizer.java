@@ -103,7 +103,7 @@ public class DLMTableStructureSynchronizer {
             if (srcTable != null && srcConfig.getDialectType().isMysql()) {
                 quoteColumnDefaultValuesForMySQL(srcTable);
             }
-            if (tgtTable != null && srcConfig.getDialectType().isMysql()) {
+            if (tgtTable != null && tgtConfig.getDialectType().isMysql()) {
                 quoteColumnDefaultValuesForMySQL(tgtTable);
             }
             DBTableStructureComparator comparator = new DBTableStructureComparator(tgtTableEditor,
