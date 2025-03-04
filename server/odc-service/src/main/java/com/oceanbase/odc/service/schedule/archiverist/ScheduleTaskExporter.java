@@ -30,6 +30,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -40,8 +41,11 @@ import org.springframework.stereotype.Service;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.security.PasswordUtils;
 import com.oceanbase.odc.common.util.FileZipper;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
+import com.oceanbase.odc.metadb.task.TaskEntity;
+import com.oceanbase.odc.metadb.task.TaskRepository;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
@@ -98,6 +102,9 @@ public class ScheduleTaskExporter {
     AuthenticationFacade authenticationFacade;
     @Autowired
     private ObjectStorageFacade objectStorageFacade;
+
+    @Autowired
+    private TaskRepository taskRepository;
 
     public ExportedFile export(Collection<Long> scheduleIds) {
         String encryptKey = new BCryptPasswordEncoder().encode(PasswordUtils.random());
@@ -209,10 +216,15 @@ public class ScheduleTaskExporter {
     public void exportPartitionPlan(ExportRowDataAppender appender, ScheduleEntity scheduleEntity) {
         PartitionPlanConfig parameters = JsonUtils.fromJson(scheduleEntity.getJobParametersJson(),
                 PartitionPlanConfig.class);
+        Optional<TaskEntity> taskOption = taskRepository.findById(parameters.getTaskId());
+        Verify.verify(taskOption.isPresent(), "Can't find task entity");
+        TaskEntity taskEntity = taskOption.get();
+        PartitionPlanConfig originParameter = JsonUtils.fromJson(taskEntity.getParametersJson(),
+                PartitionPlanConfig.class);
         PartitionPlanScheduleRowData partitionPlanScheduleRowData =
-                ExportRowDataMapper.INSTANCE.toPartitionPlanScheduleRowData(scheduleEntity, parameters,
+                ExportRowDataMapper.INSTANCE.toPartitionPlanScheduleRowData(scheduleEntity, originParameter,
                         getExportedDatabase(
-                                parameters.getDatabaseId()));
+                                originParameter.getDatabaseId()));
         appender.append(partitionPlanScheduleRowData);
 
     }
