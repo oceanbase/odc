@@ -38,16 +38,16 @@ public class OrganizationConfigEntity extends ConfigEntity {
      * organization id of this organization configuration
      */
     @NotNull
-    @Column(name = "`organization_id`")
+    @Column(name = "organization_id")
     private Long organizationId;
     /**
      * creator id of this organization configuration
      */
-    @Column(name = "`creator_id`", updatable = false)
+    @Column(name = "creator_id", updatable = false)
     private Long creatorId;
     /**
      * last modifier id of this organization configuration
      */
-    @Column(name = "`last_modifier_id`")
+    @Column(name = "last_modifier_id")
     private Long lastModifierId;
 }
