@@ -853,16 +853,24 @@ public class ConnectionService {
     }
 
     public Set<Long> innerGetIdsIfAnyOfCondition(@NotNull InnerQueryConnectionParams params) {
-        Specification<ConnectionEntity> spec;
+        Specification<ConnectionEntity> spec = null;
+        int conditionCount = 0;
         if (StringUtils.isNotBlank(params.getDataSourceName())) {
             spec = Specification.where(ConnectionSpecs.nameLike(params.getDataSourceName()));
-        } else if (StringUtils.isNotBlank(params.getTenantName())) {
+            ++conditionCount;
+        }
+        if (StringUtils.isNotBlank(params.getTenantName())) {
             spec = Specification.where(ConnectionSpecs.tenantNameLike(params.getTenantName()));
-        } else if (StringUtils.isNotBlank(params.getClusterName())) {
+            ++conditionCount;
+        }
+        if (StringUtils.isNotBlank(params.getClusterName())) {
             spec = Specification.where(ConnectionSpecs.clusterNameLike(params.getClusterName()));
-        } else {
+            ++conditionCount;
+        }
+        if (spec == null) {
             return Collections.emptySet();
         }
+        Verify.equalsExactlyOne(conditionCount, "InnerQueryConnectionParams");
         return this.repository.findAll(spec, Pageable.unpaged()).stream().map(ConnectionEntity::getId)
                 .collect(Collectors.toSet());
     }
