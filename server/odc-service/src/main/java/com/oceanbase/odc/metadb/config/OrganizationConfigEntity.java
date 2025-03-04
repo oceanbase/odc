@@ -18,6 +18,7 @@ package com.oceanbase.odc.metadb.config;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -36,6 +37,7 @@ public class OrganizationConfigEntity extends ConfigEntity {
     /**
      * organization id of this organization configuration
      */
+    @NotNull
     @Column(name = "`organization_id`")
     private Long organizationId;
     /**
