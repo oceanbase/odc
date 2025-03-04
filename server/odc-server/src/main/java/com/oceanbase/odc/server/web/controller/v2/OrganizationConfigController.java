@@ -17,7 +17,6 @@ package com.oceanbase.odc.server.web.controller.v2;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,11 +26,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
-import com.oceanbase.odc.service.config.OrganizationConfigMetaService;
-import com.oceanbase.odc.service.config.OrganizationConfigService;
 import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.config.model.ConfigurationMeta;
-import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
 import io.swagger.annotations.ApiOperation;
 
