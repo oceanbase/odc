@@ -41,7 +41,6 @@ public class EventLabelKeys {
     public static final String TENANT_NAME = "tenantName";
     public static final String DATABASE_ID = "databaseId";
     public static final String DATABASE_NAME = "databaseName";
-    public static final String DATABASE_REMARK = "databaseRemark";
     public static final String TABLE_NAME = "tableName";
 
     /**
