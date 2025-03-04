@@ -27,7 +27,7 @@ import lombok.EqualsAndHashCode;
  * @author yizhuo
  * @date 2025/2/12 11:24
  * @description organization config data object
- * @since 1.8
+ * @since 4.3.4
  */
 @Data
 @EqualsAndHashCode(callSuper = true)

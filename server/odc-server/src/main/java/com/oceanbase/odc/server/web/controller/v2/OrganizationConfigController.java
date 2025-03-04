@@ -35,18 +35,11 @@ import io.swagger.annotations.ApiOperation;
  * @author yizhuo
  * @date 2025/2/13 08:24
  * @description organization configuration controller
- * @since 1.8
+ * @since 4.3.4
  */
 @RestController
 @RequestMapping("/api/v2/config/organization")
 public class OrganizationConfigController {
-    //@Autowired
-    //private OrganizationConfigMetaService organizationConfigMetaService;
-    //@Autowired
-    //private OrganizationConfigService organizationConfigService;
-    //@Autowired
-    //private AuthenticationFacade authenticationFacade;
-
     /**
      * Load meta organization configurations
      *
@@ -57,7 +50,6 @@ public class OrganizationConfigController {
     @RequestMapping(value = "/configurationMetas", method = RequestMethod.GET)
     public ListResponse<ConfigurationMeta> listConfigurationMetas() {
         throw new NotImplementedException("not implemented");
-        // return Responses.list(organizationConfigMetaService.listAllConfigMetas());
     }
 
     /**
@@ -71,7 +63,6 @@ public class OrganizationConfigController {
     @RequestMapping(value = "/configurations", method = RequestMethod.GET)
     public ListResponse<Configuration> listCurrentOrganizationConfigs(Long organizationId) {
         throw new NotImplementedException("not implemented");
-        // return Responses.list(organizationConfigService.listOrganizationConfigurations(organizationId));
     }
 
     /**
@@ -85,8 +76,6 @@ public class OrganizationConfigController {
     @RequestMapping(value = "/configurations", method = RequestMethod.PATCH)
     public ListResponse<Configuration> updateOrganizationConfigs(@RequestBody List<Configuration> configurations) {
         throw new NotImplementedException("not implemented");
-        // long organizationId = authenticationFacade.currentOrganizationId();
-        // return Responses.list(organizationConfigService.batchUpdate(organizationId, configurations));
     }
 
     /**
@@ -102,9 +91,6 @@ public class OrganizationConfigController {
     public SuccessResponse<Configuration> updateOrganizationConfig(@PathVariable("key") String key,
             @RequestBody Configuration configuration) {
         throw new NotImplementedException("not implemented");
-        // long organizationId = authenticationFacade.currentOrganizationId();
-        // configuration.setKey(key);
-        // return Responses.single(organizationConfigService.update(organizationId, configuration));
     }
 
     /**
@@ -117,7 +103,6 @@ public class OrganizationConfigController {
     @RequestMapping(value = "/default/configurations", method = RequestMethod.GET)
     public ListResponse<Configuration> listDefaultOrganizationConfigs() {
         throw new NotImplementedException("not implemented");
-        // return Responses.list(organizationConfigService.listDefaultOrganizationConfigurations());
     }
 
 }
