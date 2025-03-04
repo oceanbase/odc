@@ -15,23 +15,37 @@
  */
 package com.oceanbase.odc.metadb.config;
 
-import javax.validation.constraints.NotNull;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * @Author: Lebie
- * @Date: 2021/7/12 下午2:33
- * @Description: [Organization Configuration Data Object for DAO]
+ * @author yizhuo
+ * @date 2025/2/12 11:24
+ * @description organization config data object
+ * @since 1.8
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
+@Entity
+@Table(name = "config_organization_configuration")
 public class OrganizationConfigEntity extends ConfigEntity {
     /**
-     * organizationId of this organization config
+     * organization id of this organization configuration
      */
-    @NotNull
+    @Column(name = "`organization_id`")
     private Long organizationId;
-
+    /**
+     * creator id of this organization configuration
+     */
+    @Column(name = "`creator_id`", updatable = false)
+    private Long creatorId;
+    /**
+     * last modifier id of this organization configuration
+     */
+    @Column(name = "`last_modifier_id`")
+    private Long lastModifierId;
 }
