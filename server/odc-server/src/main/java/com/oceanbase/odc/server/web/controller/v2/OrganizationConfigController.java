@@ -44,12 +44,12 @@ import io.swagger.annotations.ApiOperation;
 @RestController
 @RequestMapping("/api/v2/config/organization")
 public class OrganizationConfigController {
-    @Autowired
-    private OrganizationConfigMetaService organizationConfigMetaService;
-    @Autowired
-    private OrganizationConfigService organizationConfigService;
-    @Autowired
-    private AuthenticationFacade authenticationFacade;
+    //@Autowired
+    //private OrganizationConfigMetaService organizationConfigMetaService;
+    //@Autowired
+    //private OrganizationConfigService organizationConfigService;
+    //@Autowired
+    //private AuthenticationFacade authenticationFacade;
 
     /**
      * Load meta organization configurations
