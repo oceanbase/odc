@@ -26,7 +26,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ExportedDatabase implements Encryptable {
     ExportedDataSource exportedDataSource;
-    String             schema;
+    String schema;
 
     public static ExportedDatabase of(ExportedDataSource exportedDataSource, String schema) {
         return new ExportedDatabase(exportedDataSource, schema);

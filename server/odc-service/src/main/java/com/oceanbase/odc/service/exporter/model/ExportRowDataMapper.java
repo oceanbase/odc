@@ -24,9 +24,9 @@ import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
-import com.oceanbase.odc.service.schedule.archiverist.model.ExportedDatabase;
 import com.oceanbase.odc.service.schedule.archiverist.model.DataArchiveScheduleRowData;
 import com.oceanbase.odc.service.schedule.archiverist.model.DataDeleteScheduleRowData;
+import com.oceanbase.odc.service.schedule.archiverist.model.ExportedDatabase;
 import com.oceanbase.odc.service.schedule.archiverist.model.PartitionPlanScheduleRowData;
 import com.oceanbase.odc.service.schedule.archiverist.model.SqlPlanScheduleRowData;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
@@ -57,9 +57,11 @@ public interface ExportRowDataMapper {
     @Mapping(target = "triggerConfig", expression = "java(fromJson(scheduleEntity))")
     @Mapping(target = "name", source = "scheduleEntity.name")
     @Mapping(source = "targetDatabase", target = "targetDatabase")
-    SqlPlanScheduleRowData toSqlPlanScheduleRowData(ScheduleEntity scheduleEntity, SqlPlanParameters parameters, ExportedDatabase targetDatabase);
+    SqlPlanScheduleRowData toSqlPlanScheduleRowData(ScheduleEntity scheduleEntity, SqlPlanParameters parameters,
+            ExportedDatabase targetDatabase);
 
-    PartitionPlanScheduleRowData toPartitionPlanScheduleRowData(ScheduleEntity scheduleEntity, PartitionPlanConfig partitionPlanConfig,ExportedDatabase database);
+    PartitionPlanScheduleRowData toPartitionPlanScheduleRowData(ScheduleEntity scheduleEntity,
+            PartitionPlanConfig partitionPlanConfig, ExportedDatabase database);
 
     default TriggerConfig fromJson(ScheduleEntity scheduleEntity) {
         return JsonUtils.fromJson(scheduleEntity.getTriggerConfigJson(), TriggerConfig.class);

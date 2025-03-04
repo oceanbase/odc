@@ -219,7 +219,7 @@ public class ScheduleTaskExporter {
 
     private void addAdditionFile(ExportRowDataAppender appender, List<String> sqlObjectIds,
             String tempFilePath, String bucket) throws IOException {
-        if(CollectionUtils.isEmpty(sqlObjectIds)) {
+        if (CollectionUtils.isEmpty(sqlObjectIds)) {
             return;
         }
         for (String objectId : sqlObjectIds) {
