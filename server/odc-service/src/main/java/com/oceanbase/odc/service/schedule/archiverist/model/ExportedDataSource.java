@@ -26,7 +26,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ArchiveDataSource implements Encryptable {
+public class ExportedDataSource implements Encryptable {
     private String cloudProvider;
     private String instanceId;
     private String tenantId;
@@ -35,8 +35,8 @@ public class ArchiveDataSource implements Encryptable {
     private String username;
     private String password;
 
-    public static ArchiveDataSource fromConnectionConfig(ConnectionConfig dataSource) {
-        return new ArchiveDataSource(dataSource.getCloudProvider(), dataSource.getClusterName(),
+    public static ExportedDataSource fromConnectionConfig(ConnectionConfig dataSource) {
+        return new ExportedDataSource(dataSource.getCloudProvider(), dataSource.getClusterName(),
                 dataSource.getTenantName(),
                 dataSource.getHost(), dataSource.getPort(), dataSource.getUsername(), dataSource.getPassword());
     }

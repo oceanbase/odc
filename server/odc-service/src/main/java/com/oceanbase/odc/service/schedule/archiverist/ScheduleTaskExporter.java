@@ -20,14 +20,20 @@ import static com.oceanbase.odc.service.exporter.model.ExportConstants.FILE_NAME
 import static com.oceanbase.odc.service.exporter.model.ExportConstants.SCHEDULE_ARCHIVE_TYPE;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -35,8 +41,11 @@ import org.springframework.stereotype.Service;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.security.PasswordUtils;
 import com.oceanbase.odc.common.util.FileZipper;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
+import com.oceanbase.odc.metadb.task.TaskEntity;
+import com.oceanbase.odc.metadb.task.TaskRepository;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
@@ -50,13 +59,18 @@ import com.oceanbase.odc.service.exporter.model.ExportRowDataAppender;
 import com.oceanbase.odc.service.exporter.model.ExportRowDataMapper;
 import com.oceanbase.odc.service.exporter.model.ExportedFile;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.schedule.ScheduleExportFacade;
 import com.oceanbase.odc.service.schedule.ScheduleService;
-import com.oceanbase.odc.service.schedule.archiverist.model.ArchiveDataSource;
-import com.oceanbase.odc.service.schedule.archiverist.model.ArchiveDatabase;
 import com.oceanbase.odc.service.schedule.archiverist.model.DataArchiveScheduleRowData;
 import com.oceanbase.odc.service.schedule.archiverist.model.DataDeleteScheduleRowData;
+import com.oceanbase.odc.service.schedule.archiverist.model.ExportedDataSource;
+import com.oceanbase.odc.service.schedule.archiverist.model.ExportedDatabase;
+import com.oceanbase.odc.service.schedule.archiverist.model.PartitionPlanScheduleRowData;
+import com.oceanbase.odc.service.schedule.archiverist.model.SqlPlanScheduleRowData;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
+import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
 
 import lombok.SneakyThrows;
 
@@ -86,6 +100,11 @@ public class ScheduleTaskExporter {
 
     @Autowired
     AuthenticationFacade authenticationFacade;
+    @Autowired
+    private ObjectStorageFacade objectStorageFacade;
+
+    @Autowired
+    private TaskRepository taskRepository;
 
     public ExportedFile export(Collection<Long> scheduleIds) {
         String encryptKey = new BCryptPasswordEncoder().encode(PasswordUtils.random());
@@ -117,7 +136,6 @@ public class ScheduleTaskExporter {
             ExportProperties exportProperties) {
         // Ensure all archive file in same path
         ExportProperties deepClone = exportProperties.deepClone();
-
         deepClone.putToMetaData(FILE_NAME, entry.getKey().name());
         deepClone.addFilePathProperties(exportConfiguration.getDefaultArchivePath());
         exportProperties.putToMetaData("taskType", entry.getKey());
@@ -157,6 +175,12 @@ public class ScheduleTaskExporter {
             case DATA_ARCHIVE:
                 exportDataArchive(appender, scheduleEntity);
                 break;
+            case SQL_PLAN:
+                exportSqlPlan(appender, scheduleEntity);
+                break;
+            case PARTITION_PLAN:
+                exportPartitionPlan(appender, scheduleEntity);
+                break;
             default:
                 throw new IllegalArgumentException();
         }
@@ -168,9 +192,61 @@ public class ScheduleTaskExporter {
                 DataDeleteParameters.class);
         DataDeleteScheduleRowData dataDeleteRowData =
                 ExportRowDataMapper.INSTANCE.toDataDeleteRowData(scheduleEntity, parameters,
-                        getArchiveDatabase(parameters.getDatabaseId()),
-                        getArchiveDatabase(parameters.getTargetDatabaseId()));
+                        getExportedDatabase(parameters.getDatabaseId()),
+                        getExportedDatabase(parameters.getTargetDatabaseId()));
         appender.append(dataDeleteRowData);
+    }
+
+    @SneakyThrows
+    public void exportSqlPlan(ExportRowDataAppender appender, ScheduleEntity scheduleEntity) {
+        SqlPlanParameters parameters = JsonUtils.fromJson(scheduleEntity.getJobParametersJson(),
+                SqlPlanParameters.class);
+        String tempFilePath = appender.getMetaData().acquireFilePath();
+        String bucket = "async".concat(File.separator).concat(String.valueOf(scheduleEntity.getCreatorId()));
+        addAdditionFile(appender, parameters.getSqlObjectIds(), tempFilePath, bucket);
+        addAdditionFile(appender, parameters.getRollbackSqlObjectIds(), tempFilePath, bucket);
+        SqlPlanScheduleRowData sqlPlanScheduleRowData =
+                ExportRowDataMapper.INSTANCE.toSqlPlanScheduleRowData(scheduleEntity, parameters, getExportedDatabase(
+                        parameters.getDatabaseId()));
+        appender.append(sqlPlanScheduleRowData);
+
+    }
+
+    @SneakyThrows
+    public void exportPartitionPlan(ExportRowDataAppender appender, ScheduleEntity scheduleEntity) {
+        PartitionPlanConfig parameters = JsonUtils.fromJson(scheduleEntity.getJobParametersJson(),
+                PartitionPlanConfig.class);
+        Optional<TaskEntity> taskOption = taskRepository.findById(parameters.getTaskId());
+        Verify.verify(taskOption.isPresent(), "Can't find task entity");
+        TaskEntity taskEntity = taskOption.get();
+        PartitionPlanConfig originParameter = JsonUtils.fromJson(taskEntity.getParametersJson(),
+                PartitionPlanConfig.class);
+        PartitionPlanScheduleRowData partitionPlanScheduleRowData =
+                ExportRowDataMapper.INSTANCE.toPartitionPlanScheduleRowData(scheduleEntity, originParameter,
+                        getExportedDatabase(
+                                originParameter.getDatabaseId()));
+        appender.append(partitionPlanScheduleRowData);
+
+    }
+
+    private void addAdditionFile(ExportRowDataAppender appender, List<String> sqlObjectIds,
+            String tempFilePath, String bucket) throws IOException {
+        if (CollectionUtils.isEmpty(sqlObjectIds)) {
+            return;
+        }
+        for (String objectId : sqlObjectIds) {
+            File targetFile = new File(tempFilePath + File.separator + objectId);
+            targetFile.createNewFile();
+            byte[] buffer = new byte[8192];
+            int bytesRead;
+            try (OutputStream outputStream = Files.newOutputStream(targetFile.toPath());
+                    InputStream inputStream = objectStorageFacade.loadObject(bucket, objectId).getContent();) {
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, bytesRead);
+                }
+            }
+            appender.addAdditionFile(objectId, targetFile);
+        }
     }
 
     @SneakyThrows
@@ -179,18 +255,18 @@ public class ScheduleTaskExporter {
                 DataArchiveParameters.class);
         DataArchiveScheduleRowData dataDeleteRowData =
                 ExportRowDataMapper.INSTANCE.toDataArchiveRowData(scheduleEntity, parameters,
-                        getArchiveDatabase(parameters.getSourceDatabaseId()),
-                        getArchiveDatabase(parameters.getTargetDataBaseId()));
+                        getExportedDatabase(parameters.getSourceDatabaseId()),
+                        getExportedDatabase(parameters.getTargetDataBaseId()));
         appender.append(dataDeleteRowData);
     }
 
-    private ArchiveDatabase getArchiveDatabase(Long databaseId) {
+    private ExportedDatabase getExportedDatabase(Long databaseId) {
         if (databaseId == null) {
             return null;
         }
         Database database = databaseService.detailSkipPermissionCheck(databaseId);
         ConnectionConfig dataSource = database.getDataSource();
-        ArchiveDataSource archiveDataSource = ArchiveDataSource.fromConnectionConfig(dataSource);
-        return ArchiveDatabase.of(archiveDataSource, database.getName());
+        ExportedDataSource exportedDataSource = ExportedDataSource.fromConnectionConfig(dataSource);
+        return ExportedDatabase.of(exportedDataSource, database.getName());
     }
 }

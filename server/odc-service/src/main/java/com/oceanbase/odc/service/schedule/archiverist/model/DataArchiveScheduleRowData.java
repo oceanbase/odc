@@ -36,10 +36,10 @@ public class DataArchiveScheduleRowData extends BaseScheduleRowData {
     private String name;
 
     @NotNull
-    private ArchiveDatabase sourceDatabase;
+    private ExportedDatabase sourceDatabase;
 
     @NotNull
-    private ArchiveDatabase targetDataBase;
+    private ExportedDatabase targetDataBase;
 
     private List<OffsetConfig> variables;
 

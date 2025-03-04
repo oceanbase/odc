@@ -136,6 +136,7 @@ public class LocalJsonExporter implements Exporter {
                     metaData.acquireZipFileUrl(),
                     encryptKey);
             OdcFileUtil.deleteFiles(configFile);
+            this.additionFiles.values().forEach(OdcFileUtil::deleteFiles);
             return build;
         }
 
