@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.flow.model;
 
+import java.util.Collection;
+
 import lombok.Data;
 
 /**
@@ -25,4 +27,5 @@ import lombok.Data;
 @Data
 public class FlowInstanceApprovalReq {
     private String comment;
+    private Collection<Long> approvalFlowInstanceIds;
 }

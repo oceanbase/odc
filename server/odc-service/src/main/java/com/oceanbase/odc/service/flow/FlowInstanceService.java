@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -41,6 +42,7 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.flowable.engine.HistoryService;
 import org.flowable.engine.history.HistoricProcessInstance;
 import org.flowable.engine.history.HistoricProcessInstanceQuery;
@@ -94,6 +96,7 @@ import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
+import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.common.util.SqlUtils;
@@ -178,6 +181,7 @@ import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
+import cn.hutool.core.collection.CollUtil;
 import io.micrometer.core.instrument.Tag;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -683,6 +687,74 @@ public class FlowInstanceService {
     }
 
     @Transactional(rollbackFor = Exception.class)
+    public List<FlowInstanceDetailResp> batchApprove(
+            @NotNull @Size(min = 1, max = 100,
+                    message = "The number of approvals is out of range [1,100]") Collection<Long> ids,
+            @Size(max = 1024, message = "The approval comment is out of range [0,1024]") String message,
+            Boolean skipAuth) throws IOException {
+        List<Long> flowInstanceIds = CollUtil.distinct(ids);
+        List<TaskEntity> taskEntities = listTaskByFlowInstanceIds(flowInstanceIds);
+        if (CollectionUtils.isEmpty(taskEntities)) {
+            return Collections.emptyList();
+        }
+
+        Map<Long, Long> taskId2FlowInstanceId = listServiceTaskByFlowInstanceIds(flowInstanceIds).stream().filter(
+                t -> t.getTargetTaskId() != null)
+                .collect(Collectors.toMap(ServiceTaskInstanceEntity::getTargetTaskId,
+                        ServiceTaskInstanceEntity::getFlowInstanceId, (exist, value) -> exist));
+
+        Map<String, List<TaskEntity>> tasksToForwardByHostPort = new HashMap<>();
+        List<TaskEntity> tasksNotToForward = new ArrayList<>();
+
+        for (TaskEntity taskEntity : taskEntities) {
+            if (taskEntity.getTaskType() == TaskType.IMPORT && !dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
+                ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
+                String hostPortKey = executorInfo.getHost() + ":" + executorInfo.getPort();
+                tasksToForwardByHostPort.computeIfAbsent(hostPortKey, k -> new ArrayList<>()).add(taskEntity);
+            } else {
+                tasksNotToForward.add(taskEntity);
+            }
+        }
+
+        List<FlowInstanceDetailResp> flowInstanceDetailResps = new ArrayList<>();
+        for (Entry<String, List<TaskEntity>> entry : tasksToForwardByHostPort.entrySet()) {
+            String[] hostPorts = entry.getKey().split(":");
+            DispatchResponse response = requestDispatcher.forward(hostPorts[0], Integer.valueOf(hostPorts[1]));
+            flowInstanceDetailResps.addAll(ObjectUtils.defaultIfNull(
+                    response.getContentByType(new TypeReference<ListResponse<FlowInstanceDetailResp>>() {}).getData()
+                            .getContents(),
+                    new ArrayList<>()));
+        }
+        if (notificationProperties.isEnabled()) {
+            try {
+                eventBuilder
+                        .ofApprovedTasks(listTaskByFlowInstanceIds(flowInstanceIds),
+                                authenticationFacade.currentUserId())
+                        .forEach(e -> broker.enqueueEvent(e));
+            } catch (Exception e) {
+                log.warn("Failed to enqueue events.", e);
+            }
+        }
+        for (TaskEntity t : tasksNotToForward) {
+            Long flowInstanceId = taskId2FlowInstanceId.get(t.getId());
+            if (flowInstanceId != null) {
+                completeApprovalInstance(flowInstanceId, instance -> instance.approve(message, !skipAuth), skipAuth);
+                flowInstanceDetailResps.add(FlowInstanceDetailResp.withIdAndType(flowInstanceId, t.getTaskType()));
+            }
+        }
+        // Ensure that the id of the final result matches the relative order of the elements in the
+        // flowInstanceIds
+        Map<Long, Integer> id2Index = new HashMap<>();
+        for (int i = 0; i < flowInstanceIds.size(); ++i) {
+            id2Index.put(flowInstanceIds.get(i), i);
+        }
+        return flowInstanceDetailResps.stream()
+                .filter(resp -> id2Index.containsKey(resp.getId()))
+                .sorted(Comparator.comparing(resp -> id2Index.get(resp.getId())))
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(rollbackFor = Exception.class)
     public FlowInstanceDetailResp reject(@NotNull Long id,
             @Size(max = 1024, message = "The approval comment is out of range [0,1024]") String message,
             Boolean skipAuth) {
@@ -736,6 +808,33 @@ public class FlowInstanceService {
 
     public <T> T mapFlowInstanceWithoutPermissionCheck(@NonNull Long flowInstanceId, Function<FlowInstance, T> mapper) {
         return mapFlowInstance(flowInstanceId, mapper, flowPermissionHelper.skipCheck());
+    }
+
+    public List<ServiceTaskInstanceEntity> listServiceTaskByFlowInstanceIds(Collection<Long> flowInstanceIds) {
+        if (CollectionUtils.isEmpty(flowInstanceIds)) {
+            return Collections.emptyList();
+        }
+        Set<Long> ids = new HashSet<>(flowInstanceIds);
+        return serviceTaskRepository
+                .findAll(ServiceTaskInstanceSpecs.flowInstanceIdIn(ids))
+                .stream()
+                .filter(e -> e.getTaskType() != TaskType.GENERATE_ROLLBACK && e.getTaskType() != TaskType.SQL_CHECK
+                        && e.getTaskType() != TaskType.PRE_CHECK)
+                .collect(Collectors.toList());
+    }
+
+    public List<TaskEntity> listTaskByFlowInstanceIds(Collection<Long> flowInstanceIds) {
+        if (CollectionUtils.isEmpty(flowInstanceIds)) {
+            return Collections.emptyList();
+        }
+        List<ServiceTaskInstanceEntity> entities = listServiceTaskByFlowInstanceIds(flowInstanceIds);
+        Verify.verify(CollectionUtils.isNotEmpty(entities), "TaskEntities can not be empty");
+
+        Set<Long> taskIds = entities.stream().map(ServiceTaskInstanceEntity::getTargetTaskId)
+                .filter(Objects::nonNull).collect(Collectors.toSet());
+        List<TaskEntity> tasks = taskService.list(taskIds);
+        Verify.equals(taskIds.size(), tasks.size(), "TaskEntities");
+        return tasks;
     }
 
     public TaskEntity getTaskByFlowInstanceId(Long id) {
