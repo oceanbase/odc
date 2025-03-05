@@ -156,6 +156,7 @@
         <commons-codec.version>1.15</commons-codec.version>
         <registry-prometheus.version>1.9.5</registry-prometheus.version>
         <actuator.version>2.7.12</actuator.version>
+        <picocli.version>4.7.0</picocli.version>
     </properties>
 
     <dependencyManagement>
@@ -1081,6 +1082,11 @@
                     </exclusion>
                 </exclusions>
                 <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>info.picocli</groupId>
+                <artifactId>picocli</artifactId>
+                <version>${picocli.version}</version>
             </dependency>
 
             <!-- 以下测试依赖 -->
