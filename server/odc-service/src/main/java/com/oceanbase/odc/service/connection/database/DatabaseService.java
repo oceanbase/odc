@@ -252,9 +252,9 @@ public class DatabaseService {
     }
 
     @SkipAuthorize("internal usage")
-    public Database detailSkipPermissionCheckForRead(@NonNull Long id) {
-        return entityToModelForRead(databaseRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)), true);
+    public Database detailSkipPermissionCheckForTask(@NonNull Long id) {
+        return entityToModelForTask(databaseRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)));
     }
 
     @SkipAuthorize("odc internal usage")
@@ -994,20 +994,17 @@ public class DatabaseService {
         });
     }
 
-    private Database entityToModelForRead(DatabaseEntity entity, boolean includesPermittedAction) {
+    // only use for task
+    private Database entityToModelForTask(DatabaseEntity entity) {
         Database model = databaseMapper.entityToModel(entity);
         if (Objects.nonNull(entity.getProjectId())) {
             model.setProject(projectService.detail(entity.getProjectId()));
         }
         // for logical database, the connection id may be null
         if (entity.getConnectionId() != null) {
-            model.setDataSource(connectionService.getBasicWithoutPermissionCheck(entity.getConnectionId()));
+            model.setDataSource(connectionService.getDecryptedConfig(entity.getConnectionId()));
         }
         model.setEnvironment(environmentService.detailSkipPermissionCheck(entity.getEnvironmentId()));
-        if (includesPermittedAction) {
-            model.setAuthorizedPermissionTypes(
-                    permissionHelper.getDBPermissions(Collections.singleton(entity.getId())).get(entity.getId()));
-        }
         return model;
     }
 
