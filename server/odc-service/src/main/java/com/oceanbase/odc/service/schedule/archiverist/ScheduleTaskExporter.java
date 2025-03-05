@@ -73,8 +73,10 @@ import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
 
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
+@Slf4j
 public class ScheduleTaskExporter {
 
     @Autowired
@@ -107,6 +109,7 @@ public class ScheduleTaskExporter {
     private TaskRepository taskRepository;
 
     public ExportedFile export(Collection<Long> scheduleIds) {
+        Verify.notEmpty(scheduleIds, "scheduleIds");
         String encryptKey = new BCryptPasswordEncoder().encode(PasswordUtils.random());
         ExportProperties exportProperties = generateArchiveProperties();
         List<ExportedFile> exportedFiles = new ArrayList<>();
@@ -126,9 +129,14 @@ public class ScheduleTaskExporter {
             }
         }
 
+        if (CollectionUtils.isEmpty(exportedFiles)) {
+            throw new RuntimeException("Export files is empty");
+        }
+
         if (exportedFiles.size() == 1) {
             return exportedFiles.get(0);
         }
+
         return mergeToZip(exportProperties, exportedFiles, encryptKey);
     }
 
@@ -137,7 +145,6 @@ public class ScheduleTaskExporter {
         // Ensure all archive file in same path
         ExportProperties deepClone = exportProperties.deepClone();
         deepClone.putToMetaData(FILE_NAME, entry.getKey().name());
-        deepClone.addFilePathProperties(exportConfiguration.getDefaultArchivePath());
         exportProperties.putToMetaData("taskType", entry.getKey());
         return deepClone;
     }
@@ -151,10 +158,12 @@ public class ScheduleTaskExporter {
         return exportProperties;
     }
 
+    @SneakyThrows
     public ExportedFile mergeToZip(ExportProperties exportProperties, List<ExportedFile> files, String encryptKey) {
         String filePath = exportProperties.acquireFilePath();
         String outputFileName = filePath + File.separator + buildMergedZipName();
         File outputFile = new File(outputFileName);
+        outputFile.createNewFile();
         List<File> fs = files.stream().map(ExportedFile::getFile).collect(Collectors.toList());
         FileZipper.mergeToZipFile(fs, outputFile);
         FileZipper.deleteQuietly(fs);
@@ -163,7 +172,11 @@ public class ScheduleTaskExporter {
 
 
     public String buildMergedZipName() {
-        return authenticationFacade.currentUserAccountName() + "_" + LocalDate.now() + ".zip";
+        return removeSeparator(authenticationFacade.currentUserAccountName()) + "_" + LocalDate.now() + ".zip";
+    }
+
+    private String removeSeparator(String fileName) {
+        return fileName.replace(File.separator, "_");
     }
 
     public void export(ExportRowDataAppender appender, ScheduleEntity scheduleEntity) {
@@ -235,7 +248,7 @@ public class ScheduleTaskExporter {
             return;
         }
         for (String objectId : sqlObjectIds) {
-            File targetFile = new File(tempFilePath + File.separator + objectId);
+            File targetFile = new File(tempFilePath + File.separator + removeSeparator(objectId));
             targetFile.createNewFile();
             byte[] buffer = new byte[8192];
             int bytesRead;
@@ -245,7 +258,7 @@ public class ScheduleTaskExporter {
                     outputStream.write(buffer, 0, bytesRead);
                 }
             }
-            appender.addAdditionFile(objectId, targetFile);
+            appender.addAdditionFile(removeSeparator(objectId), targetFile);
         }
     }
 
