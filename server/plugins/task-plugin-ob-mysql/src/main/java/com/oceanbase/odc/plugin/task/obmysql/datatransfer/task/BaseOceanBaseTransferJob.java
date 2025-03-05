@@ -16,19 +16,28 @@
 
 package com.oceanbase.odc.plugin.task.obmysql.datatransfer.task;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.MoreObjects;
 import com.oceanbase.odc.common.util.ExceptionUtils;
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferJob;
@@ -55,6 +64,10 @@ import lombok.NonNull;
  */
 public abstract class BaseOceanBaseTransferJob<T extends BaseParameter> implements DataTransferJob {
     private static final Logger LOGGER = LoggerFactory.getLogger("DataTransferLogger");
+    private static final String HADOOP_PATH =
+            Paths.get(MoreObjects.firstNonNull(SystemUtils.getEnvOrProperty("file.storage.dir"), "./data"),
+                    "data_transfer/hadoop").toString();
+    private static final String HADOOP_VERSION = "3.3.6";
 
     protected final T parameter;
     protected final boolean transferData;
@@ -79,6 +92,43 @@ public abstract class BaseOceanBaseTransferJob<T extends BaseParameter> implemen
         totalTaskCount += transferData ? 1 : 0;
         totalTaskCount += transferSchema ? 1 : 0;
         this.sleepInterval = 500;
+    }
+
+    private synchronized static void prepareHadoopEnv()
+            throws IOException {
+        if (!SystemUtils.isOnWindows()) {
+            return;
+        }
+        String hadoopPath = HADOOP_PATH + "/hadoop-" + HADOOP_VERSION;
+        System.setProperty("hadoop.home.dir", hadoopPath);
+        if (new File(hadoopPath).exists()) {
+            return;
+        }
+        try (InputStream resource =
+                BaseOceanBaseTransferJob.class.getResourceAsStream("/hadoop-" + HADOOP_VERSION + ".zip");
+                ZipInputStream zis = new ZipInputStream(resource)) {
+            byte[] buffer = new byte[1024];
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                File file = new File(HADOOP_PATH, entry.getName());
+                if (entry.isDirectory()) {
+                    file.mkdirs();
+                } else {
+                    File parent = file.getParentFile();
+                    if (!parent.exists()) {
+                        parent.mkdirs();
+                    }
+                    try (FileOutputStream fos = new FileOutputStream(file)) {
+                        int len;
+                        while ((len = zis.read(buffer)) > 0) {
+                            fos.write(buffer, 0, len);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            throw new IOException("Failed to unzip hadoop resource", e);
+        }
     }
 
     protected abstract TaskContext startTransferData() throws Exception;
@@ -149,6 +199,7 @@ public abstract class BaseOceanBaseTransferJob<T extends BaseParameter> implemen
         try {
             status = TaskStatus.RUNNING;
             System.clearProperty("logging.level");
+            prepareHadoopEnv();
             String fileSuffix = parameter.getFileSuffix();
             if (transferSchema) {
                 LOGGER.info("Begin transferring schema");
