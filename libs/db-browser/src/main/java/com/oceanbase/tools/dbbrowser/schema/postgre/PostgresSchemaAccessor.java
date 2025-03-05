@@ -27,6 +27,7 @@ import org.springframework.jdbc.core.JdbcOperations;
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
+import com.oceanbase.tools.dbbrowser.model.DBMVSyncDataParameter;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBPackage;
@@ -180,6 +181,26 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
     @Override
     public List<String> showSystemViews(String schemaName) {
         throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
+    public List<DBObjectIdentity> listMVs(String schemaName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public List<DBObjectIdentity> listAllMVs(String viewNameLike) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public Boolean syncMVData(DBMVSyncDataParameter parameter) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public DBView getMV(String schemaName, String viewName) {
+        throw new UnsupportedOperationException("not support yet");
     }
 
     @Override

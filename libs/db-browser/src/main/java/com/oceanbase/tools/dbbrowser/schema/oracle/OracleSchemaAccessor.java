@@ -47,6 +47,7 @@ import com.oceanbase.tools.dbbrowser.model.DBForeignKeyModifyRule;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
 import com.oceanbase.tools.dbbrowser.model.DBIndexType;
+import com.oceanbase.tools.dbbrowser.model.DBMVSyncDataParameter;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
@@ -315,6 +316,27 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
                 .append(" where OWNER='SYS' ORDER BY VIEW_NAME");
         return jdbcOperations.queryForList(sb.toString(), String.class);
     }
+
+    @Override
+    public List<DBObjectIdentity> listMVs(String schemaName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public List<DBObjectIdentity> listAllMVs(String viewNameLike) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public Boolean syncMVData(DBMVSyncDataParameter parameter) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public DBView getMV(String schemaName, String viewName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
 
     @Override
     public List<DBVariable> showVariables() {

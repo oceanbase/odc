@@ -19,6 +19,7 @@ import java.util.List;
 
 import javax.validation.Valid;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,12 +27,16 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.core.shared.exception.NotImplementedException;
+import com.oceanbase.odc.service.common.model.ResourceIdentifier;
 import com.oceanbase.odc.service.common.model.ResourceSql;
 import com.oceanbase.odc.service.common.response.OdcResult;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
+import com.oceanbase.odc.service.common.util.ResourceIDParser;
+import com.oceanbase.odc.service.db.DBMaterializedViewService;
 import com.oceanbase.odc.service.db.model.AllTablesAndViews;
 import com.oceanbase.odc.service.db.model.DBViewResponse;
 import com.oceanbase.odc.service.db.model.MVSyncDataReq;
+import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.odc.service.state.model.StateName;
 import com.oceanbase.odc.service.state.model.StatefulRoute;
 import com.oceanbase.tools.dbbrowser.model.DBView;
@@ -49,11 +54,19 @@ import io.swagger.annotations.ApiOperation;
 @RequestMapping("/api/v2/materializedView")
 public class DBMaterializedViewController {
 
+    @Autowired
+    private DBMaterializedViewService dbMaterializedViewService;
+    @Autowired
+    private ConnectSessionService sessionService;
+
     @ApiOperation(value = "list", notes = "obtain the list of materialized views. Sid example: sid:1000-1:d:db1")
     @RequestMapping(value = "/list/{sid:.*}", method = RequestMethod.GET)
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
-    public OdcResult<List<DBViewResponse>> list(@PathVariable String sid) {
-        throw new NotImplementedException("not implemented");
+    public OdcResult<List<DBView>> list(@PathVariable String sid) {
+        // sid:1-1:d:database
+        ResourceIdentifier i = ResourceIDParser.parse(sid);
+        return OdcResult
+                .ok(dbMaterializedViewService.list(sessionService.nullSafeGet(i.getSid(), true), i.getDatabase()));
     }
 
     @ApiOperation(value = "detail",
@@ -61,7 +74,10 @@ public class DBMaterializedViewController {
     @RequestMapping(value = "/{sid:.*}", method = RequestMethod.GET)
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<DBViewResponse> detail(@PathVariable String sid) {
-        throw new NotImplementedException("not implemented");
+        ResourceIdentifier i = ResourceIDParser.parse(sid);
+        return OdcResult
+                .ok(dbMaterializedViewService.detail(sessionService.nullSafeGet(i.getSid(), true), i.getDatabase(),
+                        i.getView()));
     }
 
     @ApiOperation(value = "listBases",

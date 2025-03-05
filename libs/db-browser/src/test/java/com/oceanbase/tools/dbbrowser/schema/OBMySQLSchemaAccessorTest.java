@@ -21,7 +21,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
+import org.apache.commons.lang3.Validate;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -33,6 +35,8 @@ import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
+import com.oceanbase.tools.dbbrowser.model.DBMVSyncDataOption;
+import com.oceanbase.tools.dbbrowser.model.DBMVSyncDataParameter;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
@@ -46,6 +50,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
 import com.oceanbase.tools.dbbrowser.model.DBVariable;
 import com.oceanbase.tools.dbbrowser.model.DBView;
+import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessors;
 
@@ -58,6 +63,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     private static final String BASE_PATH = "src/test/resources/table/obmysql/";
     private static String ddl;
     private static String dropTables;
+    private static String dropMVs;
     private static String testProcedureDDL;
     private static String testFunctionDDL;
     private static List<DataType> verifyDataTypes = new ArrayList<>();
@@ -73,6 +79,11 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
         dropTables = loadAsString(BASE_PATH + "drop.sql");
         jdbcTemplate.execute(dropTables);
 
+        if (accessor.getClass().equals(OBMySQLSchemaAccessor.class)) {
+            dropMVs = loadAsString(BASE_PATH + "dropMV.sql");
+            jdbcTemplate.execute(dropTables);
+        }
+
         ddl = loadAsString(BASE_PATH + "testTableColumnDDL.sql", BASE_PATH + "testTableIndexDDL.sql",
                 BASE_PATH + "testTableConstraintDDL.sql", BASE_PATH + "testPartitionDDL.sql",
                 BASE_PATH + "testViewDDL.sql");
@@ -82,16 +93,42 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
         batchExcuteSql(testProcedureDDL);
         testFunctionDDL = loadAsString(BASE_PATH + "testFunctionDDL.sql");
         batchExcuteSql(testFunctionDDL);
+
+        if (accessor.getClass().equals(OBMySQLSchemaAccessor.class)) {
+            String createMV = loadAsString(BASE_PATH + "testMVDDL.sql");
+            jdbcTemplate.execute(createMV);
+        }
     }
 
     @AfterClass
     public static void tearDown() throws Exception {
         jdbcTemplate.execute(dropTables);
+        if (accessor.getClass().equals(OBMySQLSchemaAccessor.class)) {
+            jdbcTemplate.execute(dropTables);
+        }
     }
 
     private static void batchExcuteSql(String str) {
         for (String ddl : str.split("/")) {
             jdbcTemplate.execute(ddl);
+        }
+    }
+
+    @Test
+    public void listMVs_Success() {
+        if (accessor.getClass().equals(OBMySQLSchemaAccessor.class)) {
+            List<DBObjectIdentity> dbObjectIdentities = accessor.listMVs(getOBMySQLDataBaseName());
+            Assert.assertEquals(1, dbObjectIdentities.size());
+        }
+    }
+
+    @Test
+    public void syncMVData_Success() {
+        if (accessor.getClass().equals(OBMySQLSchemaAccessor.class)) {
+            DBMVSyncDataParameter dbmvSyncDataParameter =
+                    new DBMVSyncDataParameter(getOBMySQLDataBaseName(), "test_mv", DBMVSyncDataOption.FORCE_REFRESH, 2);
+            Boolean aBoolean = accessor.syncMVData(dbmvSyncDataParameter);
+            Assert.assertTrue(aBoolean);
         }
     }
 
@@ -486,6 +523,27 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
                 DataType.of("col25", "date", 0, null, 0, null),
                 DataType.of("col26", "datetime", 0, 0L, 0, null),
                 DataType.of("col27", "year", 0, 0L, 0, null)));
+    }
+
+    private static Optional<String> getObVersion() {
+        String sql = "SHOW VARIABLES LIKE 'version_comment'";
+        return jdbcTemplate.queryForObject(
+                sql,
+                (rs, rowNum) -> Optional.ofNullable(parseObVersionComment(rs.getString("Value"))));
+    }
+
+    private static String parseObVersionComment(String obVersionComment) {
+        Validate.notBlank(obVersionComment);
+        String[] obVersion = obVersionComment.split("\\s+");
+        if (obVersion == null) {
+            String errMsg = "version comment is empty, " + obVersionComment;
+            throw new RuntimeException(errMsg);
+        }
+        if (obVersion.length < 4) {
+            String errMsg = "failed to get version comment, " + obVersionComment;
+            throw new RuntimeException(errMsg);
+        }
+        return obVersion[1];
     }
 
     @Data

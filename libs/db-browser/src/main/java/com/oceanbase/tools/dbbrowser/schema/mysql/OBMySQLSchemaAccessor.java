@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -31,6 +32,8 @@ import org.springframework.jdbc.core.JdbcOperations;
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
+import com.oceanbase.tools.dbbrowser.model.DBMVSyncDataOption;
+import com.oceanbase.tools.dbbrowser.model.DBMVSyncDataParameter;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBObjectWarningDescriptor;
@@ -39,6 +42,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
+import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.parser.SqlParser;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseSqlResult;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorSqlMappers;
@@ -54,7 +58,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 适用 OB 版本：[4.3.2, ~)
+ * 适用 OB 版本：[4.3.3, ~)
  *
  * @author jingtian
  */
@@ -68,6 +72,54 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
         ESCAPE_SCHEMA_SET.add("LBACSYS");
         ESCAPE_SCHEMA_SET.add("ORAAUDITOR");
         ESCAPE_SCHEMA_SET.add("__public");
+    }
+
+    @Override
+    public List<DBObjectIdentity> listMVs(String schemaName) {
+        MySQLSqlBuilder sb = new MySQLSqlBuilder();
+        sb.append("select MVIEW_NAME FROM OCEANBASE.DBA_MVIEWS WHERE OWNER = ");
+        sb.value(schemaName);
+        return jdbcOperations.query(sb.toString(),
+                (rs, rowNum) -> DBObjectIdentity.of(schemaName, DBObjectType.MATERIALIZED_VIEW, rs.getString(1)));
+    }
+
+    @Override
+    public List<DBObjectIdentity> listAllMVs(String viewNameLike) {
+        MySQLSqlBuilder sb = new MySQLSqlBuilder();
+        sb.append(
+                "select TABLE_SCHEMA as schema_name,TABLE_NAME as name, 'VIEW' as type from information_schema.views "
+                        + "where TABLE_NAME LIKE ")
+                .value('%' + viewNameLike + '%')
+                .append(" order by name asc;");
+        return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
+    }
+
+    @Override
+    public Boolean syncMVData(DBMVSyncDataParameter parameter) {
+        MySQLSqlBuilder sb = new MySQLSqlBuilder();
+        sb.append("call DBMS_MVIEW.REFRESH('");
+        sb.append(parameter.getDatabaseName());
+        sb.append(".");
+        sb.append(parameter.getMvName());
+        sb.append("'");
+        if (Objects.nonNull(parameter.getMvSyncDataOption())
+                && parameter.getMvSyncDataOption() != DBMVSyncDataOption.UNKNOWN) {
+            sb.append(",");
+            sb.value(parameter.getMvSyncDataOption().getValue());
+        }
+        if (Objects.nonNull(parameter.getParallelismDegree())) {
+            sb.append(",");
+            sb.append("refresh_parallel => ");
+            sb.append(parameter.getParallelismDegree() + "");
+        }
+        sb.append(");");
+        jdbcOperations.execute(sb.toString());
+        return Boolean.TRUE;
+    }
+
+    @Override
+    public DBView getMV(String schemaName, String viewName) {
+        throw new UnsupportedOperationException("not support yet");
     }
 
     @Override
