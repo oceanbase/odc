@@ -460,6 +460,17 @@ public class DatabaseService {
     }
 
     @SkipAuthorize("internal usage")
+    public Set<Database> listExistAndNotPendingDatabasesByProjectIdIn(@NonNull Collection<Long> projectIds) {
+        if (CollectionUtils.isEmpty(projectIds)) {
+            return Collections.emptySet();
+        }
+        return databaseRepository
+                .findByProjectIdInAndExistedAndObjectSyncStatusNot(projectIds, true, DBObjectSyncStatus.PENDING)
+                .stream()
+                .map(databaseMapper::entityToModel).collect(Collectors.toSet());
+    }
+
+    @SkipAuthorize("internal usage")
     public Set<Database> listDatabaseByNames(@NotEmpty Collection<String> names) {
         return databaseRepository.findByNameIn(names).stream().map(databaseMapper::entityToModel)
                 .collect(Collectors.toSet());
