@@ -24,21 +24,21 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ArchiveDatabase implements Encryptable {
-    ArchiveDataSource archiveDataSource;
+public class ExportedDatabase implements Encryptable {
+    ExportedDataSource exportedDataSource;
     String schema;
 
-    public static ArchiveDatabase of(ArchiveDataSource archiveDataSource, String schema) {
-        return new ArchiveDatabase(archiveDataSource, schema);
+    public static ExportedDatabase of(ExportedDataSource exportedDataSource, String schema) {
+        return new ExportedDatabase(exportedDataSource, schema);
     }
 
     @Override
     public void encrypt(String encryptKey) {
-        archiveDataSource.encrypt(encryptKey);
+        exportedDataSource.encrypt(encryptKey);
     }
 
     @Override
     public void decrypt(String encryptKey) {
-        archiveDataSource.decrypt(encryptKey);
+        exportedDataSource.decrypt(encryptKey);
     }
 }

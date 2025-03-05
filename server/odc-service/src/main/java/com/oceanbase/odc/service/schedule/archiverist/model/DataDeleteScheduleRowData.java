@@ -30,9 +30,9 @@ import lombok.Data;
 public class DataDeleteScheduleRowData extends BaseScheduleRowData {
 
     @NotNull
-    private ArchiveDatabase database;
+    private ExportedDatabase database;
 
-    private ArchiveDatabase targetDatabase;
+    private ExportedDatabase targetDatabase;
 
     private List<OffsetConfig> variables;
 
