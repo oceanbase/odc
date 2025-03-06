@@ -15,8 +15,12 @@
  */
 package com.oceanbase.odc.common.json;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -195,6 +199,23 @@ public class JsonUtilsTest {
         Assert.assertEquals(excepted, xml);
     }
 
+    @Test
+    public void toJsonBytes() {
+        MockObj mockObj = new MockObj();
+        mockObj.setList(Arrays.asList(1L, 2L, 3L));
+        mockObj.setMsg("test");
+        byte[] bytes = JsonUtils.toBytes(mockObj);
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            bos.write(bytes);
+            bos.flush();
+            ObjectMapper objectMapper = new ObjectMapper();
+            MockObj deserializedMockObj = objectMapper.readValue(bos.toByteArray(), MockObj.class);
+            Assert.assertEquals(deserializedMockObj.getMsg(), mockObj.getMsg());
+            Assert.assertEquals(deserializedMockObj.getList(), mockObj.getList());
+        } catch (IOException ignored) {
+        }
+    }
+
     @Data
     public static class Generic<T> {
         private T t;
@@ -217,6 +238,14 @@ public class JsonUtilsTest {
         private String username;
 
         private TT a;
+    }
+
+    @Data
+    public static class MockObj {
+
+        private Collection<Long> list;
+
+        private String msg;
     }
 
     enum TT {

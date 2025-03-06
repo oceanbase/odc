@@ -127,6 +127,7 @@ import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 import com.oceanbase.odc.service.flow.listener.AutoApproveUserTaskListener;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.model.ExecutionStrategyConfig;
+import com.oceanbase.odc.service.flow.model.FlowInstanceApprovalReq;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp.FlowInstanceMapper;
 import com.oceanbase.odc.service.flow.model.FlowMetaInfo;
@@ -703,23 +704,32 @@ public class FlowInstanceService {
                 .collect(Collectors.toMap(ServiceTaskInstanceEntity::getTargetTaskId,
                         ServiceTaskInstanceEntity::getFlowInstanceId, (exist, value) -> exist));
 
-        Map<String, List<TaskEntity>> tasksToForwardByHostPort = new HashMap<>();
+        Map<String, List<Long>> HostPortKey2FlowInstanceId = new HashMap<>();
         List<TaskEntity> tasksNotToForward = new ArrayList<>();
 
         for (TaskEntity taskEntity : taskEntities) {
             if (taskEntity.getTaskType() == TaskType.IMPORT && !dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
                 ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
                 String hostPortKey = executorInfo.getHost() + ":" + executorInfo.getPort();
-                tasksToForwardByHostPort.computeIfAbsent(hostPortKey, k -> new ArrayList<>()).add(taskEntity);
+                Long flowInstanceId = taskId2FlowInstanceId.get(taskEntity.getId());
+                if (flowInstanceId != null) {
+                    HostPortKey2FlowInstanceId.computeIfAbsent(hostPortKey, k -> new ArrayList<>()).add(flowInstanceId);
+                }
             } else {
                 tasksNotToForward.add(taskEntity);
             }
         }
 
         List<FlowInstanceDetailResp> flowInstanceDetailResps = new ArrayList<>();
-        for (Entry<String, List<TaskEntity>> entry : tasksToForwardByHostPort.entrySet()) {
+        for (Entry<String, List<Long>> entry : HostPortKey2FlowInstanceId.entrySet()) {
             String[] hostPorts = entry.getKey().split(":");
-            DispatchResponse response = requestDispatcher.forward(hostPorts[0], Integer.valueOf(hostPorts[1]));
+            List<Long> approvalFlowInstanceIds = entry.getValue();
+            if (CollectionUtils.isEmpty(approvalFlowInstanceIds)) {
+                continue;
+            }
+            DispatchResponse response =
+                    requestDispatcher.forwardWithRequestBodyData(hostPorts[0], Integer.valueOf(hostPorts[1]),
+                            FlowInstanceApprovalReq.of(message, approvalFlowInstanceIds));
             flowInstanceDetailResps.addAll(ObjectUtils.defaultIfNull(
                     response.getContentByType(new TypeReference<ListResponse<FlowInstanceDetailResp>>() {}).getData()
                             .getContents(),

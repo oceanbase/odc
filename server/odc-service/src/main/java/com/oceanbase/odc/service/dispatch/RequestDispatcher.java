@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
+import java.rmi.UnexpectedException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -39,9 +40,11 @@ import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
@@ -74,6 +77,40 @@ public class RequestDispatcher {
 
     public DispatchResponse forward(@NonNull String ip, @NonNull Integer port) throws IOException {
         return forward(ip, port, requestProvider.getRequest(), requestProvider.getRequestBody());
+    }
+
+    public DispatchResponse forward(@NonNull String ip, @NonNull Integer port, ByteArrayOutputStream requestBody)
+            throws IOException {
+        return forward(ip, port, requestProvider.getRequest(), requestBody);
+    }
+
+    public DispatchResponse forwardWithRequestBodyData(@NonNull String ip, @NonNull Integer port,
+            @NonNull Object requestBodyData)
+            throws IOException {
+        HttpServletRequest request = requestProvider.getRequest();
+        if (request == null) {
+            throw new IllegalStateException("HttpServletRequest is missing");
+        }
+        String contentType = request.getContentType();
+        if (contentType == null) {
+            throw new IllegalArgumentException("Content-Type header is missing");
+        }
+        MediaType mediaType = MediaType.parseMediaType(contentType);
+        byte[] requestBodyBytes = null;
+        if (mediaType.includes(MediaType.APPLICATION_JSON)) {
+            requestBodyBytes = JsonUtils.toBytes(requestBodyData);
+        } else {
+            throw new UnsupportedEncodingException("Unsupported Content-Type: " + contentType);
+        }
+
+        if (requestBodyBytes != null) {
+            try (ByteArrayOutputStream bao = new ByteArrayOutputStream()) {
+                bao.write(requestBodyBytes);
+                bao.flush();
+                return forward(ip, port, bao);
+            }
+        }
+        throw new UnexpectedException("Request body bytes is missing");
     }
 
     public DispatchResponse forward(@NonNull String ip, @NonNull Integer port, HttpServletRequest request,
