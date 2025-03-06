@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.db.schema.syncer.object;
 
 import java.sql.Connection;
@@ -48,7 +47,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Component
 @Slf4j
-public class DBMVSyncer extends AbstractDBObjectSyncer<MVExtensionPoint>{
+public class DBMVSyncer extends AbstractDBObjectSyncer<MVExtensionPoint> {
 
     @Autowired
     private PermissionRepository permissionRepository;
@@ -66,9 +65,9 @@ public class DBMVSyncer extends AbstractDBObjectSyncer<MVExtensionPoint>{
 
     @Override
     Set<String> getLatestObjectNames(@NonNull MVExtensionPoint extensionPoint, @NonNull Connection connection,
-        @NonNull Database database) {
+            @NonNull Database database) {
         return extensionPoint.list(connection, database.getName()).stream().map(DBObjectIdentity::getName)
-            .collect(Collectors.toSet());
+                .collect(Collectors.toSet());
     }
 
     @Override
@@ -79,7 +78,7 @@ public class DBMVSyncer extends AbstractDBObjectSyncer<MVExtensionPoint>{
     @Override
     protected void preDelete(@NonNull Set<Long> toBeDeletedIds) {
         List<PermissionEntity> permissions =
-            permissionRepository.findByResourceTypeAndResourceIdIn(ResourceType.ODC_TABLE, toBeDeletedIds);
+                permissionRepository.findByResourceTypeAndResourceIdIn(ResourceType.ODC_TABLE, toBeDeletedIds);
         Set<Long> permissionIds = permissions.stream().map(PermissionEntity::getId).collect(Collectors.toSet());
         permissionRepository.deleteByIds(permissionIds);
         userPermissionRepository.deleteByPermissionIds(permissionIds);
@@ -89,10 +88,10 @@ public class DBMVSyncer extends AbstractDBObjectSyncer<MVExtensionPoint>{
     public boolean supports(@NonNull DialectType dialectType, @NonNull Connection connection) {
         try {
             InformationExtensionPoint point =
-                ConnectionPluginUtil.getInformationExtension(dialectType);
+                    ConnectionPluginUtil.getInformationExtension(dialectType);
             String databaseProductVersion = point.getDBVersion(connection);
             return versionDiffConfigService.isMVSupported(dialectType, databaseProductVersion)
-                   && getExtensionPoint(dialectType) != null;
+                    && getExtensionPoint(dialectType) != null;
         } catch (Exception e) {
             log.warn("check external table support failed", e);
             return false;

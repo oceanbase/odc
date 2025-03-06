@@ -176,8 +176,8 @@ public class VersionDiffConfigService {
         List<VersionDiffConfig> list = versionDiffConfigDAO.query(config);
         String minVersion = CollectionUtils.isNotEmpty(list) ? list.get(0).getMinVersion() : null;
         if ((dialectType == DialectType.OB_MYSQL || dialectType == DialectType.OB_ORACLE)
-            && minVersion != null
-            && VersionUtils.isGreaterThanOrEqualsTo(versionNumber, minVersion)) {
+                && minVersion != null
+                && VersionUtils.isGreaterThanOrEqualsTo(versionNumber, minVersion)) {
             return true;
         }
         return false;

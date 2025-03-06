@@ -15,7 +15,8 @@
  */
 package com.oceanbase.odc.server.web.controller.v2;
 
-import java.util.List;
+import java.sql.SQLException;
+import java.util.Collections;
 
 import javax.validation.Valid;
 
@@ -24,14 +25,19 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.common.model.ResourceIdentifier;
 import com.oceanbase.odc.service.common.model.ResourceSql;
+import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.OdcResult;
+import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.ResourceIDParser;
+import com.oceanbase.odc.service.connection.table.model.QueryTableParams;
+import com.oceanbase.odc.service.connection.table.model.Table;
 import com.oceanbase.odc.service.db.DBMaterializedViewService;
 import com.oceanbase.odc.service.db.model.AllTablesAndViews;
 import com.oceanbase.odc.service.db.model.DBViewResponse;
@@ -39,6 +45,7 @@ import com.oceanbase.odc.service.db.model.MVSyncDataReq;
 import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.odc.service.state.model.StateName;
 import com.oceanbase.odc.service.state.model.StatefulRoute;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBView;
 
 import io.swagger.annotations.ApiOperation;
@@ -62,11 +69,18 @@ public class DBMaterializedViewController {
     @ApiOperation(value = "list", notes = "obtain the list of materialized views. Sid example: sid:1000-1:d:db1")
     @RequestMapping(value = "/list/{sid:.*}", method = RequestMethod.GET)
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
-    public OdcResult<List<DBView>> list(@PathVariable String sid) {
+    public ListResponse<Table> list(@PathVariable String sid,
+            @RequestParam(name = "databaseId") Long databaseId,
+            @RequestParam(name = "includePermittedAction", required = false,
+                    defaultValue = "false") boolean includePermittedAction) throws SQLException, InterruptedException {
         // sid:1-1:d:database
         ResourceIdentifier i = ResourceIDParser.parse(sid);
-        return OdcResult
-                .ok(dbMaterializedViewService.list(sessionService.nullSafeGet(i.getSid(), true), i.getDatabase()));
+        QueryTableParams params = QueryTableParams.builder()
+                .databaseId(databaseId)
+                .types(Collections.singletonList(DBObjectType.MATERIALIZED_VIEW))
+                .includePermittedAction(includePermittedAction)
+                .build();
+        return Responses.list(dbMaterializedViewService.list(sessionService.nullSafeGet(i.getSid(), true), params));
     }
 
     @ApiOperation(value = "detail",

@@ -67,7 +67,7 @@ public class DBViewSyncer extends AbstractDBObjectSyncer<ViewExtensionPoint> {
     @Override
     protected void preDelete(@NonNull Set<Long> toBeDeletedIds) {
         List<PermissionEntity> permissions =
-            permissionRepository.findByResourceTypeAndResourceIdIn(ResourceType.ODC_TABLE, toBeDeletedIds);
+                permissionRepository.findByResourceTypeAndResourceIdIn(ResourceType.ODC_TABLE, toBeDeletedIds);
         Set<Long> permissionIds = permissions.stream().map(PermissionEntity::getId).collect(Collectors.toSet());
         permissionRepository.deleteByIds(permissionIds);
         userPermissionRepository.deleteByPermissionIds(permissionIds);

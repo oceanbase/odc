@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.db;
 
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -27,12 +29,21 @@ import org.springframework.stereotype.Service;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
+import com.oceanbase.odc.core.session.ConnectionSessionUtil;
+import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
 import com.oceanbase.odc.plugin.schema.api.MVExtensionPoint;
+import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.table.TableService;
+import com.oceanbase.odc.service.connection.table.model.QueryTableParams;
+import com.oceanbase.odc.service.connection.table.model.Table;
 import com.oceanbase.odc.service.db.model.DBViewResponse;
+import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBView;
 
 import lombok.NonNull;
@@ -55,19 +66,29 @@ public class DBMaterializedViewService {
     @Autowired
     private TableService tableService;
 
-    public List<DBView> list(ConnectionSession connectionSession, String dbName) {
-        Set<String> latestMVNames = connectionSession.getSyncJdbcExecutor(
-                ConnectionSessionConstants.BACKEND_DS_KEY)
-            .execute((ConnectionCallback<List<DBObjectIdentity>>) con -> getDBMVExtensionPoint(connectionSession)
-                .list(con, dbName)).stream().map(DBObjectIdentity::getName).collect(Collectors.toCollection(LinkedHashSet::new));
+    @Autowired
+    private DatabaseService databaseService;
 
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
 
-        return connectionSession.getSyncJdbcExecutor(
+    @Autowired
+    private DBObjectRepository dbObjectRepository;
+
+    public List<Table> list(ConnectionSession connectionSession, QueryTableParams params)
+        throws SQLException, InterruptedException {
+        Database database = databaseService.detail(params.getDatabaseId());
+        List<Table> tables = new ArrayList<>();
+        Set<String> latestTableNames = connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.BACKEND_DS_KEY)
                 .execute((ConnectionCallback<List<DBObjectIdentity>>) con -> getDBMVExtensionPoint(connectionSession)
-                        .list(con, dbName))
-                .stream().map(identity -> DBView.of(identity.getSchemaName(), identity.getName()))
-                .collect(Collectors.toList());
+                        .list(con, database.getName()))
+                .stream().map(DBObjectIdentity::getName).collect(Collectors.toCollection(LinkedHashSet::new));
+        ConnectionConfig connectionConfig = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(
+            connectionSession);
+        tableService.generateListAndSyncDBTablesByTableType(params, database, connectionConfig, tables,null,
+            DBObjectType.MATERIALIZED_VIEW,latestTableNames);
+        return tables;
     }
 
     public DBViewResponse detail(ConnectionSession connectionSession, String schemaName, String viewName) {
