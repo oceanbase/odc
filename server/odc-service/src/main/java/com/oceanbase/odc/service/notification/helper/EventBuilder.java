@@ -109,13 +109,6 @@ public class EventBuilder {
             "${com.oceanbase.odc.builtin-resource.regulation.approval.flow.config.auto-approval.name}";
     private static final String TICKET_URL_TEMPLATE =
             "%s/#/task?taskId=%s&taskType=%s&organizationId=%s";
-    /**
-     * eg: {environmentName: 测试, databaseName: a, databaseRemark: 备注，这是一个数据库，这是一个数据库}, {environmentName:
-     * 生产, databaseName: b, databaseRemark: 备注，这是一个数据库，这是一个数据库}, display: - 数据库: 【测试】a
-     * (备注，这是一个数据库，这是一个数据库), 【生产】b (备注，这是一个数据库，这是一个数据库) - 发起人: admin - 触发时间: 2025-01-17 06:41:09
-     */
-    private static final String ENVIRONMENT_DBNAME_DBREMARK_FORMATTER = "\n\t【%s】%s（%s）";
-
     @Autowired
     private ConnectionService connectionService;
     @Autowired
@@ -235,8 +228,8 @@ public class EventBuilder {
             String dbNames = parameter.getDatabases().stream().map(d -> {
                 String dbName = d.getName();
                 String dbRemark = decorateDatabaseRemark(dbId2DatabaseRemark.get(d.getId()));
-                return dbName + dbRemark;
-            }).collect(Collectors.joining(","));
+                return "\n\t" + dbName + dbRemark;
+            }).collect(Collectors.joining(StringUtils.EMPTY));
             labels.putIfNonNull(DATABASE_NAME, dbNames);
             projectId = parameter.getProject().getId();
             labels.putIfNonNull(PROJECT_ID, projectId);
@@ -251,8 +244,8 @@ public class EventBuilder {
             String dbNames = parameter.getTables().stream().map(d -> {
                 String dbName = d.getDatabaseName();
                 String dbRemark = decorateDatabaseRemark(dbId2DatabaseRemark.get(d.getDatabaseId()));
-                return dbName + dbRemark;
-            }).collect(Collectors.joining(","));
+                return "\n\t" + dbName + dbRemark;
+            }).collect(Collectors.joining(StringUtils.EMPTY));
             labels.putIfNonNull(DATABASE_NAME, dbNames);
             projectId = parameter.getProject().getId();
             labels.putIfNonNull(PROJECT_ID, projectId);
@@ -278,8 +271,8 @@ public class EventBuilder {
                         String dbName = String.format("【%s】%s", database.getEnvironment() == null ? ""
                                 : database.getEnvironment().getName(), database.getName());
                         String dbRemark = decorateDatabaseRemark(dbId2DatabaseRemark.get(database.getId()));
-                        return dbName + dbRemark;
-                    }).collect(Collectors.joining(",")));
+                        return "\n\t" + dbName + dbRemark;
+                    }).collect(Collectors.joining(StringUtils.EMPTY)));
             labels.putIfNonNull(PROJECT_ID, projectId);
         } else if (task.getTaskType() == TaskType.ALTER_SCHEDULE) {
             AlterScheduleParameters parameter = JsonUtils.fromJson(task.getParametersJson(),

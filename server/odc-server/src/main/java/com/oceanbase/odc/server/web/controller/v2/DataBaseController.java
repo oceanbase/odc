@@ -128,10 +128,10 @@ public class DataBaseController {
         return Responses.success(databaseService.modifyDatabasesOwners(projectId, req));
     }
 
-    @ApiOperation(value = "updateDatabaseRemark", notes = "add databases remark")
+    @ApiOperation(value = "updateDatabaseRemark", notes = "update databases remark")
     @RequestMapping(value = "/databases/remark", method = RequestMethod.PUT)
     public SuccessResponse<Boolean> modifyDatabaseRemark(@Valid @RequestBody TransferDatabasesReq req) {
         return Responses
-                .success(databaseService.modifyDatabaseRemark(req.getDatabaseIds().get(0), req.getDatabaseRemark()));
+                .success(databaseService.modifyDatabaseRemark(req.getDatabaseIds(), req.getDatabaseRemark()));
     }
 }
