@@ -15,7 +15,9 @@
  */
 package com.oceanbase.odc.service.db;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +28,7 @@ import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.plugin.schema.api.MVExtensionPoint;
+import com.oceanbase.odc.service.connection.table.TableService;
 import com.oceanbase.odc.service.db.model.DBViewResponse;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
@@ -49,7 +52,16 @@ public class DBMaterializedViewService {
     @Autowired
     private ConnectConsoleService consoleService;
 
+    @Autowired
+    private TableService tableService;
+
     public List<DBView> list(ConnectionSession connectionSession, String dbName) {
+        Set<String> latestMVNames = connectionSession.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+            .execute((ConnectionCallback<List<DBObjectIdentity>>) con -> getDBMVExtensionPoint(connectionSession)
+                .list(con, dbName)).stream().map(DBObjectIdentity::getName).collect(Collectors.toCollection(LinkedHashSet::new));
+
+
         return connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.BACKEND_DS_KEY)
                 .execute((ConnectionCallback<List<DBObjectIdentity>>) con -> getDBMVExtensionPoint(connectionSession)

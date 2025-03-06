@@ -50,6 +50,7 @@ import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
 import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
 import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
+import com.oceanbase.odc.plugin.schema.api.MVExtensionPoint;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
 import com.oceanbase.odc.plugin.schema.api.ViewExtensionPoint;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
@@ -60,6 +61,7 @@ import com.oceanbase.odc.service.connection.table.model.Table;
 import com.oceanbase.odc.service.db.schema.DBSchemaSyncService;
 import com.oceanbase.odc.service.db.schema.syncer.DBSchemaSyncer;
 import com.oceanbase.odc.service.db.schema.syncer.object.DBExternalTableSyncer;
+import com.oceanbase.odc.service.db.schema.syncer.object.DBMVSyncer;
 import com.oceanbase.odc.service.db.schema.syncer.object.DBTableSyncer;
 import com.oceanbase.odc.service.db.schema.syncer.object.DBViewSyncer;
 import com.oceanbase.odc.service.feature.VersionDiffConfigService;
@@ -106,6 +108,9 @@ public class TableService {
     private DBViewSyncer dbViewSyncer;
 
     @Autowired
+    private DBMVSyncer dbMVSyncer;
+
+    @Autowired
     private JdbcLockRegistry lockRegistry;
 
     @Autowired
@@ -138,19 +143,17 @@ public class TableService {
                 generateListAndSyncDBTablesByTableType(params, database, dataSource, tables, conn, DBObjectType.TABLE,
                         latestTableNames);
             }
-            if (types.contains(DBObjectType.EXTERNAL_TABLE)) {
-                InformationExtensionPoint point =
-                        ConnectionPluginUtil.getInformationExtension(dataSource.getDialectType());
-                String databaseProductVersion = point.getDBVersion(conn);
-                if (versionDiffConfigService.isExternalTableSupported(dataSource.getDialectType(),
-                        databaseProductVersion)) {
-                    Set<String> latestExternalTableNames =
-                            tableExtension.list(conn, database.getName(), DBObjectType.EXTERNAL_TABLE)
-                                    .stream().map(DBObjectIdentity::getName)
-                                    .collect(Collectors.toCollection(LinkedHashSet::new));
-                    generateListAndSyncDBTablesByTableType(params, database, dataSource, tables, conn,
-                            DBObjectType.EXTERNAL_TABLE, latestExternalTableNames);
-                }
+            InformationExtensionPoint point =
+                ConnectionPluginUtil.getInformationExtension(dataSource.getDialectType());
+            String version = point.getDBVersion(conn);
+            if (types.contains(DBObjectType.EXTERNAL_TABLE)
+                &&versionDiffConfigService.isExternalTableSupported(dataSource.getDialectType(), version)) {
+                Set<String> latestExternalTableNames =
+                        tableExtension.list(conn, database.getName(), DBObjectType.EXTERNAL_TABLE)
+                                .stream().map(DBObjectIdentity::getName)
+                                .collect(Collectors.toCollection(LinkedHashSet::new));
+                generateListAndSyncDBTablesByTableType(params, database, dataSource, tables, conn,
+                        DBObjectType.EXTERNAL_TABLE, latestExternalTableNames);
             }
             if (types.contains(DBObjectType.VIEW)) {
                 ViewExtensionPoint viewExtension = SchemaPluginUtil.getViewExtension(dataSource.getDialectType());
@@ -161,6 +164,17 @@ public class TableService {
                     generateListAndSyncDBTablesByTableType(params, database, dataSource, tables, conn,
                             DBObjectType.VIEW,
                             latestViewNames);
+                }
+            }
+            if (types.contains(DBObjectType.MATERIALIZED_VIEW)&&versionDiffConfigService.isMVSupported(dataSource.getDialectType(),version)){
+                MVExtensionPoint mvExtension = SchemaPluginUtil.getMVExtension(dataSource.getDialectType());
+                if (mvExtension != null) {
+                    Set<String> latestViewNames = mvExtension.list(conn, database.getName())
+                        .stream().map(DBObjectIdentity::getName)
+                        .collect(Collectors.toCollection(LinkedHashSet::new));
+                    generateListAndSyncDBTablesByTableType(params, database, dataSource, tables, conn,
+                        DBObjectType.MATERIALIZED_VIEW,
+                        latestViewNames);
                 }
             }
         }
@@ -203,6 +217,8 @@ public class TableService {
                 return dbExternalTableSyncer;
             case VIEW:
                 return dbViewSyncer;
+            case MATERIALIZED_VIEW:
+                return dbMVSyncer;
             default:
                 throw new IllegalArgumentException("Unsupported table type: " + tableType);
         }

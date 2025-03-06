@@ -267,5 +267,5 @@ insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min
 insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_kill_session','ORACLE','true','0',CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_value`=VALUES(`config_value`);
 
 -- supports ob materialized view
-insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_ materialized_view', 'OB_MYSQL', 'true', '4.3.2', CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
-insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_ materialized_view', 'OB_ORACLE', 'true', '4.3.2', CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_materialized_view', 'OB_MYSQL', 'true', '4.3.3', CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
+insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_materialized_view', 'OB_ORACLE', 'true', '4.3.3', CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
