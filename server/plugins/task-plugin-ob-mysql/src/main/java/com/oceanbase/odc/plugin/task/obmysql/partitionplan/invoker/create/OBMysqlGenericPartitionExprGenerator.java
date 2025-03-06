@@ -58,10 +58,10 @@ public class OBMysqlGenericPartitionExprGenerator implements GenericIncreasePart
     }
 
     private String process(Date date, GenericIncreaseGeneratorConfig config) {
-        if (config.getFieldType() != null && config.getFieldType() == FieldType.DATE_TIME) {
+        if (config.getFieldType() == FieldType.DATE_TIME) {
             SimpleDateFormat sdf = new SimpleDateFormat(config.getTimeFormat());
             return "'" + sdf.format(date) + "'";
-        } else if (config.getFieldType() != null && config.getFieldType() == FieldType.TIMESTAMP) {
+        } else if (config.getFieldType() == FieldType.TIMESTAMP) {
             return String.valueOf(date.getTime());
         } else {
             throw new IllegalArgumentException("Unsupported field type");
