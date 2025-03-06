@@ -168,10 +168,6 @@ public class EventBuilder {
         return event;
     }
 
-    public List<Event> ofApprovedTasks(List<TaskEntity> tasks, Long approver) {
-        return tasks.stream().map(t -> ofApprovedTask(t, approver)).collect(Collectors.toList());
-    }
-
     public Event ofRejectedTask(TaskEntity task, Long approver) {
         Event event = ofTask(task, TaskEvent.APPROVAL_REJECTION);
         if (approver == null) {

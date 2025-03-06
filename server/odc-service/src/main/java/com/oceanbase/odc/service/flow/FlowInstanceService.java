@@ -162,6 +162,7 @@ import com.oceanbase.odc.service.monitor.DefaultMeterName;
 import com.oceanbase.odc.service.monitor.MeterKey;
 import com.oceanbase.odc.service.monitor.MeterManager;
 import com.oceanbase.odc.service.notification.Broker;
+import com.oceanbase.odc.service.notification.NotificationEventTaskExecutor;
 import com.oceanbase.odc.service.notification.NotificationProperties;
 import com.oceanbase.odc.service.notification.helper.EventBuilder;
 import com.oceanbase.odc.service.notification.model.Event;
@@ -737,10 +738,12 @@ public class FlowInstanceService {
         }
         if (notificationProperties.isEnabled()) {
             try {
-                eventBuilder
-                        .ofApprovedTasks(listTaskByFlowInstanceIds(flowInstanceIds),
-                                authenticationFacade.currentUserId())
-                        .forEach(e -> broker.enqueueEvent(e));
+                for (Long flowInstanceId : flowInstanceIds) {
+                    NotificationEventTaskExecutor.getInstance().submit(String.valueOf(flowInstanceId), () -> {
+                        broker.enqueueEvent(eventBuilder.ofApprovedTask(getTaskByFlowInstanceId(flowInstanceId),
+                                authenticationFacade.currentUserId()));
+                    });
+                }
             } catch (Exception e) {
                 log.warn("Failed to enqueue events.", e);
             }
