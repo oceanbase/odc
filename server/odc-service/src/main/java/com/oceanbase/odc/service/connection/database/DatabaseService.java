@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -66,6 +67,7 @@ import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
@@ -511,7 +513,9 @@ public class DatabaseService {
             return false;
         }
         checkTransferable(entities, req);
-        checkIfCanAddDatabaseRemark(req.getProjectId());
+        if (StringUtils.isNotBlank(req.getDatabaseRemark())) {
+            checkIfCanUpsertDatabaseRemark(req.getProjectId());
+        }
         Set<Long> databaseIds = entities.stream().map(DatabaseEntity::getId).collect(Collectors.toSet());
         databaseRepository.setProjectIdByIdIn(req.getProjectId(), databaseIds);
         deleteDatabaseRelatedPermissionByIds(databaseIds);
@@ -914,14 +918,25 @@ public class DatabaseService {
 
     @SkipAuthorize("internal authorized")
     @Transactional(rollbackFor = Exception.class)
-    public boolean modifyDatabaseRemark(@NotNull Long databaseId, @NotNull @Size(min = 1, max = 100) String remark) {
-        DatabaseEntity db = databaseRepository.findById(databaseId).orElseThrow(
-                () -> new NotFoundException(ErrorCodes.NotFound, new Object[] {"Database", "ID", databaseId},
-                        "Database: " + databaseId + " does not exist"));
-        PreConditions.notNull(db.getProjectId(), "Project", "No projects have been added to the database");
-        checkIfCanAddDatabaseRemark(db.getProjectId());
-        db.setDatabaseRemark(remark);
-        databaseRepository.setDatabaseRemarkById(databaseId, remark);
+    public boolean modifyDatabaseRemark(@NotEmpty Collection<Long> databaseIds,
+            @NotNull @Size(min = 1, max = 100) String remark) {
+        Set<Long> ids = new HashSet<>(databaseIds);
+        List<Database> databases = listDatabasesByIds(ids);
+        Verify.equals(ids.size(), databases.size(), "Missing databases may exist");
+
+        for (Database database : databases) {
+            horizontalDataPermissionValidator.checkCurrentOrganization(database);
+            Permission requiredPermission = this.securityManager
+                    .getPermissionByActions(database.getDataSource(), Collections.singletonList("read"));
+            if (this.securityManager.isPermitted(requiredPermission)) {
+                if (database.getProject() == null) {
+                    throw new NotFoundException(ResourceType.ODC_PROJECT, "databaseId", database.getId());
+                }
+                checkIfCanUpsertDatabaseRemark(database.getProject());
+                database.setDatabaseRemark(remark);
+            }
+        }
+        databaseRepository.setDatabaseRemarkByIdIn(databaseIds, remark);
         return true;
     }
 
@@ -942,14 +957,20 @@ public class DatabaseService {
         }
     }
 
-    private void checkIfCanAddDatabaseRemark(@NonNull Long projectId) {
+    private void checkIfCanUpsertDatabaseRemark(@NonNull Long projectId) {
         Project project = projectService.getBasicSkipPermissionCheck(projectId);
-        if (!(project.getCreator() != null
-                && Objects.equals(authenticationFacade.currentUserId(), project.getCreator().getId()))) {
-            projectPermissionValidator.checkProjectRole(projectId,
-                    Arrays.asList(ResourceRoleName.OWNER, ResourceRoleName.DBA));
+        if (Objects.isNull(project)) {
+            throw new NotFoundException(ResourceType.ODC_PROJECT, "id", projectId);
         }
-        throw new AccessDeniedException(ErrorCodes.AccessDenied, "Cannot add database remark");
+        checkIfCanUpsertDatabaseRemark(project);
+    }
+
+    private void checkIfCanUpsertDatabaseRemark(@NonNull Project project) {
+        if (Objects.equals(authenticationFacade.currentUserId(), project.getCreator().getId())) {
+            return;
+        }
+        projectPermissionValidator.checkProjectRole(project.getId(),
+                Arrays.asList(ResourceRoleName.OWNER, ResourceRoleName.DBA));
     }
 
     private void checkTransferable(@NonNull Collection<DatabaseEntity> databases, @NonNull TransferDatabasesReq req) {

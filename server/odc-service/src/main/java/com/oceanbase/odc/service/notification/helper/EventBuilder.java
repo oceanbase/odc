@@ -235,8 +235,8 @@ public class EventBuilder {
             String dbNames = parameter.getDatabases().stream().map(d -> {
                 String dbName = d.getName();
                 String dbRemark = decorateDatabaseRemark(dbId2DatabaseRemark.get(d.getId()));
-                return dbName + dbRemark;
-            }).collect(Collectors.joining(","));
+                return "\n\t" + dbName + dbRemark;
+            }).collect(Collectors.joining(""));
             labels.putIfNonNull(DATABASE_NAME, dbNames);
             projectId = parameter.getProject().getId();
             labels.putIfNonNull(PROJECT_ID, projectId);
@@ -251,8 +251,8 @@ public class EventBuilder {
             String dbNames = parameter.getTables().stream().map(d -> {
                 String dbName = d.getDatabaseName();
                 String dbRemark = decorateDatabaseRemark(dbId2DatabaseRemark.get(d.getDatabaseId()));
-                return dbName + dbRemark;
-            }).collect(Collectors.joining(","));
+                return "\n\t" + dbName + dbRemark;
+            }).collect(Collectors.joining(""));
             labels.putIfNonNull(DATABASE_NAME, dbNames);
             projectId = parameter.getProject().getId();
             labels.putIfNonNull(PROJECT_ID, projectId);
@@ -278,8 +278,8 @@ public class EventBuilder {
                         String dbName = String.format("【%s】%s", database.getEnvironment() == null ? ""
                                 : database.getEnvironment().getName(), database.getName());
                         String dbRemark = decorateDatabaseRemark(dbId2DatabaseRemark.get(database.getId()));
-                        return dbName + dbRemark;
-                    }).collect(Collectors.joining(",")));
+                        return "\n\t" + dbName + dbRemark;
+                    }).collect(Collectors.joining("")));
             labels.putIfNonNull(PROJECT_ID, projectId);
         } else if (task.getTaskType() == TaskType.ALTER_SCHEDULE) {
             AlterScheduleParameters parameter = JsonUtils.fromJson(task.getParametersJson(),
