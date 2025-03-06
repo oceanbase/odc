@@ -46,6 +46,9 @@ public interface DatabaseRepository extends JpaRepository<DatabaseEntity, Long>,
 
     List<DatabaseEntity> findByProjectIdAndExisted(Long projectId, Boolean existed);
 
+    List<DatabaseEntity> findByProjectIdInAndExistedAndObjectSyncStatusNot(Collection<Long> projectIds, Boolean existed,
+            DBObjectSyncStatus dbObjectSyncStatus);
+
     List<DatabaseEntity> findByIdIn(Collection<Long> ids);
 
     List<DatabaseEntity> findByNameIn(Collection<String> name);
