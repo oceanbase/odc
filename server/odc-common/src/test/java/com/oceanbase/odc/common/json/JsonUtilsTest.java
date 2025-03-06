@@ -200,7 +200,7 @@ public class JsonUtilsTest {
     }
 
     @Test
-    public void toJsonBytes() {
+    public void toJsonBytes() throws IOException {
         MockObj mockObj = new MockObj();
         mockObj.setList(Arrays.asList(1L, 2L, 3L));
         mockObj.setMsg("test");
@@ -212,7 +212,6 @@ public class JsonUtilsTest {
             MockObj deserializedMockObj = objectMapper.readValue(bos.toByteArray(), MockObj.class);
             Assert.assertEquals(deserializedMockObj.getMsg(), mockObj.getMsg());
             Assert.assertEquals(deserializedMockObj.getList(), mockObj.getList());
-        } catch (IOException ignored) {
         }
     }
 
@@ -241,7 +240,7 @@ public class JsonUtilsTest {
     }
 
     @Data
-    public static class MockObj {
+    private static class MockObj {
 
         private Collection<Long> list;
 

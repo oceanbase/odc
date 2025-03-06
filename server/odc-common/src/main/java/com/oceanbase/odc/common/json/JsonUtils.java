@@ -180,6 +180,7 @@ public class JsonUtils {
         try {
             return OBJECT_MAPPER.writeValueAsBytes(obj);
         } catch (JsonProcessingException e) {
+            log.warn("parses obj to bytes failed, reason = {}", e.getMessage());
             return null;
         }
     }

@@ -84,9 +84,26 @@ public class RequestDispatcher {
         return forward(ip, port, requestProvider.getRequest(), requestBody);
     }
 
-    public DispatchResponse forwardWithRequestBodyData(@NonNull String ip, @NonNull Integer port,
-            @NonNull Object requestBodyData)
+    public DispatchResponse forward(@NonNull String ip, @NonNull Integer port, HttpServletRequest request,
+            ByteArrayOutputStream requestBody) throws IOException {
+        String hostUrl = getHostUrl(ip, port);
+        return forward(hostUrl, request, requestBody);
+    }
+
+    private DispatchResponse forward(String hostUrl, HttpServletRequest request, ByteArrayOutputStream requestBody)
             throws IOException {
+        Verify.notNull(request, "HttpServletRequest");
+        String requestUrl = getRequestUrlByRequest(request);
+        HttpMethod method = HttpMethod.valueOf(request.getMethod());
+        HttpHeaders headers = getRequestHeaders(request);
+        if (requestBody == null) {
+            return forward(hostUrl, method, requestUrl, headers, null);
+        }
+        return forward(hostUrl, method, requestUrl, headers, requestBody.toByteArray());
+    }
+
+    public DispatchResponse forwardWithRequestBodyData(@NonNull String ip, @NonNull Integer port,
+            @NonNull Object requestBodyData) throws IOException {
         HttpServletRequest request = requestProvider.getRequest();
         if (request == null) {
             throw new IllegalStateException("HttpServletRequest is missing");
@@ -111,24 +128,6 @@ public class RequestDispatcher {
             }
         }
         throw new UnexpectedException("Request body bytes is missing");
-    }
-
-    public DispatchResponse forward(@NonNull String ip, @NonNull Integer port, HttpServletRequest request,
-            ByteArrayOutputStream requestBody) throws IOException {
-        String hostUrl = getHostUrl(ip, port);
-        return forward(hostUrl, request, requestBody);
-    }
-
-    private DispatchResponse forward(String hostUrl, HttpServletRequest request, ByteArrayOutputStream requestBody)
-            throws IOException {
-        Verify.notNull(request, "HttpServletRequest");
-        String requestUrl = getRequestUrlByRequest(request);
-        HttpMethod method = HttpMethod.valueOf(request.getMethod());
-        HttpHeaders headers = getRequestHeaders(request);
-        if (requestBody == null) {
-            return forward(hostUrl, method, requestUrl, headers, null);
-        }
-        return forward(hostUrl, method, requestUrl, headers, requestBody.toByteArray());
     }
 
     public String getHostUrl(@NonNull String ip, @NonNull Integer port) {

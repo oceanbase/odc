@@ -704,7 +704,7 @@ public class FlowInstanceService {
                 .collect(Collectors.toMap(ServiceTaskInstanceEntity::getTargetTaskId,
                         ServiceTaskInstanceEntity::getFlowInstanceId, (exist, value) -> exist));
 
-        Map<String, List<Long>> HostPortKey2FlowInstanceId = new HashMap<>();
+        Map<String, List<Long>> hostPortKey2FlowInstanceId = new HashMap<>();
         List<TaskEntity> tasksNotToForward = new ArrayList<>();
 
         for (TaskEntity taskEntity : taskEntities) {
@@ -713,7 +713,7 @@ public class FlowInstanceService {
                 String hostPortKey = executorInfo.getHost() + ":" + executorInfo.getPort();
                 Long flowInstanceId = taskId2FlowInstanceId.get(taskEntity.getId());
                 if (flowInstanceId != null) {
-                    HostPortKey2FlowInstanceId.computeIfAbsent(hostPortKey, k -> new ArrayList<>()).add(flowInstanceId);
+                    hostPortKey2FlowInstanceId.computeIfAbsent(hostPortKey, k -> new ArrayList<>()).add(flowInstanceId);
                 }
             } else {
                 tasksNotToForward.add(taskEntity);
@@ -721,7 +721,7 @@ public class FlowInstanceService {
         }
 
         List<FlowInstanceDetailResp> flowInstanceDetailResps = new ArrayList<>();
-        for (Entry<String, List<Long>> entry : HostPortKey2FlowInstanceId.entrySet()) {
+        for (Entry<String, List<Long>> entry : hostPortKey2FlowInstanceId.entrySet()) {
             String[] hostPorts = entry.getKey().split(":");
             List<Long> approvalFlowInstanceIds = entry.getValue();
             if (CollectionUtils.isEmpty(approvalFlowInstanceIds)) {
