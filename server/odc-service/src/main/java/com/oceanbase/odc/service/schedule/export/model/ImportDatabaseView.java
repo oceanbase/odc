@@ -13,26 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.exporter.model;
+package com.oceanbase.odc.service.schedule.export.model;
 
-import java.io.File;
+import javax.annotation.Nullable;
 
-import lombok.AllArgsConstructor;
+import com.oceanbase.odc.core.shared.constant.ConnectType;
+
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString.Exclude;
 
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class ExportedFile {
+public class ImportDatabaseView {
+    private String cloudProvider;
+    private ConnectType type;
+    private String instanceId;
+    private String instanceNickName;
+    private String tenantId;
+    private String host;
+    private Integer port;
+    private String username;
+    // export datasource name
+    private String name;
+    // matched Datasource name, null means not matched
+    @Nullable
+    private String matchedDatasourceName;
 
-    private File file;
-
-    /**
-     * AES secret， null means decrypt data
-     */
-    @Exclude
-    private String secret;
-
+    private String databaseName;
 }

@@ -26,9 +26,12 @@ public final class ExportConstants {
 
 
 
-    public static final String ARCHIVE_TYPE = "archiveType";
+    public static final String EXPORT_TYPE = "exportType";
+    public static final String SCHEDULE_TYPE = "scheduleType";
 
     public static final String SCHEDULE_ARCHIVE_TYPE = "scheduleArchive";
+
+    public static final String SIGNATURE = "signature";
 
     /**
      * filePath, include filename and filetype

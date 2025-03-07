@@ -13,14 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.archiverist.model;
+package com.oceanbase.odc.service.schedule.export.model;
 
 import com.oceanbase.odc.common.security.EncryptAlgorithm;
+import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.exporter.model.Encryptable;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Data
@@ -28,6 +30,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ExportedDataSource implements Encryptable {
     private String cloudProvider;
+    private String region;
+    private ConnectType type;
+    @EqualsAndHashCode.Exclude
+    private String name;
     private String instanceId;
     private String tenantId;
     private String host;
@@ -36,7 +42,9 @@ public class ExportedDataSource implements Encryptable {
     private String password;
 
     public static ExportedDataSource fromConnectionConfig(ConnectionConfig dataSource) {
-        return new ExportedDataSource(dataSource.getCloudProvider(), dataSource.getClusterName(),
+        return new ExportedDataSource(dataSource.getCloudProvider(), dataSource.getRegion(), dataSource.getType(),
+                dataSource.getName(),
+                dataSource.getClusterName(),
                 dataSource.getTenantName(),
                 dataSource.getHost(), dataSource.getPort(), dataSource.getUsername(), dataSource.getPassword());
     }

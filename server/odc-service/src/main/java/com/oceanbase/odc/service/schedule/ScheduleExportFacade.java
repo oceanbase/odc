@@ -15,10 +15,24 @@
  */
 package com.oceanbase.odc.service.schedule;
 
+import java.util.List;
+
 import com.oceanbase.odc.service.exporter.model.ExportProperties;
+import com.oceanbase.odc.service.schedule.export.exception.DatabaseNonExistException;
+import com.oceanbase.odc.service.schedule.export.model.ExportedDatabase;
+import com.oceanbase.odc.service.schedule.export.model.ImportScheduleTaskView;
+import com.oceanbase.odc.service.schedule.export.model.ScheduleRowPreviewDto;
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 
 public interface ScheduleExportFacade {
 
     void adapt(ExportProperties exportProperties);
+
+    List<ImportScheduleTaskView> preview(ScheduleType scheduleType, Long projectId, ExportProperties exportProperties,
+            List<ScheduleRowPreviewDto> dtos);
+
+
+    Long getOrCreateDatabaseId(Long projectId, ExportedDatabase exportedDatabase) throws DatabaseNonExistException;
+
 
 }
