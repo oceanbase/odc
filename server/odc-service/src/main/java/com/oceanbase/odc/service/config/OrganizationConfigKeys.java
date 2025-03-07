@@ -20,8 +20,6 @@ public class OrganizationConfigKeys {
 
     public static final String DEFAULT_QUERY_NUMBER = "odc.sqlexecute.default.queryNumber";
 
-    public static final String DEFAULT_UPLOAD_KEY_FILE = "odc.security.default.uploadKeyFile";
-
     public static final String DEFAULT_ROLLBACK_PLAN = "odc.task.default.rollbackPlan";
 
     public static final String DEFAULT_TASK_DESCRIPTION_PROMPT = "odc.task.default.taskDescriptionPrompt";

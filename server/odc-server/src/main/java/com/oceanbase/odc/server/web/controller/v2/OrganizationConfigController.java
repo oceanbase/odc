@@ -55,13 +55,12 @@ public class OrganizationConfigController {
     /**
      * Get organization configurations
      *
-     * @param organizationId organization id
      * @return configuration listResponse
      */
     @ApiOperation(value = "listCurrentOrganizationConfigs",
             notes = "get organization configuration in present organization")
     @RequestMapping(value = "/configurations", method = RequestMethod.GET)
-    public ListResponse<Configuration> listCurrentOrganizationConfigs(Long organizationId) {
+    public ListResponse<Configuration> listCurrentOrganizationConfigs() {
         throw new NotImplementedException("not implemented");
     }
 
@@ -75,21 +74,6 @@ public class OrganizationConfigController {
             notes = "batch update organization configurations in present organization")
     @RequestMapping(value = "/configurations", method = RequestMethod.PATCH)
     public ListResponse<Configuration> updateOrganizationConfigs(@RequestBody List<Configuration> configurations) {
-        throw new NotImplementedException("not implemented");
-    }
-
-    /**
-     * Update organization configuration
-     *
-     * @param key key of configuration
-     * @param configuration configuration to update
-     * @return configuration success response
-     */
-    @ApiOperation(value = "updateOrganizationConfig",
-            notes = "update organization configuration in present organization")
-    @RequestMapping(value = "/configurations/{key:[A-Za-z0-9.]+}", method = RequestMethod.PUT)
-    public SuccessResponse<Configuration> updateOrganizationConfig(@PathVariable("key") String key,
-            @RequestBody Configuration configuration) {
         throw new NotImplementedException("not implemented");
     }
 
