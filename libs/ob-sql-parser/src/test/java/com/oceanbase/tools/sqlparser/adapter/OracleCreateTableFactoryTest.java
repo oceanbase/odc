@@ -72,6 +72,40 @@ import com.oceanbase.tools.sqlparser.statement.select.oracle.FetchType;
 public class OracleCreateTableFactoryTest {
 
     @Test
+    public void generate_enableMacroBlockBloomFilterEqualsFalse_generateSucceed() {
+        Create_table_stmtContext context = getCreateTableContext("CREATE TABLE \"EMPLOYEES\" (\n" +
+                "  \"EMPLOYEE_ID\" NUMBER(10),\n" +
+                "  \"FIRST_NAME\" VARCHAR2(50),\n" +
+                "  \"LAST_NAME\" VARCHAR2(50),\n" +
+                "  \"HIRE_DATE\" DATE,\n" +
+                "  \"SALARY\" NUMBER(10,2),\n" +
+                "  PRIMARY KEY (\"EMPLOYEE_ID\")\n" +
+                ") COMPRESS FOR ARCHIVE REPLICA_NUM = 1 BLOCK_SIZE = 16384 USE_BLOOM_FILTER = FALSE " +
+                "ENABLE_MACRO_BLOCK_BLOOM_FILTER = FALSE TABLET_SIZE = 134217728 PCTFREE = 0 ");
+        StatementFactory<CreateTable> factory = new OracleCreateTableFactory(context);
+        CreateTable actual = factory.generate();
+        Assert.assertEquals(Boolean.FALSE,
+                actual.getTableOptions().getEnableMacroBlockBloomFilter());
+    }
+
+    @Test
+    public void generate_enableMacroBlockBloomFilterEqualsTrue_generateSucceed() {
+        Create_table_stmtContext context = getCreateTableContext("CREATE TABLE \"EMPLOYEES\" (\n" +
+                "  \"EMPLOYEE_ID\" NUMBER(10),\n" +
+                "  \"FIRST_NAME\" VARCHAR2(50),\n" +
+                "  \"LAST_NAME\" VARCHAR2(50),\n" +
+                "  \"HIRE_DATE\" DATE,\n" +
+                "  \"SALARY\" NUMBER(10,2),\n" +
+                "  PRIMARY KEY (\"EMPLOYEE_ID\")\n" +
+                ") COMPRESS FOR ARCHIVE REPLICA_NUM = 1 BLOCK_SIZE = 16384 USE_BLOOM_FILTER = FALSE " +
+                "ENABLE_MACRO_BLOCK_BLOOM_FILTER = TRUE TABLET_SIZE = 134217728 PCTFREE = 0 ");
+        StatementFactory<CreateTable> factory = new OracleCreateTableFactory(context);
+        CreateTable actual = factory.generate();
+        Assert.assertEquals(Boolean.TRUE,
+                actual.getTableOptions().getEnableMacroBlockBloomFilter());
+    }
+
+    @Test
     public void generate_onlyColumnDefExists_generateSucceed() {
         Create_table_stmtContext context = getCreateTableContext("create table any_schema.abcd (id varchar(64))");
         StatementFactory<CreateTable> factory = new OracleCreateTableFactory(context);
