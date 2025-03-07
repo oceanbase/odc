@@ -67,7 +67,7 @@ public class DBMaterializedViewController {
     @Autowired
     private ConnectSessionService sessionService;
 
-    @ApiOperation(value = "list", notes = "obtain the list of materialized views. Sid example: sid:1000-1:d:db1")
+    @ApiOperation(value = "list", notes = "obtain the list of materialized views. Sid example: sid:1000-1")
     @RequestMapping(value = "/list/{sid:.*}", method = RequestMethod.GET)
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public ListResponse<Table> list(@PathVariable String sid,
@@ -75,7 +75,7 @@ public class DBMaterializedViewController {
             @RequestParam(name = "includePermittedAction", required = false,
                     defaultValue = "false") boolean includePermittedAction)
             throws SQLException, InterruptedException {
-        // sid:1-1:d:database
+        // sid:1000-1
         ResourceIdentifier i = ResourceIDParser.parse(sid);
         QueryTableParams params = QueryTableParams.builder()
                 .databaseId(databaseId)
@@ -97,10 +97,11 @@ public class DBMaterializedViewController {
     }
 
     @ApiOperation(value = "listBases",
-            notes = "obtain list of base tables under the current data source that are used to create the materialized view. Sid example: sid:1000-1:d:db1")
+            notes = "obtain list of base tables under the current data source that are used to create the materialized view. Sid example: sid:1000-1")
     @RequestMapping(value = "/listAllBases/{sid:.*}", method = RequestMethod.GET)
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<AllTablesAndViews> listAllBases(@PathVariable String sid, @RequestParam String name) {
+        // sid:1000-1 name:""
         return OdcResult.ok(dbMaterializedViewService.listAllBases(
                 sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), name));
     }

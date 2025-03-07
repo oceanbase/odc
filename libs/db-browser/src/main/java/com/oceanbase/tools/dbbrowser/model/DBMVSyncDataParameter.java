@@ -26,8 +26,6 @@ import lombok.NoArgsConstructor;
  * @since: 4.3.4
  */
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
 public class DBMVSyncDataParameter {
 
     private String databaseName;
