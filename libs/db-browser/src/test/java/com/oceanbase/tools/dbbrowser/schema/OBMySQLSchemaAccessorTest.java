@@ -115,6 +115,14 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void listAllMVs_Success() {
+        if (accessor.getClass().equals(OBMySQLSchemaAccessor.class)) {
+            List<DBObjectIdentity> dbObjectIdentities = accessor.listAllMVs("");
+            Assert.assertTrue(dbObjectIdentities.size() > 0);
+        }
+    }
+
+    @Test
     public void listMVs_Success() {
         if (accessor.getClass().equals(OBMySQLSchemaAccessor.class)) {
             List<DBObjectIdentity> dbObjectIdentities = accessor.listMVs(getOBMySQLDataBaseName());

@@ -120,21 +120,21 @@ public class DBMaterializedViewService {
                     : new DatabaseAndTables();
         }).filter(item -> item.getDatabaseName() != null)
                 .sorted(Comparator.comparing(DatabaseAndTables::getDatabaseName)).collect(Collectors.toList());
-        List<DBObjectIdentity> viewsIdentities = accessor.listAllMVs(tableNameLike);
-        Map<String, List<String>> schema2views = new HashMap<>();
-        viewsIdentities.forEach(item -> {
-            List<String> views = schema2views.computeIfAbsent(item.getSchemaName(), t -> new ArrayList<>());
+        List<DBObjectIdentity> mvIdentities = accessor.listAllMVs(tableNameLike);
+        Map<String, List<String>> schema2mvs = new HashMap<>();
+        mvIdentities.forEach(item -> {
+            List<String> views = schema2mvs.computeIfAbsent(item.getSchemaName(), t -> new ArrayList<>());
             views.add(item.getName());
         });
-        List<DatabaseAndViews> views = new ArrayList<>();
-        schema2views.forEach((schema, viewNames) -> {
+        List<DatabaseAndViews> mvs = new ArrayList<>();
+        schema2mvs.forEach((schema, viewNames) -> {
             DatabaseAndViews view = new DatabaseAndViews();
             view.setDatabaseName(schema);
             view.setViews(viewNames);
-            views.add(view);
+            mvs.add(view);
         });
         allResult.setTables(tables);
-        allResult.setViews(views);
+        allResult.setViews(mvs);
         return allResult;
     }
 

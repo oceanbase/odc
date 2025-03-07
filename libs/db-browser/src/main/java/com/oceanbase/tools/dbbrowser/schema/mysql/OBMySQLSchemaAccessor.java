@@ -86,10 +86,9 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     public List<DBObjectIdentity> listAllMVs(String viewNameLike) {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
         sb.append(
-                "select TABLE_SCHEMA as schema_name,TABLE_NAME as name, 'VIEW' as type from information_schema.views "
-                        + "where TABLE_NAME LIKE ")
+                "select OWNER AS schema_name, MVIEW_NAME AS name,'MATERIALIZED_VIEW_LOG' AS type FROM OCEANBASE.DBA_MVIEWS WHERE MVIEW_NAME LIKE ")
                 .value('%' + viewNameLike + '%')
-                .append(" order by name asc;");
+                .append(" ORDER BY name ASC;");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
     }
 
