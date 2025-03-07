@@ -150,6 +150,14 @@ public class FlowInstanceController {
         return Responses.single(flowInstanceService.approve(id, flowInstanceApprovalReq.getComment(), false));
     }
 
+    @ApiOperation(value = "batchApproveFlowInstance", notes = "批量审批通过指定流程实例")
+    @RequestMapping(value = "/batchApprove", method = RequestMethod.POST)
+    public ListResponse<FlowInstanceDetailResp> batchApproveFlowInstance(
+            @RequestBody FlowInstanceApprovalReq flowInstanceApprovalReq) throws IOException {
+        return Responses.list(flowInstanceService.batchApprove(flowInstanceApprovalReq.getApprovalFlowInstanceIds(),
+                flowInstanceApprovalReq.getComment(), false));
+    }
+
     @ApiOperation(value = "rejectFlowInstance", notes = "审批拒绝指定流程实例")
     @RequestMapping(value = "/{id:[\\d]+}/reject", method = RequestMethod.POST)
     public SuccessResponse<FlowInstanceDetailResp> rejectFlowInstance(@PathVariable Long id,
