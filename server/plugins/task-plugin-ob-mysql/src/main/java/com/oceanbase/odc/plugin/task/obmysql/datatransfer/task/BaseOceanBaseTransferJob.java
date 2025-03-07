@@ -17,9 +17,6 @@
 package com.oceanbase.odc.plugin.task.obmysql.datatransfer.task;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
@@ -27,8 +24,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -65,9 +60,8 @@ import lombok.NonNull;
 public abstract class BaseOceanBaseTransferJob<T extends BaseParameter> implements DataTransferJob {
     private static final Logger LOGGER = LoggerFactory.getLogger("DataTransferLogger");
     private static final String HADOOP_PATH =
-            Paths.get(MoreObjects.firstNonNull(SystemUtils.getEnvOrProperty("file.storage.dir"), "./data"),
-                    "data_transfer/hadoop").toString();
-    private static final String HADOOP_VERSION = "3.3.6";
+            Paths.get(MoreObjects.firstNonNull(SystemUtils.getEnvOrProperty("libraries.others.file.path"), ""),
+                    "hadoop-3.3.6").toString();
 
     protected final T parameter;
     protected final boolean transferData;
@@ -92,43 +86,6 @@ public abstract class BaseOceanBaseTransferJob<T extends BaseParameter> implemen
         totalTaskCount += transferData ? 1 : 0;
         totalTaskCount += transferSchema ? 1 : 0;
         this.sleepInterval = 500;
-    }
-
-    private synchronized static void prepareHadoopEnv()
-            throws IOException {
-        if (!SystemUtils.isOnWindows()) {
-            return;
-        }
-        String hadoopPath = HADOOP_PATH + "/hadoop-" + HADOOP_VERSION;
-        System.setProperty("hadoop.home.dir", hadoopPath);
-        if (new File(hadoopPath).exists()) {
-            return;
-        }
-        try (InputStream resource =
-                BaseOceanBaseTransferJob.class.getResourceAsStream("/hadoop-" + HADOOP_VERSION + ".zip");
-                ZipInputStream zis = new ZipInputStream(resource)) {
-            byte[] buffer = new byte[1024];
-            ZipEntry entry;
-            while ((entry = zis.getNextEntry()) != null) {
-                File file = new File(HADOOP_PATH, entry.getName());
-                if (entry.isDirectory()) {
-                    file.mkdirs();
-                } else {
-                    File parent = file.getParentFile();
-                    if (!parent.exists()) {
-                        parent.mkdirs();
-                    }
-                    try (FileOutputStream fos = new FileOutputStream(file)) {
-                        int len;
-                        while ((len = zis.read(buffer)) > 0) {
-                            fos.write(buffer, 0, len);
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            throw new IOException("Failed to unzip hadoop resource", e);
-        }
     }
 
     protected abstract TaskContext startTransferData() throws Exception;
@@ -199,7 +156,9 @@ public abstract class BaseOceanBaseTransferJob<T extends BaseParameter> implemen
         try {
             status = TaskStatus.RUNNING;
             System.clearProperty("logging.level");
-            prepareHadoopEnv();
+            if (SystemUtils.isOnWindows()) {
+                checkHadoopPath();
+            }
             String fileSuffix = parameter.getFileSuffix();
             if (transferSchema) {
                 LOGGER.info("Begin transferring schema");
@@ -379,6 +338,14 @@ public abstract class BaseOceanBaseTransferJob<T extends BaseParameter> implemen
     private boolean isCreateExistsObjectError(String error) {
         return StringUtils.containsIgnoreCase(error, "already exist") ||
                 StringUtils.containsIgnoreCase(error, "already used by an existing object");
+    }
+
+    private void checkHadoopPath() {
+        File hadoop = new File(HADOOP_PATH);
+        if (!hadoop.exists()) {
+            throw new IllegalArgumentException("HADOOP_HOME is not set or not exists");
+        }
+        System.setProperty("hadoop.home.dir", hadoop.getAbsolutePath());
     }
 
 }
