@@ -121,6 +121,23 @@ final class TaskContainer<RESULT> implements ExceptionListener {
         }
     }
 
+    public boolean timeout() {
+        try {
+            if (getStatus().isTerminated()) {
+                log.warn("Task is already finished and cannot be timeout, id={}, status={}.", getJobId(), getStatus());
+            } else {
+                task.stop();
+                updateStatus(TaskStatus.EXEC_TIMEOUT);
+            }
+            return true;
+        } catch (Throwable e) {
+            log.warn("Stop task failed, id={}", getJobId(), e);
+            return false;
+        } finally {
+            close();
+        }
+    }
+
     public boolean modify(Map<String, String> jobParameters) {
         if (Objects.isNull(jobParameters) || jobParameters.isEmpty()) {
             log.warn("Job parameter cannot be null, id={}", getJobId());
