@@ -24,7 +24,7 @@ import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.NumberIncreasePartitionExprGenerator;
-import com.oceanbase.odc.plugin.task.api.partitionplan.model.GenericIncreaseGeneratorConfig;
+import com.oceanbase.odc.plugin.task.api.partitionplan.model.NumberIncreaseGeneratorConfig;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.OBMySQLAutoPartitionExtensionPoint;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.OBMySQLExprCalculator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator;
@@ -43,7 +43,7 @@ public class OBMySQLNumberIncreasePartitionExprGenerator implements NumberIncrea
     @Override
     public List<String> generate(@NonNull Connection connection,
             @NonNull DBTable dbTable, @NonNull String partitionKey, @NonNull Integer generateCount,
-            @NonNull GenericIncreaseGeneratorConfig config) throws Exception {
+            @NonNull NumberIncreaseGeneratorConfig config) throws Exception {
         String numberInterval = config.getNumberInterval();
         DBTablePartitionOption option = dbTable.getPartition().getPartitionOption();
         String lastPartiValue;

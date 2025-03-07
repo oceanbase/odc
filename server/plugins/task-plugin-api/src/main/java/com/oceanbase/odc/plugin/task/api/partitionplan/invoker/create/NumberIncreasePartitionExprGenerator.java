@@ -19,7 +19,7 @@ import java.sql.Connection;
 import java.util.List;
 import java.util.Map;
 
-import com.oceanbase.odc.plugin.task.api.partitionplan.model.GenericIncreaseGeneratorConfig;
+import com.oceanbase.odc.plugin.task.api.partitionplan.model.NumberIncreaseGeneratorConfig;
 import com.oceanbase.odc.plugin.task.api.partitionplan.util.ParameterUtil;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 
@@ -31,7 +31,7 @@ public interface NumberIncreasePartitionExprGenerator extends PartitionExprGener
 
     List<String> generate(@NonNull Connection connection, @NonNull DBTable dbTable,
             @NonNull String partitionKey, @NonNull Integer generateCount,
-            @NonNull GenericIncreaseGeneratorConfig config) throws Exception;
+            @NonNull NumberIncreaseGeneratorConfig config) throws Exception;
 
     @Override
     default String getName() {
@@ -44,7 +44,7 @@ public interface NumberIncreasePartitionExprGenerator extends PartitionExprGener
             @NonNull Map<String, Object> parameters) throws Exception {
         return generate(connection, dbTable, partitionKey, generateCount,
                 ParameterUtil.nullSafeExtract(parameters, GENERATOR_PARAMETER_KEY,
-                        GenericIncreaseGeneratorConfig.class));
+                        NumberIncreaseGeneratorConfig.class));
     }
 
 }

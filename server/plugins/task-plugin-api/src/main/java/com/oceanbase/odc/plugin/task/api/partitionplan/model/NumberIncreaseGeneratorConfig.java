@@ -22,9 +22,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class GenericIncreaseGeneratorConfig extends TimeIncreaseGeneratorConfig {
-
-    private String fieldType;
+public class NumberIncreaseGeneratorConfig extends TimeIncreaseGeneratorConfig {
 
     private String numberInterval;
 
