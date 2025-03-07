@@ -36,6 +36,7 @@ import com.oceanbase.odc.service.common.response.OdcResult;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.ResourceIDParser;
+import com.oceanbase.odc.service.common.util.SidUtils;
 import com.oceanbase.odc.service.connection.table.model.QueryTableParams;
 import com.oceanbase.odc.service.connection.table.model.Table;
 import com.oceanbase.odc.service.db.DBMaterializedViewService;
@@ -97,10 +98,11 @@ public class DBMaterializedViewController {
 
     @ApiOperation(value = "listBases",
             notes = "obtain list of base tables under the current data source that are used to create the materialized view. Sid example: sid:1000-1:d:db1")
-    @RequestMapping(value = "/listBases/{sid:.*}", method = RequestMethod.GET)
+    @RequestMapping(value = "/listAllBases/{sid:.*}", method = RequestMethod.GET)
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
-    public OdcResult<AllTablesAndViews> listBases(@PathVariable String sid) {
-        throw new NotImplementedException("not implemented");
+    public OdcResult<AllTablesAndViews> listAllBases(@PathVariable String sid,@RequestParam String name) {
+        return OdcResult.ok(dbMaterializedViewService.listAllBases(
+            sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), name));
     }
 
     @ApiOperation(value = "getCreateSql",

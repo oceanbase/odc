@@ -36,7 +36,6 @@ import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
-import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
 import com.oceanbase.odc.plugin.schema.api.MVExtensionPoint;
@@ -111,14 +110,6 @@ public class DBMaterializedViewService {
         AllTablesAndViews allResult = new AllTablesAndViews();
         DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
         List<DatabaseAndTables> tables = new ArrayList<>();
-        if (connectionSession.getConnectType().equals(ConnectType.ODP_SHARDING_OB_MYSQL)) {
-            List<String> names = accessor.showTablesLike(null, tableNameLike).stream()
-                .filter(name -> !StringUtils.endsWithIgnoreCase(name, OdcConstants.VALIDATE_DDL_TABLE_POSTFIX))
-                .collect(Collectors.toList());
-            DatabaseAndTables databaseAndTables = new DatabaseAndTables(
-                ConnectionSessionUtil.getCurrentSchema(connectionSession), names);
-            tables.add(databaseAndTables);
-        } else {
             List<String> databases = accessor.showDatabases();
             tables = databases.stream().map(schema -> {
                     List<String> tablesLike = accessor.showTablesLike(schema, tableNameLike).stream()
@@ -129,9 +120,7 @@ public class DBMaterializedViewService {
                         : new DatabaseAndTables();
                 }).filter(item -> item.getDatabaseName() != null)
                 .sorted(Comparator.comparing(DatabaseAndTables::getDatabaseName)).collect(Collectors.toList());
-        }
-
-        List<DBObjectIdentity> viewsIdentities = accessor.listAllViews(tableNameLike);
+        List<DBObjectIdentity> viewsIdentities = accessor.listAllMVs(tableNameLike);
         Map<String, List<String>> schema2views = new HashMap<>();
         viewsIdentities.forEach(item -> {
             List<String> views = schema2views.computeIfAbsent(item.getSchemaName(), t -> new ArrayList<>());
