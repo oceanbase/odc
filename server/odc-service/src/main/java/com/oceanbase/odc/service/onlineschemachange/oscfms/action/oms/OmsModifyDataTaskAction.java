@@ -125,19 +125,17 @@ public class OmsModifyDataTaskAction implements Action<OscActionContext, OscActi
 
     private void doUpdateOmsProjectConfig(Long scheduleTaskId, OnlineSchemaChangeScheduleTaskParameters taskParameters,
             OnlineSchemaChangeParameters oscParameters, OscActionContext context) {
-        OmsProjectControlRequest controlRequest = new OmsProjectControlRequest();
-        controlRequest.setId(taskParameters.getOmsProjectId());
-        controlRequest.setUid(taskParameters.getUid());
-        UpdateProjectConfigRequest request = new UpdateProjectConfigRequest();
-        request.setId(taskParameters.getOmsProjectId());
         FullTransferConfig fullTransferConfig = new FullTransferConfig();
         IncrTransferConfig incrTransferConfig = new IncrTransferConfig();
         fullTransferConfig.setThrottleIOPS(oscParameters.getRateLimitConfig().getDataSizeLimit());
         incrTransferConfig.setThrottleIOPS(oscParameters.getRateLimitConfig().getDataSizeLimit());
         fullTransferConfig.setThrottleRps(oscParameters.getRateLimitConfig().getRowLimit());
         incrTransferConfig.setThrottleRps(oscParameters.getRateLimitConfig().getRowLimit());
+        UpdateProjectConfigRequest request = new UpdateProjectConfigRequest();
         request.setFullTransferConfig(fullTransferConfig);
         request.setIncrTransferConfig(incrTransferConfig);
+        request.setUid(taskParameters.getUid());
+        request.setId(taskParameters.getOmsProjectId());
 
         log.info("Try to update oms project, omsProjectId={}, scheduleTaskId={},"
                 + " request={}.", taskParameters.getOmsProjectId(), scheduleTaskId, JsonUtils.toJson(request));
@@ -149,7 +147,9 @@ public class OmsModifyDataTaskAction implements Action<OscActionContext, OscActi
 
         log.info("Update oms project completed, Try to resume project, omsProjectId={},"
                 + " scheduleTaskId={}", taskParameters.getOmsProjectId(), scheduleTaskId);
-
+        OmsProjectControlRequest controlRequest = new OmsProjectControlRequest();
+        controlRequest.setId(taskParameters.getOmsProjectId());
+        controlRequest.setUid(taskParameters.getUid());
         projectOpenApiService.resumeProject(controlRequest);
         log.info("Resume oms project completed, omsProjectId={}, scheduleTaskId={}",
                 taskParameters.getOmsProjectId(), scheduleTaskId);
