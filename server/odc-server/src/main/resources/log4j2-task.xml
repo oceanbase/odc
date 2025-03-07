@@ -18,7 +18,7 @@
             [%date{yyyy-MM-dd HH:mm:ss.SSS z}][%thread][%X{traceId},%X{spanId},%X{requestId}][%X{taskId}][%level][%class][%line]: %message%n
         </Property>
         <Property name="TASK_LOG_PATTERN">
-            [%d{yyyy-MM-dd HH:mm:ss z}] [%X{taskId}] [%p] %m%n
+            [%d{yyyy-MM-dd HH:mm:ss z}] [%X{taskId}] [%p][%class][%line] %m%n
         </Property>
     </Properties>
 
