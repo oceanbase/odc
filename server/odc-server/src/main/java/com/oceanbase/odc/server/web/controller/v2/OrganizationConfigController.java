@@ -17,7 +17,6 @@ package com.oceanbase.odc.server.web.controller.v2;
 
 import java.util.List;
 
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -25,7 +24,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.common.response.ListResponse;
-import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.config.model.ConfigurationMeta;
 
@@ -40,17 +38,6 @@ import io.swagger.annotations.ApiOperation;
 @RestController
 @RequestMapping("/api/v2/config/organization")
 public class OrganizationConfigController {
-    /**
-     * Load meta organization configurations
-     *
-     * @return configuration meta listResponse
-     */
-    @ApiOperation(value = "listConfigurationMetas",
-            notes = "list all organization configuration metas")
-    @RequestMapping(value = "/configurationMetas", method = RequestMethod.GET)
-    public ListResponse<ConfigurationMeta> listConfigurationMetas() {
-        throw new NotImplementedException("not implemented");
-    }
 
     /**
      * Get organization configurations
