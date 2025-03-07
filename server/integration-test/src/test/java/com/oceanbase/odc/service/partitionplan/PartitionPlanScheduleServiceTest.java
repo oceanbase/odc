@@ -95,9 +95,15 @@ public class PartitionPlanScheduleServiceTest extends ServiceTestEnv {
 
     @Test
     public void disablePartitionPlanTables_enableEntitiesExists_disableSucceed() throws SchedulerException {
+        PartitionPlanEntity pp = TestRandom.nextObject(PartitionPlanEntity.class);
+        pp.setId(null);
+        pp.setEnabled(true);
+        pp = this.partitionPlanRepository.save(pp);
+
         PartitionPlanTableEntity ppt = TestRandom.nextObject(PartitionPlanTableEntity.class);
         ppt.setId(null);
         ppt.setEnabled(true);
+        ppt.setPartitionPlanId(pp.getId());
         ppt = this.partitionPlanTableRepository.save(ppt);
 
         PartitionPlanTablePartitionKeyEntity pptk1 = TestRandom.nextObject(PartitionPlanTablePartitionKeyEntity.class);
@@ -112,7 +118,7 @@ public class PartitionPlanScheduleServiceTest extends ServiceTestEnv {
         Mockito.when(this.scheduleService.nullSafeGetById(Mockito.anyLong()))
                 .thenReturn(TestRandom.nextObject(ScheduleEntity.class));
         Mockito.doNothing().when(this.scheduleService).terminate(Mockito.isA(ScheduleEntity.class));
-        this.partitionPlanScheduleService.disablePartitionPlanTables(Collections.singletonList(ppt.getId()));
+        this.partitionPlanScheduleService.disablePartitionPlanTables(Collections.singletonList(pp.getId()));
         List<PartitionPlanTablePartitionKeyEntity> expect1 = this.partitionPlanTablePartitionKeyRepository
                 .findByIdIn(Arrays.asList(pptk1.getId(), pptk2.getId()));
         Optional<PartitionPlanTableEntity> optional = this.partitionPlanTableRepository.findById(ppt.getId());
