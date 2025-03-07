@@ -18,12 +18,12 @@ package com.oceanbase.odc.service.config;
 public class OrganizationConfigKeys {
     public static final String DEFAULT_QUERY_LIMIT = "odc.sqlexecute.default.queryLimit";
 
-    public static final String DEFAULT_QUERY_NUMBER = "odc.sqlexecute.default.queryNumber";
+    public static final String DEFAULT_QUERY_NUMBER = "odc.sqlexecute.default.queryCount";
 
-    public static final String DEFAULT_ROLLBACK_PLAN = "odc.task.default.rollbackPlan";
+    public static final String DEFAULT_ROLLBACK_PLAN_ENABLED = "odc.task.default.rollbackPlanEnabled";
 
     public static final String DEFAULT_TASK_DESCRIPTION_PROMPT = "odc.task.default.taskDescriptionPrompt";
 
-    public static final String DEFAULT_IMPORT_TASK_STRUCTURE_REPLACEMENT =
-            "odc.task.default.importTaskStructureReplacement";
+    public static final String DEFAULT_IMPORT_TASK_STRUCTURE_REPLACEMENT_ENABLED =
+            "odc.task.default.importTaskStructureReplacementEnabled";
 }
