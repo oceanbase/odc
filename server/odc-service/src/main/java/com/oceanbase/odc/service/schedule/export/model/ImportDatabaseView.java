@@ -26,18 +26,14 @@ public class ImportDatabaseView {
     private String cloudProvider;
     private ConnectType type;
     private String instanceId;
+    private String instanceNickName;
     private String tenantId;
     private String host;
     private Integer port;
     private String username;
-    /**
-     * datasource name from export file
-     */
-    private String datasourceName;
-    /**
-     * If the imported datasource is consistent with the existing data source, the existing data source
-     * will be reused. It's means matched datasource name, null means not matched
-     */
+    // export datasource name
+    private String name;
+    // matched Datasource name, null means not matched
     @Nullable
     private String matchedDatasourceName;
 

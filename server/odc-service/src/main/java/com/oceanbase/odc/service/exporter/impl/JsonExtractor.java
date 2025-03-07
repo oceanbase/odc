@@ -16,20 +16,16 @@
 package com.oceanbase.odc.service.exporter.impl;
 
 import static com.oceanbase.odc.service.exporter.model.ExportConstants.HMAC_ALGORITHM;
+import static com.oceanbase.odc.service.exporter.utils.JsonExtractorFactory.getConfigJson;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 
-import javax.annotation.Nullable;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -39,8 +35,6 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.oceanbase.odc.common.security.EncryptAlgorithm;
-import com.oceanbase.odc.common.util.FileZipper;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
 import com.oceanbase.odc.service.exporter.Extractor;
@@ -49,60 +43,22 @@ import com.oceanbase.odc.service.exporter.model.ExportProperties;
 import com.oceanbase.odc.service.exporter.model.ExportRowDataReader;
 import com.oceanbase.odc.service.exporter.model.ExportedFile;
 
-import lombok.Getter;
-import lombok.SneakyThrows;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@Data
 public class JsonExtractor implements Extractor<JsonNode> {
 
     private String tempFilePath;
-    @Getter
     private ExportedFile exportedFile;
 
-    private JsonExtractor() {}
+    public JsonExtractor() {}
 
-    @SneakyThrows
-    public static JsonExtractor buildJsonExtractor(ExportedFile exportedFile, String tempPath) {
-        JsonExtractor jsonExtractor = new JsonExtractor();
-        // Create a random directory within the specified destination path
-        Path randomDir = Files.createTempDirectory(new File(tempPath).toPath(), "unzipped-");
-
-        // Create a temporary file to save the InputStream contents
-        File tempZipFile = File.createTempFile("tempZip", ".zip", randomDir.toFile());
-        jsonExtractor.tempFilePath = randomDir.toFile().getPath();
-
-        // Write the InputStream to the temporary zip file
-        try (FileOutputStream fos = new FileOutputStream(tempZipFile);
-                InputStream inputStream = Files.newInputStream(exportedFile.getFile().toPath())) {
-            byte[] buffer = new byte[1024];
-            int len;
-            while ((len = inputStream.read(buffer)) != -1) {
-                fos.write(buffer, 0, len);
-            }
-        }
-        FileZipper.unzipFileToPath(tempZipFile, randomDir);
-        File configJson = getConfigJson(jsonExtractor.tempFilePath);
-        Verify.notNull(configJson, "Invalid file format, lack of config json.");
-        log.info("Files extracted to: {}", randomDir.toAbsolutePath());
-        jsonExtractor.exportedFile = new ExportedFile(configJson, exportedFile.getSecret(),
-                exportedFile.isCheckConfigJsonSignature());
-        return jsonExtractor;
-    }
-
-    public static File getConfigJson(String path) {
-        File configJson = new File(path, "config.json");
-
-        if (configJson.exists() && configJson.isFile()) {
-            return configJson;
-        } else {
-            return null;
-        }
-    }
 
     @Override
     public boolean checkSignature() {
-        if (exportedFile.getSecret() == null || !exportedFile.isCheckConfigJsonSignature()) {
+        if (exportedFile.getSecret() == null) {
             return true;
         }
         JsonFactory jsonFactory = new JsonFactory();
@@ -178,10 +134,11 @@ public class JsonExtractor implements Extractor<JsonNode> {
     @Override
     public void close() {
         OdcFileUtil.deleteFiles(new File(tempFilePath));
+        log.info("JsonExtractor deleted temp file {}", tempFilePath);
     }
 
 
-    public ExportRowDataReader<JsonNode> getRowDataReader() throws Exception {
+    public ExportRowDataReader<JsonNode> getRowDataReader() throws IOException {
         JsonFactory jsonFactory = new JsonFactory();
         ObjectMapper objectMapper = new ObjectMapper(jsonFactory);
         File configJson = getConfigJson(this.tempFilePath);
@@ -209,7 +166,7 @@ public class JsonExtractor implements Extractor<JsonNode> {
                     new TypeReference<LinkedHashMap<String, Object>>() {});
 
             ExportProperties properties = new ExportProperties(metadata, null);
-
+            properties.putTransientProperties("signature", getSignature());
             jsonParser.nextToken(); // Move to next field after metadata
             if (!"data".equals(jsonParser.getCurrentName())) {
                 throw new IllegalStateException("Expected next field to be 'data'");
@@ -223,31 +180,31 @@ public class JsonExtractor implements Extractor<JsonNode> {
         }
     }
 
-    private String decrypt(InputStream inputStream, @Nullable String key) throws Exception {
-        String json = convertInputStreamToString(inputStream);
-        if (key == null) {
-            return json;
-        }
-        return EncryptAlgorithm.AES.decrypt(json, key, StandardCharsets.UTF_8.name());
-    }
-
-    private String convertInputStreamToString(InputStream inputStream) throws IOException {
-        if (inputStream == null) {
-            return "";
-        }
-
-        StringBuilder stringBuilder = new StringBuilder();
-        char[] buffer = new char[1024];
-        int bytesRead;
-
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
-            while ((bytesRead = reader.read(buffer, 0, buffer.length)) != -1) {
-                stringBuilder.append(buffer, 0, bytesRead);
+    private String getSignature() {
+        JsonFactory jsonFactory = new JsonFactory();
+        File configJson = getConfigJson(this.tempFilePath);
+        try (InputStream inputStream = Files.newInputStream(configJson.toPath())) {
+            JsonParser jsonParser = jsonFactory.createParser(inputStream);
+            JsonToken jsonToken = jsonParser.nextToken();
+            if (jsonToken != JsonToken.START_OBJECT) {
+                throw new IllegalStateException("Expected data to start with an Object");
             }
+            while (jsonParser.nextToken() != JsonToken.END_OBJECT) {
+                String fieldName = jsonParser.getCurrentName();
+                if ("signature".equals(fieldName)) {
+                    jsonParser.nextToken();
+                    return jsonParser.getText();
+                } else {
+                    jsonParser.nextToken();
+                    jsonParser.skipChildren();
+                }
+            }
+            throw new IllegalStateException("Missing required fields in JSON data");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-
-        return stringBuilder.toString();
     }
+
 
     private final static class JsonRowDataReader implements ExportRowDataReader<JsonNode> {
 
@@ -268,7 +225,7 @@ public class JsonExtractor implements Extractor<JsonNode> {
         }
 
         @Override
-        public ExportProperties getMetaData() {
+        public ExportProperties getProperties() {
             return metadata;
         }
 
