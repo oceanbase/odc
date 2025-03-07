@@ -1,0 +1,2 @@
+ALTER TABLE `dlm_task_generator` ADD COLUMN `partition_min_key` mediumtext COMMENT 'minimum key of partitions' NULL ;
+ALTER TABLE `dlm_task_generator` ADD COLUMN `partition_max_key` mediumtext COMMENT 'maximum key of partitions' NULL ;

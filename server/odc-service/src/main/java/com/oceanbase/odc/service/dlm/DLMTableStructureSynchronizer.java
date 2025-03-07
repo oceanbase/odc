@@ -16,15 +16,21 @@
 package com.oceanbase.odc.service.dlm;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
+
+import org.springframework.util.CollectionUtils;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.common.util.StringUtils;
@@ -41,6 +47,8 @@ import com.oceanbase.odc.service.structurecompare.model.DBObjectComparisonResult
 import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
+import com.oceanbase.tools.dbbrowser.model.datatype.DataTypeUtil;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.util.VersionUtils;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
@@ -92,13 +100,11 @@ public class DLMTableStructureSynchronizer {
                     Collections.singletonList(srcTableName)).get(srcTableName);
             DBTable tgtTable = tgtAccessor.getTables(tgtConfig.getDefaultSchema(),
                     Collections.singletonList(tgtTableName)).get(tgtTableName);
-            if (tgtConfig.getType().getDialectType().isMysql()) {
-                if (srcTable != null) {
-                    StringUtils.quoteColumnDefaultValuesForMySQL(srcTable);
-                }
-                if (tgtTable != null) {
-                    StringUtils.quoteColumnDefaultValuesForMySQL(tgtTable);
-                }
+            if (srcTable != null && srcConfig.getDialectType().isMysql()) {
+                quoteColumnDefaultValuesForMySQL(srcTable);
+            }
+            if (tgtTable != null && tgtConfig.getDialectType().isMysql()) {
+                quoteColumnDefaultValuesForMySQL(tgtTable);
             }
             DBTableStructureComparator comparator = new DBTableStructureComparator(tgtTableEditor,
                     tgtConfig.getType().getDialectType(), srcConfig.getDefaultSchema(), tgtConfig.getDefaultSchema());
@@ -133,6 +139,51 @@ public class DLMTableStructureSynchronizer {
             closeDataSource(sourceDs);
             closeDataSource(targetDs);
         }
+    }
+
+    public static void createTempTable(DataSourceInfo sourceInfo, String srcTableName, String tempTableName) {
+        ConnectionConfig srcConfig = DataSourceInfoMapper.toConnectionConfig(sourceInfo);
+        DataSource sourceDs;
+        try {
+            sourceDs = new DruidDataSourceFactory(srcConfig).getDataSource();
+        } catch (Exception e) {
+            log.warn("Create datasource failed,errorMsg={}", e.getMessage());
+            return;
+        }
+
+        try {
+            String srcDbVersion = getDBVersion(srcConfig.getType(), sourceDs);
+            if (!isSupportedSyncTableStructure(srcConfig.getDialectType(), srcDbVersion, srcConfig.getDialectType(),
+                    srcDbVersion)) {
+                log.warn("Create temporary table structure is unsupported,sourceDbType={},targetDbType={}",
+                        srcConfig.getDialectType(),
+                        srcConfig.getDialectType());
+                return;
+            }
+            DBSchemaAccessor srcAccessor = getDBSchemaAccessor(srcConfig.getType(), sourceDs, srcDbVersion);
+            Map<String, DBTable> tables = srcAccessor.getTables(srcConfig.getDefaultSchema(),
+                    Arrays.asList(srcTableName, tempTableName));
+            // create temporary table if not exists.
+            if (!tables.containsKey(tempTableName)) {
+                DBTable srcTable = tables.get(srcTableName);
+                srcTable.setName(tempTableName);
+                if (srcConfig.getDialectType().isMysql()) {
+                    quoteColumnDefaultValuesForMySQL(srcTable);
+                }
+                DBTableEditor tableEditor = getDBTableEditor(srcConfig.getType(), srcDbVersion);
+                String createTableDdl = tableEditor.generateCreateObjectDDL(srcTable);
+                log.info("Start to create temporary table,ddl={}", createTableDdl);
+                try (Connection conn = sourceDs.getConnection();
+                        PreparedStatement ps = conn.prepareStatement(createTableDdl)) {
+                    ps.execute();
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Create temporary table failed,errorMsg={}", e.getMessage());
+        } finally {
+            closeDataSource(sourceDs);
+        }
+
     }
 
 
@@ -184,6 +235,28 @@ public class DLMTableStructureSynchronizer {
 
     private static boolean isMySQLVersionLessThan570(String version) {
         return VersionUtils.isLessThan(version, "5.7.0");
+    }
+
+    private static void quoteColumnDefaultValuesForMySQL(DBTable table) {
+        if (!CollectionUtils.isEmpty(table.getColumns())) {
+            table.getColumns().forEach(column -> {
+                String defaultValue = column.getDefaultValue();
+                if (StringUtils.isNotEmpty(defaultValue)) {
+                    if (!isDefaultValueBuiltInFunction(column) && !DataTypeUtil.isBitType(column.getTypeName())) {
+                        column.setDefaultValue("'".concat(defaultValue.replace("'", "''")).concat("'"));
+                    }
+                } else if (!column.getNullable() && DataTypeUtil.isStringType(column.getTypeName())) {
+                    column.setDefaultValue("''");
+                }
+            });
+        }
+    }
+
+    private static boolean isDefaultValueBuiltInFunction(DBTableColumn column) {
+        return com.oceanbase.tools.dbbrowser.util.StringUtils.isEmpty(column.getDefaultValue())
+                || (!DataTypeUtil.isStringType(column.getTypeName())
+                        && column.getDefaultValue().trim().toUpperCase(Locale.getDefault())
+                                .startsWith("CURRENT_TIMESTAMP"));
     }
 
 }

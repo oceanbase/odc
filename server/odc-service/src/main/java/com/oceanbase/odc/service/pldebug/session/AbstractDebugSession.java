@@ -20,6 +20,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -182,7 +183,7 @@ public abstract class AbstractDebugSession implements AutoCloseable {
             PLDebugODPSpecifiedRoute route, String url) {
         DebugDataSource dataSource = new DebugDataSource(config, initSqls, route);
         dataSource.setUrl(url);
-        dataSource.setUsername(buildUserName(config));
+        dataSource.setUsername(buildUserName(config, route));
         dataSource.setPassword(config.getPassword());
         dataSource.setDriverClassName(OdcConstants.DEFAULT_DRIVER_CLASS_NAME);
         return dataSource;
@@ -209,10 +210,13 @@ public abstract class AbstractDebugSession implements AutoCloseable {
         return new HostAddress(ipParts[0], Integer.parseInt(ipParts[1]));
     }
 
-    private String buildUserName(ConnectionConfig connectionConfig) {
+    private String buildUserName(ConnectionConfig connectionConfig, PLDebugODPSpecifiedRoute route) {
         StringBuilder userNameBuilder = new StringBuilder(connectionConfig.getUsername());
         if (StringUtils.isNotBlank(connectionConfig.getTenantName())) {
             userNameBuilder.append("@").append(connectionConfig.getTenantName());
+        }
+        if (Objects.nonNull(route) && StringUtils.isNotBlank(connectionConfig.getClusterName())) {
+            userNameBuilder.append("#").append(connectionConfig.getClusterName());
         }
         return userNameBuilder.toString();
     }

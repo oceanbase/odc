@@ -62,7 +62,7 @@ public class DataArchivePreprocessor extends AbstractDlmPreprocessor {
             Database targetDb = databaseService.detail(parameters.getTargetDataBaseId());
             supportDataArchivingLink(sourceDb.getDataSource(), targetDb.getDataSource());
             if (!parameters.getSyncTableStructure().isEmpty()) {
-                PreConditions.validArgumentState(sourceDb.getDialectType() != targetDb.getDialectType(),
+                PreConditions.validArgumentState(sourceDb.getDialectType() == targetDb.getDialectType(),
                         ErrorCodes.UnsupportedSyncTableStructure,
                         new Object[] {sourceDb.getDialectType(), targetDb.getDialectType()}, null);
             }

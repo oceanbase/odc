@@ -22,7 +22,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -61,6 +64,8 @@ class TaskMonitor {
     private ScheduledExecutorService heartScheduledExecutor;
     private Map<String, String> logMetadata = new HashMap<>();
     private AtomicLong logMetaCollectedMillis = new AtomicLong(0L);
+    private Lock reportLock = new ReentrantLock();
+    private AtomicBoolean metaDataReported = new AtomicBoolean(false);
 
     public TaskMonitor(TaskContainer<?> task, TaskReporter taskReporter,
             CloudObjectStorageService cloudObjectStorageService) {
@@ -88,7 +93,7 @@ class TaskMonitor {
         reportScheduledExecutor.scheduleAtFixedRate(() -> {
             if (isTimeout() && !getTaskContainer().getStatus().isTerminated()) {
                 log.info("Task timeout, try stop, jobId={}", getJobId());
-                getTaskContainer().stop();
+                getTaskContainer().timeout();
             }
             try {
                 if (JobUtils.getExecutorPort().isPresent()) {
@@ -149,10 +154,21 @@ class TaskMonitor {
                     taskResult.getJobIdentity().getId(), taskResult.getStatus());
             return;
         }
-
-        getReporter().report(JobServerUrls.TASK_UPLOAD_RESULT, taskResult);
-        log.info("Report task info, id: {}, status: {}, progress: {}%, result: {}", getJobId(),
-                taskResult.getStatus(), String.format("%.2f", taskResult.getProgress()), getTask().getTaskResult());
+        // 1. exclusive report
+        // 2. if doFinal called, ignore following report
+        reportLock.lock();
+        try {
+            if (metaDataReported.get()) {
+                log.info("doFinal has called, monitor report be ignored., jobId = {}, status = {}",
+                        taskResult.getJobIdentity().getId(), taskResult.getStatus());
+                return;
+            }
+            getReporter().report(JobServerUrls.TASK_UPLOAD_RESULT, taskResult);
+            log.info("Report task info, id: {}, status: {}, progress: {}%, result: {}", getJobId(),
+                    taskResult.getStatus(), String.format("%.2f", taskResult.getProgress()), getTask().getTaskResult());
+        } finally {
+            reportLock.unlock();
+        }
     }
 
     @VisibleForTesting
@@ -243,26 +259,32 @@ class TaskMonitor {
 
     @VisibleForTesting
     protected boolean reportTaskResultWithRetry(TaskResult result, int retries, int retryIntervalSeconds) {
-        if (result.getStatus() == TaskStatus.DONE) {
-            result.setProgress(100.0);
-        }
-        int retryTimes = 0;
-        while (retryTimes++ < retries) {
-            try {
-                boolean success = reporter.report(JobServerUrls.TASK_UPLOAD_RESULT, result);
-                if (success) {
-                    log.info("Report task result successfully");
-                    return true;
-                } else {
-                    log.warn("Report task result failed, will retry after {} seconds, remaining retries: {}",
-                            retryIntervalSeconds, retries - retryTimes);
-                    Thread.sleep(retryIntervalSeconds * 1000L);
-                }
-            } catch (Throwable e) {
-                log.warn("Report task result failed, taskId: {}", getJobId(), e);
+        reportLock.lock();
+        try {
+            if (result.getStatus() == TaskStatus.DONE) {
+                result.setProgress(100.0);
             }
+            int retryTimes = 0;
+            while (retryTimes++ < retries) {
+                try {
+                    boolean success = reporter.report(JobServerUrls.TASK_UPLOAD_RESULT, result);
+                    if (success) {
+                        log.info("Report task result successfully");
+                        metaDataReported.set(true);
+                        return true;
+                    } else {
+                        log.warn("Report task result failed, will retry after {} seconds, remaining retries: {}",
+                                retryIntervalSeconds, retries - retryTimes);
+                        Thread.sleep(retryIntervalSeconds * 1000L);
+                    }
+                } catch (Throwable e) {
+                    log.warn("Report task result failed, taskId: {}", getJobId(), e);
+                }
+            }
+            return false;
+        } finally {
+            reportLock.unlock();
         }
-        return false;
     }
 
     private HeartbeatRequest buildHeartRequest() {
