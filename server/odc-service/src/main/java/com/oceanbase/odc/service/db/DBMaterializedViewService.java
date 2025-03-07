@@ -106,19 +106,19 @@ public class DBMaterializedViewService {
     }
 
     public AllTablesAndViews listAllBases(ConnectionSession connectionSession,
-        String tableNameLike) {
+            String tableNameLike) {
         AllTablesAndViews allResult = new AllTablesAndViews();
         DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
         List<DatabaseAndTables> tables = new ArrayList<>();
-            List<String> databases = accessor.showDatabases();
-            tables = databases.stream().map(schema -> {
-                    List<String> tablesLike = accessor.showTablesLike(schema, tableNameLike).stream()
-                        .filter(name -> !StringUtils.endsWith(name.toUpperCase(),
+        List<String> databases = accessor.showDatabases();
+        tables = databases.stream().map(schema -> {
+            List<String> tablesLike = accessor.showTablesLike(schema, tableNameLike).stream()
+                    .filter(name -> !StringUtils.endsWith(name.toUpperCase(),
                             OdcConstants.VALIDATE_DDL_TABLE_POSTFIX))
-                        .collect(Collectors.toList());
-                    return tablesLike.size() != 0 ? new DatabaseAndTables(schema, tablesLike)
-                        : new DatabaseAndTables();
-                }).filter(item -> item.getDatabaseName() != null)
+                    .collect(Collectors.toList());
+            return tablesLike.size() != 0 ? new DatabaseAndTables(schema, tablesLike)
+                    : new DatabaseAndTables();
+        }).filter(item -> item.getDatabaseName() != null)
                 .sorted(Comparator.comparing(DatabaseAndTables::getDatabaseName)).collect(Collectors.toList());
         List<DBObjectIdentity> viewsIdentities = accessor.listAllMVs(tableNameLike);
         Map<String, List<String>> schema2views = new HashMap<>();

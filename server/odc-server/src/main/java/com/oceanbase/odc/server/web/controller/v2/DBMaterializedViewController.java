@@ -100,9 +100,9 @@ public class DBMaterializedViewController {
             notes = "obtain list of base tables under the current data source that are used to create the materialized view. Sid example: sid:1000-1:d:db1")
     @RequestMapping(value = "/listAllBases/{sid:.*}", method = RequestMethod.GET)
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
-    public OdcResult<AllTablesAndViews> listAllBases(@PathVariable String sid,@RequestParam String name) {
+    public OdcResult<AllTablesAndViews> listAllBases(@PathVariable String sid, @RequestParam String name) {
         return OdcResult.ok(dbMaterializedViewService.listAllBases(
-            sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), name));
+                sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), name));
     }
 
     @ApiOperation(value = "getCreateSql",
