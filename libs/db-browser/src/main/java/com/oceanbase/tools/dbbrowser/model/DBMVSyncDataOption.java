@@ -15,8 +15,7 @@
  */
 package com.oceanbase.tools.dbbrowser.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
+import lombok.Getter;
 
 /**
  * @description:
@@ -24,13 +23,13 @@ import com.fasterxml.jackson.annotation.JsonValue;
  * @date: 2025/3/4 14:53
  * @since: 4.3.4
  */
+@Getter
 public enum DBMVSyncDataOption {
 
     FAST_REFRESH("f"),
     FORCE_REFRESH("?"),
     COMPLETE_REFRESH("c"),
-    ALWAYS_REFRESH("a"),
-    UNKNOWN("unknown");
+    ALWAYS_REFRESH("a");
 
     private String value;
 
@@ -38,18 +37,4 @@ public enum DBMVSyncDataOption {
         this.value = value;
     }
 
-    @JsonValue
-    public String getValue() {
-        return this.value;
-    }
-
-    @JsonCreator
-    public static DBMVSyncDataOption fromString(String value) {
-        for (DBMVSyncDataOption type : DBMVSyncDataOption.values()) {
-            if (type.value.equalsIgnoreCase(value)) {
-                return type;
-            }
-        }
-        return DBMVSyncDataOption.UNKNOWN;
-    }
 }

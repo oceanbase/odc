@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.validation.constraints.NotNull;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.stereotype.Service;
@@ -39,9 +41,11 @@ import com.oceanbase.odc.service.connection.table.TableService;
 import com.oceanbase.odc.service.connection.table.model.QueryTableParams;
 import com.oceanbase.odc.service.connection.table.model.Table;
 import com.oceanbase.odc.service.db.model.DBViewResponse;
+import com.oceanbase.odc.service.db.model.MVSyncDataReq;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
+import com.oceanbase.tools.dbbrowser.model.DBMVSyncDataParameter;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBView;
@@ -76,7 +80,7 @@ public class DBMaterializedViewService {
     private DBObjectRepository dbObjectRepository;
 
     public List<Table> list(ConnectionSession connectionSession, QueryTableParams params)
-        throws SQLException, InterruptedException {
+            throws SQLException, InterruptedException {
         Database database = databaseService.detail(params.getDatabaseId());
         List<Table> tables = new ArrayList<>();
         Set<String> latestTableNames = connectionSession.getSyncJdbcExecutor(
@@ -85,9 +89,9 @@ public class DBMaterializedViewService {
                         .list(con, database.getName()))
                 .stream().map(DBObjectIdentity::getName).collect(Collectors.toCollection(LinkedHashSet::new));
         ConnectionConfig connectionConfig = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(
-            connectionSession);
-        tableService.generateListAndSyncDBTablesByTableType(params, database, connectionConfig, tables,null,
-            DBObjectType.MATERIALIZED_VIEW,latestTableNames);
+                connectionSession);
+        tableService.generateListAndSyncDBTablesByTableType(params, database, connectionConfig, tables, null,
+                DBObjectType.MATERIALIZED_VIEW, latestTableNames);
         return tables;
     }
 
@@ -96,6 +100,14 @@ public class DBMaterializedViewService {
                 ConnectionSessionConstants.BACKEND_DS_KEY)
                 .execute((ConnectionCallback<DBView>) con -> getDBMVExtensionPoint(connectionSession)
                         .getDetail(con, schemaName, viewName)));
+    }
+
+    public Boolean syncData(@NotNull ConnectionSession connectionSession, @NotNull MVSyncDataReq mvSyncDataReq) {
+        DBMVSyncDataParameter dbmvSyncDataParameter = mvSyncDataReq.convertToDBMVSyncDataParameter();
+        return connectionSession.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<Boolean>) con -> getDBMVExtensionPoint(connectionSession)
+                        .syncMVData(con, dbmvSyncDataParameter));
     }
 
     private MVExtensionPoint getDBMVExtensionPoint(@NonNull ConnectionSession session) {

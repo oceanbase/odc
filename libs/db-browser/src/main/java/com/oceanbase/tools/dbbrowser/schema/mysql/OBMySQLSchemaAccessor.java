@@ -32,7 +32,6 @@ import org.springframework.jdbc.core.JdbcOperations;
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
-import com.oceanbase.tools.dbbrowser.model.DBMVSyncDataOption;
 import com.oceanbase.tools.dbbrowser.model.DBMVSyncDataParameter;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
@@ -102,8 +101,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
         sb.append(".");
         sb.append(parameter.getMvName());
         sb.append("'");
-        if (Objects.nonNull(parameter.getMvSyncDataOption())
-                && parameter.getMvSyncDataOption() != DBMVSyncDataOption.UNKNOWN) {
+        if (Objects.nonNull(parameter.getMvSyncDataOption())) {
             sb.append(",");
             sb.value(parameter.getMvSyncDataOption().getValue());
         }

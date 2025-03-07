@@ -15,9 +15,12 @@
  */
 package com.oceanbase.odc.service.db.model;
 
-import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+
+import com.oceanbase.tools.dbbrowser.model.DBMVSyncDataOption;
+import com.oceanbase.tools.dbbrowser.model.DBMVSyncDataParameter;
 
 import lombok.Data;
 
@@ -33,15 +36,18 @@ public class MVSyncDataReq {
     private String databaseName;
     @NotBlank
     private String mvName;
-
-    /**
-     * 0: default 1: quick 2: force 3: complete/always
-     */
-    @Min(0)
-    @Max(3)
-    private int mvSyncDataOption;
-
+    @NotNull
+    DBMVSyncDataOption option;
     @Min(1)
     private int parallelismDegree = 1;
+
+    public DBMVSyncDataParameter convertToDBMVSyncDataParameter() {
+        DBMVSyncDataParameter parameter = new DBMVSyncDataParameter();
+        parameter.setDatabaseName(databaseName);
+        parameter.setMvName(mvName);
+        parameter.setMvSyncDataOption(option);
+        parameter.setParallelismDegree(parallelismDegree);
+        return parameter;
+    }
 
 }

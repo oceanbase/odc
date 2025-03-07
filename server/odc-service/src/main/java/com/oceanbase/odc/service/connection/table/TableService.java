@@ -190,7 +190,7 @@ public class TableService {
     public void generateListAndSyncDBTablesByTableType(QueryTableParams params, Database database,
             ConnectionConfig dataSource, List<Table> tables,
             Connection conn, DBObjectType tableType, Set<String> latestTableNames)
-        throws InterruptedException, SQLException {
+            throws InterruptedException, SQLException {
         if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
             tables.addAll(latestTableNames.stream().map(tableName -> {
                 Table table = new Table();
@@ -207,18 +207,19 @@ public class TableService {
                     existTables.stream().map(DBObjectEntity::getName).collect(Collectors.toSet());
             if (latestTableNames.size() != existTableNames.size()
                     || !existTableNames.containsAll(latestTableNames)) {
-                if(Objects.isNull(conn)){
+                if (Objects.isNull(conn)) {
                     /**
-                     * This logic applies specifically to the scenario where a {@link ConnectionSession} exists.
-                     * In that scenario, need to create a new connection only when the table/view in the metadata database is inconsistent with the table/view in the real database.
-                     * For details, please refer to {@link DBMaterializedViewService#list(ConnectionSession, QueryTableParams)}
+                     * This logic applies specifically to the scenario where a {@link ConnectionSession} exists. In that
+                     * scenario, need to create a new connection only when the table/view in the metadata database is
+                     * inconsistent with the table/view in the real database. For details, please refer to
+                     * {@link DBMaterializedViewService#list(ConnectionSession, QueryTableParams)}
                      */
                     OBConsoleDataSourceFactory factory = new OBConsoleDataSourceFactory(dataSource, true);
                     try (SingleConnectionDataSource ds = (SingleConnectionDataSource) factory.getDataSource();
-                        Connection conn1 = ds.getConnection()){
+                            Connection conn1 = ds.getConnection()) {
                         syncDBTables(conn1, database, dataSource.getDialectType(), getSyncerByTableType(tableType));
                     }
-                }else {
+                } else {
                     syncDBTables(conn, database, dataSource.getDialectType(), getSyncerByTableType(tableType));
                 }
                 existTables =

@@ -72,7 +72,8 @@ public class DBMaterializedViewController {
     public ListResponse<Table> list(@PathVariable String sid,
             @RequestParam(name = "databaseId") Long databaseId,
             @RequestParam(name = "includePermittedAction", required = false,
-                    defaultValue = "false") boolean includePermittedAction) throws SQLException, InterruptedException {
+                    defaultValue = "false") boolean includePermittedAction)
+            throws SQLException, InterruptedException {
         // sid:1-1:d:database
         ResourceIdentifier i = ResourceIDParser.parse(sid);
         QueryTableParams params = QueryTableParams.builder()
@@ -111,12 +112,14 @@ public class DBMaterializedViewController {
     }
 
     @ApiOperation(value = "syncData",
-            notes = "obtain the sql to create the materialized view, Sid example: sid:1000-1:d:db1:v:v1")
+            notes = "obtain the sql to create the materialized view, Sid example: sid:1000-1")
     @RequestMapping(value = "/syncData/{sid:.*}", method = RequestMethod.POST)
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public SuccessResponse<Boolean> syncData(@PathVariable String sid,
             @RequestBody @Valid MVSyncDataReq mvSyncDataReq) {
-        throw new NotImplementedException("not implemented");
+        ResourceIdentifier i = ResourceIDParser.parse(sid);
+        return Responses.success(dbMaterializedViewService.syncData(sessionService.nullSafeGet(i.getSid(), true),
+                mvSyncDataReq));
     }
 
 }

@@ -37,4 +37,5 @@ public class DBMVSyncDataParameter {
     private DBMVSyncDataOption mvSyncDataOption;
 
     private int parallelismDegree;
+
 }
