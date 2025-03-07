@@ -13,22 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.exporter.model;
+package com.oceanbase.odc.metadb.export;
 
-import java.io.Closeable;
-import java.io.File;
-import java.io.IOException;
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 
-public interface ExportRowDataReader<R> extends Closeable {
+public interface ImportFileRowHistoryRepository extends OdcJpaRepository<ImportFileRowHistoryEntity, Long> {
 
-    ExportProperties getProperties();
-
-    <D extends Encryptable> D readRow(Class<D> rowDataClass) throws IOException;
-
-    R readRow() throws IOException;
-
-    File getFile(String fileName);
-
-    Integer getRowNumber();
-
+    boolean existsByFileSignatureAndRowId(String file, String rowId);
 }

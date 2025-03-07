@@ -13,26 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.exporter.model;
+package com.oceanbase.odc.service.schedule.export.model;
 
-import java.io.File;
+import com.oceanbase.odc.service.exporter.model.Encryptable;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.ToString.Exclude;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
-public class ExportedFile {
+@AllArgsConstructor
+public class ExportedDatabase implements Encryptable {
+    ExportedDataSource exportedDataSource;
+    String databaseName;
 
-    private File file;
+    public static ExportedDatabase of(ExportedDataSource exportedDataSource, String schema) {
+        return new ExportedDatabase(exportedDataSource, schema);
+    }
 
-    /**
-     * AES secret， null means decrypt data
-     */
-    @Exclude
-    private String secret;
+    @Override
+    public void encrypt(String encryptKey) {
+        exportedDataSource.encrypt(encryptKey);
+    }
 
+    @Override
+    public void decrypt(String encryptKey) {
+        exportedDataSource.decrypt(encryptKey);
+    }
 }

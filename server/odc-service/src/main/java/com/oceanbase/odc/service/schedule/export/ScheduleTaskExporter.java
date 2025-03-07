@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.archiverist;
+package com.oceanbase.odc.service.schedule.export;
 
-import static com.oceanbase.odc.service.exporter.model.ExportConstants.ARCHIVE_TYPE;
+import static com.oceanbase.odc.service.exporter.model.ExportConstants.EXPORT_TYPE;
 import static com.oceanbase.odc.service.exporter.model.ExportConstants.FILE_NAME;
 import static com.oceanbase.odc.service.exporter.model.ExportConstants.SCHEDULE_ARCHIVE_TYPE;
+import static com.oceanbase.odc.service.exporter.model.ExportConstants.SCHEDULE_TYPE;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,11 +43,12 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.security.PasswordUtils;
 import com.oceanbase.odc.common.util.FileZipper;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
+import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.metadb.task.TaskRepository;
-import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -62,13 +64,12 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.schedule.ScheduleExportFacade;
-import com.oceanbase.odc.service.schedule.ScheduleService;
-import com.oceanbase.odc.service.schedule.archiverist.model.DataArchiveScheduleRowData;
-import com.oceanbase.odc.service.schedule.archiverist.model.DataDeleteScheduleRowData;
-import com.oceanbase.odc.service.schedule.archiverist.model.ExportedDataSource;
-import com.oceanbase.odc.service.schedule.archiverist.model.ExportedDatabase;
-import com.oceanbase.odc.service.schedule.archiverist.model.PartitionPlanScheduleRowData;
-import com.oceanbase.odc.service.schedule.archiverist.model.SqlPlanScheduleRowData;
+import com.oceanbase.odc.service.schedule.export.model.DataArchiveScheduleRowData;
+import com.oceanbase.odc.service.schedule.export.model.DataDeleteScheduleRowData;
+import com.oceanbase.odc.service.schedule.export.model.ExportedDataSource;
+import com.oceanbase.odc.service.schedule.export.model.ExportedDatabase;
+import com.oceanbase.odc.service.schedule.export.model.PartitionPlanScheduleRowData;
+import com.oceanbase.odc.service.schedule.export.model.SqlPlanScheduleRowData;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
 
@@ -80,30 +81,27 @@ import lombok.extern.slf4j.Slf4j;
 public class ScheduleTaskExporter {
 
     @Autowired
-    ScheduleService scheduleService;
+    private ScheduleRepository scheduleRepository;
 
     @Autowired
-    ScheduleRepository scheduleRepository;
+    private DatabaseService databaseService;
 
     @Autowired
-    ConnectionService connectionService;
+    private ScheduleExportFacade scheduleExportFacade;
 
     @Autowired
-    DatabaseService databaseService;
+    private Exporter exporter;
 
     @Autowired
-    ScheduleExportFacade scheduleExportFacade;
+    private ExportConfiguration exportConfiguration;
 
     @Autowired
-    Exporter exporter;
-
-    @Autowired
-    ExportConfiguration exportConfiguration;
-
-    @Autowired
-    AuthenticationFacade authenticationFacade;
+    private AuthenticationFacade authenticationFacade;
     @Autowired
     private ObjectStorageFacade objectStorageFacade;
+
+    @Autowired
+    private ProjectRepository projectRepository;
 
     @Autowired
     private TaskRepository taskRepository;
@@ -145,13 +143,13 @@ public class ScheduleTaskExporter {
         // Ensure all archive file in same path
         ExportProperties deepClone = exportProperties.deepClone();
         deepClone.putToMetaData(FILE_NAME, entry.getKey().name());
-        exportProperties.putToMetaData("taskType", entry.getKey());
+        exportProperties.putToMetaData(SCHEDULE_TYPE, entry.getKey());
         return deepClone;
     }
 
     private ExportProperties generateArchiveProperties() {
         ExportProperties exportProperties = new ExportProperties();
-        exportProperties.putToMetaData(ARCHIVE_TYPE, SCHEDULE_ARCHIVE_TYPE);
+        exportProperties.putToMetaData(EXPORT_TYPE, SCHEDULE_ARCHIVE_TYPE);
         exportProperties.addDefaultMetaData();
         exportProperties.addFilePathProperties(exportConfiguration.getDefaultArchivePath());
         scheduleExportFacade.adapt(exportProperties);
@@ -206,7 +204,8 @@ public class ScheduleTaskExporter {
         DataDeleteScheduleRowData dataDeleteRowData =
                 ExportRowDataMapper.INSTANCE.toDataDeleteRowData(scheduleEntity, parameters,
                         getExportedDatabase(parameters.getDatabaseId()),
-                        getExportedDatabase(parameters.getTargetDatabaseId()));
+                        getExportedDatabase(parameters.getTargetDatabaseId()),
+                        getProjectName(scheduleEntity.getProjectId()));
         appender.append(dataDeleteRowData);
     }
 
@@ -220,7 +219,7 @@ public class ScheduleTaskExporter {
         addAdditionFile(appender, parameters.getRollbackSqlObjectIds(), tempFilePath, bucket);
         SqlPlanScheduleRowData sqlPlanScheduleRowData =
                 ExportRowDataMapper.INSTANCE.toSqlPlanScheduleRowData(scheduleEntity, parameters, getExportedDatabase(
-                        parameters.getDatabaseId()));
+                        parameters.getDatabaseId()), getProjectName(scheduleEntity.getProjectId()));
         appender.append(sqlPlanScheduleRowData);
 
     }
@@ -237,7 +236,8 @@ public class ScheduleTaskExporter {
         PartitionPlanScheduleRowData partitionPlanScheduleRowData =
                 ExportRowDataMapper.INSTANCE.toPartitionPlanScheduleRowData(scheduleEntity, originParameter,
                         getExportedDatabase(
-                                originParameter.getDatabaseId()));
+                                originParameter.getDatabaseId()),
+                        getProjectName(scheduleEntity.getProjectId()));
         appender.append(partitionPlanScheduleRowData);
 
     }
@@ -269,7 +269,8 @@ public class ScheduleTaskExporter {
         DataArchiveScheduleRowData dataDeleteRowData =
                 ExportRowDataMapper.INSTANCE.toDataArchiveRowData(scheduleEntity, parameters,
                         getExportedDatabase(parameters.getSourceDatabaseId()),
-                        getExportedDatabase(parameters.getTargetDataBaseId()));
+                        getExportedDatabase(parameters.getTargetDataBaseId()),
+                        getProjectName(scheduleEntity.getProjectId()));
         appender.append(dataDeleteRowData);
     }
 
@@ -281,5 +282,12 @@ public class ScheduleTaskExporter {
         ConnectionConfig dataSource = database.getDataSource();
         ExportedDataSource exportedDataSource = ExportedDataSource.fromConnectionConfig(dataSource);
         return ExportedDatabase.of(exportedDataSource, database.getName());
+    }
+
+    private String getProjectName(Long projectId) {
+        if (projectId <= 0) {
+            return null;
+        }
+        return projectRepository.findById(projectId).map(ProjectEntity::getName).orElseThrow(NullPointerException::new);
     }
 }

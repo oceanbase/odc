@@ -13,32 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.archiverist.model;
+package com.oceanbase.odc.service.schedule.export.model;
 
-import com.oceanbase.odc.service.exporter.model.Encryptable;
+import java.util.Set;
+
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ExportedDatabase implements Encryptable {
-    ExportedDataSource exportedDataSource;
-    String schema;
+public class ScheduleTaskImportRequest {
 
-    public static ExportedDatabase of(ExportedDataSource exportedDataSource, String schema) {
-        return new ExportedDatabase(exportedDataSource, schema);
-    }
+    private String bucketName;
 
-    @Override
-    public void encrypt(String encryptKey) {
-        exportedDataSource.encrypt(encryptKey);
-    }
+    private String objectId;
 
-    @Override
-    public void decrypt(String encryptKey) {
-        exportedDataSource.decrypt(encryptKey);
-    }
+    private ScheduleType scheduleType;
+
+    private Long projectId;
+
+    @ToString.Exclude
+    private String decryptKey;
+
+    private Set<String> importableExportRowId;
 }

@@ -15,14 +15,22 @@
  */
 package com.oceanbase.odc.service.schedule;
 
+import java.util.List;
+
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.oceanbase.odc.service.exporter.model.ExportProperties;
 import com.oceanbase.odc.service.schedule.alarm.DefaultScheduleAlarmClient;
 import com.oceanbase.odc.service.schedule.alarm.ScheduleAlarmClient;
+import com.oceanbase.odc.service.schedule.export.exception.DatabaseNonExistException;
+import com.oceanbase.odc.service.schedule.export.model.ExportedDatabase;
+import com.oceanbase.odc.service.schedule.export.model.ImportScheduleTaskView;
+import com.oceanbase.odc.service.schedule.export.model.ScheduleRowPreviewDto;
 import com.oceanbase.odc.service.schedule.flowtask.ApprovalFlowClient;
 import com.oceanbase.odc.service.schedule.flowtask.NoApprovalFlowClient;
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.submitter.DefaultJobSubmitter;
 import com.oceanbase.odc.service.schedule.submitter.JobSubmitter;
 import com.oceanbase.odc.service.schedule.util.DefaultScheduleDescriptionGenerator;
@@ -36,7 +44,6 @@ import com.oceanbase.odc.service.schedule.util.ScheduleDescriptionGenerator;
 
 @Configuration
 public class ScheduleTaskConfiguration {
-
 
     @Bean
     @ConditionalOnMissingBean(ApprovalFlowClient.class)
@@ -65,8 +72,25 @@ public class ScheduleTaskConfiguration {
     @Bean
     @ConditionalOnMissingBean(ScheduleExportFacade.class)
     public ScheduleExportFacade defaultScheduleArchiveFacade() {
-        return archiveProperties -> {
-            // do nothing
+        return new ScheduleExportFacade() {
+
+            @Override
+            public void adapt(ExportProperties exportProperties) {
+                throw new UnsupportedOperationException("Community Edition is not supported yet");
+            }
+
+            @Override
+            public List<ImportScheduleTaskView> preview(ScheduleType scheduleType, Long projectId,
+                    ExportProperties exportProperties, List<ScheduleRowPreviewDto> dtos) {
+                throw new UnsupportedOperationException("Community Edition is not supported yet");
+            }
+
+            @Override
+            public Long getOrCreateDatabaseId(Long projectId, ExportedDatabase exportedDatabase)
+                    throws DatabaseNonExistException {
+                throw new UnsupportedOperationException("Community Edition is not supported yet");
+            }
+
         };
     }
 }

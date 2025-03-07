@@ -13,22 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.exporter.model;
+package com.oceanbase.odc.service.exporter.exception;
 
-import java.io.Closeable;
-import java.io.File;
-import java.io.IOException;
+public class InternalImportException extends RuntimeException {
 
-public interface ExportRowDataReader<R> extends Closeable {
-
-    ExportProperties getProperties();
-
-    <D extends Encryptable> D readRow(Class<D> rowDataClass) throws IOException;
-
-    R readRow() throws IOException;
-
-    File getFile(String fileName);
-
-    Integer getRowNumber();
-
+    public InternalImportException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.archiverist.model;
+package com.oceanbase.odc.service.schedule.export.model;
 
 import java.util.UUID;
 
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
@@ -31,6 +32,16 @@ public class BaseScheduleRowData implements Encryptable {
 
     private String rowId = UUID.randomUUID().toString();
 
+    private String originScheduleId;
+
+    private String originProjectName;
+
+    @NotNull
+    private ExportedDatabase database;
+
+    @Nullable
+    private ExportedDatabase targetDatabase;
+
     @NotBlank
     private String name;
 
@@ -42,9 +53,33 @@ public class BaseScheduleRowData implements Encryptable {
 
     private String description;
 
-    @Override
-    public void encrypt(String encryptKey) {}
 
     @Override
-    public void decrypt(String encryptKey) {}
+    public void encrypt(String encryptKey) {
+        if (database != null) {
+            database.encrypt(encryptKey);
+        }
+        if (targetDatabase != null) {
+            targetDatabase.encrypt(encryptKey);
+        }
+    }
+
+    @Override
+    public void decrypt(String encryptKey) {
+        if (database != null) {
+            database.decrypt(encryptKey);
+        }
+        if (targetDatabase != null) {
+            targetDatabase.decrypt(encryptKey);
+        }
+    }
+
+    public ScheduleRowPreviewDto preview() {
+        ScheduleRowPreviewDto rowPreviewDto = new ScheduleRowPreviewDto();
+        rowPreviewDto.setOriginId(originScheduleId);
+        rowPreviewDto.setOriginProjectName(originProjectName);
+        rowPreviewDto.setDatabase(database);
+        rowPreviewDto.setTargetDatabase(targetDatabase);
+        return rowPreviewDto;
+    }
 }

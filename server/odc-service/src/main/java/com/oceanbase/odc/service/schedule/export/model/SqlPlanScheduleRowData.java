@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.archiverist.model;
+package com.oceanbase.odc.service.schedule.export.model;
 
 import java.util.List;
 
@@ -26,8 +26,6 @@ import lombok.Data;
 
 @Data
 public class SqlPlanScheduleRowData extends BaseScheduleRowData {
-
-    private ExportedDatabase targetDatabase;
 
     private String sqlContent;
     // 用于前端展示执行SQL文件名
