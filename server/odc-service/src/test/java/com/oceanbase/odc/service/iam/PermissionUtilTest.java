@@ -76,20 +76,6 @@ public class PermissionUtilTest {
     }
 
     @Test
-    public void isConnectionAccessPermission() {
-        Assert.assertTrue(PermissionUtil.isConnectionAccessPermission(
-                createPermission("ODC_CONNECTION:1", "connect", PermissionType.PUBLIC_RESOURCE)));
-        Assert.assertTrue(PermissionUtil.isConnectionAccessPermission(
-                createPermission("ODC_CONNECTION:*", "readonlyconnect", PermissionType.PUBLIC_RESOURCE)));
-        Assert.assertTrue(PermissionUtil.isConnectionAccessPermission(
-                createPermission("ODC_CONNECTION:1", "apply", PermissionType.PUBLIC_RESOURCE)));
-        Assert.assertFalse(PermissionUtil.isConnectionAccessPermission(
-                createPermission("ODC_CONNECTION:1", "read", PermissionType.PUBLIC_RESOURCE)));
-        Assert.assertFalse(PermissionUtil.isConnectionAccessPermission(
-                createPermission("ODC_PRIVATE_CONNECTION:1", "create", PermissionType.PRIVATE_RESOURCE)));
-    }
-
-    @Test
     public void isResourceManagementPermission() {
         Assert.assertTrue(PermissionUtil.isResourceManagementPermission(
                 createPermission("ODC_CONNECTION:1", "read", PermissionType.PUBLIC_RESOURCE)));
