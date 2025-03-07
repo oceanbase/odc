@@ -417,6 +417,7 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
     private DumpParameter getDumpParameterForManifest() {
         CsvConfig csvConfig = MoreObjects.firstNonNull(config.getCsvConfig(), new CsvConfig());
         DumpParameter dumpParameter = new DumpParameter();
+        dumpParameter.setTmpPath(workingDir.getAbsolutePath());
         dumpParameter.setFilePath(workingDir.getPath());
         dumpParameter.setColumnDelimiter(csvConfig.getColumnDelimiter());
         dumpParameter.setColumnSeparator(csvConfig.getColumnSeparator());
