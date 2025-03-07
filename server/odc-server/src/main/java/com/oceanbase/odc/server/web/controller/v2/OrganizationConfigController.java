@@ -25,7 +25,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.config.model.Configuration;
-import com.oceanbase.odc.service.config.model.ConfigurationMeta;
 
 import io.swagger.annotations.ApiOperation;
 
