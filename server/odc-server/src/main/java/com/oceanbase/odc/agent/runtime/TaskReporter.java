@@ -54,7 +54,8 @@ class TaskReporter {
                         HttpClientUtils.request("POST", hostWithUrl, JsonUtils.toJson(result),
                                 new TypeReference<SuccessResponse<String>>() {});
                 if (response != null && response.getSuccessful()) {
-                    log.info("Report to host {} success, result is {}, response is {}.", host, JsonUtils.toJson(result),
+                    log.info("Report to host {} success with url {}, result is {}, response is {}.", host, url,
+                            JsonUtils.toJson(result),
                             JsonUtils.toJson(response));
                     return true;
                 }
