@@ -113,6 +113,12 @@ public class DataArchiveConditionUtil {
                 return baseDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime().plusDays(offsetValue);
             case "w":
                 return baseDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime().plusWeeks(offsetValue);
+            case "h":
+                return baseDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime().plusHours(offsetValue);
+            case "m":
+                return baseDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime().plusMinutes(offsetValue);
+            case "s":
+                return baseDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime().plusSeconds(offsetValue);
             default:
                 throw new UnsupportedException("Unsupported unit: " + unit);
         }
