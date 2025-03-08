@@ -46,10 +46,10 @@ import com.oceanbase.odc.service.connection.table.TableService;
 import com.oceanbase.odc.service.connection.table.model.QueryTableParams;
 import com.oceanbase.odc.service.connection.table.model.Table;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
-import com.oceanbase.odc.service.db.model.AllTablesAndViews;
+import com.oceanbase.odc.service.db.model.AllMVBaseTables;
 import com.oceanbase.odc.service.db.model.DBViewResponse;
+import com.oceanbase.odc.service.db.model.DatabaseAndMVs;
 import com.oceanbase.odc.service.db.model.DatabaseAndTables;
-import com.oceanbase.odc.service.db.model.DatabaseAndViews;
 import com.oceanbase.odc.service.db.model.MVSyncDataReq;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
@@ -105,9 +105,9 @@ public class DBMaterializedViewService {
         return tables;
     }
 
-    public AllTablesAndViews listAllBases(ConnectionSession connectionSession,
+    public AllMVBaseTables listAllBases(ConnectionSession connectionSession,
             String tableNameLike) {
-        AllTablesAndViews allResult = new AllTablesAndViews();
+        AllMVBaseTables allResult = new AllMVBaseTables();
         DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
         List<DatabaseAndTables> tables = new ArrayList<>();
         List<String> databases = accessor.showDatabases();
@@ -126,15 +126,15 @@ public class DBMaterializedViewService {
             List<String> views = schema2mvs.computeIfAbsent(item.getSchemaName(), t -> new ArrayList<>());
             views.add(item.getName());
         });
-        List<DatabaseAndViews> mvs = new ArrayList<>();
+        List<DatabaseAndMVs> mvs = new ArrayList<>();
         schema2mvs.forEach((schema, viewNames) -> {
-            DatabaseAndViews view = new DatabaseAndViews();
+            DatabaseAndMVs view = new DatabaseAndMVs();
             view.setDatabaseName(schema);
-            view.setViews(viewNames);
+            view.setMvs(viewNames);
             mvs.add(view);
         });
         allResult.setTables(tables);
-        allResult.setViews(mvs);
+        allResult.setMvs(mvs);
         return allResult;
     }
 

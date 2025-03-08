@@ -40,7 +40,7 @@ import com.oceanbase.odc.service.common.util.SidUtils;
 import com.oceanbase.odc.service.connection.table.model.QueryTableParams;
 import com.oceanbase.odc.service.connection.table.model.Table;
 import com.oceanbase.odc.service.db.DBMaterializedViewService;
-import com.oceanbase.odc.service.db.model.AllTablesAndViews;
+import com.oceanbase.odc.service.db.model.AllMVBaseTables;
 import com.oceanbase.odc.service.db.model.DBViewResponse;
 import com.oceanbase.odc.service.db.model.MVSyncDataReq;
 import com.oceanbase.odc.service.session.ConnectSessionService;
@@ -100,8 +100,8 @@ public class DBMaterializedViewController {
             notes = "obtain list of base tables under the current data source that are used to create the materialized view. Sid example: sid:1000-1")
     @RequestMapping(value = "/listAllBases/{sid:.*}", method = RequestMethod.GET)
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
-    public OdcResult<AllTablesAndViews> listAllBases(@PathVariable String sid, @RequestParam String name) {
-        // sid:1000-1 name:""
+    public OdcResult<AllMVBaseTables> listAllBases(@PathVariable String sid, @RequestParam String name) {
+        // sid:1000-1
         return OdcResult.ok(dbMaterializedViewService.listAllBases(
                 sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), name));
     }
