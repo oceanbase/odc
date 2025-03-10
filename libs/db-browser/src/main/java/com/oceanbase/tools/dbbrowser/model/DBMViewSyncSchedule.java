@@ -39,7 +39,7 @@ public class DBMViewSyncSchedule {
 
     private Unit unit;
 
-    private enum Unit {
+    public enum Unit {
         SECOND,
         MINUTE,
         HOUR,
