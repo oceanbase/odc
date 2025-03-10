@@ -156,6 +156,7 @@
         <commons-codec.version>1.15</commons-codec.version>
         <registry-prometheus.version>1.9.5</registry-prometheus.version>
         <actuator.version>2.7.12</actuator.version>
+        <picocli.version>4.7.0</picocli.version>
     </properties>
 
     <dependencyManagement>
@@ -1082,6 +1083,11 @@
                 </exclusions>
                 <optional>true</optional>
             </dependency>
+            <dependency>
+                <groupId>info.picocli</groupId>
+                <artifactId>picocli</artifactId>
+                <version>${picocli.version}</version>
+            </dependency>
 
             <!-- 以下测试依赖 -->
             <dependency>
@@ -1602,7 +1608,7 @@ limitations under the License.
                 </property>
             </activation>
             <properties>
-                <ob-loader-dumper.version>4.3.1.1-RELEASE</ob-loader-dumper.version>
+                <ob-loader-dumper.version>4.3.3-RELEASE</ob-loader-dumper.version>
             </properties>
         </profile>
     </profiles>
