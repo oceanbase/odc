@@ -16,7 +16,6 @@
 package com.oceanbase.odc.plugin.task.api.datatransfer.dumper;
 
 import java.io.InputStream;
-import java.lang.reflect.Method;
 import java.net.URL;
 
 import com.oceanbase.tools.loaddump.utils.SerializeUtils;
