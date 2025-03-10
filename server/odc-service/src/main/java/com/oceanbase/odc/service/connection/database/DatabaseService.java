@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 import javax.validation.Valid;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -917,23 +918,23 @@ public class DatabaseService {
     @SkipAuthorize("internal authorized")
     @Transactional(rollbackFor = Exception.class)
     public boolean modifyDatabaseRemark(@NotEmpty Collection<Long> databaseIds,
-            @NotNull @Size(min = 1, max = 100) String remark) {
+            @NotBlank @Size(min = 1, max = 100) String remark) {
         Set<Long> ids = new HashSet<>(databaseIds);
-        List<Database> databases = listDatabasesByIds(ids);
+        List<Database> databases = listDatabasesDetailsByIds(ids);
         Verify.equals(ids.size(), databases.size(), "Missing databases may exist");
 
         for (Database database : databases) {
-            horizontalDataPermissionValidator.checkCurrentOrganization(database);
-            Permission requiredPermission = this.securityManager
-                    .getPermissionByActions(database.getDataSource(), Collections.singletonList("read"));
-            if (this.securityManager.isPermitted(requiredPermission)) {
-                if (database.getProject() == null) {
-                    throw new NotFoundException(ResourceType.ODC_PROJECT, "databaseId", database.getId());
-                }
-                checkIfCanUpsertDatabaseRemark(database.getProject());
-                database.setDatabaseRemark(remark);
+            if (CollectionUtils.isEmpty(database.getAuthorizedPermissionTypes())) {
+                throw new AccessDeniedException();
             }
         }
+
+        Set<Long> needCheckProjectIds =
+                databases.stream().filter(d -> d.getProject() != null && d.getProject().getId() != null)
+                        .map(d -> d.getProject().getId())
+                        .collect(Collectors.toSet());
+        checkIfCanUpsertDatabaseRemark(needCheckProjectIds);
+
         int affectRows = databaseRepository.setDatabaseRemarkByIdIn(databaseIds, remark);
         return Objects.equals(affectRows, databases.size());
     }
@@ -960,15 +961,31 @@ public class DatabaseService {
         if (Objects.isNull(project)) {
             throw new NotFoundException(ResourceType.ODC_PROJECT, "id", projectId);
         }
-        checkIfCanUpsertDatabaseRemark(project);
+        if (!Objects.equals(project.getCreator().getId(), authenticationFacade.currentUserId())) {
+            projectPermissionValidator.checkProjectRole(projectId,
+                    Arrays.asList(ResourceRoleName.OWNER, ResourceRoleName.DBA));
+        }
     }
 
-    private void checkIfCanUpsertDatabaseRemark(@NonNull Project project) {
-        if (Objects.equals(authenticationFacade.currentUserId(), project.getCreator().getId())) {
+    private void checkIfCanUpsertDatabaseRemark(Collection<Long> projectIds) {
+        if (CollectionUtils.isEmpty(projectIds)) {
             return;
         }
-        projectPermissionValidator.checkProjectRole(project.getId(),
-                Arrays.asList(ResourceRoleName.OWNER, ResourceRoleName.DBA));
+        Set<Long> ids = projectIds.stream().filter(Objects::nonNull).collect(Collectors.toSet());
+        final long userId = authenticationFacade.currentUserId();
+        List<Project> projects = projectService.listByIds(ids);
+
+        Verify.equals(ids.size(), projects.size(), "Project");
+
+        Set<Long> needCheckProjectIds = projects.stream()
+                .filter(p -> !Objects.equals(userId, p.getCreator().getId()))
+                .map(Project::getId)
+                .collect(Collectors.toSet());
+
+        if (CollectionUtils.isNotEmpty(needCheckProjectIds)) {
+            projectPermissionValidator.checkProjectRole(needCheckProjectIds,
+                    Arrays.asList(ResourceRoleName.OWNER, ResourceRoleName.DBA));
+        }
     }
 
     private void checkTransferable(@NonNull Collection<DatabaseEntity> databases, @NonNull TransferDatabasesReq req) {

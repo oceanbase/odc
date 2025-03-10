@@ -41,6 +41,7 @@ import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.connection.database.model.DeleteDatabasesReq;
 import com.oceanbase.odc.service.connection.database.model.ModifyDatabaseOwnerReq;
+import com.oceanbase.odc.service.connection.database.model.ModifyDatabaseRemarkReq;
 import com.oceanbase.odc.service.connection.database.model.QueryDatabaseParams;
 import com.oceanbase.odc.service.connection.database.model.TransferDatabasesReq;
 
@@ -130,7 +131,7 @@ public class DataBaseController {
 
     @ApiOperation(value = "updateDatabaseRemark", notes = "update databases remark")
     @RequestMapping(value = "/databases/remark", method = RequestMethod.PUT)
-    public SuccessResponse<Boolean> modifyDatabaseRemark(@Valid @RequestBody TransferDatabasesReq req) {
+    public SuccessResponse<Boolean> modifyDatabaseRemark(@Valid @RequestBody ModifyDatabaseRemarkReq req) {
         return Responses
                 .success(databaseService.modifyDatabaseRemark(req.getDatabaseIds(), req.getDatabaseRemark()));
     }

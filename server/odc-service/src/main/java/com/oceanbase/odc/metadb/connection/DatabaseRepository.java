@@ -117,6 +117,6 @@ public interface DatabaseRepository extends JpaRepository<DatabaseEntity, Long>,
 
     @Modifying
     @Transactional
-    @Query(value = "update connect_database t set t.database_remark = :remark where t.id in (:id)", nativeQuery = true)
+    @Query(value = "update connect_database t set t.database_remark = :remark where t.id in (:ids)", nativeQuery = true)
     int setDatabaseRemarkByIdIn(@Param("ids") Collection<Long> databaseIds, @Param("remark") String databaseRemark);
 }
