@@ -27,7 +27,7 @@ import com.oceanbase.odc.plugin.schema.obmysql.utils.DBAccessorUtil;
 import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.editor.DBObjectOperator;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLObjectOperator;
-import com.oceanbase.tools.dbbrowser.model.DBMVSyncDataParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataParameter;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBView;
@@ -63,7 +63,7 @@ public class OBMySQLMVExtension implements MVExtensionPoint {
     }
 
     @Override
-    public Boolean syncMVData(Connection connection, DBMVSyncDataParameter parameter) {
+    public Boolean syncMVData(Connection connection, DBMViewSyncDataParameter parameter) {
         return getSchemaAccessor(connection).syncMVData(parameter);
     }
 

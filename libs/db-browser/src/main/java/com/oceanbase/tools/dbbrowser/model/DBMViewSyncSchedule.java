@@ -13,24 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.db.model;
+package com.oceanbase.tools.dbbrowser.model;
 
-import java.util.List;
+import java.util.Date;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @description:
  * @author: zijia.cj
- * @date: 2025/3/8 14:02
+ * @date: 2025/3/10 12:36
  * @since: 4.3.4
  */
-@Setter
-@Getter
-public class AllMVBaseTables {
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class DBMViewSyncSchedule {
 
-    private List<DatabaseAndTables> tables;
-    private List<DatabaseAndMVs> mvs;
+    // 默认是当前时间 sysdate()
+    private Date startWith;
+
+    private Long interval;
+
+    private Unit unit;
+
+    private enum Unit {
+        SECOND,
+        MINUTE,
+        HOUR,
+        DAY,
+        WEEK,
+        MONTH,
+        YEAR;
+    }
 
 }

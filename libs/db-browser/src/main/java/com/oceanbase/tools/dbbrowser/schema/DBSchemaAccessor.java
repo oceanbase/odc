@@ -21,7 +21,7 @@ import java.util.Map;
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
-import com.oceanbase.tools.dbbrowser.model.DBMVSyncDataParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataParameter;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBPackage;
@@ -134,7 +134,7 @@ public interface DBSchemaAccessor {
 
     List<DBObjectIdentity> listAllMVs(String viewNameLike);
 
-    Boolean syncMVData(DBMVSyncDataParameter parameter);
+    Boolean syncMVData(DBMViewSyncDataParameter parameter);
 
     DBView getMV(String schemaName, String viewName);
 

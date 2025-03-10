@@ -57,7 +57,7 @@ import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
 import com.oceanbase.tools.dbbrowser.model.DBIndexType;
-import com.oceanbase.tools.dbbrowser.model.DBMVSyncDataParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataParameter;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
@@ -342,7 +342,7 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public Boolean syncMVData(DBMVSyncDataParameter parameter) {
+    public Boolean syncMVData(DBMViewSyncDataParameter parameter) {
         throw new UnsupportedOperationException("not support yet");
     }
 

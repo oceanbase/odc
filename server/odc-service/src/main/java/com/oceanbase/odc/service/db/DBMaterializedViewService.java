@@ -54,7 +54,7 @@ import com.oceanbase.odc.service.db.model.MVSyncDataReq;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
-import com.oceanbase.tools.dbbrowser.model.DBMVSyncDataParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataParameter;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBView;
@@ -146,7 +146,7 @@ public class DBMaterializedViewService {
     }
 
     public Boolean syncData(@NotNull ConnectionSession connectionSession, @NotNull MVSyncDataReq mvSyncDataReq) {
-        DBMVSyncDataParameter dbmvSyncDataParameter = mvSyncDataReq.convertToDBMVSyncDataParameter();
+        DBMViewSyncDataParameter dbmvSyncDataParameter = mvSyncDataReq.convertToDBMVSyncDataParameter();
         return connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.BACKEND_DS_KEY)
                 .execute((ConnectionCallback<Boolean>) con -> getDBMVExtensionPoint(connectionSession)

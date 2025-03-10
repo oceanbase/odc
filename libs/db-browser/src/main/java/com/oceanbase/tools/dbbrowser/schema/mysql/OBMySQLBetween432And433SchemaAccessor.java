@@ -19,7 +19,7 @@ import java.util.List;
 
 import org.springframework.jdbc.core.JdbcOperations;
 
-import com.oceanbase.tools.dbbrowser.model.DBMVSyncDataParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataParameter;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBView;
 
@@ -46,7 +46,7 @@ public class OBMySQLBetween432And433SchemaAccessor extends OBMySQLSchemaAccessor
     }
 
     @Override
-    public Boolean syncMVData(DBMVSyncDataParameter parameter) {
+    public Boolean syncMVData(DBMViewSyncDataParameter parameter) {
         throw new UnsupportedOperationException("not support yet");
     }
 

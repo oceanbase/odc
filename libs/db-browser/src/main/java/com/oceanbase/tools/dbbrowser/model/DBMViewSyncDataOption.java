@@ -13,24 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.db.model;
-
-import java.util.List;
+package com.oceanbase.tools.dbbrowser.model;
 
 import lombok.Getter;
-import lombok.Setter;
 
 /**
  * @description:
  * @author: zijia.cj
- * @date: 2025/3/8 14:02
+ * @date: 2025/3/4 14:53
  * @since: 4.3.4
  */
-@Setter
 @Getter
-public class AllMVBaseTables {
+public enum DBMViewSyncDataOption {
 
-    private List<DatabaseAndTables> tables;
-    private List<DatabaseAndMVs> mvs;
+    FAST_REFRESH("f"),
+    FORCE_REFRESH("?"),
+    COMPLETE_REFRESH("c"),
+    ALWAYS_REFRESH("a"),
+    NEVER_REFRESH("n");
+
+    private String value;
+
+    DBMViewSyncDataOption(String value) {
+        this.value = value;
+    }
 
 }

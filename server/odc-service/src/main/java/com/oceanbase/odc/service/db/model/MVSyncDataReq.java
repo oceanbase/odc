@@ -19,8 +19,8 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
-import com.oceanbase.tools.dbbrowser.model.DBMVSyncDataOption;
-import com.oceanbase.tools.dbbrowser.model.DBMVSyncDataParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataOption;
+import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataParameter;
 
 import lombok.Data;
 
@@ -37,12 +37,12 @@ public class MVSyncDataReq {
     @NotBlank
     private String mvName;
     @NotNull
-    DBMVSyncDataOption option;
+    DBMViewSyncDataOption option;
     @Min(1)
     private int parallelismDegree = 1;
 
-    public DBMVSyncDataParameter convertToDBMVSyncDataParameter() {
-        DBMVSyncDataParameter parameter = new DBMVSyncDataParameter();
+    public DBMViewSyncDataParameter convertToDBMVSyncDataParameter() {
+        DBMViewSyncDataParameter parameter = new DBMViewSyncDataParameter();
         parameter.setDatabaseName(databaseName);
         parameter.setMvName(mvName);
         parameter.setMvSyncDataOption(option);

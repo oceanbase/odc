@@ -32,7 +32,7 @@ import org.springframework.jdbc.core.JdbcOperations;
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
-import com.oceanbase.tools.dbbrowser.model.DBMVSyncDataParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataParameter;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBObjectWarningDescriptor;
@@ -93,7 +93,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     }
 
     @Override
-    public Boolean syncMVData(DBMVSyncDataParameter parameter) {
+    public Boolean syncMVData(DBMViewSyncDataParameter parameter) {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
         sb.append("call DBMS_MVIEW.REFRESH('");
         sb.append(parameter.getDatabaseName());

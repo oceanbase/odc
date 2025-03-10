@@ -15,26 +15,27 @@
  */
 package com.oceanbase.tools.dbbrowser.model;
 
-import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @description:
  * @author: zijia.cj
- * @date: 2025/3/4 14:53
+ * @date: 2025/3/4 14:57
  * @since: 4.3.4
  */
-@Getter
-public enum DBMVSyncDataOption {
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class DBMViewSyncDataParameter {
 
-    FAST_REFRESH("f"),
-    FORCE_REFRESH("?"),
-    COMPLETE_REFRESH("c"),
-    ALWAYS_REFRESH("a");
+    private String databaseName;
 
-    private String value;
+    private String mvName;
 
-    DBMVSyncDataOption(String value) {
-        this.value = value;
-    }
+    private DBMViewSyncDataOption mvSyncDataOption;
+
+    private int parallelismDegree;
 
 }

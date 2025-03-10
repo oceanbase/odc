@@ -15,25 +15,13 @@
  */
 package com.oceanbase.tools.dbbrowser.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 /**
  * @description:
  * @author: zijia.cj
- * @date: 2025/3/4 14:57
+ * @date: 2025/3/10 12:28
  * @since: 4.3.4
  */
-@Data
-public class DBMVSyncDataParameter {
-
-    private String databaseName;
-
-    private String mvName;
-
-    private DBMVSyncDataOption mvSyncDataOption;
-
-    private int parallelismDegree;
-
+public enum DBMViewSyncPattern {
+    ON_DEMAND,
+    SCHEDULED
 }

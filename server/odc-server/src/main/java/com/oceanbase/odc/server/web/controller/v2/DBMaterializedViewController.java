@@ -46,8 +46,8 @@ import com.oceanbase.odc.service.db.model.MVSyncDataReq;
 import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.odc.service.state.model.StateName;
 import com.oceanbase.odc.service.state.model.StatefulRoute;
+import com.oceanbase.tools.dbbrowser.model.DBMView;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
-import com.oceanbase.tools.dbbrowser.model.DBView;
 
 import io.swagger.annotations.ApiOperation;
 
@@ -110,7 +110,7 @@ public class DBMaterializedViewController {
             notes = "obtain the sql to create the materialized view, Sid example: sid:1000-1:d:db1:v:v1")
     @RequestMapping(value = "/getCreateSql/{sid:.*}", method = RequestMethod.PATCH)
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
-    public OdcResult<ResourceSql> getCreateSql(@PathVariable String sid, @RequestBody DBView resource) {
+    public OdcResult<ResourceSql> getCreateSql(@PathVariable String sid, @RequestBody DBMView resource) {
         throw new NotImplementedException("not implemented");
     }
 
