@@ -67,9 +67,10 @@ public class DoStopJobV2 implements Job {
                 taskFrameworkProperties.getSingleFetchCancelingJobRows());
         jobs.forEach(job -> {
             try {
-                sendStopToTask(configuration, taskFrameworkService, job);
+                configuration.getTransactionManager().doInTransactionWithoutResult(
+                        () -> sendStopToTask(configuration, taskFrameworkService, job));
             } catch (Throwable e) {
-                log.warn("Try to start job {} failed: ", job.getId(), e);
+                log.warn("Try to stop job {} failed: ", job.getId(), e);
             }
         });
     }

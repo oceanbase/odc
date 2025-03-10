@@ -44,8 +44,14 @@ public enum JobStatus {
 
     public TaskStatus convertTaskStatus() {
 
-        if (CANCELING == this) {
+        if (CANCELING == this || DO_CANCELING == this) {
             return TaskStatus.CANCELED;
+        }
+        if (TIMEOUT == this) {
+            return TaskStatus.FAILED;
+        }
+        if (PREPARING_RESR == this) {
+            return TaskStatus.PREPARING;
         }
         return TaskStatus.valueOf(this.name());
     }
