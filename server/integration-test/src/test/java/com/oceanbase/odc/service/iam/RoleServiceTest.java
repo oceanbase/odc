@@ -130,7 +130,6 @@ public class RoleServiceTest extends AuthorityTestEnv {
     @Test(expected = BadRequestException.class)
     public void testCreateDuplicate() {
         CreateRoleReq createRoleReq = buildCreateRoleReq("create");
-        Role createdRole = roleService.create(createRoleReq);
         roleService.create(createRoleReq);
     }
 
