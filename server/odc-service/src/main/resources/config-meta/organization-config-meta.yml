@@ -13,7 +13,7 @@
   description: 'SQL query row limit'
 - id: 2
   category: 'organization'
-  key: 'odc.sqlexecute.default.queryNumber'
+  key: 'odc.sqlexecute.default.queryCount'
   type: 'integer'
   max_value:
   min_value:
@@ -23,7 +23,7 @@
   description: 'SQL query row limit'
 - id: 3
   category: 'organization'
-  key: 'odc.task.default.rollbackPlan'
+  key: 'odc.task.default.rollbackPlanEnabled'
   type: 'boolean'
   max_value:
   min_value:
@@ -43,7 +43,7 @@
   description: 'Task description field prompt text.'
 - id: 5
   category: 'organization'
-  key: 'odc.task.default.importTaskStructureReplacement'
+  key: 'odc.task.default.importTaskStructureReplacementEnabled'
   type: 'boolean'
   max_value:
   min_value:

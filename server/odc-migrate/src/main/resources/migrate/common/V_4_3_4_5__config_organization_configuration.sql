@@ -14,4 +14,4 @@ CREATE TABLE IF NOT EXISTS `config_organization_configuration`(
   `last_modifier_id` bigint(20) DEFAULT NULL COMMENT 'user id of the last modifier',
   CONSTRAINT `pk_organization_configuration_id` PRIMARY KEY  (`id`),
   UNIQUE KEY `uk_organization_configuration_organization_id_key` (`organization_id`, `key`)
-) COMMENT='Organization configuration, for organization administrator';
+) COMMENT = 'Organization configuration, for organization administrator';

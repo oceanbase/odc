@@ -18,9 +18,6 @@ templates:
       - column_name: value
         value: "1000"
         data_type: java.lang.String
-      - column_name: label
-        value: "team"
-        data_type: java.lang.String
       - column_name: description
         value: "SQL query row limit in team organization."
         data_type: java.lang.String
@@ -47,9 +44,6 @@ templates:
       - column_name: value
         value: "1000"
         data_type: java.lang.String
-      - column_name: label
-        value: "team"
-        data_type: java.lang.String
       - column_name: description
         value: "SQL query row limit value in team organization."
         data_type: java.lang.String
@@ -71,13 +65,10 @@ templates:
         value: ${ORGANIZATION_ID}
         data_type: java.lang.Long
       - column_name: key
-        value: "odc.task.default.rollbackPlan"
+        value: "odc.task.default.rollbackPlanEnabled"
         data_type: java.lang.String
       - column_name: value
         value: "false"
-        data_type: java.lang.String
-      - column_name: label
-        value: "team"
         data_type: java.lang.String
       - column_name: description
         value: "Automatic generate rollback plan for database changes in team organization."
@@ -105,9 +96,6 @@ templates:
       - column_name: value
         value: ""
         data_type: java.lang.String
-      - column_name: label
-        value: "team"
-        data_type: java.lang.String
       - column_name: description
         value: "Task description field prompt text in team organization."
         data_type: java.lang.String
@@ -129,13 +117,10 @@ templates:
         value: ${ORGANIZATION_ID}
         data_type: java.lang.Long
       - column_name: key
-        value: "odc.task.default.importTaskStructureReplacement"
+        value: "odc.task.default.importTaskStructureReplacementEnabled"
         data_type: java.lang.String
       - column_name: value
         value: "true"
-        data_type: java.lang.String
-      - column_name: label
-        value: "team"
         data_type: java.lang.String
       - column_name: description
         value: "Whether to replace the task structure when importing tasks in team organization."
