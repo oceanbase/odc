@@ -47,10 +47,12 @@ public class BinaryFile<T> {
         try (InputStream inputStream = url.openStream()) {
             T value = SerializeUtils.deserializeObjectByKryo(inputStream);
             if (value == null) {
+                log.warn("Failed to deserialize object, url={}", url);
                 return null;
             }
             return new BinaryFile<>(value, url);
         } catch (Exception e) {
+            log.warn("Failed to deserialize object, url={}", url, e);
             return null;
         }
     }
