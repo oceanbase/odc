@@ -1,0 +1,53 @@
+# organization configuration meta
+# - category options: user, organization, system
+# - type options: string, integer, decimal, boolean, list
+- id: 1
+  category: 'organization'
+  key: 'odc.sqlexecute.default.queryLimit'
+  type: 'integer'
+  max_value: 10000
+  min_value: 1
+  allowed_values: ~
+  default_value: '1000'
+  nullable: false
+  description: 'SQL query row limit'
+- id: 2
+  category: 'organization'
+  key: 'odc.sqlexecute.default.queryNumber'
+  type: 'integer'
+  max_value:
+  min_value:
+  allowed_values: ~
+  default_value: '1000'
+  nullable: false
+  description: 'SQL query row limit'
+- id: 3
+  category: 'organization'
+  key: 'odc.task.default.rollbackPlan'
+  type: 'boolean'
+  max_value:
+  min_value:
+  allowed_values: ['true', 'false']
+  default_value: 'false'
+  nullable: false
+  description: 'Automatically generate a rollback plan for database changes.'
+- id: 4
+  category: 'organization'
+  key: 'odc.task.default.taskDescriptionPrompt'
+  type: 'string'
+  max_value:
+  min_value:
+  allowed_values: ~
+  default_value: ''
+  nullable: true
+  description: 'Task description field prompt text.'
+- id: 5
+  category: 'organization'
+  key: 'odc.task.default.importTaskStructureReplacement'
+  type: 'boolean'
+  max_value:
+  min_value:
+  allowed_values: ~
+  default_value: 'true'
+  nullable: false
+  description: 'Whether to replace the task structure when importing tasks.'
