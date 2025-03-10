@@ -173,6 +173,18 @@ public class JsonUtils {
         return innerToJson(OBJECT_MAPPER, obj);
     }
 
+    public static byte[] toBytes(Object obj) {
+        if (obj == null) {
+            return null;
+        }
+        try {
+            return OBJECT_MAPPER.writeValueAsBytes(obj);
+        } catch (JsonProcessingException e) {
+            log.warn("parses obj to bytes failed, reason = {}", e.getMessage());
+            return null;
+        }
+    }
+
     /**
      * 不会将 @MaskField 注解修饰的字段处理成指定模糊字段(******)
      *
