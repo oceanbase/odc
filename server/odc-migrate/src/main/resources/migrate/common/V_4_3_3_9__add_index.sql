@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-CREATE INDEX idx_iam_user_creator_id ON iam_user (creator_id);
-CREATE INDEX idx_iam_role_creator_id ON iam_role (creator_id);
-CREATE INDEX idx_connect_connection_creator_id ON connect_connection (creator_id);
+CREATE INDEX idx_iam_user_org_id_creator_id ON iam_user (organization_id, creator_id);
+CREATE INDEX idx_iam_role_org_id_creator_id ON iam_role (organization_id, creator_id);
+CREATE INDEX idx_connect_connection_org_id_creator_id ON connect_connection (organization_id, creator_id);
 
