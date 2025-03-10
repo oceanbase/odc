@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2025 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,26 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.iam.model;
 
-import java.io.Serializable;
-import java.util.List;
+CREATE INDEX idx_iam_user_org_id_creator_id ON iam_user (organization_id, creator_id);
+CREATE INDEX idx_iam_role_org_id_creator_id ON iam_role (organization_id, creator_id);
+CREATE INDEX idx_connect_connection_org_id_creator_id ON connect_connection (organization_id, creator_id);
 
-import com.oceanbase.odc.core.shared.constant.ResourceType;
-
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-/**
- * @author gaoda.xy
- * @date 2022/11/25 11:18
- */
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class PermissionConfig implements Serializable {
-    private String resourceId;
-    private ResourceType resourceType;
-    private List<String> actions;
-}
