@@ -91,6 +91,7 @@ import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.DBAccessHistoryReq;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.QueryConnectionParams;
@@ -155,7 +156,6 @@ import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 
-import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -289,6 +289,16 @@ public class ScheduleService {
             }
         }
         changeSchedule(scheduleChangeParams);
+        if (Objects.nonNull(createReq.getDatabaseId())) {
+            try {
+                DBAccessHistoryReq dbAccessHistoryReq = new DBAccessHistoryReq().setDatabaseIds(
+                        Collections.singleton(createReq.getDatabaseId()));
+                databaseService.recordDatabaseAccessHistory(dbAccessHistoryReq);
+            } catch (Exception e) {
+                log.warn("Failed to record database access history while creating schedule task, dbId={}",
+                        createReq.getDatabaseId(), e);
+            }
+        }
         return Collections.singletonList(FlowInstanceDetailResp.withIdAndType(-1L, TaskType.ALTER_SCHEDULE));
     }
 
@@ -1132,6 +1142,7 @@ public class ScheduleService {
          * ODC 4.3.4 only {@link ScheduleType.DATA_DELETE} and {@link ScheduleType.DATA_ARCHIVE} is used to
          * taskFramework
          */
+        params.setScheduleTypes(ObjectUtil.defaultIfNull(params.getScheduleTypes(), Collections.emptySet()));
         List<ScheduleTaskEntity> scheduleTasks = scheduleTaskRepository.findByJobGroupInAndCreateTimeBetween(
                 params.getScheduleTypes().stream().map(Enum::name).collect(
                         Collectors.toSet()),
@@ -1191,14 +1202,9 @@ public class ScheduleService {
          * {@link ScheduleType.DATA_DELETE} and {@link ScheduleType.DATA_ARCHIVE} {@link TaskType.ASYNC} and
          * {@link TaskType.PARTITION_PLAN}
          */
-        Set<Long> joinedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
-        if (CollectionUtils.isEmpty(joinedProjectIds)) {
-            return Collections.emptyList();
-        }
-        List<AlterScheduleSubTaskStat> statsWithTaskFramework =
-                CollUtil.defaultIfEmpty(listAlterScheduleSubTaskStatWithTaskFramework(params), new ArrayList<>());
-        List<AlterScheduleSubTaskStat> statsWithoutTaskFramework = CollUtil.defaultIfEmpty(
-                listAlterScheduleSubTaskStatWithoutTaskFramework(params), Collections.emptyList());
+        List<AlterScheduleSubTaskStat> statsWithTaskFramework = listAlterScheduleSubTaskStatWithTaskFramework(params);
+        List<AlterScheduleSubTaskStat> statsWithoutTaskFramework =
+                listAlterScheduleSubTaskStatWithoutTaskFramework(params);
         statsWithTaskFramework.addAll(statsWithoutTaskFramework);
         return statsWithTaskFramework;
     }

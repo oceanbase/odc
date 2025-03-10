@@ -131,9 +131,8 @@ public class DataBaseController {
     @ApiOperation(value = "listDatabaseAccessHistories", notes = "list accessed database histories ")
     @RequestMapping(value = "/databases/histories", method = RequestMethod.GET)
     public SuccessResponse<List<Database>> listDatabaseAccessHistories(
-            @RequestParam(name = "limit") Integer historiesLimit) {
-        DBAccessHistoryReq req = new DBAccessHistoryReq()
-                .setHistoryCount(historiesLimit == null ? Integer.MAX_VALUE : historiesLimit);
+            @RequestParam(name = "limit", defaultValue = "10") Integer historiesLimit) {
+        DBAccessHistoryReq req = new DBAccessHistoryReq().setHistoryCount(historiesLimit);
         return Responses.success(databaseService.listDatabaseAccessHistory(req));
     }
 }

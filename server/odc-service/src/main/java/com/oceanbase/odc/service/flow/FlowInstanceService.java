@@ -412,14 +412,14 @@ public class FlowInstanceService {
                     con.getTenantName()), con.getInstanceType(), false, CloudPermissionAction.READONLY));
         }
         List<FlowInstanceDetailResp> flowInstanceDetailResps = Collections.singletonList(
-            buildFlowInstance(riskLevels, createReq, conns));
+                buildFlowInstance(riskLevels, createReq, conns));
         if (Objects.nonNull(createReq.getDatabaseId())) {
             try {
                 DBAccessHistoryReq dbAccessHistoryReq = new DBAccessHistoryReq().setDatabaseIds(
-                    Collections.singleton(createReq.getDatabaseId()));
+                        Collections.singleton(createReq.getDatabaseId()));
                 databaseService.recordDatabaseAccessHistory(dbAccessHistoryReq);
-            }catch (Exception e) {
-                log.warn("Failed to record database access history, dbId={}",createReq.getDatabaseId(), e);
+            } catch (Exception e) {
+                log.warn("Failed to record database access history, dbId={}", createReq.getDatabaseId(), e);
             }
         }
         return flowInstanceDetailResps;
@@ -1330,29 +1330,29 @@ public class FlowInstanceService {
         return flowInstanceRepository.findFlowInstanceIdByScheduleIdAndStatus(scheduleId, status);
     }
 
-    private List<ServiceTaskInstanceEntity> listFlowInstanceIdAndTaskType(
+    private List<ServiceTaskInstanceEntity> innerListDistinctServiceTaskInstances(
             @NonNull InnerQueryFlowInstanceParams params) {
-        StringBuilder queryAlterScheduleSubTaskSQL = new StringBuilder();
-        HashMap<String, Object> queryAlterScheduleSubTaskParam = new HashMap<>();
-        queryAlterScheduleSubTaskParam.put("organizationId", authenticationFacade.currentOrganizationId());
-        queryAlterScheduleSubTaskSQL.append("SELECT flow_instance_id, task_type FROM flow_instance_node_task ");
-        queryAlterScheduleSubTaskSQL.append("WHERE organization_id = :organizationId ");
+        StringBuilder querySql = new StringBuilder();
+        HashMap<String, Object> queryParamMap = new HashMap<>();
+        queryParamMap.put("organizationId", authenticationFacade.currentOrganizationId());
+        querySql.append("SELECT flow_instance_id, task_type FROM flow_instance_node_task ");
+        querySql.append("WHERE organization_id = :organizationId ");
         if (CollectionUtils.isNotEmpty(params.getTaskTypes())) {
-            queryAlterScheduleSubTaskParam.put("taskTypes",
+            queryParamMap.put("taskTypes",
                     params.getTaskTypes().stream().map(Enum::name).collect(Collectors.toSet()));
-            queryAlterScheduleSubTaskSQL.append("AND task_type in (:taskTypes) ");
+            querySql.append("AND task_type in (:taskTypes) ");
         }
         if (params.getStartTime() != null) {
-            queryAlterScheduleSubTaskParam.put("startTime", params.getStartTime());
-            queryAlterScheduleSubTaskSQL.append("AND create_time >= :startTime ");
+            queryParamMap.put("startTime", params.getStartTime());
+            querySql.append("AND create_time >= :startTime ");
         }
         if (params.getEndTime() != null) {
-            queryAlterScheduleSubTaskParam.put("endTime", params.getEndTime());
-            queryAlterScheduleSubTaskSQL.append("AND create_time <= :endTime ");
+            queryParamMap.put("endTime", params.getEndTime());
+            querySql.append("AND create_time <= :endTime ");
         }
-        queryAlterScheduleSubTaskSQL.append("GROUP BY flow_instance_id;");
+        querySql.append("GROUP BY flow_instance_id;");
         return namedParameterJdbcTemplate.query(
-                queryAlterScheduleSubTaskSQL.toString(), queryAlterScheduleSubTaskParam,
+                querySql.toString(), queryParamMap,
                 new BeanPropertyRowMapper<>(ServiceTaskInstanceEntity.class));
     }
 
@@ -1372,7 +1372,7 @@ public class FlowInstanceService {
          * Query flow_instance_node_task table to get {@link ServiceTaskInstanceEntity#getFlowInstanceId()}
          * and {@link ServiceTaskInstanceEntity#getTaskType()}
          */
-        List<ServiceTaskInstanceEntity> serviceTasks = listFlowInstanceIdAndTaskType(params);
+        List<ServiceTaskInstanceEntity> serviceTasks = innerListDistinctServiceTaskInstances(params);
         if (CollectionUtils.isEmpty(serviceTasks)) {
             return Collections.emptyList();
         }
@@ -1427,11 +1427,12 @@ public class FlowInstanceService {
          */
         final Map<Long, FlowStatus> flowInstanceId2FlowStatus = flowInstances.stream()
                 .filter(f -> realAlterScheduleParentInstanceIds.contains(f.getParentInstanceId())).collect(
-                        Collectors.toMap(FlowInstanceProjection::getId, FlowInstanceProjection::getStatus));
+                        Collectors.toMap(FlowInstanceProjection::getId, FlowInstanceProjection::getStatus,
+                                (exist, val) -> exist));
         final Map<Long, TaskType> flowInstanceId2TaskType =
                 serviceTasks.stream().filter(s -> flowInstanceId2FlowStatus.containsKey(s.getFlowInstanceId())).collect(
                         Collectors.toMap(ServiceTaskInstanceEntity::getFlowInstanceId,
-                                ServiceTaskInstanceEntity::getTaskType));
+                                ServiceTaskInstanceEntity::getTaskType, (exist, val) -> exist));
         if (flowInstanceId2FlowStatus.isEmpty() || flowInstanceId2TaskType.isEmpty()) {
             log.warn("The List flow instance states is abnormal");
             return Collections.emptyList();

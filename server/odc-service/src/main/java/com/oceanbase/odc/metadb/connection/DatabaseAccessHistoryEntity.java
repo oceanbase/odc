@@ -59,7 +59,7 @@ public class DatabaseAccessHistoryEntity {
     /**
      * Refer to {@link ConnectionConfig#getId()}
      */
-    @Column(name = "connection_id", nullable = false)
+    @Column(name = "connection_id")
     private Long connectionId;
 
     /**

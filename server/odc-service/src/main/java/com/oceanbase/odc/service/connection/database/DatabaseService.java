@@ -58,6 +58,7 @@ import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.common.event.LocalEventPublisher;
@@ -235,6 +236,9 @@ public class DatabaseService {
 
     @Autowired
     private DatabaseAccessHistoryRepository databaseAccessHistoryRepository;
+
+    @Autowired
+    private TransactionTemplate transactionTemplate;
 
     @Value("${odc.integration.bastion.enabled:false}")
     private boolean bastionEnabled;
@@ -909,7 +913,6 @@ public class DatabaseService {
                         .collect(Collectors.toList())),
                 true).getContent();
 
-
         Verify.equals(databaseIds.size(), dbs.size(), "Database");
 
         for (Database db : dbs) {
@@ -921,14 +924,9 @@ public class DatabaseService {
                         db.getId(), JsonUtils.toJson(db.getAuthorizedPermissionTypes()));
                 throw new AccessDeniedException();
             }
-            Project project = db.getProject();
-            if (project != null) {
-                project.setCurrentUserIsMember(
-                        projectPermissionValidator.hasProjectRole(project.getId(), ResourceRoleName.all()));
-            }
         }
 
-        List<DatabaseAccessHistoryEntity> toUpsertHistories =
+        final List<DatabaseAccessHistoryEntity> toUpsertHistories =
                 dbs.stream().map(e -> {
                     DatabaseAccessHistoryEntity databaseAccessHistoryEntity = new DatabaseAccessHistoryEntity();
                     databaseAccessHistoryEntity.setLastAccessTime(now);
@@ -941,7 +939,15 @@ public class DatabaseService {
                     return databaseAccessHistoryEntity;
                 }).collect(Collectors.toList());
 
-        int affectRows = bulkUpsertDBAccessHistory(toUpsertHistories);
+        Integer affectRows = transactionTemplate.execute(status -> {
+            try {
+                return bulkUpsertDBAccessHistory(toUpsertHistories);
+            } catch (Exception e) {
+                log.warn("Failed to upsert database access history, databaseIds={}", JsonUtils.toJson(databaseIds), e);
+                status.setRollbackOnly();
+                return 0;
+            }
+        });
         log.info("Record database access histories, expected total is {}, actual is {}",
                 dbs.size(), affectRows);
         return Objects.equals(affectRows, dbs.size());
@@ -961,7 +967,15 @@ public class DatabaseService {
         List<DatabaseAccessHistoryEntity> dbHistoryEntities = targetDbAccessHistorySlice.getContent();
         Set<Long> dbIds =
                 dbHistoryEntities.stream().map(DatabaseAccessHistoryEntity::getDatabaseId).collect(Collectors.toSet());
-        return listSkipPermissionCheck(dbIds, true);
+        List<Database> databases = listSkipPermissionCheck(dbIds, true);
+        Set<Long> joinedProjectIds = projectService.getMemberProjectIds(userId);
+        databases.forEach(d -> {
+            Project project = d.getProject();
+            if (project != null) {
+                project.setCurrentUserIsMember(joinedProjectIds.contains(project.getId()));
+            }
+        });
+        return databases;
     }
 
     private void checkPermission(Long projectId, Long dataSourceId) {
