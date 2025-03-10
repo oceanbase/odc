@@ -936,8 +936,8 @@ public class DatabaseService {
                 database.setDatabaseRemark(remark);
             }
         }
-        databaseRepository.setDatabaseRemarkByIdIn(databaseIds, remark);
-        return true;
+        int affectRows = databaseRepository.setDatabaseRemarkByIdIn(databaseIds, remark);
+        return Objects.equals(affectRows, databases.size());
     }
 
     private void checkPermission(Long projectId, Long dataSourceId) {
