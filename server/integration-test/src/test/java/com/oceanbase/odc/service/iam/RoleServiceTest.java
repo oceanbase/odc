@@ -337,11 +337,11 @@ public class RoleServiceTest extends AuthorityTestEnv {
         when(resourceGroupRepository.existsById(any())).thenReturn(true);
 
         PermissionConfig roleManagementPermission =
-                new PermissionConfig(null, ResourceType.ODC_ROLE, Arrays.asList("read", "update", "delete"));
+                new PermissionConfig("*", ResourceType.ODC_ROLE, Arrays.asList("read", "update", "delete"));
         PermissionConfig roleManagementPermissionCreate =
-                new PermissionConfig(null, ResourceType.ODC_ROLE, Arrays.asList("create"));
+                new PermissionConfig("*", ResourceType.ODC_ROLE, Arrays.asList("create"));
         PermissionConfig userManagementPermission =
-                new PermissionConfig(null, ResourceType.ODC_USER, Arrays.asList("read", "update", "delete"));
+                new PermissionConfig("*", ResourceType.ODC_USER, Arrays.asList("read", "update", "delete"));
         createRoleReq.setResourceManagementPermissions(Arrays.asList(roleManagementPermission,
                 roleManagementPermissionCreate, userManagementPermission));
         return createRoleReq;

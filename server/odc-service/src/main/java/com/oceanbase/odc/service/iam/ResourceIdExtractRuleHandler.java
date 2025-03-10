@@ -13,26 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.iam.model;
+package com.oceanbase.odc.service.iam;
 
-import java.io.Serializable;
 import java.util.List;
 
-import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.core.authority.model.SecurityResource;
+import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.resourcegroup.model.ResourceContext;
+import com.oceanbase.odc.service.resourcegroup.model.ResourceContext.ResourceIdExtractRule;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+public interface ResourceIdExtractRuleHandler {
+    boolean supports(ResourceIdExtractRule rule);
 
-/**
- * @author gaoda.xy
- * @date 2022/11/25 11:18
- */
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class PermissionConfig implements Serializable {
-    private String resourceId;
-    private ResourceType resourceType;
-    private List<String> actions;
+    List<SecurityResource> handle(ResourceContext context, AuthenticationFacade authFacade);
 }

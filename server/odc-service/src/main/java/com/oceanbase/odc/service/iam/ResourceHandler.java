@@ -13,26 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.iam.model;
+package com.oceanbase.odc.service.iam;
 
-import java.io.Serializable;
-import java.util.List;
+import java.util.Set;
 
-import com.oceanbase.odc.core.shared.constant.ResourceType;
+public interface ResourceHandler {
+    boolean supports(String resourceType);
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-/**
- * @author gaoda.xy
- * @date 2022/11/25 11:18
- */
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class PermissionConfig implements Serializable {
-    private String resourceId;
-    private ResourceType resourceType;
-    private List<String> actions;
+    Set<Long> findIds(Long organizationId, Long creatorId);
 }

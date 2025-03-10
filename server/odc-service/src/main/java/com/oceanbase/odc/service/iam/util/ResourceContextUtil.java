@@ -27,6 +27,7 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.service.resourcegroup.model.ResourceContext;
+import com.oceanbase.odc.service.resourcegroup.model.ResourceContext.ResourceIdExtractRule;
 
 /**
  * @author wenniu.ly
@@ -41,7 +42,7 @@ public class ResourceContextUtil {
 
     private static final String RESOURCE_FIELD_GROUP_NAME = "field";
     private static final String RESOURCE_ID_GROUP_NAME = "id";
-    private static Pattern firstLevelPattern = Pattern.compile("^(?<field>([a-zA-Z0-9_])+):(?<id>((\\s*\\d)+)|\\*)$");
+    private static Pattern firstLevelPattern = Pattern.compile("^(?<field>([a-zA-Z0-9_])+):(?<id>.+)$");
     private static Pattern secondLevelPattern =
             Pattern.compile("^(?<field>([a-zA-Z0-9_])+):(?<id>((\\s*\\d+)(,\\s*\\d+)*)|\\*)$");
 
@@ -64,9 +65,11 @@ public class ResourceContextUtil {
         PreConditions.validArgumentState(find, ErrorCodes.IllegalArgument, null,
                 "Field or id in resource identifier can not be null");
 
-        if (StringUtils.isNumeric(matcher.group(RESOURCE_ID_GROUP_NAME))) {
-            // id maybe *
-            resourceContext.setId(Long.valueOf(matcher.group(RESOURCE_ID_GROUP_NAME)));
+        String resourceIdGroup = matcher.group(RESOURCE_ID_GROUP_NAME);
+        if (StringUtils.isNumeric(resourceIdGroup)) {
+            resourceContext.setId(Long.valueOf(resourceIdGroup));
+        } else {
+            resourceContext.setIdExtractRule(ResourceIdExtractRule.fromString(resourceIdGroup));
         }
         resourceContext.setField(matcher.group(RESOURCE_FIELD_GROUP_NAME));
 
