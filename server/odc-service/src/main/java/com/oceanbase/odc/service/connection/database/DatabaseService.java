@@ -274,9 +274,7 @@ public class DatabaseService {
         }
         Set<Long> finalDatabaseIds = ids.stream().filter(Objects::nonNull).collect(Collectors.toSet());
         List<DatabaseEntity> dbs = databaseRepository.findByIdIn(finalDatabaseIds);
-        if (finalDatabaseIds.size() != dbs.size()) {
-            throw new NotFoundException(ResourceType.ODC_DATABASE, "ids", finalDatabaseIds);
-        }
+        Verify.equals(finalDatabaseIds.size(), dbs.size(), "Databases");
         return dbs.stream().map(databaseMapper::entityToModel).collect(Collectors.toList());
     }
 
