@@ -15,36 +15,30 @@
  */
 package com.oceanbase.odc.service.connection.database.model;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Size;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
 
 /**
- * @Author: Lebie
- * @Date: 2023/4/13 11:46
- * @Description: []
+ * @Author: ysj
+ * @Date: 2025/3/10 16:21
+ * @Since: 4.3.4
+ * @Description:
  */
-
 @Data
-@Builder
-@NoArgsConstructor(force = true)
-@AllArgsConstructor
-public class TransferDatabasesReq {
+@Accessors(chain = true)
+public class ModifyDatabaseRemarkReq {
+
     @NotEmpty
     private List<Long> databaseIds;
 
-    private Long projectId;
-
-    private Set<Long> ownerIds = new HashSet<>();
-
+    @NotBlank
     @Size(min = 1, max = 100)
     private String databaseRemark;
+
 }
