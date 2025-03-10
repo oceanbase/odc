@@ -15,19 +15,21 @@
  */
 package com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.create;
 
-import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.create.OBMysqlGenericPartitionExprGenerator;
-import com.oceanbase.odc.plugin.task.oboracle.partitionplan.OBOracleAutoPartitionExtensionPoint;
+import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.session.ConnectionSessionUtil;
+import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.create.OBMysqlTimeStringPartitionExprGenerator;
 
-public class OBOracleGenericPartitionExprGenerator extends OBMysqlGenericPartitionExprGenerator {
+public class OBOracleTimeStringPartitionExprGenerator extends OBMysqlTimeStringPartitionExprGenerator {
 
     @Override
     protected String unquoteIdentifier(String identifier) {
-        return new OBOracleAutoPartitionExtensionPoint().unquoteIdentifier(identifier);
+        return ConnectionSessionUtil.getUserOrSchemaString(identifier, DialectType.OB_ORACLE);
     }
 
     @Override
     protected String unquoteValue(String value) {
-        return new OBOracleAutoPartitionExtensionPoint().unquoteValue(value);
+        return StringUtils.unquoteOracleValue(value);
     }
 
 }

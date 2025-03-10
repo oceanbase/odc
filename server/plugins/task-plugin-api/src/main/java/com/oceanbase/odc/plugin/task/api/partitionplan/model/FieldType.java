@@ -16,7 +16,7 @@
 package com.oceanbase.odc.plugin.task.api.partitionplan.model;
 
 public enum FieldType {
-    DATE_TIME,
-    TIMESTAMP,
-    UNKNOWN;
+    NUMBER,
+    TIME_STRING,
+    TIMESTAMP;
 }

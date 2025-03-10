@@ -46,7 +46,7 @@ import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalcul
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.create.OBMySQLHistoricalPartitionPlanCreateGenerator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.create.OBMySQLSqlExprPartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.create.OBMySQLTimeIncreasePartitionExprGenerator;
-import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.create.OBMysqlGenericPartitionExprGenerator;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.create.OBMysqlTimeStringPartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.drop.OBMySQLHistoricalPartitionPlanDropGenerator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.drop.OBMySQLKeepLatestPartitionGenerator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname.OBMySQLDateBasedPartitionNameGenerator;
@@ -133,11 +133,6 @@ public class OBMySQLAutoPartitionExtensionPoint implements AutoPartitionExtensio
     }
 
     @Override
-    public String unquoteValue(@NonNull String value) {
-        return StringUtils.unquoteMysqlValue(value);
-    }
-
-    @Override
     public List<DataType> getPartitionKeyDataTypes(@NonNull Connection connection, @NonNull DBTable table) {
         if (!supports(table.getPartition())) {
             throw new UnsupportedOperationException("Unsupported db table");
@@ -192,7 +187,7 @@ public class OBMySQLAutoPartitionExtensionPoint implements AutoPartitionExtensio
         List<PartitionExprGenerator> candidates = new ArrayList<>(4);
         candidates.add(new OBMySQLSqlExprPartitionExprGenerator());
         candidates.add(new OBMySQLTimeIncreasePartitionExprGenerator());
-        candidates.add(new OBMysqlGenericPartitionExprGenerator());
+        candidates.add(new OBMysqlTimeStringPartitionExprGenerator());
         candidates.add(new OBMySQLHistoricalPartitionPlanCreateGenerator());
         return candidates.stream().filter(i -> Objects.equals(i.getName(), name)).findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Failed to find generator by name " + name));

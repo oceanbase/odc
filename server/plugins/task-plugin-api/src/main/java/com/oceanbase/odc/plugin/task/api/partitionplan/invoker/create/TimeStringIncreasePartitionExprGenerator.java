@@ -19,19 +19,19 @@ import java.sql.Connection;
 import java.util.List;
 import java.util.Map;
 
-import com.oceanbase.odc.plugin.task.api.partitionplan.model.GenericIncreaseGeneratorConfig;
+import com.oceanbase.odc.plugin.task.api.partitionplan.model.TimeStringIncreaseGeneratorConfig;
 import com.oceanbase.odc.plugin.task.api.partitionplan.util.ParameterUtil;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 
 import lombok.NonNull;
 
-public interface GenericIncreasePartitionExprGenerator extends PartitionExprGenerator {
+public interface TimeStringIncreasePartitionExprGenerator extends PartitionExprGenerator {
 
     String GENERATOR_NAME = "GENERIC_INCREASING_GENERATOR";
 
     List<String> generate(@NonNull Connection connection, @NonNull DBTable dbTable,
             @NonNull String partitionKey, @NonNull Integer generateCount,
-            @NonNull GenericIncreaseGeneratorConfig config) throws Exception;
+            @NonNull TimeStringIncreaseGeneratorConfig config) throws Exception;
 
     @Override
     default String getName() {
@@ -44,6 +44,6 @@ public interface GenericIncreasePartitionExprGenerator extends PartitionExprGene
             @NonNull Map<String, Object> parameters) throws Exception {
         return generate(connection, dbTable, partitionKey, generateCount,
                 ParameterUtil.nullSafeExtract(parameters, GENERATOR_PARAMETER_KEY,
-                        GenericIncreaseGeneratorConfig.class));
+                        TimeStringIncreaseGeneratorConfig.class));
     }
 }
