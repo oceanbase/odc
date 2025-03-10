@@ -52,7 +52,7 @@ import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
 import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
 import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
-import com.oceanbase.odc.plugin.schema.api.MVExtensionPoint;
+import com.oceanbase.odc.plugin.schema.api.MViewExtensionPoint;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
 import com.oceanbase.odc.plugin.schema.api.ViewExtensionPoint;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
@@ -171,7 +171,7 @@ public class TableService {
             }
             if (types.contains(DBObjectType.MATERIALIZED_VIEW)
                     && versionDiffConfigService.isMVSupported(dataSource.getDialectType(), version)) {
-                MVExtensionPoint mvExtension = SchemaPluginUtil.getMVExtension(dataSource.getDialectType());
+                MViewExtensionPoint mvExtension = SchemaPluginUtil.getMViewExtension(dataSource.getDialectType());
                 if (mvExtension != null) {
                     Set<String> latestViewNames = mvExtension.list(conn, database.getName())
                             .stream().map(DBObjectIdentity::getName)

@@ -18,12 +18,17 @@ package com.oceanbase.tools.dbbrowser.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import lombok.Getter;
+import lombok.Setter;
+
 /**
  * @description:
  * @author: zijia.cj
  * @date: 2025/3/10 11:03
  * @since: 4.3.4
  */
+@Setter
+@Getter
 public class DBMView implements DBObject {
     private String mVName;
     // if null, use defaultSchemaName in current connection

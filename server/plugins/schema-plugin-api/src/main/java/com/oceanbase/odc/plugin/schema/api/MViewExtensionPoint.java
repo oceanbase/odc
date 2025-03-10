@@ -30,14 +30,14 @@ import com.oceanbase.tools.dbbrowser.model.DBView;
  * @date: 2025/3/4 14:41
  * @since: 4.3.4
  */
-public interface MVExtensionPoint extends ExtensionPoint {
+public interface MViewExtensionPoint extends ExtensionPoint {
     List<DBObjectIdentity> list(Connection connection, String schemaName);
 
     DBView getDetail(Connection connection, String schemaName, String viewName);
 
     void drop(Connection connection, String schemaName, String viewName);
 
-    String generateCreateTemplate(DBView view);
+    String generateCreateTemplate(DBView View);
 
     Boolean syncMVData(Connection connection, DBMViewSyncDataParameter parameter);
 

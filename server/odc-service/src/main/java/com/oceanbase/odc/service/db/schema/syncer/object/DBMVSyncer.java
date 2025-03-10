@@ -29,7 +29,7 @@ import com.oceanbase.odc.metadb.iam.PermissionEntity;
 import com.oceanbase.odc.metadb.iam.PermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserPermissionRepository;
 import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
-import com.oceanbase.odc.plugin.schema.api.MVExtensionPoint;
+import com.oceanbase.odc.plugin.schema.api.MViewExtensionPoint;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.feature.VersionDiffConfigService;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
@@ -47,7 +47,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Component
 @Slf4j
-public class DBMVSyncer extends AbstractDBObjectSyncer<MVExtensionPoint> {
+public class DBMVSyncer extends AbstractDBObjectSyncer<MViewExtensionPoint> {
 
     @Autowired
     private PermissionRepository permissionRepository;
@@ -64,15 +64,15 @@ public class DBMVSyncer extends AbstractDBObjectSyncer<MVExtensionPoint> {
     }
 
     @Override
-    Set<String> getLatestObjectNames(@NonNull MVExtensionPoint extensionPoint, @NonNull Connection connection,
+    Set<String> getLatestObjectNames(@NonNull MViewExtensionPoint extensionPoint, @NonNull Connection connection,
             @NonNull Database database) {
         return extensionPoint.list(connection, database.getName()).stream().map(DBObjectIdentity::getName)
                 .collect(Collectors.toSet());
     }
 
     @Override
-    Class<MVExtensionPoint> getExtensionPointClass() {
-        return MVExtensionPoint.class;
+    Class<MViewExtensionPoint> getExtensionPointClass() {
+        return MViewExtensionPoint.class;
     }
 
     @Override

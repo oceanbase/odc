@@ -22,11 +22,12 @@ import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.plugin.schema.api.MVExtensionPoint;
+import com.oceanbase.odc.plugin.schema.api.MViewExtensionPoint;
 import com.oceanbase.odc.plugin.schema.obmysql.utils.DBAccessorUtil;
 import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.editor.DBObjectOperator;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLObjectOperator;
+import com.oceanbase.tools.dbbrowser.model.DBMView;
 import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataParameter;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
@@ -41,7 +42,7 @@ import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
  * @since: 4.3.4
  */
 @Extension
-public class OBMySQLMVExtension implements MVExtensionPoint {
+public class OBMySQLMVExtension implements MViewExtensionPoint {
     @Override
     public List<DBObjectIdentity> list(Connection connection, String schemaName) {
         return getSchemaAccessor(connection).listMVs(schemaName);
@@ -58,8 +59,8 @@ public class OBMySQLMVExtension implements MVExtensionPoint {
     }
 
     @Override
-    public String generateCreateTemplate(DBView view) {
-        return getTemplate().generateCreateObjectTemplate(view);
+    public String generateCreateTemplate(DBView mView) {
+        return getTemplate().generateCreateObjectTemplate(mView);
     }
 
     @Override

@@ -38,7 +38,7 @@ import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
-import com.oceanbase.odc.plugin.schema.api.MVExtensionPoint;
+import com.oceanbase.odc.plugin.schema.api.MViewExtensionPoint;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -95,7 +95,7 @@ public class DBMaterializedViewService {
         List<Table> tables = new ArrayList<>();
         Set<String> latestTableNames = connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.BACKEND_DS_KEY)
-                .execute((ConnectionCallback<List<DBObjectIdentity>>) con -> getDBMVExtensionPoint(connectionSession)
+                .execute((ConnectionCallback<List<DBObjectIdentity>>) con -> getDBMViewExtensionPoint(connectionSession)
                         .list(con, database.getName()))
                 .stream().map(DBObjectIdentity::getName).collect(Collectors.toCollection(LinkedHashSet::new));
         ConnectionConfig connectionConfig = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(
@@ -138,10 +138,18 @@ public class DBMaterializedViewService {
         return allResult;
     }
 
+    public String getCreateSql(@NonNull ConnectionSession session,
+        @NonNull DBView resource) {
+        return session.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+            .execute((ConnectionCallback<String>) con -> getDBMViewExtensionPoint(session)
+                .generateCreateTemplate(resource));
+    }
+
     public DBViewResponse detail(ConnectionSession connectionSession, String schemaName, String viewName) {
         return new DBViewResponse(connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.BACKEND_DS_KEY)
-                .execute((ConnectionCallback<DBView>) con -> getDBMVExtensionPoint(connectionSession)
+                .execute((ConnectionCallback<DBView>) con -> getDBMViewExtensionPoint(connectionSession)
                         .getDetail(con, schemaName, viewName)));
     }
 
@@ -149,12 +157,12 @@ public class DBMaterializedViewService {
         DBMViewSyncDataParameter dbmvSyncDataParameter = mvSyncDataReq.convertToDBMVSyncDataParameter();
         return connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.BACKEND_DS_KEY)
-                .execute((ConnectionCallback<Boolean>) con -> getDBMVExtensionPoint(connectionSession)
+                .execute((ConnectionCallback<Boolean>) con -> getDBMViewExtensionPoint(connectionSession)
                         .syncMVData(con, dbmvSyncDataParameter));
     }
 
-    private MVExtensionPoint getDBMVExtensionPoint(@NonNull ConnectionSession session) {
-        return SchemaPluginUtil.getMVExtension(session.getDialectType());
+    private MViewExtensionPoint getDBMViewExtensionPoint(@NonNull ConnectionSession session) {
+        return SchemaPluginUtil.getMViewExtension(session.getDialectType());
     }
 
 }
