@@ -99,27 +99,15 @@ public class ResourcePermissionExtractor {
 
 
     public List<PermissionConfig> aggregatePermissions(List<PermissionEntity> permissionEntities) {
-        Map<String, Set<String>> identifier2Actions = new HashMap<>();
-        for (PermissionEntity permissionEntity : permissionEntities) {
-            if (Objects.nonNull(permissionEntity)) {
-                Set<String> action = identifier2Actions.computeIfAbsent(permissionEntity.getResourceIdentifier(),
-                        e -> new HashSet<>());
-                action.add(permissionEntity.getAction());
-            }
-        }
-        List<PermissionConfig> aggregated = new ArrayList<>();
-        for (Map.Entry<String, Set<String>> entry : identifier2Actions.entrySet()) {
-            Set<String> actions = entry.getValue();
-            List<SecurityResource> resources = getResourcesByIdentifier(entry.getKey(), new HashMap<>());
-            for (SecurityResource resource : resources) {
-                aggregated.add(new PermissionConfig(String.valueOf(resource.resourceId()),
-                        ResourceType.valueOf(resource.resourceType()), new ArrayList<>(actions)));
-            }
-        }
-        return aggregated;
+        return innerAggregatePermissions(permissionEntities, false);
     }
 
     public List<PermissionConfig> aggregateResourceManagementPermissions(List<PermissionEntity> permissionEntities) {
+        return innerAggregatePermissions(permissionEntities, true);
+    }
+
+    private List<PermissionConfig> innerAggregatePermissions(List<PermissionEntity> permissionEntities,
+            boolean isResourceManagementPermission) {
         Map<String, Set<String>> identifier2Actions = new HashMap<>();
         for (PermissionEntity permissionEntity : permissionEntities) {
             if (Objects.nonNull(permissionEntity)) {
@@ -133,11 +121,13 @@ public class ResourcePermissionExtractor {
             Set<String> actions = entry.getValue();
             List<SecurityResource> resources = getResourcesByIdentifier(entry.getKey(), new HashMap<>());
             for (SecurityResource resource : resources) {
-                // Separately extract the permission configuration with "create" for resource management permissions
-                if (entry.getValue().contains("create") && entry.getValue().size() > 1) {
+                if (isResourceManagementPermission & entry.getValue().contains("create")
+                        && entry.getValue().size() > 1) {
+                    // Separately extract the permission configuration with "create" for resource management permissions
                     aggregated.add(new PermissionConfig("*", ResourceType.valueOf(resource.resourceType()),
                             Collections.singletonList("create")));
                     entry.getValue().remove("create");
+
                 }
                 aggregated.add(new PermissionConfig(String.valueOf(resource.resourceId()),
                         ResourceType.valueOf(resource.resourceType()), new ArrayList<>(actions)));
