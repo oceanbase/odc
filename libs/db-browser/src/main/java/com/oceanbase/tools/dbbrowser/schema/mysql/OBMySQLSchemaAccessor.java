@@ -86,7 +86,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     public List<DBObjectIdentity> listAllMVs(String viewNameLike) {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
         sb.append(
-                "select OWNER AS schema_name, MVIEW_NAME AS name,'MATERIALIZED_VIEW_LOG' AS type FROM OCEANBASE.DBA_MVIEWS WHERE MVIEW_NAME LIKE ")
+                "select OWNER AS schema_name, MVIEW_NAME AS name,'MATERIALIZED_VIEW' AS type FROM OCEANBASE.DBA_MVIEWS WHERE MVIEW_NAME LIKE ")
                 .value('%' + viewNameLike + '%')
                 .append(" ORDER BY name ASC;");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
@@ -116,7 +116,33 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
 
     @Override
     public DBView getMV(String schemaName, String viewName) {
-        throw new UnsupportedOperationException("not support yet");
+        MySQLSqlBuilder getOption = new MySQLSqlBuilder();
+
+
+        MySQLSqlBuilder sb = new MySQLSqlBuilder();
+        sb.append("select * from information_schema.views where table_schema=");
+        sb.value(schemaName);
+        sb.append(" and table_name=");
+        sb.value(viewName);
+
+        DBView view = new DBView();
+        view.setViewName(viewName);
+        view.setSchemaName(schemaName);
+        jdbcOperations.query(sb.toString(), (rs) -> {
+            view.setCheckOption(rs.getString(5));
+            view.setUpdatable("YES".equalsIgnoreCase(rs.getString(6)));
+            view.setDefiner(rs.getString(7));
+        });
+        MySQLSqlBuilder getDDL = new MySQLSqlBuilder();
+        getDDL.append("show create table ");
+        getDDL.identifier(schemaName);
+        getDDL.append(".");
+        getDDL.identifier(viewName);
+        jdbcOperations.query(getDDL.toString(), (rs) -> {
+            view.setDdl(rs.getString(2));
+        });
+
+        return fillColumnInfoByDesc(view);
     }
 
     @Override
