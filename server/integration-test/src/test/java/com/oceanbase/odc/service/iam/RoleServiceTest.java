@@ -131,6 +131,7 @@ public class RoleServiceTest extends AuthorityTestEnv {
     public void testCreateDuplicate() {
         CreateRoleReq createRoleReq = buildCreateRoleReq("create");
         roleService.create(createRoleReq);
+        roleService.create(createRoleReq);
     }
 
     // delete
