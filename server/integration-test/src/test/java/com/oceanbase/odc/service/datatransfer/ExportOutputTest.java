@@ -28,6 +28,7 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.AbstractOutputFile;
 import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.DumpDBObject;
 import com.oceanbase.odc.plugin.task.api.datatransfer.dumper.ExportOutput;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
+import com.oceanbase.tools.loaddump.utils.SerializeUtils;
 
 /**
  * Test cases for {@link ExportOutput}
@@ -39,15 +40,15 @@ import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 public class ExportOutputTest {
 
     @Test
-    @Ignore
+    //@Ignore
     public void getManifest_fromZipFile_returnNotNull() throws IOException {
         ExportOutput output = new ExportOutput(getDumpZip());
         Assert.assertNotNull(output.getManifest());
     }
 
     @Test
-    @Ignore
-    public void getManifest_fromFolder_returnNotNull() throws IOException {
+    //@Ignore
+    public void getManifest_fromFolder_returnNotNull() throws Exception {
         ExportOutput output = new ExportOutput(getDumpFolder());
         Assert.assertNotNull(output.getManifest());
     }
