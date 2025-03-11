@@ -18,7 +18,7 @@ package com.oceanbase.odc.service.config;
 public class OrganizationConfigKeys {
     public static final String DEFAULT_QUERY_LIMIT = "odc.sqlexecute.default.queryLimit";
 
-    public static final String DEFAULT_QUERY_COUNT = "odc.sqlexecute.default.queryCount";
+    public static final String DEFAULT_DEFAULT_QUERY_LIMIT = "odc.sqlexecute.default.defaultQueryLimit";
 
     public static final String DEFAULT_ROLLBACK_PLAN_ENABLED = "odc.task.default.rollbackPlanEnabled";
 
