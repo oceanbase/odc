@@ -45,7 +45,6 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -63,6 +62,7 @@ import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.common.event.LocalEventPublisher;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.permission.Permission;
 import com.oceanbase.odc.core.authority.util.Authenticated;
@@ -115,6 +115,7 @@ import com.oceanbase.odc.service.connection.database.model.TransferDatabasesReq;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionSyncErrorReason;
 import com.oceanbase.odc.service.connection.model.ConnectionSyncResult;
+import com.oceanbase.odc.service.connection.model.InnerQueryConnectionParams;
 import com.oceanbase.odc.service.db.DBSchemaService;
 import com.oceanbase.odc.service.db.schema.DBSchemaSyncTaskManager;
 import com.oceanbase.odc.service.db.schema.GlobalSearchProperties;
@@ -323,7 +324,6 @@ public class DatabaseService {
         }
         Specification<DatabaseEntity> specs = DatabaseSpecs
                 .environmentIdEquals(params.getEnvironmentId())
-                .and(DatabaseSpecs.nameLike(params.getSchemaName()))
                 .and(DatabaseSpecs.typeIn(params.getTypes()))
                 .and(DatabaseSpecs.connectTypeIn(params.getConnectTypes()))
                 .and(DatabaseSpecs.existedEquals(params.getExisted()))
@@ -354,8 +354,21 @@ public class DatabaseService {
             specs = specs.and(DatabaseSpecs.projectIdEquals(params.getProjectId()));
         }
 
+        InnerQueryConnectionParams innerQueryConnectionParams = InnerQueryConnectionParams
+                .builder()
+                .dataSourceName(params.getDataSourceName())
+                .tenantName(params.getTenantName())
+                .clusterName(params.getClusterName())
+                .build();
+        Set<Long> orDataSourceIds = connectionService.innerGetIdsIfAnyOfCondition(innerQueryConnectionParams);
         if (Objects.nonNull(params.getDataSourceId())) {
             specs = specs.and(DatabaseSpecs.connectionIdEquals(params.getDataSourceId()));
+        }
+        if (CollectionUtils.isNotEmpty(orDataSourceIds)) {
+            specs = specs.and(
+                    DatabaseSpecs.nameLike(params.getSchemaName()).or(DatabaseSpecs.connectionIdIn(orDataSourceIds)));
+        } else {
+            specs = specs.and(DatabaseSpecs.nameLike(params.getSchemaName()));
         }
         Page<DatabaseEntity> entities = databaseRepository.findAll(specs, pageable);
         return entitiesToModels(entities,
@@ -471,6 +484,17 @@ public class DatabaseService {
     @SkipAuthorize("internal usage")
     public Set<Database> listExistDatabasesByProjectId(@NonNull Long projectId) {
         return databaseRepository.findByProjectIdAndExisted(projectId, true).stream()
+                .map(databaseMapper::entityToModel).collect(Collectors.toSet());
+    }
+
+    @SkipAuthorize("internal usage")
+    public Set<Database> listExistAndNotPendingDatabasesByProjectIdIn(@NonNull Collection<Long> projectIds) {
+        if (CollectionUtils.isEmpty(projectIds)) {
+            return Collections.emptySet();
+        }
+        return databaseRepository
+                .findByProjectIdInAndExistedAndObjectSyncStatusNot(projectIds, true, DBObjectSyncStatus.PENDING)
+                .stream()
                 .map(databaseMapper::entityToModel).collect(Collectors.toSet());
     }
 

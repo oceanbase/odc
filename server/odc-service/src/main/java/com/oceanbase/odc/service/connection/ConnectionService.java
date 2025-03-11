@@ -108,6 +108,7 @@ import com.oceanbase.odc.service.connection.database.DatabaseSyncManager;
 import com.oceanbase.odc.service.connection.event.UpsertDatasourceEvent;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.connection.model.InnerQueryConnectionParams;
 import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
 import com.oceanbase.odc.service.connection.model.QueryConnectionParams;
 import com.oceanbase.odc.service.connection.ssl.ConnectionSSLAdaptor;
@@ -849,6 +850,29 @@ public class ConnectionService {
     @SkipAuthorize("odc internal usage")
     public List<ConnectionConfig> listSkipPermissionCheck(@NotNull QueryConnectionParams params) {
         return innerList(params, Pageable.unpaged()).toList();
+    }
+
+    public Set<Long> innerGetIdsIfAnyOfCondition(@NotNull InnerQueryConnectionParams params) {
+        Specification<ConnectionEntity> spec = null;
+        int conditionCount = 0;
+        if (StringUtils.isNotBlank(params.getDataSourceName())) {
+            spec = Specification.where(ConnectionSpecs.nameLike(params.getDataSourceName()));
+            ++conditionCount;
+        }
+        if (StringUtils.isNotBlank(params.getTenantName())) {
+            spec = Specification.where(ConnectionSpecs.tenantNameLike(params.getTenantName()));
+            ++conditionCount;
+        }
+        if (StringUtils.isNotBlank(params.getClusterName())) {
+            spec = Specification.where(ConnectionSpecs.clusterNameLike(params.getClusterName()));
+            ++conditionCount;
+        }
+        if (spec == null) {
+            return Collections.emptySet();
+        }
+        Verify.equalsExactlyOne(conditionCount, "InnerQueryConnectionParams");
+        return this.repository.findAll(spec, Pageable.unpaged()).stream().map(ConnectionEntity::getId)
+                .collect(Collectors.toSet());
     }
 
     private Page<ConnectionConfig> innerList(@NotNull QueryConnectionParams params, @NotNull Pageable pageable) {

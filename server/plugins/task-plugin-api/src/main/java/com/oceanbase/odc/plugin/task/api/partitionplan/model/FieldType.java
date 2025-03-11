@@ -15,32 +15,8 @@
  */
 package com.oceanbase.odc.plugin.task.api.partitionplan.model;
 
-import com.oceanbase.odc.plugin.task.api.partitionplan.datatype.TimeDataType;
-
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
-
-/**
- * {@link TimeIncreaseGeneratorConfig}
- *
- * @author yh263208
- * @date 2024-01-19 17:23
- * @since ODC_release_4.2.4
- */
-@Getter
-@Setter
-@ToString
-public class TimeIncreaseGeneratorConfig {
-
-    private long baseTimestampMillis;
-    private int interval;
-    /**
-     * ref {@link TimeDataType#getPrecision()}
-     */
-    private int intervalPrecision;
-    private boolean fromCurrentTime;
-
-    private String timeFormat;
-
+public enum FieldType {
+    NUMBER,
+    TIME_STRING,
+    TIMESTAMP;
 }
