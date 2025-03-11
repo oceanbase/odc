@@ -155,7 +155,7 @@ public class DBMaterializedViewService {
     }
 
     public Boolean syncData(@NotNull ConnectionSession connectionSession, @NotNull MVSyncDataReq mvSyncDataReq) {
-        DBMViewSyncDataParameter dbmvSyncDataParameter = mvSyncDataReq.convertToDBMVSyncDataParameter();
+        DBMViewSyncDataParameter dbmvSyncDataParameter = mvSyncDataReq.convertToDBMViewSyncDataParameter();
         return connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.BACKEND_DS_KEY)
                 .execute((ConnectionCallback<Boolean>) con -> getDBMViewExtensionPoint(connectionSession)

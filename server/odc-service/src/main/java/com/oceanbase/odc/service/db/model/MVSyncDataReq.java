@@ -41,11 +41,11 @@ public class MVSyncDataReq {
     @Min(1)
     private int parallelismDegree = 1;
 
-    public DBMViewSyncDataParameter convertToDBMVSyncDataParameter() {
+    public DBMViewSyncDataParameter convertToDBMViewSyncDataParameter() {
         DBMViewSyncDataParameter parameter = new DBMViewSyncDataParameter();
         parameter.setDatabaseName(databaseName);
         parameter.setMvName(mvName);
-        parameter.setMvSyncDataOption(method);
+        parameter.setMvSyncDataMethod(method);
         parameter.setParallelismDegree(parallelismDegree);
         return parameter;
     }

@@ -23,27 +23,23 @@ import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotNull;
 
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+
 import com.oceanbase.tools.dbbrowser.editor.DBTableColumnEditor;
 import com.oceanbase.tools.dbbrowser.editor.DBTableConstraintEditor;
 import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLColumnEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLConstraintEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLDBTablePartitionEditor;
-import org.apache.commons.collections4.CollectionUtils;
-
-import com.oceanbase.tools.dbbrowser.DBBrowser;
-import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBMView;
 import com.oceanbase.tools.dbbrowser.model.DBMViewSyncSchedule;
-import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
-import com.oceanbase.tools.dbbrowser.template.BaseViewTemplate;
 import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * @description:
@@ -64,7 +60,7 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
     public MysqlMViewTemplate() {
         mySQLViewTemplate = new MySQLViewTemplate();
         dbTableColumnEditor = new MySQLColumnEditor();
-        dbTableConstraintEditor =new MySQLConstraintEditor();
+        dbTableConstraintEditor = new MySQLConstraintEditor();
         dbTablePartitionEditor = new OBMySQLDBTablePartitionEditor();
     }
 
