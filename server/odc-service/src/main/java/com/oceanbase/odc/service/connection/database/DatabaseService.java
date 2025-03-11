@@ -51,7 +51,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
@@ -906,6 +905,11 @@ public class DatabaseService {
         final long userId = authenticationFacade.currentUserId();
 
         Set<Long> joinedProjectIds = projectService.getMemberProjectIds(userId);
+        if (CollectionUtils.isEmpty(joinedProjectIds)) {
+            log.warn("No member project found for user, can't record database history, param={}",
+                    JsonUtils.toJson(dbAccessHistoryReq));
+            return false;
+        }
         List<Database> dbs = entitiesToModels(
                 new PageImpl<>(databaseRepository.findByIdInAndProjectIdIn(databaseIds, joinedProjectIds)
                         .stream()
@@ -917,9 +921,7 @@ public class DatabaseService {
 
         for (Database db : dbs) {
             horizontalDataPermissionValidator.checkCurrentOrganization(db);
-            boolean implied =
-                    db.getAuthorizedPermissionTypes().stream().anyMatch(e -> DatabasePermissionType.all().contains(e));
-            if (!implied) {
+            if (CollectionUtils.isEmpty(db.getAuthorizedPermissionTypes())) {
                 log.warn("User not authorized to record database accessing history: dbId = {}, permissions = {}",
                         db.getId(), JsonUtils.toJson(db.getAuthorizedPermissionTypes()));
                 throw new AccessDeniedException();
@@ -962,9 +964,8 @@ public class DatabaseService {
         }
         Pageable page = PageRequest.of(0, Math.max(dbAccessHistoryReq.getHistoryCount(), 1))
                 .withSort(Sort.by(DatabaseAccessHistoryEntity.LAST_ACCESS_TIME_NAME).descending());
-        Slice<DatabaseAccessHistoryEntity> targetDbAccessHistorySlice =
-                databaseAccessHistoryRepository.findByUserId(userId, page);
-        List<DatabaseAccessHistoryEntity> dbHistoryEntities = targetDbAccessHistorySlice.getContent();
+        List<DatabaseAccessHistoryEntity> dbHistoryEntities =
+                databaseAccessHistoryRepository.findByUserId(userId, page).getContent();
         Set<Long> dbIds =
                 dbHistoryEntities.stream().map(DatabaseAccessHistoryEntity::getDatabaseId).collect(Collectors.toSet());
         List<Database> databases = listSkipPermissionCheck(dbIds, true);

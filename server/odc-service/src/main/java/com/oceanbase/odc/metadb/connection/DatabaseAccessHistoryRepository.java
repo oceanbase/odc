@@ -15,8 +15,8 @@
  */
 package com.oceanbase.odc.metadb.connection;
 
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
@@ -29,5 +29,5 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 public interface DatabaseAccessHistoryRepository extends JpaRepository<DatabaseAccessHistoryEntity, Long>,
         JpaSpecificationExecutor<DatabaseAccessHistoryEntity> {
 
-    Slice<DatabaseAccessHistoryEntity> findByUserId(Long userId, Pageable pageable);
+    Page<DatabaseAccessHistoryEntity> findByUserId(Long userId, Pageable pageable);
 }
