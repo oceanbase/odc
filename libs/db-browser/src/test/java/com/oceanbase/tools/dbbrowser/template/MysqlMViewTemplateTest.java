@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,8 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.tools.dbbrowser.template;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
@@ -29,13 +36,6 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
 import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.model.DBViewColumn;
 import com.oceanbase.tools.dbbrowser.template.mysql.MysqlMViewTemplate;
-import org.junit.Assert;
-import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
 
 /**
  * @description:
@@ -45,7 +45,7 @@ import java.util.List;
  */
 public class MysqlMViewTemplateTest {
     @Test
-    public void generateCreateObjectTemplate_allInputs_success(){
+    public void generateCreateObjectTemplate_allInputs_success() {
         DBObjectTemplate<DBMView> mysqlMViewTemplate = new MysqlMViewTemplate();
         DBMView dbmView = new DBMView();
         dbmView.setMVName("mv_0");
@@ -77,35 +77,35 @@ public class MysqlMViewTemplateTest {
         dbmView.setCreateColumns(prepareQueryColumns(2));
 
         String expect = "create materialized view `schema_0`.`mv_0` (\n" +
-            "`col0`,\n" +
-            "`col1`,\n" +
-            "PRIMARY KEY (`col0`)\n" +
-            ") \n" +
-            "PARALLEL 8\n" +
-            " PARTITION BY HASH(`col0`) \n" +
-            "PARTITIONS 3\n" +
-            " WITH COLUMN GROUP(all columns,each column)\n" +
-            "REFRESH COMPLETE\n" +
-            "ON DEMAND\n" +
-            "START WITH sysdate()\n" +
-            "NEXT sysdate() + INTERVAL 1 DAY\n" +
-            "DISABLE QUERY REWRITE\n" +
-            "DISABLE ON QUERY COMPUTATION\n" +
-            "AS\n" +
-            "select\n" +
-            "\ttableAlias_0.`c_0` as alias_c0,\n" +
-            "\ttableAlias_0.`d_0` as alias_d0,\n" +
-            "\ttableAlias_1.`c_1` as alias_c1,\n" +
-            "\ttableAlias_1.`d_1` as alias_d1\n" +
-            "from\n" +
-            "\t`database_0`.`table_0` tableAlias_0\n" +
-            "\tleft join `database_1`.`table_1` tableAlias_1 on /* TODO enter attribute to join on here */";
-        String  actual= mysqlMViewTemplate.generateCreateObjectTemplate(dbmView);
+                "`col0`,\n" +
+                "`col1`,\n" +
+                "PRIMARY KEY (`col0`)\n" +
+                ") \n" +
+                "PARALLEL 8\n" +
+                " PARTITION BY HASH(`col0`) \n" +
+                "PARTITIONS 3\n" +
+                " WITH COLUMN GROUP(all columns,each column)\n" +
+                "REFRESH COMPLETE\n" +
+                "ON DEMAND\n" +
+                "START WITH sysdate()\n" +
+                "NEXT sysdate() + INTERVAL 1 DAY\n" +
+                "DISABLE QUERY REWRITE\n" +
+                "DISABLE ON QUERY COMPUTATION\n" +
+                "AS\n" +
+                "select\n" +
+                "\ttableAlias_0.`c_0` as alias_c0,\n" +
+                "\ttableAlias_0.`d_0` as alias_d0,\n" +
+                "\ttableAlias_1.`c_1` as alias_c1,\n" +
+                "\ttableAlias_1.`d_1` as alias_d1\n" +
+                "from\n" +
+                "\t`database_0`.`table_0` tableAlias_0\n" +
+                "\tleft join `database_1`.`table_1` tableAlias_1 on /* TODO enter attribute to join on here */";
+        String actual = mysqlMViewTemplate.generateCreateObjectTemplate(dbmView);
         Assert.assertEquals(expect, actual);
     }
 
     @Test
-    public void generateCreateObjectTemplate_startAtSchedule_success(){
+    public void generateCreateObjectTemplate_startAtSchedule_success() {
         DBObjectTemplate<DBMView> mysqlMViewTemplate = new MysqlMViewTemplate();
         DBMView dbmView = new DBMView();
         dbmView.setMVName("mv_0");
@@ -118,21 +118,21 @@ public class MysqlMViewTemplateTest {
         dbmView.setCreateColumns(prepareQueryColumns(2));
 
         String expect = "create materialized view `schema_0`.`mv_0`\n" +
-            "ON DEMAND\n" +
-            "START WITH TIMESTAMP '2025-07-11 18:00:00'\n" +
-            "NEXT TIMESTAMP '2025-07-11 18:00:00' + INTERVAL 1 DAY\n" +
-            "DISABLE QUERY REWRITE\n" +
-            "DISABLE ON QUERY COMPUTATION\n" +
-            "AS\n" +
-            "select\n" +
-            "\ttableAlias_0.`c_0` as alias_c0,\n" +
-            "\ttableAlias_0.`d_0` as alias_d0,\n" +
-            "\ttableAlias_1.`c_1` as alias_c1,\n" +
-            "\ttableAlias_1.`d_1` as alias_d1\n" +
-            "from\n" +
-            "\t`database_0`.`table_0` tableAlias_0\n" +
-            "\tleft join `database_1`.`table_1` tableAlias_1 on /* TODO enter attribute to join on here */";
-        String  actual= mysqlMViewTemplate.generateCreateObjectTemplate(dbmView);
+                "ON DEMAND\n" +
+                "START WITH TIMESTAMP '2025-07-11 18:00:00'\n" +
+                "NEXT TIMESTAMP '2025-07-11 18:00:00' + INTERVAL 1 DAY\n" +
+                "DISABLE QUERY REWRITE\n" +
+                "DISABLE ON QUERY COMPUTATION\n" +
+                "AS\n" +
+                "select\n" +
+                "\ttableAlias_0.`c_0` as alias_c0,\n" +
+                "\ttableAlias_0.`d_0` as alias_d0,\n" +
+                "\ttableAlias_1.`c_1` as alias_c1,\n" +
+                "\ttableAlias_1.`d_1` as alias_d1\n" +
+                "from\n" +
+                "\t`database_0`.`table_0` tableAlias_0\n" +
+                "\tleft join `database_1`.`table_1` tableAlias_1 on /* TODO enter attribute to join on here */";
+        String actual = mysqlMViewTemplate.generateCreateObjectTemplate(dbmView);
         Assert.assertEquals(expect, actual);
     }
 

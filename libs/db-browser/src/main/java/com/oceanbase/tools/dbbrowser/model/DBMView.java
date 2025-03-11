@@ -81,7 +81,7 @@ public class DBMView implements DBObject {
         return DBObjectType.MATERIALIZED_VIEW;
     }
 
-    public DBTable generateDBTable(){
+    public DBTable generateDBTable() {
         DBTable dbTable = new DBTable();
         dbTable.setName(mVName);
         dbTable.setColumns(columns);
@@ -91,7 +91,7 @@ public class DBMView implements DBObject {
         return dbTable;
     }
 
-    public DBView generateDBView(){
+    public DBView generateDBView() {
         DBView dbView = new DBView();
         dbView.setViewName(mVName);
         dbView.setSchemaName(schemaName);

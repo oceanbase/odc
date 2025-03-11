@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.pf4j.ExtensionPoint;
 
+import com.oceanbase.tools.dbbrowser.model.DBMView;
 import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataParameter;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBView;
@@ -37,7 +38,7 @@ public interface MViewExtensionPoint extends ExtensionPoint {
 
     void drop(Connection connection, String schemaName, String viewName);
 
-    String generateCreateTemplate(DBView View);
+    String generateCreateTemplate(DBMView mView);
 
     Boolean syncMVData(Connection connection, DBMViewSyncDataParameter parameter);
 

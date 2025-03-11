@@ -17,7 +17,7 @@ package com.oceanbase.tools.dbbrowser.template;
 
 public class DBObjectTemplateFactories {
 
-    public DBMViewTemplateFactory mViewTemplate(){
+    public DBMViewTemplateFactory mViewTemplate() {
         return new DBMViewTemplateFactory();
     }
 

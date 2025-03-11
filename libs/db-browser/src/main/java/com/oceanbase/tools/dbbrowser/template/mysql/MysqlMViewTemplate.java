@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,32 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.tools.dbbrowser.template.mysql;
 
-import com.oceanbase.tools.dbbrowser.DBBrowser;
-import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
-import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
-import com.oceanbase.tools.dbbrowser.model.DBMView;
-import com.oceanbase.tools.dbbrowser.model.DBMViewSyncPattern;
-import com.oceanbase.tools.dbbrowser.model.DBMViewSyncSchedule;
-import com.oceanbase.tools.dbbrowser.model.DBTable;
-import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
-import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
-import com.oceanbase.tools.dbbrowser.model.DBView;
-import com.oceanbase.tools.dbbrowser.template.BaseViewTemplate;
-import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
-import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
-import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
-import org.apache.commons.collections4.CollectionUtils;
-
-import javax.lang.model.element.NestingKind;
-import javax.validation.constraints.NotNull;
 import java.text.SimpleDateFormat;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import javax.validation.constraints.NotNull;
+
+import org.apache.commons.collections4.CollectionUtils;
+
+import com.oceanbase.tools.dbbrowser.DBBrowser;
+import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
+import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
+import com.oceanbase.tools.dbbrowser.model.DBMView;
+import com.oceanbase.tools.dbbrowser.model.DBMViewSyncSchedule;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
+import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
+import com.oceanbase.tools.dbbrowser.template.BaseViewTemplate;
+import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
+import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
+import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 
 /**
  * @description:
@@ -47,14 +45,14 @@ import java.util.stream.Collectors;
  * @since: 4.3.4
  */
 public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
-   private BaseViewTemplate mySQLViewTemplate;
-   private DBTableEditor dbTableEditor;
+    private BaseViewTemplate mySQLViewTemplate;
+    private DBTableEditor dbTableEditor;
 
-   public  MysqlMViewTemplate() {
+    public MysqlMViewTemplate() {
         mySQLViewTemplate = new MySQLViewTemplate();
-       dbTableEditor = DBBrowser.objectEditor().tableEditor()
-           .setDbVersion("4.0.0")
-           .setType("OB_MYSQL").create();
+        dbTableEditor = DBBrowser.objectEditor().tableEditor()
+                .setDbVersion("4.0.0")
+                .setType("OB_MYSQL").create();
     }
 
     @Override
@@ -62,14 +60,14 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
         DBTable dbTable = dbObject.generateDBTable();
         SqlBuilder sqlBuilder = new MySQLSqlBuilder();
         sqlBuilder.append("create materialized view ")
-            .append(dbTableEditor.getFullyQualifiedTableName(dbTable));
+                .append(dbTableEditor.getFullyQualifiedTableName(dbTable));
         boolean isFirstSentence = true;
         // 获取列构造
-        if(Objects.nonNull(dbObject.getColumns())){
+        if (Objects.nonNull(dbObject.getColumns())) {
             for (DBTableColumn column : dbObject.getColumns()) {
-                if(isFirstSentence){
+                if (isFirstSentence) {
                     sqlBuilder.append(" (").line();
-                }else {
+                } else {
                     sqlBuilder.append(",").line();
                 }
                 isFirstSentence = false;
@@ -81,55 +79,59 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
                     sqlBuilder.append(",").line();
                 }
                 isFirstSentence = false;
-                sqlBuilder.append(getPrimary(dbTableEditor.getConstraintEditor().generateCreateDefinitionDDL(constraint)));
+                sqlBuilder.append(
+                        getPrimary(dbTableEditor.getConstraintEditor().generateCreateDefinitionDDL(constraint)));
             }
             sqlBuilder.line().append(") ");
         }
         // 构造物化视图并行度
-        if (Objects.nonNull(dbObject.getParallelismDegree())&&dbObject.getParallelismDegree()>1) {
+        if (Objects.nonNull(dbObject.getParallelismDegree()) && dbObject.getParallelismDegree() > 1) {
             sqlBuilder.line().append("PARALLEL ").append(dbObject.getParallelismDegree());
         }
         // 获取分区构造
         if (Objects.nonNull(dbObject.getPartition())) {
-            sqlBuilder.line().append(dbTableEditor.getPartitionEditor().generateCreateDefinitionDDL(dbObject.getPartition()));
+            sqlBuilder.line()
+                    .append(dbTableEditor.getPartitionEditor().generateCreateDefinitionDDL(dbObject.getPartition()));
         }
         // 获取存储格式构造
         if (CollectionUtils.isNotEmpty(dbObject.getColumnGroups())) {
             sqlBuilder.line().append(" WITH COLUMN GROUP(")
-                .append(dbObject.getColumnGroups().stream().map(DBColumnGroupElement::toString)
-                    .collect(Collectors.joining(",")))
-                .append(")");
+                    .append(dbObject.getColumnGroups().stream().map(DBColumnGroupElement::toString)
+                            .collect(Collectors.joining(",")))
+                    .append(")");
         }
         // 物化视图刷新方式
-        if(Objects.nonNull(dbObject.getSyncDataMethod())){
+        if (Objects.nonNull(dbObject.getSyncDataMethod())) {
             sqlBuilder.line().append(dbObject.getSyncDataMethod().getName());
         }
         // 物化视图刷新模式
-        if(dbObject.isOnDemand()){
+        if (dbObject.isOnDemand()) {
             sqlBuilder.line().append("ON DEMAND");
         }
-        if(Objects.nonNull(dbObject.getSyncSchedule())){
+        if (Objects.nonNull(dbObject.getSyncSchedule())) {
             DBMViewSyncSchedule syncSchedule = dbObject.getSyncSchedule();
-            if(syncSchedule.getStartStrategy()== DBMViewSyncSchedule.StartStrategy.START_NOW){
+            if (syncSchedule.getStartStrategy() == DBMViewSyncSchedule.StartStrategy.START_NOW) {
                 sqlBuilder.line().append("START WITH sysdate()");
-                sqlBuilder.line().append("NEXT sysdate() + INTERVAL ").append(syncSchedule.getInterval()).append(" ").append(syncSchedule.getUnit());
-            }else if (syncSchedule.getStartStrategy()== DBMViewSyncSchedule.StartStrategy.START_AT){
+                sqlBuilder.line().append("NEXT sysdate() + INTERVAL ").append(syncSchedule.getInterval()).append(" ")
+                        .append(syncSchedule.getUnit());
+            } else if (syncSchedule.getStartStrategy() == DBMViewSyncSchedule.StartStrategy.START_AT) {
                 SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 String formattedDate = formatter.format(syncSchedule.getStartWith());
                 sqlBuilder.line().append("START WITH TIMESTAMP '").append(formattedDate).append("'");
-                sqlBuilder.line().append("NEXT TIMESTAMP '").append(formattedDate).append("' + INTERVAL ").append(syncSchedule.getInterval()).append(" ").append(syncSchedule.getUnit());
+                sqlBuilder.line().append("NEXT TIMESTAMP '").append(formattedDate).append("' + INTERVAL ")
+                        .append(syncSchedule.getInterval()).append(" ").append(syncSchedule.getUnit());
             }
         }
         // 查询改写
-        if(dbObject.isEnableQueryRewrite()){
+        if (dbObject.isEnableQueryRewrite()) {
             sqlBuilder.line().append("ENABLE QUERY REWRITE");
-        }else {
+        } else {
             sqlBuilder.line().append("DISABLE QUERY REWRITE");
         }
         // 实时计算
-        if(dbObject.isEnableQueryComputation()){
+        if (dbObject.isEnableQueryComputation()) {
             sqlBuilder.line().append("ENABLE ON QUERY COMPUTATION");
-        }else {
+        } else {
             sqlBuilder.line().append("DISABLE ON QUERY COMPUTATION");
         }
         sqlBuilder.line().append("AS");
@@ -138,7 +140,7 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
         return sqlBuilder.toString();
     }
 
-    private String getColumn(@NotNull String input){
+    private String getColumn(@NotNull String input) {
         Pattern pattern = Pattern.compile("(`[^`]+`)");
         Matcher matcher = pattern.matcher(input);
         if (matcher.find()) {
@@ -149,7 +151,7 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
         }
     }
 
-    private String getPrimary(@NotNull String input){
-       return input.replaceFirst("(?i)CONSTRAINT\\s*", "");
+    private String getPrimary(@NotNull String input) {
+        return input.replaceFirst("(?i)CONSTRAINT\\s*", "");
     }
 }

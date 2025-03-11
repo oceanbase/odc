@@ -59,7 +59,7 @@ public class OBMySQLMVExtension implements MViewExtensionPoint {
     }
 
     @Override
-    public String generateCreateTemplate(DBView mView) {
+    public String generateCreateTemplate(DBMView mView) {
         return getTemplate().generateCreateObjectTemplate(mView);
     }
 
@@ -76,8 +76,8 @@ public class OBMySQLMVExtension implements MViewExtensionPoint {
         return new MySQLObjectOperator(JdbcOperationsUtil.getJdbcOperations(connection));
     }
 
-    protected DBObjectTemplate<DBView> getTemplate() {
-        return DBBrowser.objectTemplate().viewTemplate()
+    protected DBObjectTemplate<DBMView> getTemplate() {
+        return DBBrowser.objectTemplate().mViewTemplate()
                 .setType(DialectType.OB_MYSQL.getDBBrowserDialectTypeName()).create();
     }
 }

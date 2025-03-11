@@ -28,7 +28,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.common.model.ResourceIdentifier;
 import com.oceanbase.odc.service.common.model.ResourceSql;
 import com.oceanbase.odc.service.common.response.ListResponse;
@@ -111,7 +110,8 @@ public class DBMaterializedViewController {
     @RequestMapping(value = "/getCreateSql/{sid:.*}", method = RequestMethod.PATCH)
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<ResourceSql> getCreateSql(@PathVariable String sid, @RequestBody DBMView resource) {
-        throw new NotImplementedException("not implemented");
+        return OdcResult.ok(ResourceSql.ofSql(dbMaterializedViewService.getCreateSql(
+            sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), resource)));
     }
 
     @ApiOperation(value = "syncData",
