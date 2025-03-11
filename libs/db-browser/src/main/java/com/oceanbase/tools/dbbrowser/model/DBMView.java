@@ -38,8 +38,8 @@ public class DBMView implements DBObject {
     private DBMViewSyncDataMethod syncDataMethod;
     // 刷新并行度
     private Integer parallelismDegree;
-    // 刷新模式
-    private List<DBMViewSyncPattern> syncPatterns;
+    // 按需刷新
+    private boolean onDemand = true;
     // 刷新计划
     private DBMViewSyncSchedule syncSchedule;
     // 查询改写

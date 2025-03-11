@@ -34,6 +34,7 @@ import org.apache.commons.collections4.CollectionUtils;
 
 import javax.lang.model.element.NestingKind;
 import javax.validation.constraints.NotNull;
+import java.text.SimpleDateFormat;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -109,17 +110,19 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
             sqlBuilder.line().append(dbObject.getSyncDataMethod().getName());
         }
         // 物化视图刷新模式
-        if(CollectionUtils.isNotEmpty(dbObject.getSyncPatterns())){
-            if(dbObject.getSyncPatterns().contains(DBMViewSyncPattern.ON_DEMAND))
+        if(dbObject.isOnDemand()){
             sqlBuilder.line().append("ON DEMAND");
         }
         if(Objects.nonNull(dbObject.getSyncSchedule())){
             DBMViewSyncSchedule syncSchedule = dbObject.getSyncSchedule();
             if(syncSchedule.getStartStrategy()== DBMViewSyncSchedule.StartStrategy.START_NOW){
                 sqlBuilder.line().append("START WITH sysdate()");
-                sqlBuilder.line().append("NEXT sysdate() + INTERVAL ").append(syncSchedule.getInterval()).append(" ").append(syncSchedule);
+                sqlBuilder.line().append("NEXT sysdate() + INTERVAL ").append(syncSchedule.getInterval()).append(" ").append(syncSchedule.getUnit());
             }else if (syncSchedule.getStartStrategy()== DBMViewSyncSchedule.StartStrategy.START_AT){
-
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                String formattedDate = formatter.format(syncSchedule.getStartWith());
+                sqlBuilder.line().append("START WITH TIMESTAMP '").append(formattedDate).append("'");
+                sqlBuilder.line().append("NEXT TIMESTAMP '").append(formattedDate).append("' + INTERVAL ").append(syncSchedule.getInterval()).append(" ").append(syncSchedule.getUnit());
             }
         }
         // 查询改写
