@@ -35,7 +35,7 @@ import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
-import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataOption;
+import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataMethod;
 import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataParameter;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
@@ -135,7 +135,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
         if (accessor.getClass().equals(OBMySQLSchemaAccessor.class)) {
             DBMViewSyncDataParameter DBMViewSyncDataParameter =
                     new DBMViewSyncDataParameter(getOBMySQLDataBaseName(), "test_mv",
-                            DBMViewSyncDataOption.FORCE_REFRESH, 2);
+                            DBMViewSyncDataMethod.REFRESH_FORCE, 2);
             Boolean aBoolean = accessor.syncMVData(DBMViewSyncDataParameter);
             Assert.assertTrue(aBoolean);
         }

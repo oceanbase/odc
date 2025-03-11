@@ -34,7 +34,7 @@ public class DBMViewSyncDataParameter {
 
     private String mvName;
 
-    private DBMViewSyncDataOption mvSyncDataOption;
+    private DBMViewSyncDataMethod mvSyncDataOption;
 
     private int parallelismDegree;
 

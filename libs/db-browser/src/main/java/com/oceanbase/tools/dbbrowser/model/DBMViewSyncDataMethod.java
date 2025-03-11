@@ -24,17 +24,19 @@ import lombok.Getter;
  * @since: 4.3.4
  */
 @Getter
-public enum DBMViewSyncDataOption {
+public enum DBMViewSyncDataMethod {
 
-    FAST_REFRESH("f"),
-    FORCE_REFRESH("?"),
-    COMPLETE_REFRESH("c"),
-    ALWAYS_REFRESH("a"),
-    NEVER_REFRESH("n");
+    REFRESH_FAST("REFRESH FAST","f"),
+    REFRESH_FORCE("REFRESH FORCE","?"),
+    REFRESH_COMPLETE("REFRESH COMPLETE","c"),
+    REFRESH_ALWAYS("REFRESH ALWAYS","a"),
+    NEVER_REFRESH("NEVER REFRESH","n");
 
+    private String name;
     private String value;
 
-    DBMViewSyncDataOption(String value) {
+    DBMViewSyncDataMethod(String name,String value) {
+        this.name = name;
         this.value = value;
     }
 

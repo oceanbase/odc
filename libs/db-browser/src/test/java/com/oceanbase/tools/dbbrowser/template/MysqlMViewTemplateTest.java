@@ -16,7 +16,17 @@
 
 package com.oceanbase.tools.dbbrowser.template;
 
+import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
+import com.oceanbase.tools.dbbrowser.model.DBConstraintDeferability;
+import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBMView;
+import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataMethod;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
+import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
+import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
 import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.model.DBViewColumn;
 import com.oceanbase.tools.dbbrowser.template.mysql.MySQLViewTemplate;
@@ -41,11 +51,25 @@ public class MysqlMViewTemplateTest {
         DBMView dbmView = new DBMView();
         dbmView.setMVName("v_test");
         dbmView.setSchemaName("schema_0");
+        // 物化视图列
+        List<DBTableColumn> dbTableColumns = prepareMViewColumns(2);
+        dbmView.setColumns(dbTableColumns);
+        // 物化视图主键
+        prepareMViewPrimary(dbmView);
+        // 物化视图分区
+        prepareMViewPartition(dbmView);
+        // 物化视图存储格式
+        prepareMViewColumnGroups(dbmView);
+        // 物化视图刷新方式
+        dbmView.setSyncDataMethod(DBMViewSyncDataMethod.REFRESH_COMPLETE);
+        // 物化视图刷新并行度
+        dbmView.setParallelismDegree(8);
+
 
         List<DBView.DBViewUnit> viewUnits = prepareViewUnit(2);
         dbmView.setViewUnits(viewUnits);
         dbmView.setOperations(Collections.singletonList("left join"));
-        dbmView.setCreateColumns(prepareColumns(2));
+        dbmView.setCreateColumns(prepareQueryColumns(2));
 
         String expect = "\n"
             + "select\n"
@@ -56,7 +80,51 @@ public class MysqlMViewTemplateTest {
             + "from\n"
             + "\t`database_0`.`table_0` tableAlias_0\n"
             + "\tleft join `database_1`.`table_1` tableAlias_1 on /* TODO enter attribute to join on here */";
+        String s = mysqlMViewTemplate.generateCreateObjectTemplate(dbmView);
         Assert.assertEquals(expect, mysqlMViewTemplate.generateCreateObjectTemplate(dbmView));
+    }
+
+    private static void prepareMViewColumnGroups(DBMView dbmView) {
+        List<DBColumnGroupElement> dbColumnGroupElements = new ArrayList<>();
+        DBColumnGroupElement dbColumnGroupElement1 = new DBColumnGroupElement();
+        dbColumnGroupElement1.setAllColumns(true);
+        DBColumnGroupElement dbColumnGroupElement2 = new DBColumnGroupElement();
+        dbColumnGroupElement2.setEachColumn(true);
+        dbColumnGroupElements.add(dbColumnGroupElement1);
+        dbColumnGroupElements.add(dbColumnGroupElement2);
+        dbmView.setColumnGroups(dbColumnGroupElements);
+    }
+
+    private static void prepareMViewPartition(DBMView dbmView) {
+        DBTablePartition dbTablePartition = new DBTablePartition();
+        DBTablePartitionOption dbTablePartitionOption = new DBTablePartitionOption();
+        dbTablePartitionOption.setType(DBTablePartitionType.HASH);
+        dbTablePartitionOption.setExpression("`col0`");
+        dbTablePartitionOption.setPartitionsNum(3);
+        dbTablePartition.setPartitionOption(dbTablePartitionOption);
+        dbmView.setPartition(dbTablePartition);
+    }
+
+    private static void prepareMViewPrimary(DBMView dbmView) {
+        DBTableConstraint dbTableConstraint = new DBTableConstraint();
+        dbTableConstraint.setType(DBConstraintType.PRIMARY_KEY);
+        dbTableConstraint.setColumnNames(Collections.singletonList("col0"));
+        dbTableConstraint.setEnabled(true);
+        dbTableConstraint.setDeferability(DBConstraintDeferability.NOT_DEFERRABLE);
+        dbmView.setConstraints(Collections.singletonList(dbTableConstraint));
+    }
+
+    private List<DBTableColumn> prepareMViewColumns(int size) {
+        List<DBTableColumn> viewColumns = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            DBTableColumn viewColumn = new DBTableColumn();
+            viewColumn.setName("col" + i);
+            viewColumn.setTypeName("int");
+            viewColumn.setNullable(true);
+            viewColumn.setVirtual(false);
+            viewColumns.add(viewColumn);
+        }
+        return viewColumns;
     }
 
     private List<DBView.DBViewUnit> prepareViewUnit(int size) {
@@ -72,7 +140,7 @@ public class MysqlMViewTemplateTest {
         return viewUnits;
     }
 
-    private List<DBViewColumn> prepareColumns(int size) {
+    private List<DBViewColumn> prepareQueryColumns(int size) {
         List<DBViewColumn> viewColumns = new ArrayList<>();
         for (int i = 0; i < size; i++) {
             DBViewColumn viewColumn1 = new DBViewColumn();

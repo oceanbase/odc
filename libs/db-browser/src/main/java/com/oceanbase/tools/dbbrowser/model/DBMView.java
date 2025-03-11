@@ -34,12 +34,10 @@ public class DBMView implements DBObject {
     // if null, use defaultSchemaName in current connection
     private String schemaName;
     private String ddl;
-    // 存储格式
-    private List<DBColumnGroupElement> columnGroups;
     // 刷新方式
-    private DBMViewSyncDataOption syncDataOption;
+    private DBMViewSyncDataMethod syncDataMethod;
     // 刷新并行度
-    private int parallelismDegree;
+    private Integer parallelismDegree;
     // 刷新模式
     private List<DBMViewSyncPattern> syncPatterns;
     // 刷新计划
@@ -69,6 +67,8 @@ public class DBMView implements DBObject {
     private List<DBTableConstraint> constraints;
     // 分区
     private DBTablePartition partition;
+    // 存储格式
+    private List<DBColumnGroupElement> columnGroups;
 
 
     @Override
@@ -84,6 +84,7 @@ public class DBMView implements DBObject {
     public DBTable generateDBTable(){
         DBTable dbTable = new DBTable();
         dbTable.setName(mVName);
+        dbTable.setColumns(columns);
         dbTable.setSchemaName(schemaName);
         dbTable.setPartition(partition);
         dbTable.setConstraints(constraints);
