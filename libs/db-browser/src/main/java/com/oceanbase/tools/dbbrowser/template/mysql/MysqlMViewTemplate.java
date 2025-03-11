@@ -23,6 +23,12 @@ import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotNull;
 
+import com.oceanbase.tools.dbbrowser.editor.DBTableColumnEditor;
+import com.oceanbase.tools.dbbrowser.editor.DBTableConstraintEditor;
+import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
+import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLColumnEditor;
+import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLConstraintEditor;
+import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLDBTablePartitionEditor;
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.tools.dbbrowser.DBBrowser;
@@ -37,6 +43,7 @@ import com.oceanbase.tools.dbbrowser.template.BaseViewTemplate;
 import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * @description:
@@ -45,22 +52,27 @@ import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
  * @since: 4.3.4
  */
 public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
-    private BaseViewTemplate mySQLViewTemplate;
-    private DBTableEditor dbTableEditor;
+    private MySQLViewTemplate mySQLViewTemplate;
+
+    private DBTableColumnEditor dbTableColumnEditor;
+
+    private DBTableConstraintEditor dbTableConstraintEditor;
+
+    private DBTablePartitionEditor dbTablePartitionEditor;
+
 
     public MysqlMViewTemplate() {
         mySQLViewTemplate = new MySQLViewTemplate();
-        dbTableEditor = DBBrowser.objectEditor().tableEditor()
-                .setDbVersion("4.0.0")
-                .setType("OB_MYSQL").create();
+        dbTableColumnEditor = new MySQLColumnEditor();
+        dbTableConstraintEditor =new MySQLConstraintEditor();
+        dbTablePartitionEditor = new OBMySQLDBTablePartitionEditor();
     }
 
     @Override
     public String generateCreateObjectTemplate(DBMView dbObject) {
-        DBTable dbTable = dbObject.generateDBTable();
         SqlBuilder sqlBuilder = new MySQLSqlBuilder();
         sqlBuilder.append("create materialized view ")
-                .append(dbTableEditor.getFullyQualifiedTableName(dbTable));
+                .append(getFullyQualifiedTableName(dbObject));
         boolean isFirstSentence = true;
         // 获取列构造
         if (Objects.nonNull(dbObject.getColumns())) {
@@ -71,7 +83,7 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
                     sqlBuilder.append(",").line();
                 }
                 isFirstSentence = false;
-                sqlBuilder.append(getColumn(dbTableEditor.getColumnEditor().generateCreateDefinitionDDL(column)));
+                sqlBuilder.append(getColumn(dbTableColumnEditor.generateCreateDefinitionDDL(column)));
             }
             // 获取主键构造
             for (DBTableConstraint constraint : dbObject.getConstraints()) {
@@ -80,7 +92,7 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
                 }
                 isFirstSentence = false;
                 sqlBuilder.append(
-                        getPrimary(dbTableEditor.getConstraintEditor().generateCreateDefinitionDDL(constraint)));
+                        getPrimary(dbTableConstraintEditor.generateCreateDefinitionDDL(constraint)));
             }
             sqlBuilder.line().append(") ");
         }
@@ -91,7 +103,7 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
         // 获取分区构造
         if (Objects.nonNull(dbObject.getPartition())) {
             sqlBuilder.line()
-                    .append(dbTableEditor.getPartitionEditor().generateCreateDefinitionDDL(dbObject.getPartition()));
+                    .append(dbTablePartitionEditor.generateCreateDefinitionDDL(dbObject.getPartition()));
         }
         // 获取存储格式构造
         if (CollectionUtils.isNotEmpty(dbObject.getColumnGroups())) {
@@ -153,5 +165,14 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
 
     private String getPrimary(@NotNull String input) {
         return input.replaceFirst("(?i)CONSTRAINT\\s*", "");
+    }
+
+    private String getFullyQualifiedTableName(@NotNull DBMView dbmView) {
+        SqlBuilder sqlBuilder = new MySQLSqlBuilder();;
+        if (StringUtils.isNotEmpty(dbmView.getSchemaName())) {
+            sqlBuilder.identifier(dbmView.getSchemaName()).append(".");
+        }
+        sqlBuilder.identifier(dbmView.getMVName());
+        return sqlBuilder.toString();
     }
 }
