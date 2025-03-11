@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.server.web.controller.v2;
 
 import java.util.List;
@@ -39,6 +38,7 @@ public class ImportController {
     public SuccessResponse<String> startPreviewImportTask(@RequestBody ScheduleTaskImportRequest request) {
         throw new UnsupportedException();
     }
+
     /**
      * @param previewId {@link ImportController#startPreviewImportTask}'s return value
      */
