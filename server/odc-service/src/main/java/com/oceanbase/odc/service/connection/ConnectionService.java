@@ -42,6 +42,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Example;
@@ -225,6 +226,9 @@ public class ConnectionService {
     @Autowired
     private ConnectionEventPublisher connectionEventPublisher;
 
+    @Value("${odc.integration.bastion.enabled:false}")
+    private boolean bastionEnabled;
+
     private final ConnectionMapper mapper = ConnectionMapper.INSTANCE;
 
     public static final String DEFAULT_MIN_PRIVILEGE = "read";
@@ -244,8 +248,10 @@ public class ConnectionService {
         ConnectionConfig saved = txTemplate.execute(status -> {
             try {
                 ConnectionConfig created = innerCreate(connection, creatorId, skipPermissionCheck);
-                userPermissionService.bindUserAndDataSourcePermission(creatorId, currentOrganizationId(),
-                        created.getId(), Arrays.asList("read", "update", "delete"));
+                if (bastionEnabled) {
+                    userPermissionService.bindUserAndDataSourcePermission(creatorId, currentOrganizationId(),
+                            created.getId(), Arrays.asList("read", "update", "delete"));
+                }
                 return created;
             } catch (Exception e) {
                 status.setRollbackOnly();
