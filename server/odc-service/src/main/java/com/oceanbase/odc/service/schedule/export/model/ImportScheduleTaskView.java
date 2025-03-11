@@ -26,12 +26,12 @@ import lombok.Data;
 public class ImportScheduleTaskView {
 
     /**
-     * The unique ID of the exported file, which uniquely represents one task in one file
+     * The unique ID of the exported file, which uniquely represents one schedule in one exported file
      */
     private String exportRowId;
 
     /**
-     * Indicates whether a task can be imported
+     * Indicates whether a schedule can be imported
      */
     private Boolean importable;
 
@@ -42,7 +42,7 @@ public class ImportScheduleTaskView {
     private ScheduleNonImportableType nonImportableType;
 
     /**
-     * schedule ID of the system before export
+     * Schedule id of the system before export
      */
     private String originId;
 

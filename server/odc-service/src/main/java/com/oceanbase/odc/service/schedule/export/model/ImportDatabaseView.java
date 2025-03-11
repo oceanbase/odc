@@ -31,9 +31,9 @@ public class ImportDatabaseView {
     private String host;
     private Integer port;
     private String username;
-    // export datasource name
+    // datasource name from export file
     private String name;
-    // matched Datasource name, null means not matched
+    // matched datasource name, null means not matched
     @Nullable
     private String matchedDatasourceName;
 
