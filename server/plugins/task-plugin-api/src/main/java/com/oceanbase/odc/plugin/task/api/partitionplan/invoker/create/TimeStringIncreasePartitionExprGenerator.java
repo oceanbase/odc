@@ -27,7 +27,7 @@ import lombok.NonNull;
 
 public interface TimeStringIncreasePartitionExprGenerator extends PartitionExprGenerator {
 
-    String GENERATOR_NAME = "GENERIC_INCREASING_GENERATOR";
+    String GENERATOR_NAME = "TIME_STRING_INCREASING_GENERATOR";
 
     List<String> generate(@NonNull Connection connection, @NonNull DBTable dbTable,
             @NonNull String partitionKey, @NonNull Integer generateCount,
