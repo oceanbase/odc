@@ -53,9 +53,9 @@ public class ImportScheduleTaskView {
 
     private ScheduleType type;
 
-    private ImportDatabaseView datasourceView;
+    private ImportDatabaseView databaseView;
 
     @Nullable
-    private ImportDatabaseView targetDatasourceView;
+    private ImportDatabaseView targetDatabaseView;
 
 }
