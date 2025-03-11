@@ -140,11 +140,11 @@ public class DBMaterializedViewService {
     }
 
     public String getCreateSql(@NonNull ConnectionSession session,
-        @NonNull DBMView resource) {
+            @NonNull DBMView resource) {
         return session.getSyncJdbcExecutor(
                 ConnectionSessionConstants.BACKEND_DS_KEY)
-            .execute((ConnectionCallback<String>) con -> getDBMViewExtensionPoint(session)
-                .generateCreateTemplate(resource));
+                .execute((ConnectionCallback<String>) con -> getDBMViewExtensionPoint(session)
+                        .generateCreateTemplate(resource));
     }
 
     public DBViewResponse detail(ConnectionSession connectionSession, String schemaName, String viewName) {

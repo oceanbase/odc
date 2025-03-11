@@ -100,9 +100,9 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
         sb.append(".");
         sb.append(parameter.getMvName());
         sb.append("'");
-        if (Objects.nonNull(parameter.getMvSyncDataOption())) {
+        if (Objects.nonNull(parameter.getMvSyncDataMethod())) {
             sb.append(",");
-            sb.value(parameter.getMvSyncDataOption().getValue());
+            sb.value(parameter.getMvSyncDataMethod().getValue());
         }
         if (Objects.nonNull(parameter.getParallelismDegree())) {
             sb.append(",");

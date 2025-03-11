@@ -111,7 +111,7 @@ public class DBMaterializedViewController {
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<ResourceSql> getCreateSql(@PathVariable String sid, @RequestBody DBMView resource) {
         return OdcResult.ok(ResourceSql.ofSql(dbMaterializedViewService.getCreateSql(
-            sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), resource)));
+                sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), resource)));
     }
 
     @ApiOperation(value = "syncData",
