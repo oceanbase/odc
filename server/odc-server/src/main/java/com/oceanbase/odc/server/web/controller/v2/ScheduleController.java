@@ -289,41 +289,4 @@ public class ScheduleController {
         return Responses.single(scheduleService.updateDlmRateLimit(id, limiterConfig));
     }
 
-
-    @RequestMapping(value = "/schedules/preview", method = RequestMethod.POST)
-    public SuccessResponse<String> submitPreviewImportTask(@RequestBody ScheduleTaskImportRequest request) {
-        throw new UnsupportedException();
-    }
-
-    /**
-     * @param previewId {@link ScheduleController#submitPreviewImportTask}'s return value
-     */
-    @RequestMapping(value = "/schedules/preview/{previewId}", method = RequestMethod.GET)
-    @StatefulRoute(stateName = StateName.UUID_STATEFUL_ID, stateIdExpression = "#previewId")
-    public SuccessResponse<List<ImportScheduleTaskView>> getPreviewImportTask(@PathVariable String previewId) {
-        throw new UnsupportedException();
-    }
-
-    @RequestMapping(value = "/schedules/import", method = RequestMethod.POST)
-    public SuccessResponse<String> submitImportTask(@RequestBody ScheduleTaskImportRequest request) {
-        throw new UnsupportedException();
-    }
-
-    /**
-     * @param importTaskId {@link ScheduleController#submitImportTask}'s return value
-     */
-    @RequestMapping(value = "/schedules/import/{importTaskId}", method = RequestMethod.GET)
-    @StatefulRoute(stateName = StateName.UUID_STATEFUL_ID, stateIdExpression = "#importTaskId")
-    public SuccessResponse<List<ImportTaskResult>> getImportResult(@PathVariable String importTaskId) {
-        throw new UnsupportedException();
-    }
-
-    /**
-     * @param importTaskId {@link ScheduleController#submitImportTask}'s return value
-     */
-    @RequestMapping(value = "/schedules/import/{importTaskId}/log", method = RequestMethod.GET)
-    @StatefulRoute(stateName = StateName.UUID_STATEFUL_ID, stateIdExpression = "#importTaskId")
-    public SuccessResponse<String> getImportLog(@PathVariable String importTaskId) {
-        throw new UnsupportedException();
-    }
 }
