@@ -30,9 +30,14 @@ public class ImportDatabaseView {
     private String host;
     private Integer port;
     private String username;
-    // datasource name from export file
-    private String name;
-    // matched datasource name, null means not matched
+    /**
+     * datasource name from export file
+     */
+    private String datasourceName;
+    /**
+     * If the imported datasource is consistent with the existing data source, the existing data source
+     * will be reused. It's means matched datasource name, null means not matched
+     */
     @Nullable
     private String matchedDatasourceName;
 
