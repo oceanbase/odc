@@ -64,7 +64,6 @@ import com.oceanbase.odc.service.state.model.StateName;
 import com.oceanbase.odc.service.state.model.StatefulRoute;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
-import com.oceanbase.tools.sqlparser.FastFailErrorListener;
 
 import io.swagger.annotations.ApiOperation;
 
@@ -297,11 +296,11 @@ public class ScheduleController {
     }
 
     /**
-     * @param submitId {@link ScheduleController#submitPreviewImportTask}'s return value
+     * @param previewId {@link ScheduleController#submitPreviewImportTask}'s return value
      */
-    @RequestMapping(value = "/schedules/getPreviewResult", method = RequestMethod.POST)
-    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#submitId")
-    public SuccessResponse<List<ImportScheduleTaskView>> getPreviewImportTask(String submitId) {
+    @RequestMapping(value = "/schedules/getPreviewResult/{previewId}", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.UUID_STATEFUL_ID, stateIdExpression = "#previewId")
+    public SuccessResponse<List<ImportScheduleTaskView>> getPreviewImportTask(@PathVariable String previewId) {
         throw new UnsupportedException();
     }
 
@@ -313,18 +312,18 @@ public class ScheduleController {
     /**
      * @param importTaskId {@link ScheduleController#submitImportTask}'s return value
      */
-    @RequestMapping(value = "/schedules/getImportResult", method = RequestMethod.POST)
-    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#importTaskId")
-    public SuccessResponse<List<ImportTaskResult>> getImportResult(String importTaskId) {
+    @RequestMapping(value = "/schedules/getImportResult/{importTaskId}", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.UUID_STATEFUL_ID, stateIdExpression = "#importTaskId")
+    public SuccessResponse<List<ImportTaskResult>> getImportResult(@PathVariable String importTaskId) {
         throw new UnsupportedException();
     }
 
     /**
      * @param importTaskId {@link ScheduleController#submitImportTask}'s return value
      */
-    @RequestMapping(value = "/schedules/getImportLog", method = RequestMethod.POST)
-    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#importTaskId")
-    public SuccessResponse<String> getImportLog(String importTaskId) {
+    @RequestMapping(value = "/schedules/getImportLog/{importTaskId}", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.UUID_STATEFUL_ID, stateIdExpression = "#importTaskId")
+    public SuccessResponse<String> getImportLog(@PathVariable String importTaskId) {
         throw new UnsupportedException();
     }
 }
