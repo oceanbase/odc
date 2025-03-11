@@ -920,14 +920,8 @@ public class DatabaseService {
     public boolean modifyDatabaseRemark(@NotEmpty Collection<Long> databaseIds,
             @NotBlank @Size(min = 1, max = 100) String remark) {
         Set<Long> ids = new HashSet<>(databaseIds);
-        List<Database> databases = listDatabasesDetailsByIds(ids);
+        List<Database> databases = listDatabasesByIds(ids);
         Verify.equals(ids.size(), databases.size(), "Missing databases may exist");
-
-        for (Database database : databases) {
-            if (CollectionUtils.isEmpty(database.getAuthorizedPermissionTypes())) {
-                throw new AccessDeniedException();
-            }
-        }
 
         Set<Long> needCheckProjectIds =
                 databases.stream().filter(d -> d.getProject() != null && d.getProject().getId() != null)
