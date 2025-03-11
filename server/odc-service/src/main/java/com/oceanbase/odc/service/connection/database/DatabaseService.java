@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -889,9 +890,15 @@ public class DatabaseService {
 
     @SkipAuthorize("internal usage")
     public List<Database> listSkipPermissionCheck(@NonNull Collection<Long> ids, boolean includesPermittedAction) {
-        List<DatabaseEntity> databaseEntities = databaseRepository.findByIdIn(ids);
-        Verify.equals(ids.size(), databaseEntities.size(), "Database");
-        return entitiesToModels(new PageImpl<>(databaseEntities), includesPermittedAction).getContent();
+        Set<Long> databaseIds =
+                ids.stream().filter(Objects::nonNull).collect(Collectors.toCollection(LinkedHashSet::new));
+        if (CollectionUtils.isEmpty(databaseIds)) {
+            return Collections.emptyList();
+        }
+        List<DatabaseEntity> databaseEntities = databaseRepository.findByIdsWithPreservedOrder(databaseIds);
+        Verify.equals(databaseIds.size(), databaseEntities.size(), "Database");
+        return entitiesToModels(new PageImpl<>(databaseEntities),
+                includesPermittedAction).getContent();
     }
 
 
@@ -911,10 +918,7 @@ public class DatabaseService {
             return false;
         }
         List<Database> dbs = entitiesToModels(
-                new PageImpl<>(databaseRepository.findByIdInAndProjectIdIn(databaseIds, joinedProjectIds)
-                        .stream()
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toList())),
+                new PageImpl<>(databaseRepository.findByIdInAndProjectIdIn(databaseIds, joinedProjectIds)),
                 true).getContent();
 
         Verify.equals(databaseIds.size(), dbs.size(), "Database");
@@ -943,7 +947,7 @@ public class DatabaseService {
 
         Integer affectRows = transactionTemplate.execute(status -> {
             try {
-                return bulkUpsertDBAccessHistory(toUpsertHistories);
+                return databaseAccessHistoryRepository.upsert(toUpsertHistories);
             } catch (Exception e) {
                 log.warn("Failed to upsert database access history, databaseIds={}", JsonUtils.toJson(databaseIds), e);
                 status.setRollbackOnly();
@@ -956,18 +960,18 @@ public class DatabaseService {
     }
 
     @SkipAuthorize("odc internal usage")
-    @Transactional(rollbackFor = Exception.class)
-    public List<Database> listDatabaseAccessHistory(@NonNull DBAccessHistoryReq dbAccessHistoryReq) {
+    public List<Database> listDatabaseAccessHistory(@NonNull @Valid DBAccessHistoryReq dbAccessHistoryReq) {
         final long userId = authenticationFacade.currentUserId();
         if (dbAccessHistoryReq.getHistoryCount() == null) {
             return Collections.emptyList();
         }
-        Pageable page = PageRequest.of(0, Math.max(dbAccessHistoryReq.getHistoryCount(), 1))
+        Pageable page = PageRequest.of(0, dbAccessHistoryReq.getHistoryCount())
                 .withSort(Sort.by(DatabaseAccessHistoryEntity.LAST_ACCESS_TIME_NAME).descending());
         List<DatabaseAccessHistoryEntity> dbHistoryEntities =
                 databaseAccessHistoryRepository.findByUserId(userId, page).getContent();
         Set<Long> dbIds =
-                dbHistoryEntities.stream().map(DatabaseAccessHistoryEntity::getDatabaseId).collect(Collectors.toSet());
+                dbHistoryEntities.stream().map(DatabaseAccessHistoryEntity::getDatabaseId)
+                        .collect(Collectors.toCollection(LinkedHashSet::new));
         List<Database> databases = listSkipPermissionCheck(dbIds, true);
         Set<Long> joinedProjectIds = projectService.getMemberProjectIds(userId);
         databases.forEach(d -> {
@@ -1219,23 +1223,5 @@ public class DatabaseService {
                     ex.getLocalizedMessage());
         }
 
-    }
-
-    private int bulkUpsertDBAccessHistory(@NonNull Collection<DatabaseAccessHistoryEntity> historyEntities) {
-        if (CollectionUtils.isEmpty(historyEntities)) {
-            return 0;
-        }
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        String sql = "INSERT INTO database_access_history " +
-                "(user_id, database_id, last_access_time, connection_id) " +
-                "VALUES (?,?,?,?) " +
-                "ON DUPLICATE KEY UPDATE " +
-                "last_access_time = VALUES(last_access_time)";
-        return jdbcTemplate.batchUpdate(sql, historyEntities.stream().map(h -> new Object[] {
-                h.getUserId(),
-                h.getDatabaseId(),
-                h.getLastAccessTime(),
-                h.getConnectionId()
-        }).collect(Collectors.toList())).length;
     }
 }

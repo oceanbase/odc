@@ -48,6 +48,10 @@ public interface DatabaseRepository extends JpaRepository<DatabaseEntity, Long>,
 
     List<DatabaseEntity> findByIdIn(Collection<Long> ids);
 
+    @Query(value = "SELECT * FROM connect_database d WHERE d.id IN (:ids) ORDER BY FIELD(d.id, :ids)",
+            nativeQuery = true)
+    List<DatabaseEntity> findByIdsWithPreservedOrder(@Param("ids") Collection<Long> ids);
+
     List<DatabaseEntity> findByNameIn(Collection<String> name);
 
     List<DatabaseEntity> findByIdInAndProjectIdIn(Collection<Long> ids, Collection<Long> projectIds);

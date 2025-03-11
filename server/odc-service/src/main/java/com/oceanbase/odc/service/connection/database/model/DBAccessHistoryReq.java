@@ -17,6 +17,9 @@ package com.oceanbase.odc.service.connection.database.model;
 
 import java.util.Set;
 
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
+
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -32,5 +35,7 @@ public class DBAccessHistoryReq {
 
     private Set<Long> databaseIds;
 
+    @NotNull(message = "Query history count param must not be null")
+    @Min(value = 1, message = "Query history count must greater than or equals 1")
     private Integer historyCount;
 }

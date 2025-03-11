@@ -15,10 +15,18 @@
  */
 package com.oceanbase.odc.metadb.connection;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
+
+import lombok.NonNull;
 
 /**
  * @Author: ysj
@@ -26,8 +34,27 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
  * @Since: 4.3.4
  * @Description: database access history repository
  */
-public interface DatabaseAccessHistoryRepository extends JpaRepository<DatabaseAccessHistoryEntity, Long>,
+public interface DatabaseAccessHistoryRepository extends OdcJpaRepository<DatabaseAccessHistoryEntity, Long>,
         JpaSpecificationExecutor<DatabaseAccessHistoryEntity> {
 
     Page<DatabaseAccessHistoryEntity> findByUserId(Long userId, Pageable pageable);
+
+    default int upsert(@NonNull Collection<DatabaseAccessHistoryEntity> historyEntities) {
+        List<DatabaseAccessHistoryEntity> histories = historyEntities.stream().filter(Objects::nonNull).collect(
+                Collectors.toList());
+        if (histories.isEmpty()) {
+            return 0;
+        }
+        String sql = "INSERT INTO database_access_history " +
+                "(user_id, database_id, last_access_time, connection_id) " +
+                "VALUES (?,?,?,?) " +
+                "ON DUPLICATE KEY UPDATE " +
+                "last_access_time = VALUES(last_access_time)";
+        return getJdbcTemplate().batchUpdate(sql, historyEntities.stream().map(h -> new Object[] {
+                h.getUserId(),
+                h.getDatabaseId(),
+                h.getLastAccessTime(),
+                h.getConnectionId()
+        }).collect(Collectors.toList())).length;
+    }
 }
