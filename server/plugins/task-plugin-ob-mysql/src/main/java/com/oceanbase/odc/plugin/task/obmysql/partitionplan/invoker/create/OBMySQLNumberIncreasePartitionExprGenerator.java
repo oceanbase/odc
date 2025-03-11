@@ -25,7 +25,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.create.NumberIncreasePartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.NumberIncreaseGeneratorConfig;
-import com.oceanbase.odc.plugin.task.obmysql.partitionplan.OBMySQLAutoPartitionExtensionPoint;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.OBMySQLExprCalculator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator.SqlExprResult;
@@ -49,15 +48,16 @@ public class OBMySQLNumberIncreasePartitionExprGenerator implements NumberIncrea
         String lastPartiValue;
         List<DBTablePartitionDefinition> definitions = dbTable.getPartition().getPartitionDefinitions();
         DBTablePartitionDefinition lastDef = definitions.get(definitions.size() - 1);
-        if (CollectionUtils.isNotEmpty(option.getColumnNames())) {
+        List<String> columnNames = option.getColumnNames();
+        String realName = unquoteIdentifier(partitionKey);
+        if (CollectionUtils.isNotEmpty(columnNames)) {
             int i;
-            String realName = unquoteIdentifier(partitionKey);
-            for (i = 0; i < option.getColumnNames().size(); i++) {
-                if (realName.equals(unquoteIdentifier(option.getColumnNames().get(i)))) {
+            for (i = 0; i < columnNames.size(); i++) {
+                if (realName.equals(unquoteIdentifier(columnNames.get(i)))) {
                     break;
                 }
             }
-            if (i >= option.getColumnNames().size()) {
+            if (i >= columnNames.size()) {
                 throw new IllegalArgumentException("Unknown partition key, " + partitionKey);
             }
             lastPartiValue = lastDef.getMaxValues().get(i);
@@ -87,7 +87,7 @@ public class OBMySQLNumberIncreasePartitionExprGenerator implements NumberIncrea
     }
 
     protected String unquoteIdentifier(String identifier) {
-        return new OBMySQLAutoPartitionExtensionPoint().unquoteIdentifier(identifier);
+        return StringUtils.unquoteMySqlIdentifier(identifier);
     }
 
     protected SqlExprCalculator getSqlExprCalculator(Connection connection) {

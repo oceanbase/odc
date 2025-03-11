@@ -15,7 +15,12 @@
  */
 package com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.create;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.create.OBMySQLNumberIncreasePartitionExprGenerator;
 
 public class OBOracleNumberIncreasePartitionExprGenerator extends OBMySQLNumberIncreasePartitionExprGenerator {
+
+    protected String unquoteIdentifier(String identifier) {
+        return StringUtils.unquoteOracleIdentifier(identifier);
+    }
 }
