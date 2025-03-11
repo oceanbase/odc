@@ -16,9 +16,20 @@
 
 package com.oceanbase.tools.dbbrowser.template.mysql;
 
+import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
+import com.oceanbase.tools.dbbrowser.editor.DBTableEditorFactory;
+import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
+import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLTableEditor;
+import com.oceanbase.tools.dbbrowser.model.DBMView;
 import com.oceanbase.tools.dbbrowser.model.DBView;
+import com.oceanbase.tools.dbbrowser.template.BaseMViewTemplate;
 import com.oceanbase.tools.dbbrowser.template.BaseViewTemplate;
+import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
+import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
+import org.apache.commons.lang3.Validate;
+
+import javax.validation.constraints.NotNull;
 
 /**
  * @description:
@@ -26,19 +37,27 @@ import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
  * @date: 2025/3/10 16:45
  * @since: 4.3.4
  */
-public class MysqlMViewTemplate extends BaseViewTemplate {
-    @Override
-    protected String preHandle(String str) {
-        return null;
+public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
+   private BaseViewTemplate mySQLViewTemplate;
+   private DBTableEditor dbTableEditor;
+
+   public  MysqlMViewTemplate() {
+        mySQLViewTemplate = new MySQLViewTemplate();
+        DBTableEditorFactory dbTableEditorFactory = new DBTableEditorFactory();
+        dbTableEditorFactory.setDbVersion("4.3.3");
+        dbTableEditor = dbTableEditorFactory.buildForOBMySQL();
     }
 
     @Override
-    protected SqlBuilder sqlBuilder() {
-        return null;
+    public String generateCreateObjectTemplate(DBMView dbObject) {
+        SqlBuilder sqlBuilder = new MySQLSqlBuilder();
+        sqlBuilder.append("create materialized view ")
+            .identifier(dbObject.getMVName());
+        String ddl = dbTableEditor.generateCreateObjectDDL(dbObject.generateDBTable());
+//        dbTableEditor.getColumnEditor().generateCreateDefinitionDDL(dbObject.getCreateColumns());
+        String partitionDDL = dbTableEditor.getPartitionEditor().generateCreateDefinitionDDL(dbObject.getPartition());
+        mySQLViewTemplate.generateQueryStatement(dbObject.generateDBView(), sqlBuilder);
+        return sqlBuilder.toString();
     }
 
-    @Override
-    protected String doGenerateCreateObjectTemplate(SqlBuilder sqlBuilder, DBView dbObject) {
-        return null;
-    }
 }

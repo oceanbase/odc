@@ -71,6 +71,11 @@ public abstract class BaseViewTemplate implements DBObjectTemplate<DBView> {
         sqlBuilder.append(preHandle("create or replace view "))
                 .identifier(dbObject.getViewName())
                 .append(preHandle(" as"));
+        generateQueryStatement(dbObject, sqlBuilder);
+        return doGenerateCreateObjectTemplate(sqlBuilder, dbObject);
+    }
+
+    public void generateQueryStatement(DBView dbObject, SqlBuilder sqlBuilder) {
         ViewCreateParameters params = new ViewCreateParameters(dbObject);
         params.getSubParameters().forEach(p -> {
             if (Objects.isNull(p.getViewUnits()) && Objects.isNull(p.getColumns())) {
@@ -80,7 +85,6 @@ public abstract class BaseViewTemplate implements DBObjectTemplate<DBView> {
             }
             handleQuery(sqlBuilder, p);
         });
-        return doGenerateCreateObjectTemplate(sqlBuilder, dbObject);
     }
 
     private void handleQuery(SqlBuilder sqlBuilder, ViewCreateSubParameters subParam) {

@@ -32,7 +32,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class DBMViewSyncSchedule {
 
-    // 默认是当前时间 sysdate()
+    private StartStrategy startStrategy;
+
     private Date startWith;
 
     private Long interval;
@@ -47,6 +48,11 @@ public class DBMViewSyncSchedule {
         WEEK,
         MONTH,
         YEAR;
+    }
+
+    public enum StartStrategy {
+        START_NOW,
+        START_AT;
     }
 
 }

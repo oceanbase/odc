@@ -33,6 +33,7 @@ public class DBMView implements DBObject {
     private String mVName;
     // if null, use defaultSchemaName in current connection
     private String schemaName;
+    private String ddl;
     // 存储格式
     private List<DBColumnGroupElement> columnGroups;
     // 刷新方式
@@ -48,17 +49,27 @@ public class DBMView implements DBObject {
     // 实时计算
     private boolean enableQueryComputation;
 
+    /**
+     * 复用视图，用于构造query statement
+     */
+
     // 基表
     private List<DBView.DBViewUnit> viewUnits = new ArrayList<>();
     // 列
     private List<DBViewColumn> createColumns;
 
     private List<String> operations = new ArrayList<>();
+
+    /**
+     * 复用表
+     */
+
+    private List<DBTableColumn> columns;
     // 主键约束
     private List<DBTableConstraint> constraints;
     // 分区
     private DBTablePartition partition;
-    private String ddl;
+
 
     @Override
     public String name() {
@@ -68,5 +79,24 @@ public class DBMView implements DBObject {
     @Override
     public DBObjectType type() {
         return DBObjectType.MATERIALIZED_VIEW;
+    }
+
+    public DBTable generateDBTable(){
+        DBTable dbTable = new DBTable();
+        dbTable.setName(mVName);
+        dbTable.setSchemaName(schemaName);
+        dbTable.setPartition(partition);
+        dbTable.setConstraints(constraints);
+        return dbTable;
+    }
+
+    public DBView generateDBView(){
+        DBView dbView = new DBView();
+        dbView.setViewName(mVName);
+        dbView.setSchemaName(schemaName);
+        dbView.setViewUnits(viewUnits);
+        dbView.setCreateColumns(createColumns);
+        dbView.setOperations(operations);
+        return dbView;
     }
 }
