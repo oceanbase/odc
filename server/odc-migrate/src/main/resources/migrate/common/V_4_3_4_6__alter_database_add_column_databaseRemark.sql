@@ -13,4 +13,4 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-ALTER TABLE `connect_database` ADD COLUMN `database_remark` VARCHAR(255) DEFAULT NULL COMMENT 'database remark';
+ALTER TABLE `connect_database` ADD COLUMN `remark` VARCHAR(255) DEFAULT NULL COMMENT 'database remark';

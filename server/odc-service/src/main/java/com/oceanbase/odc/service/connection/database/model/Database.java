@@ -109,7 +109,7 @@ public class Database implements SecurityResource, OrganizationIsolated, Seriali
 
     private List<InnerUser> owners;
 
-    private String databaseRemark;
+    private String remark;
 
     @Override
     public String resourceId() {

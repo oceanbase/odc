@@ -119,7 +119,7 @@ public class DatabaseEntity {
     @Column(name = "object_last_sync_time")
     private Date objectLastSyncTime;
 
-    @Column(name = "database_remark")
-    private String databaseRemark;
+    @Column(name = "remark")
+    private String remark;
 
 }

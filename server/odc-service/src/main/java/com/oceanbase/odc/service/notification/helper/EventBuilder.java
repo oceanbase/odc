@@ -215,7 +215,7 @@ public class EventBuilder {
             Database database = databaseService.getBasicSkipPermissionCheck(task.getDatabaseId());
             labels.putIfNonNull(DATABASE_ID, database.id());
             labels.putIfNonNull(DATABASE_NAME,
-                    String.format("%s%s", database.getName(), decorateDatabaseRemark(database.getDatabaseRemark())));
+                    String.format("%s%s", database.getName(), decorateDatabaseRemark(database.getRemark())));
             labels.putIfNonNull(PROJECT_ID, database.getProject().id());
             projectId = database.getProject().id();
         } else if (task.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION) {
@@ -224,7 +224,7 @@ public class EventBuilder {
             Set<Long> databaseIds = parameter.getDatabases().stream().map(e -> e.getId()).collect(Collectors.toSet());
             Map<Long, String> dbId2DatabaseRemark =
                     databaseService.listBasicSkipPermissionCheckByIds(databaseIds).stream()
-                            .collect(Collectors.toMap(Database::getId, Database::getDatabaseRemark));
+                            .collect(Collectors.toMap(Database::getId, Database::getRemark));
             String dbNames = parameter.getDatabases().stream().map(d -> {
                 String dbName = d.getName();
                 String dbRemark = decorateDatabaseRemark(dbId2DatabaseRemark.get(d.getId()));
@@ -240,7 +240,7 @@ public class EventBuilder {
                     parameter.getTables().stream().map(ApplyTable::getDatabaseId).collect(Collectors.toSet());
             Map<Long, String> dbId2DatabaseRemark =
                     databaseService.listBasicSkipPermissionCheckByIds(databaseIds).stream()
-                            .collect(Collectors.toMap(Database::getId, Database::getDatabaseRemark));
+                            .collect(Collectors.toMap(Database::getId, Database::getRemark));
             String dbNames = parameter.getTables().stream().map(d -> {
                 String dbName = d.getDatabaseName();
                 String dbRemark = decorateDatabaseRemark(dbId2DatabaseRemark.get(d.getDatabaseId()));
@@ -265,7 +265,7 @@ public class EventBuilder {
                     .collect(Collectors.toSet());
             Map<Long, String> dbId2DatabaseRemark =
                     databaseService.listBasicSkipPermissionCheckByIds(databaseIds).stream()
-                            .collect(Collectors.toMap(Database::getId, Database::getDatabaseRemark));
+                            .collect(Collectors.toMap(Database::getId, Database::getRemark));
             labels.putIfNonNull(DATABASE_NAME, parameter.getDatabases().stream()
                     .map(database -> {
                         String dbName = String.format("【%s】%s", database.getEnvironment() == null ? ""
@@ -287,7 +287,7 @@ public class EventBuilder {
             labels.putIfNonNull(PROJECT_ID, projectId);
             labels.putIfNonNull(DATABASE_ID, schedule.getDatabaseId());
             labels.putIfNonNull(DATABASE_NAME, String.format("%s%s", schedule.getDatabaseName(),
-                    decorateDatabaseRemark(database.getDatabaseRemark())));
+                    decorateDatabaseRemark(database.getRemark())));
             labels.putIfNonNull(TASK_TYPE, schedule.getType().name());
         } else {
             throw new UnexpectedException("task.databaseId should not be null");
@@ -322,7 +322,7 @@ public class EventBuilder {
         labels.putIfNonNull(PROJECT_ID, schedule.getProjectId());
         labels.putIfNonNull(DATABASE_ID, schedule.getDatabaseId());
         labels.putIfNonNull(DATABASE_NAME,
-                String.format("%s%s", schedule.getDatabaseName(), decorateDatabaseRemark(db.getDatabaseRemark())));
+                String.format("%s%s", schedule.getDatabaseName(), decorateDatabaseRemark(db.getRemark())));
 
         return Event.builder()
                 .status(EventStatus.CREATED)
@@ -350,7 +350,7 @@ public class EventBuilder {
         labels.putIfNonNull(PROJECT_ID, schedule.getProjectId());
         labels.putIfNonNull(DATABASE_ID, schedule.getDatabaseId());
         labels.putIfNonNull(DATABASE_NAME,
-                String.format("%s%s", schedule.getDatabaseName(), decorateDatabaseRemark(db.getDatabaseRemark())));
+                String.format("%s%s", schedule.getDatabaseName(), decorateDatabaseRemark(db.getRemark())));
 
         return Event.builder()
                 .status(EventStatus.CREATED)
