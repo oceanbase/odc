@@ -25,12 +25,14 @@ import com.oceanbase.tools.dbbrowser.model.DBMViewSyncSchedule;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
+import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.template.BaseViewTemplate;
 import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 import org.apache.commons.collections4.CollectionUtils;
 
+import javax.lang.model.element.NestingKind;
 import javax.validation.constraints.NotNull;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -51,7 +53,7 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
         mySQLViewTemplate = new MySQLViewTemplate();
 //        DBTableEditorFactory dbTableEditorFactory = new DBTableEditorFactory();
        dbTableEditor = DBBrowser.objectEditor().tableEditor()
-           .setDbVersion("4.3.3")
+           .setDbVersion("4.0.0")
            .setType("OB_MYSQL").create();
 
 //       dbTableEditorFactory.setDbVersion("4.3.3");
@@ -78,12 +80,12 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
                 sqlBuilder.append(getColumn(dbTableEditor.getColumnEditor().generateCreateDefinitionDDL(column)));
             }
             // 获取主键构造
-            for (DBTableConstraint constraint : dbTableEditor. excludeUniqueConstraint(null, dbObject.getConstraints())) {
+            for (DBTableConstraint constraint : dbObject.getConstraints()) {
                 if (!isFirstSentence) {
                     sqlBuilder.append(",").line();
                 }
                 isFirstSentence = false;
-                sqlBuilder.append(dbTableEditor.getConstraintEditor().generateCreateDefinitionDDL(constraint));
+                sqlBuilder.append(getPrimary(dbTableEditor.getConstraintEditor().generateCreateDefinitionDDL(constraint)));
             }
             sqlBuilder.line().append(") ");
         }
@@ -116,6 +118,8 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
             if(syncSchedule.getStartStrategy()== DBMViewSyncSchedule.StartStrategy.START_NOW){
                 sqlBuilder.line().append("START WITH sysdate()");
                 sqlBuilder.line().append("NEXT sysdate() + INTERVAL ").append(syncSchedule.getInterval()).append(" ").append(syncSchedule);
+            }else if (syncSchedule.getStartStrategy()== DBMViewSyncSchedule.StartStrategy.START_AT){
+
             }
         }
         // 查询改写
@@ -130,7 +134,7 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
         }else {
             sqlBuilder.line().append("DISABLE ON QUERY COMPUTATION");
         }
-        sqlBuilder.line().append("AS").line();
+        sqlBuilder.line().append("AS");
         // 此阶段获取queryStatement
         mySQLViewTemplate.generateQueryStatement(dbObject.generateDBView(), sqlBuilder);
         return sqlBuilder.toString();
@@ -139,12 +143,15 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
     private String getColumn(@NotNull String input){
         Pattern pattern = Pattern.compile("(`[^`]+`)");
         Matcher matcher = pattern.matcher(input);
-
         if (matcher.find()) {
             String extractedColumn = matcher.group(1);
             return extractedColumn;
         } else {
             return input;
         }
+    }
+
+    private String getPrimary(@NotNull String input){
+       return input.replaceFirst("(?i)CONSTRAINT\\s*", "");
     }
 }

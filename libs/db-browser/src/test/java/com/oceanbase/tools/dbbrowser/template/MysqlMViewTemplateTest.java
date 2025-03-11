@@ -109,8 +109,6 @@ public class MysqlMViewTemplateTest {
         DBTableConstraint dbTableConstraint = new DBTableConstraint();
         dbTableConstraint.setType(DBConstraintType.PRIMARY_KEY);
         dbTableConstraint.setColumnNames(Collections.singletonList("col0"));
-        dbTableConstraint.setEnabled(true);
-        dbTableConstraint.setDeferability(DBConstraintDeferability.NOT_DEFERRABLE);
         dbmView.setConstraints(Collections.singletonList(dbTableConstraint));
     }
 
@@ -119,9 +117,7 @@ public class MysqlMViewTemplateTest {
         for (int i = 0; i < size; i++) {
             DBTableColumn viewColumn = new DBTableColumn();
             viewColumn.setName("col" + i);
-            viewColumn.setTypeName("int");
             viewColumn.setNullable(true);
-            viewColumn.setVirtual(false);
             viewColumns.add(viewColumn);
         }
         return viewColumns;
