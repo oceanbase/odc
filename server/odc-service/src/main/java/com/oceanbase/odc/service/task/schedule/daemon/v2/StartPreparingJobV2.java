@@ -40,6 +40,7 @@ import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.JobStatus;
+import com.oceanbase.odc.service.task.enums.TaskMonitorMode;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
@@ -52,6 +53,7 @@ import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.supervisor.endpoint.ExecutorEndpoint;
 import com.oceanbase.odc.service.task.supervisor.endpoint.SupervisorEndpoint;
 import com.oceanbase.odc.service.task.util.JobDateUtils;
+import com.oceanbase.odc.service.task.util.JobPropertiesUtils;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -226,6 +228,9 @@ public class StartPreparingJobV2 implements Job {
         String logPath = properties.getRunMode() == TaskRunMode.K8S
                 ? JobUtils.getLogBasePath(properties.getK8sProperties().getMountPath())
                 : LogUtils.getBaseLogPath();
+        if (null != jobContext.getJobProperties()) {
+            JobPropertiesUtils.setMonitorMode(jobContext.getJobProperties(), TaskMonitorMode.PULL);
+        }
         ProcessJobCaller jobCaller = JobCallerBuilder.buildProcessCaller(jobContext,
                 new JobEnvironmentFactory().build(jobContext, TaskRunMode.PROCESS, configuration, logPath),
                 configuration);
