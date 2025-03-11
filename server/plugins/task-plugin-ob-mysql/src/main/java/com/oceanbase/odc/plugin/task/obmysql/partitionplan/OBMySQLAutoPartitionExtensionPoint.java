@@ -44,6 +44,7 @@ import com.oceanbase.odc.plugin.task.obmysql.partitionplan.datatype.OBMySQLParti
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.OBMySQLExprCalculator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.create.OBMySQLHistoricalPartitionPlanCreateGenerator;
+import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.create.OBMySQLNumberIncreasePartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.create.OBMySQLSqlExprPartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.create.OBMySQLTimeIncreasePartitionExprGenerator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.create.OBMysqlTimeStringPartitionExprGenerator;
@@ -187,6 +188,7 @@ public class OBMySQLAutoPartitionExtensionPoint implements AutoPartitionExtensio
         List<PartitionExprGenerator> candidates = new ArrayList<>(4);
         candidates.add(new OBMySQLSqlExprPartitionExprGenerator());
         candidates.add(new OBMySQLTimeIncreasePartitionExprGenerator());
+        candidates.add(new OBMySQLNumberIncreasePartitionExprGenerator());
         candidates.add(new OBMysqlTimeStringPartitionExprGenerator());
         candidates.add(new OBMySQLHistoricalPartitionPlanCreateGenerator());
         return candidates.stream().filter(i -> Objects.equals(i.getName(), name)).findFirst()
