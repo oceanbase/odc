@@ -52,14 +52,9 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
 
    public  MysqlMViewTemplate() {
         mySQLViewTemplate = new MySQLViewTemplate();
-//        DBTableEditorFactory dbTableEditorFactory = new DBTableEditorFactory();
        dbTableEditor = DBBrowser.objectEditor().tableEditor()
            .setDbVersion("4.0.0")
            .setType("OB_MYSQL").create();
-
-//       dbTableEditorFactory.setDbVersion("4.3.3");
-//        dbTableEditorFactory.setType("OB_MYSQL");
-//        dbTableEditor = dbTableEditorFactory.buildForOBMySQL();
     }
 
     @Override

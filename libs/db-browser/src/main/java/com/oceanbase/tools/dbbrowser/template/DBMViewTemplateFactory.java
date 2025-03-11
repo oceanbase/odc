@@ -21,6 +21,7 @@ import com.oceanbase.tools.dbbrowser.model.DBMView;
 import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.template.mysql.MySQLViewTemplate;
 import com.oceanbase.tools.dbbrowser.template.mysql.MysqlMViewTemplate;
+import com.oceanbase.tools.dbbrowser.template.oracle.OracleMViewTemplate;
 
 /**
  * @description:
@@ -32,12 +33,12 @@ public class DBMViewTemplateFactory extends AbstractDBBrowserFactory<DBObjectTem
 
     @Override
     public DBObjectTemplate<DBMView> buildForDoris() {
-        return new MysqlMViewTemplate();
+        throw new UnsupportedOperationException("not support yet");
     }
 
     @Override
     public DBObjectTemplate<DBMView> buildForMySQL() {
-        return null;
+        throw new UnsupportedOperationException("not support yet");
     }
 
     @Override
@@ -47,21 +48,21 @@ public class DBMViewTemplateFactory extends AbstractDBBrowserFactory<DBObjectTem
 
     @Override
     public DBObjectTemplate<DBMView> buildForOBOracle() {
-        return null;
+        return new OracleMViewTemplate();
     }
 
     @Override
     public DBObjectTemplate<DBMView> buildForOracle() {
-        return null;
+        throw new UnsupportedOperationException("not support yet");
     }
 
     @Override
     public DBObjectTemplate<DBMView> buildForOdpSharding() {
-        return null;
+        throw new UnsupportedOperationException("not support yet");
     }
 
     @Override
     public DBObjectTemplate<DBMView> buildForPostgres() {
-        return null;
+        throw new UnsupportedOperationException("not support yet");
     }
 }
