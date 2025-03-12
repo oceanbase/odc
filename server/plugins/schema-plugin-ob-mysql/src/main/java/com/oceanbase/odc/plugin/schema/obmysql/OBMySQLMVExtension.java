@@ -31,7 +31,6 @@ import com.oceanbase.tools.dbbrowser.model.DBMView;
 import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataParameter;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
-import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
 
@@ -49,8 +48,8 @@ public class OBMySQLMVExtension implements MViewExtensionPoint {
     }
 
     @Override
-    public DBView getDetail(Connection connection, String schemaName, String mViewName) {
-        return getSchemaAccessor(connection).getMV(schemaName, mViewName);
+    public DBMView getDetail(Connection connection, String schemaName, String mViewName) {
+        return getSchemaAccessor(connection).getMView(schemaName, mViewName);
     }
 
     @Override

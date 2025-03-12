@@ -334,7 +334,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public DBMView getMV(String schemaName, String viewName) {
+    public DBMView getMView(String schemaName, String mViewName) {
         throw new UnsupportedOperationException("not support yet");
     }
 

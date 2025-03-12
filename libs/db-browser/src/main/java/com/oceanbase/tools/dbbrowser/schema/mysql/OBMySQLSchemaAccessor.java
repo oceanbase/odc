@@ -42,7 +42,6 @@ import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
-import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.parser.SqlParser;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseSqlResult;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorSqlMappers;
@@ -95,7 +94,8 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     @Override
     public Boolean syncMVData(DBMViewSyncDataParameter parameter) {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
-        sb.append("call DBMS_MVIEW.REFRESH('").append(parameter.getDatabaseName()).append(".").append(parameter.getMvName()).append("'");
+        sb.append("call DBMS_MVIEW.REFRESH('").append(parameter.getDatabaseName()).append(".")
+                .append(parameter.getMvName()).append("'");
         if (Objects.nonNull(parameter.getMvSyncDataMethod())) {
             sb.append(",").value(parameter.getMvSyncDataMethod().getValue());
         }
@@ -108,31 +108,24 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     }
 
     @Override
-    public DBMView getMV(String schemaName, String viewName) {
-        MySQLSqlBuilder getOption = new MySQLSqlBuilder();
-
-
+    public DBMView getMView(String schemaName, String mViewName) {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
-        sb.append("select * from information_schema.views where table_schema=");
-        sb.value(schemaName);
-        sb.append(" and table_name=");
-        sb.value(viewName);
+        sb.append("select * from FROM OCEANBASE.DBA_MVIEWS WHERE OWNER = ")
+                .value(schemaName).append(" AND MVIEW_NAME = ").value(mViewName);
 
-        DBView view = new DBView();
-        view.setViewName(viewName);
-        view.setSchemaName(schemaName);
+        DBMView mView = new DBMView();
+        mView.setMVName(mViewName);
+        mView.setSchemaName(schemaName);
         jdbcOperations.query(sb.toString(), (rs) -> {
-            view.setCheckOption(rs.getString(5));
-            view.setUpdatable("YES".equalsIgnoreCase(rs.getString(6)));
-            view.setDefiner(rs.getString(7));
+
         });
         MySQLSqlBuilder getDDL = new MySQLSqlBuilder();
         getDDL.append("show create table ");
         getDDL.identifier(schemaName);
         getDDL.append(".");
-        getDDL.identifier(viewName);
+        getDDL.identifier(mViewName);
         jdbcOperations.query(getDDL.toString(), (rs) -> {
-            view.setDdl(rs.getString(2));
+            mView.setDdl(rs.getString(2));
         });
 
         return null;

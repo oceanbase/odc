@@ -40,7 +40,6 @@ import com.oceanbase.odc.service.connection.table.model.QueryTableParams;
 import com.oceanbase.odc.service.connection.table.model.Table;
 import com.oceanbase.odc.service.db.DBMaterializedViewService;
 import com.oceanbase.odc.service.db.model.AllMVBaseTables;
-import com.oceanbase.odc.service.db.model.DBViewResponse;
 import com.oceanbase.odc.service.db.model.MVSyncDataReq;
 import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.odc.service.state.model.StateName;
@@ -88,7 +87,7 @@ public class DBMaterializedViewController {
             notes = "obtain detail about the materialized view. Sid example: sid:1000-1:d:db1:v:v1")
     @RequestMapping(value = "/{sid:.*}", method = RequestMethod.GET)
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
-    public OdcResult<DBViewResponse> detail(@PathVariable String sid) {
+    public OdcResult<DBMView> detail(@PathVariable String sid) {
         ResourceIdentifier i = ResourceIDParser.parse(sid);
         return OdcResult
                 .ok(dbMaterializedViewService.detail(sessionService.nullSafeGet(i.getSid(), true), i.getDatabase(),

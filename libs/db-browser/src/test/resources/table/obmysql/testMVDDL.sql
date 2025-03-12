@@ -1,5 +1,5 @@
 create table if not exists test_mv_base
-(col1 INT,col2 INT AUTO_INCREMENT PRIMARY KEY);
+(col1 INT AUTO_INCREMENT PRIMARY KEY,col2 INT);
 
 CREATE MATERIALIZED VIEW test_mv
     (col1,col2,PRIMARY KEY(col1))

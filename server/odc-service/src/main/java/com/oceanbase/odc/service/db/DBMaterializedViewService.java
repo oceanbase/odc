@@ -47,7 +47,6 @@ import com.oceanbase.odc.service.connection.table.model.QueryTableParams;
 import com.oceanbase.odc.service.connection.table.model.Table;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.db.model.AllMVBaseTables;
-import com.oceanbase.odc.service.db.model.DBViewResponse;
 import com.oceanbase.odc.service.db.model.DatabaseAndMVs;
 import com.oceanbase.odc.service.db.model.DatabaseAndTables;
 import com.oceanbase.odc.service.db.model.MVSyncDataReq;
@@ -58,7 +57,6 @@ import com.oceanbase.tools.dbbrowser.model.DBMView;
 import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataParameter;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
-import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import lombok.NonNull;
@@ -146,11 +144,11 @@ public class DBMaterializedViewService {
                         .generateCreateTemplate(resource));
     }
 
-    public DBViewResponse detail(ConnectionSession connectionSession, String schemaName, String viewName) {
-        return new DBViewResponse(connectionSession.getSyncJdbcExecutor(
+    public DBMView detail(ConnectionSession connectionSession, String schemaName, String viewName) {
+        return connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.BACKEND_DS_KEY)
-                .execute((ConnectionCallback<DBView>) con -> getDBMViewExtensionPoint(connectionSession)
-                        .getDetail(con, schemaName, viewName)));
+                .execute((ConnectionCallback<DBMView>) con -> getDBMViewExtensionPoint(connectionSession)
+                        .getDetail(con, schemaName, viewName));
     }
 
     public Boolean syncData(@NotNull ConnectionSession connectionSession, @NotNull MVSyncDataReq mvSyncDataReq) {

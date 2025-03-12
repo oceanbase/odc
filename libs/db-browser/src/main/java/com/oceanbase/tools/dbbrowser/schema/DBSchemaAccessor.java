@@ -149,7 +149,7 @@ public interface DBSchemaAccessor {
     /**
      * Get materialized view details
      */
-    DBMView getMV(String schemaName, String viewName);
+    DBMView getMView(String schemaName, String mViewName);
 
     /**
      * List all variables
