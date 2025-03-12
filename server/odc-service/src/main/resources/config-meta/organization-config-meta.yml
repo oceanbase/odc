@@ -1,0 +1,83 @@
+# organization configuration meta
+# - category options: user, indivOrganization, teamOrganization, system
+# - type options: string, integer, decimal, boolean, list
+- id: 1
+  category: 'teamOrganization'
+  key: 'odc.sqlexecute.default.maxQueryLimit'
+  type: 'integer'
+  max_value: 100000
+  min_value: 1
+  allowed_values: ~
+  default_value: '1000'
+  nullable: false
+  description: 'SQL query row limit.'
+- id: 2
+  category: 'teamOrganization'
+  key: 'odc.sqlexecute.default.queryLimit'
+  type: 'integer'
+  max_value:
+  min_value:
+  allowed_values: ~
+  default_value: '1000'
+  nullable: false
+  description: 'SQL query row limit default value.'
+- id: 3
+  category: 'teamOrganization'
+  key: 'odc.task.default.rollbackPlanEnabled'
+  type: 'boolean'
+  max_value:
+  min_value:
+  allowed_values: ['true', 'false']
+  default_value: 'false'
+  nullable: false
+  description: 'Automatically generate a rollback plan for database changes.'
+- id: 4
+  category: 'teamOrganization'
+  key: 'odc.task.default.taskDescriptionPrompt'
+  type: 'string'
+  max_value:
+  min_value:
+  allowed_values: ~
+  default_value: ''
+  nullable: true
+  description: 'Task description field prompt text.'
+- id: 5
+  category: 'teamOrganization'
+  key: 'odc.task.default.importTaskStructureReplacementEnabled'
+  type: 'boolean'
+  max_value:
+  min_value:
+  allowed_values: ~
+  default_value: 'true'
+  nullable: false
+  description: 'Whether to replace the task structure when importing tasks.'
+- id: 6
+  category: 'indivOrganization'
+  key: 'odc.sqlexecute.default.maxQueryLimit'
+  type: 'integer'
+  max_value: 10000
+  min_value: 1
+  allowed_values: ~
+  default_value: '1000'
+  nullable: false
+  description: 'SQL query row limit for individual organization.'
+- id: 7
+  category: 'indivOrganization'
+  key: 'odc.sqlexecute.default.queryLimit'
+  type: 'integer'
+  max_value:
+  min_value:
+  allowed_values: ~
+  default_value: '1000'
+  nullable: false
+  description: 'SQL query row limit default value for individual organization.'
+- id: 8
+  category: 'indivOrganization'
+  key: 'odc.task.default.rollbackPlanEnabled'
+  type: 'boolean'
+  max_value:
+  min_value:
+  allowed_values: ['true', 'false']
+  default_value: 'false'
+  nullable: false
+  description: 'Automatically generate a rollback plan for database changes for individual organization.'
