@@ -346,7 +346,6 @@ public class FlowInstanceService {
             if (CollectionUtils.isNotEmpty(databases) && databases.size() > MAX_APPLY_DATABASE_SIZE) {
                 throw new IllegalStateException("The number of databases to apply for exceeds the maximum limit");
             }
-            // todo 记录数据库
             return databases.stream().map(e -> {
                 List<ApplyDatabase> applyDatabases = new ArrayList<>();
                 applyDatabases.add(e);
@@ -364,7 +363,6 @@ public class FlowInstanceService {
                     && databaseId2Tables.keySet().size() > MAX_APPLY_DATABASE_SIZE) {
                 throw new IllegalStateException("The number of databases to apply for exceeds the maximum limit");
             }
-            // todo 记录数据库
             return databaseId2Tables.entrySet().stream().map(e -> {
                 parameter.setTables(new ArrayList<>(e.getValue()));
                 createReq.setDatabaseId(e.getKey());
@@ -372,7 +370,6 @@ public class FlowInstanceService {
                 return innerCreate(createReq);
             }).collect(Collectors.toList()).stream().flatMap(Collection::stream).collect(Collectors.toList());
         } else {
-            // todo 记录数据库
             return innerCreate(createReq);
         }
     }
