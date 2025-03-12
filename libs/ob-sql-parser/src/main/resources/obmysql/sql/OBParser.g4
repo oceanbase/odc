@@ -1365,6 +1365,8 @@ table_option
     | STATS_SAMPLE_PAGES COMP_EQ? (INTNUM|DEFAULT)
     | UNION COMP_EQ? LeftParen table_list? RightParen
     | INSERT_METHOD COMP_EQ? merge_insert_types
+    | ORGANIZATION COMP_EQ? index_or_heap
+    | ENABLE_MACRO_BLOCK_BLOOM_FILTER COMP_EQ? BOOL_VALUE
     ;
 
 merge_insert_types
@@ -1612,6 +1614,11 @@ range_expr
 int_or_decimal
     : INTNUM
     | DECIMAL_VAL
+    ;
+
+index_or_heap
+    : INDEX
+    | HEAP
     ;
 
 tg_hash_partition_option
@@ -4779,6 +4786,7 @@ unreserved_keyword_normal
     | ENABLE
     | ENABLE_ARBITRATION_SERVICE
     | ENABLE_EXTENDED_ROWID
+    | ENABLE_MACRO_BLOCK_BLOOM_FILTER
     | ENCODING
     | ENCRYPTED
     | ENCRYPTION
@@ -5406,6 +5414,7 @@ unreserved_keyword_normal
     | OVERWRITE
     | OPTIMIZER_COSTS
     | MICRO_INDEX_CLUSTERED
+    | ORGANIZATION
     ;
 
 unreserved_keyword_special

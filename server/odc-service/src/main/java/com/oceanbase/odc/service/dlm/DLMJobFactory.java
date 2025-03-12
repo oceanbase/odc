@@ -17,9 +17,7 @@ package com.oceanbase.odc.service.dlm;
 
 import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnitParameters;
-import com.oceanbase.tools.migrator.common.dto.HistoryJob;
 import com.oceanbase.tools.migrator.core.JobFactory;
-import com.oceanbase.tools.migrator.core.JobReq;
 import com.oceanbase.tools.migrator.core.store.IJobStore;
 import com.oceanbase.tools.migrator.job.Job;
 
@@ -37,26 +35,22 @@ public class DLMJobFactory extends JobFactory {
         super(jobStore);
     }
 
-    public Job createJob(DlmTableUnit parameters) {
-        HistoryJob historyJob = new HistoryJob();
-        historyJob.setId(parameters.getDlmTableUnitId());
-        historyJob.setJobType(parameters.getType());
-        historyJob.setPrintSqlTrace(false);
-        historyJob.setSourceTable(parameters.getTableName());
-        historyJob.setTargetTable(parameters.getTargetTableName());
-        historyJob.setJobParameter(parameters.getParameters());
-        DlmTableUnitParameters jobParameter = parameters.getParameters();
-        parameters.getSourceDatasourceInfo().setConnectionCount(2 * (jobParameter.getReaderTaskCount()
+    public Job createJob(DlmTableUnit tableUnit) {
+        DlmTableUnitParameters jobParameter = tableUnit.getParameters();
+        jobParameter.setId(tableUnit.getDlmTableUnitId());
+        jobParameter.setJobType(tableUnit.getType());
+        jobParameter.setPrintSqlTrace(false);
+        jobParameter.setSourceTableName(tableUnit.getTableName());
+        jobParameter.setTargetTableName(tableUnit.getTargetTableName());
+        jobParameter.setSourceDs(tableUnit.getSourceDatasourceInfo());
+        jobParameter.setTargetDs(tableUnit.getTargetDatasourceInfo());
+        jobParameter.getSourceDs().setConnectionCount(2 * (jobParameter.getReaderTaskCount()
                 + jobParameter.getWriterTaskCount()));
-        parameters.getTargetDatasourceInfo().setConnectionCount(2 * (jobParameter.getReaderTaskCount()
+        jobParameter.getTargetDs().setConnectionCount(2 * (jobParameter.getReaderTaskCount()
                 + jobParameter.getWriterTaskCount()));
-        log.info("Begin to create dlm job,params={}", historyJob);
-        JobReq req = new JobReq();
-        req.setHistoryJob(historyJob);
-        req.setSourceDs(parameters.getSourceDatasourceInfo());
-        req.setTargetDs(parameters.getTargetDatasourceInfo());
-        req.setSourceLimitConfig(parameters.getSourceLimitConfig());
-        req.setTargetLimitConfig(parameters.getTargetLimitConfig());
-        return super.createJob(req);
+        jobParameter.setSourceLimiterConfig(tableUnit.getSourceLimitConfig());
+        jobParameter.setTargetLimiterConfig(tableUnit.getTargetLimitConfig());
+        log.info("Begin to create dlm job,params={}", jobParameter);
+        return super.createJob(jobParameter);
     }
 }

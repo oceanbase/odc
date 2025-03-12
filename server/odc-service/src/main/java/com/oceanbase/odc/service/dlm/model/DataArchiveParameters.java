@@ -59,6 +59,8 @@ public class DataArchiveParameters implements ScheduleTaskParameters {
 
     private boolean deleteAfterMigration = false;
 
+    private boolean deleteTemporaryTable = false;
+
     private boolean needPrintSqlTrace = false;
 
     private int readThreadCount;

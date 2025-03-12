@@ -329,16 +329,21 @@ public class ResourceRoleService {
 
     @SkipAuthorize("internal usage")
     public List<UserResourceRole> listByResourceIdentifierIn(Set<String> resourceIdentifiers) {
+        return listByResourceIdentifierIn(resourceIdentifiers, authenticationFacade.currentOrganizationId());
+    }
+
+    @SkipAuthorize("internal usage")
+    public List<UserResourceRole> listByResourceIdentifierIn(Set<String> resourceIdentifiers, Long organizationId) {
         List<UserResourceRole> userResourceRoles =
                 fromEntities(userResourceRoleRepository.findByResourceIdsAndResourceRoleIdsIn(resourceIdentifiers));
         List<UserGlobalResourceRole> globalUserResourceRoles = globalResourceRoleService
-                .findGlobalResourceRoleUsersByOrganizationIdAndRoleIn(authenticationFacade.currentOrganizationId(),
+                .findGlobalResourceRoleUsersByOrganizationIdAndRoleIn(organizationId,
                         filterResourceRoleNames(ResourceType.ODC_PROJECT, resourceIdentifiers));
         if (CollectionUtils.isEmpty(globalUserResourceRoles)) {
             return userResourceRoles;
         }
         Map<ResourceRoleName, Long> resourceRoleName2Id = getProjectResourceRoleName2Id();
-        projectRepository.findAllByOrganizationId(authenticationFacade.currentOrganizationId()).stream()
+        projectRepository.findAllByOrganizationId(organizationId).stream()
                 .forEach(p -> globalUserResourceRoles.stream()
                         .map(i -> new UserResourceRole(i.getUserId(), p.getId(), ResourceType.ODC_PROJECT,
                                 i.getResourceRole(), resourceRoleName2Id.get(i.getResourceRole()), true))

@@ -29,6 +29,7 @@ public enum TaskStatus {
     ABNORMAL,
     // the following is terminate states
     FAILED,
+    EXEC_TIMEOUT,
     CANCELED,
     DONE;
 
@@ -41,11 +42,12 @@ public enum TaskStatus {
     }
 
     public boolean isTerminated() {
-        return TaskStatus.CANCELED == this || TaskStatus.FAILED == this || TaskStatus.DONE == this;
+        return TaskStatus.CANCELED == this || TaskStatus.FAILED == this || TaskStatus.DONE == this
+                || TaskStatus.EXEC_TIMEOUT == this;
     }
 
     public boolean isRetryAllowed() {
-        return CANCELED == this || FAILED == this;
+        return CANCELED == this || FAILED == this || EXEC_TIMEOUT == this;
     }
 
     public static List<String> getRetryAllowedStatus() {

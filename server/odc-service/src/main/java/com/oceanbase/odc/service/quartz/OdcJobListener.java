@@ -39,6 +39,8 @@ import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
+import com.oceanbase.odc.metadb.task.JobEntity;
+import com.oceanbase.odc.metadb.task.JobRepository;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.model.User;
@@ -47,6 +49,7 @@ import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.flowtask.ScheduleTaskContextHolder;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskType;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
+import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 
 import lombok.extern.slf4j.Slf4j;
@@ -66,6 +69,8 @@ public class OdcJobListener implements JobListener {
     @Autowired
     private ScheduleRepository scheduleRepository;
     @Autowired
+    private JobRepository jobRepository;
+    @Autowired
     private UserService userService;
     @Autowired
     private HostProperties hostProperties;
@@ -73,6 +78,8 @@ public class OdcJobListener implements JobListener {
     private LatestTaskMappingRepository latestTaskMappingRepository;
     @Value("${odc.iam.auth.type}")
     protected Set<String> authType;
+    @Value("${odc.task.isAutoRecoveryTimeoutJob:true}")
+    protected boolean autoRecoveryTimeoutJob;
 
     private static final String ODC_JOB_LISTENER = "ODC_JOB_LISTENER";
 
@@ -112,6 +119,9 @@ public class OdcJobListener implements JobListener {
         }
         // Create or load task.
         Long targetTaskId = ScheduleTaskUtils.getTargetTaskId(context);
+        if (targetTaskId == null && autoRecoveryTimeoutJob) {
+            targetTaskId = getRecoveryTaskId(scheduleId);
+        }
         ScheduleTaskEntity entity;
         if (Objects.isNull(targetTaskId)) {
             entity = new ScheduleTaskEntity();
@@ -131,8 +141,9 @@ public class OdcJobListener implements JobListener {
             updateLatestTaskId(scheduleId, entity.getId());
         } else {
             log.info("Load an existing task,taskId={}", targetTaskId);
+            Long restartTaskId = targetTaskId;
             entity = taskRepository.findById(targetTaskId).orElseThrow(() -> new NotFoundException(
-                    ResourceType.ODC_SCHEDULE_TASK, "id", targetTaskId));
+                    ResourceType.ODC_SCHEDULE_TASK, "id", restartTaskId));
             int affectRows =
                     taskRepository.updateStatusById(entity.getId(), TaskStatus.PREPARING,
                             TaskStatus.getRetryAllowedStatus());
@@ -154,6 +165,27 @@ public class OdcJobListener implements JobListener {
     @Override
     public void jobWasExecuted(JobExecutionContext context, JobExecutionException jobException) {
         ScheduleTaskContextHolder.clear();
+    }
+
+    private Long getRecoveryTaskId(Long scheduleId) {
+        if (autoRecoveryTimeoutJob) {
+            Optional<LatestTaskMappingEntity> optional = latestTaskMappingRepository.findByScheduleId(scheduleId);
+            if (optional.isPresent()) {
+                Long latestTaskId = optional.get().getLatestScheduleTaskId();
+                if (latestTaskId != null) {
+                    Optional<ScheduleTaskEntity> taskOptional = taskRepository.findById(latestTaskId);
+                    if (taskOptional.isPresent() && taskOptional.get().getStatus() == TaskStatus.CANCELED
+                            && taskOptional.get().getJobId() != null) {
+                        Optional<JobEntity> jobEntity = jobRepository.findByIdNative(taskOptional.get().getJobId());
+                        if (jobEntity.isPresent() && jobEntity.get().getStatus() == JobStatus.EXEC_TIMEOUT) {
+                            log.info("Recovery timeout task,taskId={}", latestTaskId);
+                            return latestTaskId;
+                        }
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     private void updateLatestTaskId(Long scheduleId, Long scheduleTaskId) {
