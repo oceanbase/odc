@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.dlm.model;
 import java.util.List;
 
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
+import com.oceanbase.tools.migrator.common.configure.DirtyRowAction;
 import com.oceanbase.tools.migrator.common.enums.ShardingStrategy;
 
 import lombok.Data;
@@ -52,5 +53,9 @@ public class DLMBaseParameters implements ScheduleTaskParameters {
     private ShardingStrategy shardingStrategy;
 
     private boolean fullDatabase = false;
+
+    private DirtyRowAction dirtyRowAction = DirtyRowAction.RAISE_ERROR;
+
+    private Long maxAllowedDirtyRowCount;
 
 }

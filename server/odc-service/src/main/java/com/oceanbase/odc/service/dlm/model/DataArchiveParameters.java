@@ -55,10 +55,6 @@ public class DataArchiveParameters extends DLMBaseParameters {
 
     private MigrationInsertAction migrationInsertAction = MigrationInsertAction.INSERT_NORMAL;
 
-    private DirtyRowAction dirtyRowAction = DirtyRowAction.RAISE_ERROR;
-
-    private Long maxAllowedDirtyRowCount;
-
     private boolean fullDatabase = false;
 
 }
