@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.oceanbase.tools.dbbrowser.model.DBMView;
 import org.apache.commons.lang3.Validate;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -138,6 +139,15 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
                             DBMViewSyncDataMethod.REFRESH_FORCE, 2);
             Boolean aBoolean = accessor.syncMVData(DBMViewSyncDataParameter);
             Assert.assertTrue(aBoolean);
+        }
+    }
+
+    @Test
+    public void getMView_Success() {
+        if (accessor.getClass().equals(OBMySQLSchemaAccessor.class)) {
+
+            DBMView testMv = accessor.getMView(getOBMySQLDataBaseName(), "test_mv");
+            Assert.assertTrue(true);
         }
     }
 

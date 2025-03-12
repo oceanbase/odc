@@ -75,7 +75,7 @@ public class DBSchemaAccessorFactory extends AbstractDBBrowserFactory<DBSchemaAc
     @Override
     public DBSchemaAccessor buildForOBMySQL() {
         Validate.notNull(this.dbVersion, "DBVersion can not be null");
-        if (VersionUtils.isGreaterThanOrEqualsTo(this.dbVersion, "4.3.3")) {
+        if (VersionUtils.isGreaterThanOrEqualsTo(this.dbVersion, "4.3.5.1")) {
             // OB version >= 4.3.5.1
             return new OBMySQLSchemaAccessor(getJdbcOperations());
         } else if (VersionUtils.isGreaterThanOrEqualsTo(this.dbVersion, "4.3.2")) {

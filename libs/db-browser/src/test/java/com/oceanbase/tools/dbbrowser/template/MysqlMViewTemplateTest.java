@@ -56,7 +56,7 @@ public class MysqlMViewTemplateTest {
         // 物化视图主键
         prepareMViewPrimary(dbmView);
         // 物化视图刷新并行度
-        dbmView.setParallelismDegree(8);
+        dbmView.setParallelismDegree(8L);
         // 物化视图分区
         prepareMViewPartition(dbmView);
         // 物化视图存储格式

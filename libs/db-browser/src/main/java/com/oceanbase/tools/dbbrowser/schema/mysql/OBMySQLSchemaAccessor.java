@@ -25,6 +25,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.oceanbase.tools.dbbrowser.model.DBView;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcOperations;
@@ -110,27 +111,27 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
 
     @Override
     public DBMView getMView(String schemaName, String mViewName) {
-        MySQLSqlBuilder sb = new MySQLSqlBuilder();
-        sb.append("select * from FROM OCEANBASE.DBA_MVIEWS WHERE OWNER = ")
+        MySQLSqlBuilder getOptions = new MySQLSqlBuilder();
+        getOptions.append("SELECT * FROM OCEANBASE.DBA_MVIEWS WHERE OWNER = ")
                 .value(schemaName).append(" AND MVIEW_NAME = ").value(mViewName);
 
         DBMView mView = new DBMView();
         mView.setMVName(mViewName);
         mView.setSchemaName(schemaName);
-        jdbcOperations.query(sb.toString(), (rs) -> {
+        jdbcOperations.query(getOptions.toString(), (rs) -> {
             mView.setSyncDataMethod(DBMViewSyncDataMethod.getEnumByShowName(rs.getString("REFRESH_METHOD")));
-            mView.setEnableQueryComputation(rs.getBoolean("REWRITE_ENABLED"));
+            mView.setEnableQueryRewrite(rs.getBoolean("REWRITE_ENABLED"));
+            mView.setEnableQueryComputation(rs.getBoolean("ON_QUERY_COMPUTATION"));
+            mView.setParallelismDegree(rs.getLong("REFRESH_DOP"));
         });
         MySQLSqlBuilder getDDL = new MySQLSqlBuilder();
-        getDDL.append("show create table ");
-        getDDL.identifier(schemaName);
-        getDDL.append(".");
-        getDDL.identifier(mViewName);
+        getDDL.append("show create table ").identifier(schemaName).append(".").identifier(mViewName);
         jdbcOperations.query(getDDL.toString(), (rs) -> {
             mView.setDdl(rs.getString(2));
         });
-
-        return null;
+        DBView dbView = fillColumnInfoByDesc(mView.generateDBView());
+        mView.setColumns(dbView.getColumns());
+        return mView;
     }
 
     @Override
