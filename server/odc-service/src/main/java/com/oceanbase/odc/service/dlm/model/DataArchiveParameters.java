@@ -51,6 +51,8 @@ public class DataArchiveParameters extends DLMBaseParameters {
 
     private boolean deleteAfterMigration = false;
 
+    private boolean deleteTemporaryTable = false;
+
     private Set<DBObjectType> syncTableStructure = new HashSet<>();
 
     private MigrationInsertAction migrationInsertAction = MigrationInsertAction.INSERT_NORMAL;

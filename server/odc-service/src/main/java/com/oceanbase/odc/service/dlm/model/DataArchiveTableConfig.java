@@ -37,6 +37,9 @@ public class DataArchiveTableConfig {
 
     private String targetTableName;
 
+    // migrate task will create temporary table in source if temporary table name is not null
+    private String tempTableName;
+
     private List<String> partitions = new LinkedList<>();
 
     // the sql condition such as "gmt_create < '2023-01-01'"

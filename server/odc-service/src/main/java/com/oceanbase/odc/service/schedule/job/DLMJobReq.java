@@ -57,6 +57,8 @@ public class DLMJobReq {
 
     private DirtyRowAction dirtyRowAction;
 
+    private boolean deleteTemporaryTable = false;
+
     private MigrationInsertAction migrationInsertAction;
 
     private boolean needPrintSqlTrace;

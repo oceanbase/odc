@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.dlm.DLMJobFactory;
 import com.oceanbase.odc.service.dlm.DLMJobStore;
@@ -126,6 +127,11 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
         if (tableUnit.getType() != JobType.MIGRATE) {
             return;
         }
+        if (tableUnit.getParameters().isCreateTempTableInSource()) {
+            DLMTableStructureSynchronizer.createTempTable(tableUnit.getSourceDatasourceInfo(), tableUnit.getTableName(),
+                    tableUnit.getParameters().getTempTableName());
+            return;
+        }
         try {
             DLMTableStructureSynchronizer.sync(tableUnit.getSourceDatasourceInfo(), tableUnit.getTargetDatasourceInfo(),
                     tableUnit.getTableName(), tableUnit.getTargetTableName(),
@@ -152,6 +158,8 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             jobParameter.setShardingStrategy(req.getShardingStrategy());
             jobParameter.setPartName2MinKey(table.getPartName2MinKey());
             jobParameter.setPartName2MaxKey(table.getPartName2MaxKey());
+            jobParameter.setCreateTempTableInSource(
+                    req.isDeleteAfterMigration() && req.getTargetDs().getType().isFileSystem());
             jobParameter.setDirtyRowAction(req.getDirtyRowAction());
             dlmTableUnit.setParameters(jobParameter);
             dlmTableUnit.setDlmTableUnitId(DlmJobIdUtil.generateHistoryJobId(req.getJobName(), req.getJobType().name(),
@@ -170,6 +178,25 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             limiterConfig.setRowLimit(req.getRateLimit().getRowLimit());
             dlmTableUnit.setSourceLimitConfig(limiterConfig);
             dlmTableUnit.setTargetLimitConfig(limiterConfig);
+            if (StringUtils.isNotEmpty(table.getTempTableName())) {
+                // save data to temporary table
+                if (req.getJobType() == JobType.MIGRATE && req.isDeleteAfterMigration()
+                        && req.getTargetDs().getType().isFileSystem()) {
+                    jobParameter.setCreateTempTableInSource(true);
+                    jobParameter.setTempTableName(table.getTempTableName());
+                }
+                // check data by temporary table
+                if (req.getJobType() == JobType.DELETE && req.getTargetDs().getType().isFileSystem()) {
+                    dlmTableUnit.setTargetDatasourceInfo(req.getSourceDs());
+                    dlmTableUnit.setTargetTableName(table.getTempTableName());
+                    jobParameter.setTempTableName(table.getTempTableName());
+                    jobParameter.setDeleteTempTableAfterDelete(req.isDeleteTemporaryTable());
+                }
+                if (req.getJobType() == JobType.ROLLBACK && req.getSourceDs().getType().isFileSystem()) {
+                    dlmTableUnit.setSourceDatasourceInfo(req.getTargetDs());
+                    dlmTableUnit.setTableName(table.getTempTableName());
+                }
+            }
             dlmTableUnits.add(dlmTableUnit);
         });
         toDoList = new LinkedList<>(dlmTableUnits);

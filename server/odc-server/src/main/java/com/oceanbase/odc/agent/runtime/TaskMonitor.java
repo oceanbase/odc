@@ -93,7 +93,7 @@ class TaskMonitor {
         reportScheduledExecutor.scheduleAtFixedRate(() -> {
             if (isTimeout() && !getTaskContainer().getStatus().isTerminated()) {
                 log.info("Task timeout, try stop, jobId={}", getJobId());
-                getTaskContainer().stop();
+                getTaskContainer().timeout();
             }
             try {
                 if (JobUtils.getExecutorPort().isPresent()) {
