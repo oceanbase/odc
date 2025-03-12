@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.metadb.export;
+package com.oceanbase.odc.service.exporter.model;
 
-import com.oceanbase.odc.config.jpa.OdcJpaRepository;
-
-public interface ImportFileRowHistoryRepository extends OdcJpaRepository<ImportFileRowHistoryEntity, Long> {
-
-    ImportFileRowHistoryEntity findByFileSignatureAndRowId(String file, String rowId);
+public enum ImportResult {
+    IMPORT_SUCCESS,
+    IMPORT_FAILED,
+    NOT_IMPORTED
 }
