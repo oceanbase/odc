@@ -115,11 +115,7 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
         }
         // 物化视图刷新方式
         if (Objects.nonNull(dbObject.getSyncDataMethod())) {
-            sqlBuilder.line().append(dbObject.getSyncDataMethod().getName());
-        }
-        // 物化视图刷新模式
-        if (dbObject.isOnDemand()) {
-            sqlBuilder.line().append("ON DEMAND");
+            sqlBuilder.line().append(dbObject.getSyncDataMethod().getCreateName());
         }
         if (Objects.nonNull(dbObject.getSyncSchedule())) {
             DBMViewSyncSchedule syncSchedule = dbObject.getSyncSchedule();
@@ -136,13 +132,13 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
             }
         }
         // 查询改写
-        if (dbObject.isEnableQueryRewrite()) {
+        if (Boolean.TRUE.equals(dbObject.getEnableQueryRewrite())) {
             sqlBuilder.line().append("ENABLE QUERY REWRITE");
         } else {
             sqlBuilder.line().append("DISABLE QUERY REWRITE");
         }
         // 实时计算
-        if (dbObject.isEnableQueryComputation()) {
+        if (Boolean.TRUE.equals(dbObject.getEnableQueryComputation())) {
             sqlBuilder.line().append("ENABLE ON QUERY COMPUTATION");
         } else {
             sqlBuilder.line().append("DISABLE ON QUERY COMPUTATION");

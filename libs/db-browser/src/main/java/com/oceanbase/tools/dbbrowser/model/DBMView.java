@@ -38,14 +38,12 @@ public class DBMView implements DBObject {
     private DBMViewSyncDataMethod syncDataMethod;
     // 刷新并行度
     private Integer parallelismDegree;
-    // 按需刷新
-    private boolean onDemand = true;
     // 刷新计划
     private DBMViewSyncSchedule syncSchedule;
-    // 查询改写
-    private boolean enableQueryRewrite;
-    // 实时计算
-    private boolean enableQueryComputation;
+    // 查询改写，ob默认不开启
+    private Boolean enableQueryRewrite = Boolean.FALSE;
+    // 实时计算，ob默认不开启
+    private Boolean enableQueryComputation = Boolean.FALSE;
 
     /**
      * 复用视图，用于构造query statement

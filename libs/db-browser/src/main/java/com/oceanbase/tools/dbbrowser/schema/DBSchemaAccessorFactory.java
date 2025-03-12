@@ -31,7 +31,7 @@ import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLBetween220And225XSchema
 import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLBetween2260And2276SchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLBetween2277And3XSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLBetween400And432SchemaAccessor;
-import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLBetween432And433SchemaAccessor;
+import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLBetween432And4351SchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLNoGreaterThan1479SchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.ODPOBMySQLSchemaAccessor;
@@ -76,11 +76,11 @@ public class DBSchemaAccessorFactory extends AbstractDBBrowserFactory<DBSchemaAc
     public DBSchemaAccessor buildForOBMySQL() {
         Validate.notNull(this.dbVersion, "DBVersion can not be null");
         if (VersionUtils.isGreaterThanOrEqualsTo(this.dbVersion, "4.3.3")) {
-            // OB version >= 4.3.3
+            // OB version >= 4.3.5.1
             return new OBMySQLSchemaAccessor(getJdbcOperations());
         } else if (VersionUtils.isGreaterThanOrEqualsTo(this.dbVersion, "4.3.2")) {
-            // OB version between [4.3.2, 4.3.3)
-            return new OBMySQLBetween432And433SchemaAccessor(getJdbcOperations());
+            // OB version between [4.3.2, 4.3.5.1)
+            return new OBMySQLBetween432And4351SchemaAccessor(getJdbcOperations());
         } else if (VersionUtils.isGreaterThan(this.dbVersion, "4.0.0")) {
             // OB version between [4.0.0, 4.3.2)
             return new OBMySQLBetween400And432SchemaAccessor(getJdbcOperations());

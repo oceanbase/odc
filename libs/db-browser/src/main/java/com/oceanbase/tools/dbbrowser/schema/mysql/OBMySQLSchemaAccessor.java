@@ -33,6 +33,7 @@ import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
 import com.oceanbase.tools.dbbrowser.model.DBMView;
+import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataMethod;
 import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataParameter;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
@@ -57,7 +58,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 适用 OB 版本：[4.3.3, ~)
+ * applicable to OB [4.3.5.1, ~)
  *
  * @author jingtian
  */
@@ -117,7 +118,8 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
         mView.setMVName(mViewName);
         mView.setSchemaName(schemaName);
         jdbcOperations.query(sb.toString(), (rs) -> {
-
+            mView.setSyncDataMethod(DBMViewSyncDataMethod.getEnumByShowName(rs.getString("REFRESH_METHOD")));
+            mView.setEnableQueryComputation(rs.getBoolean("REWRITE_ENABLED"));
         });
         MySQLSqlBuilder getDDL = new MySQLSqlBuilder();
         getDDL.append("show create table ");

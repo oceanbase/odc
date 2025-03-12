@@ -24,14 +24,14 @@ import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataParameter;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 
 /**
- * @description: applicable to OB [4.3.2,4.3.3)
+ * @description: applicable to OB [4.3.2,4.3.5.1)
  * @author: zijia.cj
  * @date: 2025/3/4 19:00
  * @since: 4.3.4
  */
-public class OBMySQLBetween432And433SchemaAccessor extends OBMySQLSchemaAccessor {
+public class OBMySQLBetween432And4351SchemaAccessor extends OBMySQLSchemaAccessor {
 
-    public OBMySQLBetween432And433SchemaAccessor(JdbcOperations jdbcOperations) {
+    public OBMySQLBetween432And4351SchemaAccessor(JdbcOperations jdbcOperations) {
         super(jdbcOperations);
     }
 

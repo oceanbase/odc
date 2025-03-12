@@ -26,18 +26,33 @@ import lombok.Getter;
 @Getter
 public enum DBMViewSyncDataMethod {
 
-    REFRESH_FAST("REFRESH FAST", "f"),
-    REFRESH_FORCE("REFRESH FORCE", "?"),
-    REFRESH_COMPLETE("REFRESH COMPLETE", "c"),
-    REFRESH_ALWAYS("REFRESH ALWAYS", "a"),
-    NEVER_REFRESH("NEVER REFRESH", "n");
+    REFRESH_FAST("REFRESH FAST", "FAST", "f"),
+    REFRESH_FORCE("REFRESH FORCE", "FORCE", "?"),
+    REFRESH_COMPLETE("REFRESH COMPLETE", "COMPLETE", "c"),
+    REFRESH_ALWAYS("REFRESH ALWAYS", "ALWAYS", "a"),
+    NEVER_REFRESH("NEVER REFRESH", "NEVER", "n"),
+    OTHERS("OTHERS", "OTHERS", "OTHERS");
 
-    private String name;
+    private String createName;
+    private String showName;
     private String value;
 
-    DBMViewSyncDataMethod(String name, String value) {
-        this.name = name;
+    DBMViewSyncDataMethod(String createName, String showName, String value) {
+        this.createName = createName;
+        this.showName = showName;
         this.value = value;
+    }
+
+    public static DBMViewSyncDataMethod getEnumByShowName(String name) {
+        DBMViewSyncDataMethod result = DBMViewSyncDataMethod.OTHERS;
+        DBMViewSyncDataMethod[] methods = DBMViewSyncDataMethod.values();
+        for (DBMViewSyncDataMethod method : methods) {
+            if (method.getShowName().equalsIgnoreCase(name)) {
+                result = method;
+                break;
+            }
+        }
+        return result;
     }
 
 }

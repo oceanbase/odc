@@ -86,7 +86,6 @@ public class MysqlMViewTemplateTest {
                 "PARTITIONS 3\n" +
                 " WITH COLUMN GROUP(all columns,each column)\n" +
                 "REFRESH COMPLETE\n" +
-                "ON DEMAND\n" +
                 "START WITH sysdate()\n" +
                 "NEXT sysdate() + INTERVAL 1 DAY\n" +
                 "DISABLE QUERY REWRITE\n" +
@@ -118,7 +117,6 @@ public class MysqlMViewTemplateTest {
         dbmView.setCreateColumns(prepareQueryColumns(2));
 
         String expect = "create materialized view `schema_0`.`mv_0`\n" +
-                "ON DEMAND\n" +
                 "START WITH TIMESTAMP '2025-07-11 18:00:00'\n" +
                 "NEXT TIMESTAMP '2025-07-11 18:00:00' + INTERVAL 1 DAY\n" +
                 "DISABLE QUERY REWRITE\n" +
