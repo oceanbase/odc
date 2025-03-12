@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotNull;
 
+import com.oceanbase.tools.dbbrowser.model.DBView;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -40,6 +41,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
+import org.apache.commons.lang3.Validate;
 
 /**
  * @description:
@@ -66,6 +68,9 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
 
     @Override
     public String generateCreateObjectTemplate(DBMView dbObject) {
+        Validate.notBlank(dbObject.getMVName(), "Materialized view name can not be blank");
+        DBView dbView = dbObject.generateDBView();
+        mySQLViewTemplate.validOperations(dbView);
         SqlBuilder sqlBuilder = new MySQLSqlBuilder();
         sqlBuilder.append("create materialized view ")
                 .append(getFullyQualifiedTableName(dbObject));
@@ -144,7 +149,7 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
         }
         sqlBuilder.line().append("AS");
         // 此阶段获取queryStatement
-        mySQLViewTemplate.generateQueryStatement(dbObject.generateDBView(), sqlBuilder);
+        mySQLViewTemplate.generateQueryStatement(dbView, sqlBuilder);
         return sqlBuilder.toString();
     }
 

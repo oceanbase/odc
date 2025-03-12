@@ -110,9 +110,8 @@ public class DBMaterializedViewService {
             String tableNameLike) {
         AllMVBaseTables allResult = new AllMVBaseTables();
         DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
-        List<DatabaseAndTables> tables = new ArrayList<>();
         List<String> databases = accessor.showDatabases();
-        tables = databases.stream().map(schema -> {
+        List<DatabaseAndTables> tables = databases.stream().map(schema -> {
             List<String> tablesLike = accessor.showTablesLike(schema, tableNameLike).stream()
                     .filter(name -> !StringUtils.endsWith(name.toUpperCase(),
                             OdcConstants.VALIDATE_DDL_TABLE_POSTFIX))
