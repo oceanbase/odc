@@ -49,13 +49,13 @@ public class OBMySQLMVExtension implements MViewExtensionPoint {
     }
 
     @Override
-    public DBView getDetail(Connection connection, String schemaName, String viewName) {
-        return getSchemaAccessor(connection).getMV(schemaName, viewName);
+    public DBView getDetail(Connection connection, String schemaName, String mViewName) {
+        return getSchemaAccessor(connection).getMV(schemaName, mViewName);
     }
 
     @Override
-    public void drop(Connection connection, String schemaName, String viewName) {
-        getOperator(connection).drop(DBObjectType.MATERIALIZED_VIEW, null, viewName);
+    public void drop(Connection connection, String schemaName, String mViewName) {
+        getOperator(connection).drop(DBObjectType.MATERIALIZED_VIEW, null, mViewName);
     }
 
     @Override

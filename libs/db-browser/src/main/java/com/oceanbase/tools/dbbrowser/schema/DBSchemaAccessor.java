@@ -130,12 +130,24 @@ public interface DBSchemaAccessor {
      */
     List<String> showSystemViews(String schemaName);
 
+    /**
+     * List all materialized view as DBObjectIdentity in the specified schema
+     */
     List<DBObjectIdentity> listMVs(String schemaName);
 
+    /**
+     * List all materialized view as DBObjectIdentity in current datasource
+     */
     List<DBObjectIdentity> listAllMVs(String viewNameLike);
 
+    /**
+     * Synchronize materialized view data
+     */
     Boolean syncMVData(DBMViewSyncDataParameter parameter);
 
+    /**
+     * Get materialized view details
+     */
     DBView getMV(String schemaName, String viewName);
 
     /**

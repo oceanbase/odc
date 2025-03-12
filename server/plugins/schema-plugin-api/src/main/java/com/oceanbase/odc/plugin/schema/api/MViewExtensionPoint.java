@@ -34,9 +34,9 @@ import com.oceanbase.tools.dbbrowser.model.DBView;
 public interface MViewExtensionPoint extends ExtensionPoint {
     List<DBObjectIdentity> list(Connection connection, String schemaName);
 
-    DBView getDetail(Connection connection, String schemaName, String viewName);
+    DBView getDetail(Connection connection, String schemaName, String mViewName);
 
-    void drop(Connection connection, String schemaName, String viewName);
+    void drop(Connection connection, String schemaName, String mViewName);
 
     String generateCreateTemplate(DBMView mView);
 
