@@ -21,6 +21,7 @@ import java.util.Map;
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
+import com.oceanbase.tools.dbbrowser.model.DBMView;
 import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataParameter;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
@@ -148,7 +149,7 @@ public interface DBSchemaAccessor {
     /**
      * Get materialized view details
      */
-    DBView getMV(String schemaName, String viewName);
+    DBMView getMV(String schemaName, String viewName);
 
     /**
      * List all variables

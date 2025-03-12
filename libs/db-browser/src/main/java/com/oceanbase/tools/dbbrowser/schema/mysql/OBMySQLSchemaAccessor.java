@@ -32,6 +32,7 @@ import org.springframework.jdbc.core.JdbcOperations;
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
+import com.oceanbase.tools.dbbrowser.model.DBMView;
 import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataParameter;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
@@ -115,7 +116,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     }
 
     @Override
-    public DBView getMV(String schemaName, String viewName) {
+    public DBMView getMV(String schemaName, String viewName) {
         MySQLSqlBuilder getOption = new MySQLSqlBuilder();
 
 
@@ -142,7 +143,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
             view.setDdl(rs.getString(2));
         });
 
-        return fillColumnInfoByDesc(view);
+        return null;
     }
 
     @Override
