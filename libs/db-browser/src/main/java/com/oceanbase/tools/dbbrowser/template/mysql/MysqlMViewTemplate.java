@@ -152,11 +152,9 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
         Pattern pattern = Pattern.compile("(`[^`]+`)");
         Matcher matcher = pattern.matcher(input);
         if (matcher.find()) {
-            String extractedColumn = matcher.group(1);
-            return extractedColumn;
-        } else {
-            return input;
+            return matcher.group(1);
         }
+        return input;
     }
 
     private String getPrimary(@NotNull String input) {
