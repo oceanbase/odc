@@ -149,7 +149,6 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             dlmTableUnit.setScheduleTaskId(req.getScheduleTaskId());
             DlmTableUnitParameters jobParameter = new DlmTableUnitParameters();
             jobParameter.setMigrateRule(table.getConditionExpression());
-            jobParameter.setCheckMode(CheckMode.MULTIPLE_GET);
             jobParameter.setReaderBatchSize(req.getRateLimit().getBatchSize());
             jobParameter.setWriterBatchSize(req.getRateLimit().getBatchSize());
             jobParameter.setMigrationInsertAction(req.getMigrationInsertAction());

@@ -24,7 +24,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
-import com.oceanbase.tools.migrator.common.configure.DirtyRowAction;
 import com.oceanbase.tools.migrator.common.enums.MigrationInsertAction;
 
 import lombok.Data;
@@ -51,12 +50,27 @@ public class DataArchiveParameters extends DLMBaseParameters {
 
     private boolean deleteAfterMigration = false;
 
-    private boolean deleteTemporaryTable = false;
-
     private Set<DBObjectType> syncTableStructure = new HashSet<>();
 
     private MigrationInsertAction migrationInsertAction = MigrationInsertAction.INSERT_NORMAL;
 
     private boolean fullDatabase = false;
 
+    public String getSourceDatabaseName() {
+        return sourceDatabase == null ? null : sourceDatabase.getName();
+    }
+
+    public String getTargetDatabaseName() {
+        return targetDatabase == null ? null : targetDatabase.getName();
+    }
+
+    public String getSourceDataSourceName() {
+        return sourceDatabase == null || sourceDatabase.getDataSource() == null ? null
+                : sourceDatabase.getDataSource().getName();
+    }
+
+    public String getTargetDataSourceName() {
+        return targetDatabase == null || targetDatabase.getDataSource() == null ? null
+                : targetDatabase.getDataSource().getName();
+    }
 }
