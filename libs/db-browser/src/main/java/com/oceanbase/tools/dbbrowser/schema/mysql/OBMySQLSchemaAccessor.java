@@ -77,8 +77,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     @Override
     public List<DBObjectIdentity> listMVs(String schemaName) {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
-        sb.append("select MVIEW_NAME FROM OCEANBASE.DBA_MVIEWS WHERE OWNER = ");
-        sb.value(schemaName);
+        sb.append("select MVIEW_NAME FROM OCEANBASE.DBA_MVIEWS WHERE OWNER = ").value(schemaName);
         return jdbcOperations.query(sb.toString(),
                 (rs, rowNum) -> DBObjectIdentity.of(schemaName, DBObjectType.MATERIALIZED_VIEW, rs.getString(1)));
     }
@@ -96,19 +95,12 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     @Override
     public Boolean syncMVData(DBMViewSyncDataParameter parameter) {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
-        sb.append("call DBMS_MVIEW.REFRESH('");
-        sb.append(parameter.getDatabaseName());
-        sb.append(".");
-        sb.append(parameter.getMvName());
-        sb.append("'");
+        sb.append("call DBMS_MVIEW.REFRESH('").append(parameter.getDatabaseName()).append(".").append(parameter.getMvName()).append("'");
         if (Objects.nonNull(parameter.getMvSyncDataMethod())) {
-            sb.append(",");
-            sb.value(parameter.getMvSyncDataMethod().getValue());
+            sb.append(",").value(parameter.getMvSyncDataMethod().getValue());
         }
         if (Objects.nonNull(parameter.getParallelismDegree())) {
-            sb.append(",");
-            sb.append("refresh_parallel => ");
-            sb.append(parameter.getParallelismDegree() + "");
+            sb.append(",").append("refresh_parallel => ").append(parameter.getParallelismDegree() + "");
         }
         sb.append(");");
         jdbcOperations.execute(sb.toString());
