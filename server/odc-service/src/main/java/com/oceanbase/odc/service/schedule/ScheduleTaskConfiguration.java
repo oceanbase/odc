@@ -75,9 +75,7 @@ public class ScheduleTaskConfiguration {
         return new ScheduleExportFacade() {
 
             @Override
-            public void adapt(ExportProperties exportProperties) {
-                throw new UnsupportedOperationException("Community Edition is not supported yet");
-            }
+            public void adapt(ExportProperties exportProperties) {}
 
             @Override
             public List<ImportScheduleTaskView> preview(ScheduleType scheduleType, Long projectId,

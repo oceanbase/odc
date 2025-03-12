@@ -41,6 +41,7 @@ import com.oceanbase.odc.service.exporter.model.ExportConstants;
 import com.oceanbase.odc.service.exporter.model.ExportProperties;
 import com.oceanbase.odc.service.exporter.model.ExportRowDataMapper;
 import com.oceanbase.odc.service.exporter.model.ExportRowDataReader;
+import com.oceanbase.odc.service.exporter.model.ImportResult;
 import com.oceanbase.odc.service.exporter.utils.JsonExtractorFactory;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
@@ -95,15 +96,19 @@ public class ScheduleTaskImporter {
                         request.getObjectId(), request.getDecryptKey(), ".");
                 ExportRowDataReader<JsonNode> rowDataReader = extractor.getRowDataReader()) {
             checkMetaData(extractor, rowDataReader);
-            ExportProperties properties = rowDataReader.getProperties();
-            String exportScheduleType = properties.getStringValue(SCHEDULE_TYPE);
-            if (!exportScheduleType.equals(scheduleType.name())) {
-                throw new IllegalArgumentException("Incorrect schedule type");
-            }
+            checkScheduleType(rowDataReader, scheduleType);
             return doImportSchedule(scheduleType, request.getProjectId(), rowDataReader,
                     request.getImportableExportRowId());
         } catch (IOException e) {
             throw new ExtractFileException(ErrorCodes.ExtractFileFailed, e.getMessage(), e);
+        }
+    }
+
+    private void checkScheduleType(ExportRowDataReader<JsonNode> rowDataReader, ScheduleType scheduleType) {
+        ExportProperties properties = rowDataReader.getProperties();
+        String exportScheduleType = properties.getStringValue(SCHEDULE_TYPE);
+        if (!exportScheduleType.equals(scheduleType.name())) {
+            throw new IllegalArgumentException("Incorrect schedule type");
         }
     }
 
@@ -148,12 +153,18 @@ public class ScheduleTaskImporter {
                 if (baseScheduleRowData == null) {
                     throw new ExtractFileException(ErrorCodes.ExtractFileFailed, "Can't extract rowData");
                 }
-                if (importService.imported(properties, baseScheduleRowData.getRowId())) {
-                    log.info("Row id {} has been imported", baseScheduleRowData.getRowId());
+                ImportResult importResult = importService.imported(properties, baseScheduleRowData.getRowId());
+                if (importResult != ImportResult.NOT_IMPORTED) {
+                    if (importResult == ImportResult.IMPORT_SUCCESS) {
+                        log.info("Skip import, row id {} has been imported success", baseScheduleRowData.getRowId());
+                    } else {
+                        log.info("Skip import, row id {} has been imported failed", baseScheduleRowData.getRowId());
+                    }
                     continue;
                 }
                 if (!importableExportRowId.contains(baseScheduleRowData.getRowId())) {
                     log.info("Row id {} is not in importableExportRowId", baseScheduleRowData.getRowId());
+                    continue;
                 }
                 BaseScheduleRowData finalBaseScheduleRowData = baseScheduleRowData;
                 JsonNode finalCurrentRow = currentRow;
@@ -167,7 +178,7 @@ public class ScheduleTaskImporter {
         return results;
     }
 
-    private void doImport(ScheduleType scheduleType, Long projectId, BaseScheduleRowData baseScheduleRowData,
+    private boolean doImport(ScheduleType scheduleType, Long projectId, BaseScheduleRowData baseScheduleRowData,
             JsonNode currentRow, List<ImportTaskResult> results) {
         Long databaseId = null;
         Long targetDatabaseId = null;
@@ -179,19 +190,20 @@ public class ScheduleTaskImporter {
             }
         } catch (DatabaseNonExistException e) {
             results.add(ImportTaskResult.failed(baseScheduleRowData.getRowId(), "Database not exist"));
-            return;
+            return false;
         }
 
         if (scheduleType == ScheduleType.PARTITION_PLAN) {
             // The partition plan creates flow first
             doImportPartitionPlan(currentRow, projectId, databaseId);
-            return;
+            return true;
         }
         CreateFlowInstanceReq createScheduleReq =
                 getCreateScheduleReq(scheduleType, projectId, currentRow, databaseId,
                         targetDatabaseId);
         scheduleService.dispatchCreateSchedule(createScheduleReq);
         results.add(ImportTaskResult.success(baseScheduleRowData.getRowId()));
+        return true;
     }
 
     private CreateFlowInstanceReq getCreateScheduleReq(ScheduleType scheduleType, Long projectId, JsonNode row,

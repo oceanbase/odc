@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.service.schedule.export.model;
 
-import java.util.Optional;
-
 import javax.annotation.Nullable;
 
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
@@ -34,25 +32,5 @@ public class ScheduleRowPreviewDto {
     private ExportedDatabase database;
     @Nullable
     private ExportedDatabase targetDatabase;
-
-    public ExportedDataSource acquireDatasource() {
-        return database.getExportedDataSource();
-    }
-
-    public boolean isCloudDatasource() {
-        if (targetDatabase != null) {
-            String cloudProvider = targetDatabase.getExportedDataSource().getCloudProvider();
-            if (cloudProvider != null) {
-                return true;
-            }
-        }
-        String cloudProvider = database.getExportedDataSource().getCloudProvider();
-        return cloudProvider != null;
-    }
-
-    @Nullable
-    public ExportedDataSource acquireTargetDatasource() {
-        return Optional.ofNullable(targetDatabase).map(ExportedDatabase::getExportedDataSource).orElse(null);
-    }
 
 }
