@@ -49,7 +49,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DLMJobStore implements IJobStore {
 
     private DruidDataSource dataSource;
-    private boolean enableBreakpointRecovery = true;
+    private boolean enableBreakpointRecovery = false;
     @Setter
     private DlmTableUnit dlmTableUnit;
 
