@@ -220,6 +220,7 @@ public class ScheduleTaskImporter {
         }
     }
 
+    //todo 需要处理sql文件上传
     private CreateFlowInstanceReq getSqlPlanReq(JsonNode row, Long projectId, Long databaseId) {
         SqlPlanScheduleRowData currentRowData = JsonUtils.fromJsonNode(row, SqlPlanScheduleRowData.class);
         if (currentRowData == null) {
