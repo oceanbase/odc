@@ -38,6 +38,7 @@ import com.oceanbase.odc.service.task.base.TaskBase;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.util.JobUtils;
+import com.oceanbase.tools.migrator.common.configure.JoinCondition;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 import com.oceanbase.tools.migrator.core.meta.JobMeta;
 import com.oceanbase.tools.migrator.job.Job;
@@ -159,6 +160,12 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             jobParameter.setCreateTempTableInSource(
                     req.isDeleteAfterMigration() && req.getTargetDs().getType().isFileSystem());
             jobParameter.setDirtyRowAction(req.getDirtyRowAction());
+            jobParameter.setJoinConditions(table.getJoinTableConfigs().stream().map(joinTableConfig -> {
+                JoinCondition joinCondition = new JoinCondition();
+                joinCondition.setTableName(joinTableConfig.getTableName());
+                joinCondition.setCondition(joinTableConfig.getJoinCondition());
+                return joinCondition;
+            }).collect(Collectors.toList()));
             dlmTableUnit.setParameters(jobParameter);
             dlmTableUnit.setDlmTableUnitId(DlmJobIdUtil.generateHistoryJobId(req.getJobName(), req.getJobType().name(),
                     req.getScheduleTaskId(), dlmTableUnits.size()));
