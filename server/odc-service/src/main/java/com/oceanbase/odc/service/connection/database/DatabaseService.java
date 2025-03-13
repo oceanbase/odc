@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -40,8 +41,10 @@ import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 import javax.validation.Valid;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,6 +68,7 @@ import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
@@ -262,6 +266,17 @@ public class DatabaseService {
     public Database getBasicSkipPermissionCheck(Long id) {
         return databaseMapper.entityToModel(databaseRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)));
+    }
+
+    @SkipAuthorize("odc internal usage")
+    public List<Database> listBasicSkipPermissionCheckByIds(Collection<Long> ids) {
+        if (CollectionUtils.isEmpty(ids)) {
+            return Collections.emptyList();
+        }
+        Set<Long> finalDatabaseIds = ids.stream().filter(Objects::nonNull).collect(Collectors.toSet());
+        List<DatabaseEntity> dbs = databaseRepository.findByIdIn(finalDatabaseIds);
+        Verify.equals(finalDatabaseIds.size(), dbs.size(), "Databases");
+        return dbs.stream().map(databaseMapper::entityToModel).collect(Collectors.toList());
     }
 
     @SkipAuthorize("odc internal usage")
@@ -498,6 +513,10 @@ public class DatabaseService {
         }
         checkTransferable(entities, req);
         Set<Long> databaseIds = entities.stream().map(DatabaseEntity::getId).collect(Collectors.toSet());
+        if (StringUtils.isNotBlank(req.getDatabaseRemark())) {
+            checkIfCanUpsertDatabaseRemark(req.getProjectId());
+            databaseRepository.setDatabaseRemarkByIdIn(databaseIds, req.getDatabaseRemark());
+        }
         databaseRepository.setProjectIdByIdIn(req.getProjectId(), databaseIds);
         deleteDatabaseRelatedPermissionByIds(databaseIds);
         List<UserResourceRole> userResourceRoles = buildUserResourceRoles(databaseIds, req.getOwnerIds());
@@ -897,6 +916,28 @@ public class DatabaseService {
         log.info("Refresh outdated pending objects status, syncDate={}, affectRows={}", syncDate, affectRows);
     }
 
+    @SkipAuthorize("internal authorized")
+    @Transactional(rollbackFor = Exception.class)
+    public boolean modifyDatabaseRemark(@NotEmpty Collection<Long> databaseIds,
+            @NotBlank @Size(min = 1, max = 100) String remark) {
+        Set<Long> ids = new HashSet<>(databaseIds);
+        List<Database> databases = listDatabasesByIds(ids);
+        Verify.equals(ids.size(), databases.size(), "Missing databases may exist");
+
+        Set<Long> needCheckProjectIds =
+                databases.stream().filter(d -> d.getProject() != null && d.getProject().getId() != null)
+                        .map(d -> d.getProject().getId())
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toSet());
+        if (CollectionUtils.isEmpty(needCheckProjectIds)) {
+            return false;
+        }
+        checkIfCanUpsertDatabaseRemark(needCheckProjectIds);
+
+        int affectRows = databaseRepository.setDatabaseRemarkByIdIn(databaseIds, remark);
+        return Objects.equals(affectRows, databases.size());
+    }
+
     private void checkPermission(Long projectId, Long dataSourceId) {
         if (Objects.isNull(projectId) && Objects.isNull(dataSourceId)) {
             throw new AccessDeniedException("invalid projectId or dataSourceId");
@@ -911,6 +952,18 @@ public class DatabaseService {
         }
         if (!isProjectMember && !canUpdateDataSource) {
             throw new AccessDeniedException("invalid projectId or dataSourceId");
+        }
+    }
+
+    private void checkIfCanUpsertDatabaseRemark(@NonNull Long projectId) {
+        projectPermissionValidator.checkProjectRole(projectId,
+                Arrays.asList(ResourceRoleName.OWNER, ResourceRoleName.DBA));
+    }
+
+    private void checkIfCanUpsertDatabaseRemark(Collection<Long> projectIds) {
+        if (CollectionUtils.isNotEmpty(projectIds)) {
+            projectPermissionValidator.checkProjectRole(projectIds,
+                    Arrays.asList(ResourceRoleName.OWNER, ResourceRoleName.DBA));
         }
     }
 
