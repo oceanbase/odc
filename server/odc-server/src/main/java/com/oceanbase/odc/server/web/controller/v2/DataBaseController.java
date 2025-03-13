@@ -128,13 +128,13 @@ public class DataBaseController {
     }
 
     @ApiOperation(value = "recordDatabaseAccessHistory", notes = "record the most recently accessed database history ")
-    @RequestMapping(value = "/databases/history", method = RequestMethod.PUT)
+    @RequestMapping(value = "/databases/batchRecordHistory", method = RequestMethod.POST)
     public SuccessResponse<Boolean> recordDatabaseAccessHistory(@RequestBody DBAccessHistoryReq dbHistoryReq) {
         return Responses.success(databaseService.recordDatabaseAccessHistory(dbHistoryReq));
     }
 
     @ApiOperation(value = "listDatabaseAccessHistories", notes = "list accessed database histories ")
-    @RequestMapping(value = "/databases/history", method = RequestMethod.GET)
+    @RequestMapping(value = "/databases/histories", method = RequestMethod.GET)
     public SuccessResponse<List<Database>> listDatabaseAccessHistories(
             @RequestParam(name = "limit", defaultValue = "10") Integer historiesLimit) {
         DBAccessHistoryReq req = new DBAccessHistoryReq().setHistoryCount(historiesLimit);
