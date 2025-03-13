@@ -130,7 +130,7 @@ public class DataBaseController {
     }
 
     @ApiOperation(value = "updateDatabaseRemark", notes = "update databases remark")
-    @RequestMapping(value = "/databases", method = RequestMethod.PATCH)
+    @RequestMapping(value = "/databases/batchUpdateRemarks", method = RequestMethod.POST)
     public SuccessResponse<Boolean> modifyDatabaseRemark(@Valid @RequestBody ModifyDatabaseRemarkReq req) {
         return Responses
                 .success(databaseService.modifyDatabaseRemark(req.getDatabaseIds(), req.getDatabaseRemark()));

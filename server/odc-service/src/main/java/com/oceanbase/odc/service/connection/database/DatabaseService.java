@@ -512,10 +512,11 @@ public class DatabaseService {
             return false;
         }
         checkTransferable(entities, req);
+        Set<Long> databaseIds = entities.stream().map(DatabaseEntity::getId).collect(Collectors.toSet());
         if (StringUtils.isNotBlank(req.getDatabaseRemark())) {
             checkIfCanUpsertDatabaseRemark(req.getProjectId());
+            databaseRepository.setDatabaseRemarkByIdIn(databaseIds, req.getDatabaseRemark());
         }
-        Set<Long> databaseIds = entities.stream().map(DatabaseEntity::getId).collect(Collectors.toSet());
         databaseRepository.setProjectIdByIdIn(req.getProjectId(), databaseIds);
         deleteDatabaseRelatedPermissionByIds(databaseIds);
         List<UserResourceRole> userResourceRoles = buildUserResourceRoles(databaseIds, req.getOwnerIds());
@@ -926,7 +927,11 @@ public class DatabaseService {
         Set<Long> needCheckProjectIds =
                 databases.stream().filter(d -> d.getProject() != null && d.getProject().getId() != null)
                         .map(d -> d.getProject().getId())
+                        .filter(Objects::nonNull)
                         .collect(Collectors.toSet());
+        if (CollectionUtils.isEmpty(needCheckProjectIds)) {
+            return false;
+        }
         checkIfCanUpsertDatabaseRemark(needCheckProjectIds);
 
         int affectRows = databaseRepository.setDatabaseRemarkByIdIn(databaseIds, remark);
@@ -951,33 +956,13 @@ public class DatabaseService {
     }
 
     private void checkIfCanUpsertDatabaseRemark(@NonNull Long projectId) {
-        Project project = projectService.getBasicSkipPermissionCheck(projectId);
-        if (Objects.isNull(project)) {
-            throw new NotFoundException(ResourceType.ODC_PROJECT, "id", projectId);
-        }
-        if (!Objects.equals(project.getCreator().getId(), authenticationFacade.currentUserId())) {
-            projectPermissionValidator.checkProjectRole(projectId,
-                    Arrays.asList(ResourceRoleName.OWNER, ResourceRoleName.DBA));
-        }
+        projectPermissionValidator.checkProjectRole(projectId,
+                Arrays.asList(ResourceRoleName.OWNER, ResourceRoleName.DBA));
     }
 
     private void checkIfCanUpsertDatabaseRemark(Collection<Long> projectIds) {
-        if (CollectionUtils.isEmpty(projectIds)) {
-            return;
-        }
-        Set<Long> ids = projectIds.stream().filter(Objects::nonNull).collect(Collectors.toSet());
-        final long userId = authenticationFacade.currentUserId();
-        List<Project> projects = projectService.listByIds(ids);
-
-        Verify.equals(ids.size(), projects.size(), "Project");
-
-        Set<Long> needCheckProjectIds = projects.stream()
-                .filter(p -> !Objects.equals(userId, p.getCreator().getId()))
-                .map(Project::getId)
-                .collect(Collectors.toSet());
-
-        if (CollectionUtils.isNotEmpty(needCheckProjectIds)) {
-            projectPermissionValidator.checkProjectRole(needCheckProjectIds,
+        if (CollectionUtils.isNotEmpty(projectIds)) {
+            projectPermissionValidator.checkProjectRole(projectIds,
                     Arrays.asList(ResourceRoleName.OWNER, ResourceRoleName.DBA));
         }
     }
