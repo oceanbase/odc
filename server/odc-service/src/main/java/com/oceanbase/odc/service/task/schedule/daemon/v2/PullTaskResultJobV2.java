@@ -158,6 +158,7 @@ public class PullTaskResultJobV2 implements Job {
 
         TaskResult previous = JsonUtils.fromJson(jobEntity.getResultJson(), TaskResult.class);
         // always try update heartbeat
+        // TODO(lx): this operation can be merged into one update with following db operation if needed
         taskFrameworkService.updateHeartbeatWithExpectStatus(jobEntity.getId(), jobEntity.getStatus());
 
         if (!result.isProgressChanged(previous) || result.getStatus() == TaskStatus.PREPARING) {
@@ -174,7 +175,7 @@ public class PullTaskResultJobV2 implements Job {
         // TODO(lx): DO_CANCELING should add time out here?
         // if a task alive, but always not terminate like not upload log meta. this situation should add a
         // timeout
-        if (MapUtils.isEmpty(result.getLogMetadata())) {
+        if (result.getStatus().isTerminated() && MapUtils.isEmpty(result.getLogMetadata())) {
             log.info("Job is finished but log have not uploaded, continue monitor result, jobId={}, currentStatus={}",
                     jobEntity.getId(), jobEntity.getStatus());
             return;
