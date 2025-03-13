@@ -19,5 +19,5 @@ import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 
 public interface ImportFileRowHistoryRepository extends OdcJpaRepository<ImportFileRowHistoryEntity, Long> {
 
-    ImportFileRowHistoryEntity findByFileSignatureAndRowId(String file, String rowId);
+    boolean existsByFileSignatureAndRowId(String fileSignature, String rowId);
 }

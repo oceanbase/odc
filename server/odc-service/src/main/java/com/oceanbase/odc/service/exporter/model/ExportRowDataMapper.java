@@ -58,7 +58,9 @@ public interface ExportRowDataMapper {
             ExportedDatabase database,
             ExportedDatabase targetDatabase, String projectName);
 
-    DataDeleteParameters toDataDeleteParameters(Long sourceDatabaseId, Long targetDataBaseId,
+    @Mapping(source = "sourceDatabaseId", target = "databaseId")
+    @Mapping(source = "targetDatabaseId", target = "targetDatabaseId")
+    DataDeleteParameters toDataDeleteParameters(Long sourceDatabaseId, Long targetDatabaseId,
             DataDeleteScheduleRowData dataDeleteScheduleRowData);
 
     @Mapping(target = "triggerConfig", expression = "java(fromJson(scheduleEntity))")
@@ -69,6 +71,8 @@ public interface ExportRowDataMapper {
             ExportedDatabase database,
             ExportedDatabase targetDatabase, String projectName);
 
+    @Mapping(source = "sourceDatabaseId", target = "sourceDatabaseId")
+    @Mapping(source = "targetDataBaseId", target = "targetDataBaseId")
     DataArchiveParameters toDataArchiveParameters(Long sourceDatabaseId, Long targetDataBaseId,
             DataArchiveScheduleRowData rowData);
 
@@ -81,6 +85,7 @@ public interface ExportRowDataMapper {
     SqlPlanScheduleRowData toSqlPlanScheduleRowData(ScheduleEntity scheduleEntity, SqlPlanParameters parameters,
             ExportedDatabase targetDatabase, String projectName);
 
+    @Mapping(source = "databasesId", target = "databaseId")
     SqlPlanParameters toSqlPlanParameters(Long databasesId, SqlPlanScheduleRowData sqlPlanScheduleRowData);
 
     @Mapping(source = "scheduleEntity.id", target = "originScheduleId")
@@ -97,8 +102,9 @@ public interface ExportRowDataMapper {
             expression = "java(toImportDatabaseView(scheduleRowPreviewDto.getDatabase(),matchedDatasourceName))")
     @Mapping(target = "targetDatasourceView",
             expression = "java(toImportDatabaseView(scheduleRowPreviewDto.getTargetDatabase(),matchedTargetDatasourceName))")
+    @Mapping(target = "exportRowId", source = "scheduleRowPreviewDto.rowId")
     ImportScheduleTaskView toImportScheduleTaskView(ScheduleRowPreviewDto scheduleRowPreviewDto, Boolean importable,
-            ScheduleNonImportableType scheduleNonImportableType, String matchedDatasourceName,
+            ScheduleNonImportableType nonImportableType, String matchedDatasourceName,
             String matchedTargetDatasourceName);
 
     @Mapping(target = "cloudProvider", source = "exportedDatabase.exportedDataSource.cloudProvider")
@@ -116,7 +122,7 @@ public interface ExportRowDataMapper {
             BaseScheduleRowData baseScheduleRowData, ScheduleTaskParameters scheduleTaskParameters);
 
     CreateFlowInstanceReq toCreateFlowInstanceReq(Long projectId, Long databaseId, TaskType taskType,
-            TaskParameters taskParameters,
+            TaskParameters parameters,
             String description);
 
     default TriggerConfig fromJson(ScheduleEntity scheduleEntity) {

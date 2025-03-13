@@ -21,6 +21,7 @@ import javax.annotation.Nullable;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.oceanbase.odc.service.exporter.model.Encryptable;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
@@ -28,6 +29,7 @@ import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import lombok.Data;
 
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class BaseScheduleRowData implements Encryptable {
 
     private String rowId = UUID.randomUUID().toString();
@@ -76,6 +78,8 @@ public class BaseScheduleRowData implements Encryptable {
 
     public ScheduleRowPreviewDto preview() {
         ScheduleRowPreviewDto rowPreviewDto = new ScheduleRowPreviewDto();
+        rowPreviewDto.setType(type);
+        rowPreviewDto.setRowId(rowId);
         rowPreviewDto.setOriginId(originScheduleId);
         rowPreviewDto.setOriginProjectName(originProjectName);
         rowPreviewDto.setDatabase(database);

@@ -152,7 +152,7 @@ public class ScheduleTaskExporter {
         exportProperties.putToMetaData(EXPORT_TYPE, SCHEDULE_ARCHIVE_TYPE);
         exportProperties.addDefaultMetaData();
         exportProperties.addFilePathProperties(exportConfiguration.getDefaultArchivePath());
-        scheduleExportFacade.adapt(exportProperties);
+        scheduleExportFacade.adaptProperties(exportProperties);
         return exportProperties;
     }
 
@@ -281,6 +281,7 @@ public class ScheduleTaskExporter {
         Database database = databaseService.detailSkipPermissionCheck(databaseId);
         ConnectionConfig dataSource = database.getDataSource();
         ExportedDataSource exportedDataSource = ExportedDataSource.fromConnectionConfig(dataSource);
+        scheduleExportFacade.exportDatasourceAdapt(exportedDataSource);
         return ExportedDatabase.of(exportedDataSource, database.getName());
     }
 

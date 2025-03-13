@@ -25,6 +25,7 @@ import com.oceanbase.odc.service.exporter.model.ExportProperties;
 import com.oceanbase.odc.service.schedule.alarm.DefaultScheduleAlarmClient;
 import com.oceanbase.odc.service.schedule.alarm.ScheduleAlarmClient;
 import com.oceanbase.odc.service.schedule.export.exception.DatabaseNonExistException;
+import com.oceanbase.odc.service.schedule.export.model.ExportedDataSource;
 import com.oceanbase.odc.service.schedule.export.model.ExportedDatabase;
 import com.oceanbase.odc.service.schedule.export.model.ImportScheduleTaskView;
 import com.oceanbase.odc.service.schedule.export.model.ScheduleRowPreviewDto;
@@ -75,7 +76,12 @@ public class ScheduleTaskConfiguration {
         return new ScheduleExportFacade() {
 
             @Override
-            public void adapt(ExportProperties exportProperties) {}
+            public void adaptProperties(ExportProperties exportProperties) {}
+
+            @Override
+            public void exportDatasourceAdapt(ExportedDataSource exportedDataSource) {
+
+            }
 
             @Override
             public List<ImportScheduleTaskView> preview(ScheduleType scheduleType, Long projectId,

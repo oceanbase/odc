@@ -29,6 +29,9 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.service.common.FutureCache;
+import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.iam.model.User;
+import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 import com.oceanbase.odc.service.schedule.export.model.ImportScheduleTaskView;
 import com.oceanbase.odc.service.schedule.export.model.ImportTaskResult;
 import com.oceanbase.odc.service.schedule.export.model.ScheduleTaskImportRequest;
@@ -50,13 +53,20 @@ public class ScheduleTaskImportService {
     @Autowired
     private StatefulUuidStateIdGenerator statefulUuidStateIdGenerator;
 
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
+
     @Value("${odc.log.directory:./log}")
     private String logPath;
 
     public String startPreviewImportTask(ScheduleTaskImportRequest request) {
         String previewId = statefulUuidStateIdGenerator.generateStateId("scheduleImportReview");
+        User user = authenticationFacade.currentUser();
         Future<List<ImportScheduleTaskView>> future = scheduleImportExecutor.submit(
-                () -> scheduleTaskImporter.preview(request));
+                () -> {
+                    SecurityContextUtils.setCurrentUser(user);
+                    return scheduleTaskImporter.preview(request);
+                });
         futureCache.put(previewId, future);
         return previewId;
     }
@@ -76,8 +86,10 @@ public class ScheduleTaskImportService {
 
     public String startImportTask(ScheduleTaskImportRequest request) {
         String previewId = statefulUuidStateIdGenerator.generateStateId("scheduleImport");
+        User user = authenticationFacade.currentUser();
+
         Future<List<ImportTaskResult>> future = scheduleImportExecutor.submit(
-                new ScheduleTaskImportCallable(previewId, scheduleTaskImporter, request));
+                new ScheduleTaskImportCallable(user, previewId, scheduleTaskImporter, request));
         futureCache.put(previewId, future);
         return previewId;
     }

@@ -19,6 +19,8 @@ import static com.oceanbase.odc.service.exporter.model.ExportConstants.SIGNATURE
 
 import java.util.concurrent.Callable;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,25 +28,21 @@ import org.springframework.transaction.annotation.Transactional;
 import com.oceanbase.odc.metadb.export.ImportFileRowHistoryEntity;
 import com.oceanbase.odc.metadb.export.ImportFileRowHistoryRepository;
 import com.oceanbase.odc.service.exporter.model.ExportProperties;
-import com.oceanbase.odc.service.exporter.model.ImportResult;
 
 @Service
 public class ImportService {
 
+    private static final Logger log = LoggerFactory.getLogger(ImportService.class);
     @Autowired
     private ImportFileRowHistoryRepository importFileRowHistoryRepository;
 
-    public ImportResult imported(String fileSignature, String rowId) {
-        ImportFileRowHistoryEntity entity =
-                importFileRowHistoryRepository.findByFileSignatureAndRowId(fileSignature, rowId);
-        if (entity == null) {
-            return ImportResult.NOT_IMPORTED;
-        }
-        return entity.getSuccess() ? ImportResult.IMPORT_SUCCESS : ImportResult.IMPORT_FAILED;
+    public boolean imported(String fileSignature, String rowId) {
+        return importFileRowHistoryRepository.existsByFileSignatureAndRowId(fileSignature, rowId);
     }
 
-    public ImportResult imported(ExportProperties exportProperties, String rowId) {
+    public boolean imported(ExportProperties exportProperties, String rowId) {
         String fileSignature = exportProperties.getStringValue(SIGNATURE);
+        log.info("imported file signature: {}", fileSignature);
         return imported(fileSignature, rowId);
     }
 
@@ -52,13 +50,15 @@ public class ImportService {
     public void importAndSaveHistory(String fileSignature, String rowId, Callable<Boolean> doImport) {
         try {
             Boolean success = doImport.call();
-            ImportFileRowHistoryEntity exportFileRowHistoryEntity = new ImportFileRowHistoryEntity();
-            exportFileRowHistoryEntity.setFileSignature(fileSignature);
-            exportFileRowHistoryEntity.setRowId(rowId);
-            exportFileRowHistoryEntity.setSuccess(success);
-            importFileRowHistoryRepository.save(exportFileRowHistoryEntity);
+            if (success) {
+                ImportFileRowHistoryEntity exportFileRowHistoryEntity = new ImportFileRowHistoryEntity();
+                exportFileRowHistoryEntity.setFileSignature(fileSignature);
+                exportFileRowHistoryEntity.setRowId(rowId);
+                importFileRowHistoryRepository.save(exportFileRowHistoryEntity);
+            }
         } catch (Exception e) {
-            throw new RuntimeException();
+            log.error("Save import history failed", e);
+            throw new RuntimeException(e);
         }
     }
 
