@@ -113,7 +113,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     public DBMaterializedView getMView(String schemaName, String mViewName) {
         MySQLSqlBuilder getOptions = new MySQLSqlBuilder();
         getOptions.append(
-                "SELECT REWRITE_ENABLED,ON_QUERY_COMPUTATION,REFRESH_DOP FROM OCEANBASE.DBA_MVIEWS WHERE OWNER = ")
+                "SELECT REFRESH_METHOD,REWRITE_ENABLED,ON_QUERY_COMPUTATION,REFRESH_DOP FROM OCEANBASE.DBA_MVIEWS WHERE OWNER = ")
                 .value(schemaName).append(" AND MVIEW_NAME = ").value(mViewName);
 
         DBMaterializedView mView = new DBMaterializedView();

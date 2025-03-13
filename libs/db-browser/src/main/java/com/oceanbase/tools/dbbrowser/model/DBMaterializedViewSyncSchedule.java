@@ -17,7 +17,7 @@ package com.oceanbase.tools.dbbrowser.model;
 
 import java.util.Date;
 
-import com.ibm.icu.util.TimeUnit;
+import com.ibm.icu.impl.duration.TimeUnit;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
