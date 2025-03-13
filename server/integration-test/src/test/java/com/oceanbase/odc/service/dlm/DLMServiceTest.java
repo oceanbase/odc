@@ -25,8 +25,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
+import com.oceanbase.odc.service.dlm.model.JoinTableConfig;
 import com.oceanbase.odc.service.dlm.model.OffsetConfig;
 import com.oceanbase.odc.service.dlm.model.PreviewSqlStatementsReq;
+import com.oceanbase.tools.migrator.common.configure.JoinCondition;
 
 import cn.hutool.core.lang.Assert;
 
@@ -73,5 +75,26 @@ public class DLMServiceTest extends ServiceTestEnv {
         String expect = String.format("select * from test where 1=1;");
         Assert.equals(realSqlList.get(0), expect);
     }
+
+    @Test
+    public void getRealSqlListWithJoinCondition() {
+        PreviewSqlStatementsReq req = new PreviewSqlStatementsReq();
+        List<DataArchiveTableConfig> tableConfigs = new LinkedList<>();
+        DataArchiveTableConfig config = new DataArchiveTableConfig();
+        config.setTableName("test");
+        tableConfigs.add(config);
+        req.setTables(tableConfigs);
+        List<JoinTableConfig> list = new LinkedList<>();
+        JoinTableConfig joinTableConfig = new JoinTableConfig();
+        joinTableConfig.setTableName("test2");
+        joinTableConfig.setJoinCondition("test.id = test2.id");
+        list.add(joinTableConfig);
+        config.setJoinTableConfigs(list);
+        List<String> realSqlList = dlmService.previewSqlStatements(req);
+        String expect = String.format("select * from test join test2 on test.id = test2.id where 1=1;");
+        Assert.equals(realSqlList.get(0), expect);
+    }
+
+
 
 }
