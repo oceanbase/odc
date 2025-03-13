@@ -37,42 +37,28 @@ public class DBMView implements DBObject {
     // if null, use defaultSchemaName in current connection
     private String schemaName;
     private String ddl;
-    // 刷新方式
     private DBMViewSyncDataMethod syncDataMethod;
-    // 刷新并行度
     private Long parallelismDegree;
-    // 刷新计划
     private DBMViewSyncSchedule syncSchedule;
-    // 查询改写，ob默认不开启
     private Boolean enableQueryRewrite;
-    // 实时计算，ob默认不开启
     private Boolean enableQueryComputation;
+    private DBObjectType type;
 
     /**
-     * 复用视图，用于构造query statement
+     * reuse properties in {@link DBView} to construct query statements
      */
-
-    // 基表
     private List<DBView.DBViewUnit> viewUnits = new ArrayList<>();
-    // 列
     private List<DBViewColumn> createColumns;
-
     private List<String> operations = new ArrayList<>();
 
     /**
-     * 复用表
+     * reuse properties in {@link DBTable}
      */
-
     private List<DBTableColumn> columns;
     private List<DBTableIndex> indexes;
-    // 主键约束
     private List<DBTableConstraint> constraints;
-    // 分区
     private DBTablePartition partition;
-    // 存储格式
     private List<DBColumnGroupElement> columnGroups;
-    private DBObjectType type;
-
 
     @Override
     public String name() {
@@ -82,16 +68,6 @@ public class DBMView implements DBObject {
     @Override
     public DBObjectType type() {
         return DBObjectType.MATERIALIZED_VIEW;
-    }
-
-    public DBTable generateDBTable() {
-        DBTable dbTable = new DBTable();
-        dbTable.setName(name);
-        dbTable.setColumns(columns);
-        dbTable.setSchemaName(schemaName);
-        dbTable.setPartition(partition);
-        dbTable.setConstraints(constraints);
-        return dbTable;
     }
 
     public DBView generateDBView() {

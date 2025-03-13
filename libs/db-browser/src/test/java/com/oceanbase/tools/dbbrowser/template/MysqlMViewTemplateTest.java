@@ -28,7 +28,6 @@ import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBMView;
 import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataMethod;
 import com.oceanbase.tools.dbbrowser.model.DBMViewSyncSchedule;
-import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
@@ -50,23 +49,14 @@ public class MysqlMViewTemplateTest {
         DBMView dbmView = new DBMView();
         dbmView.setName("mv_0");
         dbmView.setSchemaName("schema_0");
-        // 物化视图主键
         prepareMViewPrimary(dbmView);
-        // 物化视图刷新并行度
         dbmView.setParallelismDegree(8L);
-        // 物化视图分区
         prepareMViewPartition(dbmView);
-        // 物化视图存储格式
         prepareMViewColumnGroups(dbmView);
-        // 物化视图刷新方式
         dbmView.setSyncDataMethod(DBMViewSyncDataMethod.REFRESH_COMPLETE);
-        // 物化视图刷新计划
         prepareMViewStartNowSchedule(dbmView);
-        // 物化视图查询改写
         dbmView.setEnableQueryRewrite(false);
-        // 物化试图实时计算
         dbmView.setEnableQueryComputation(false);
-
 
         List<DBView.DBViewUnit> viewUnits = prepareViewUnit(2);
         dbmView.setViewUnits(viewUnits);
@@ -74,24 +64,24 @@ public class MysqlMViewTemplateTest {
         dbmView.setCreateColumns(prepareQueryColumns(2));
 
         String expect = "create materialized view `schema_0`.`mv_0`(PRIMARY KEY (`alias_c0`))\n" +
-            "PARALLEL 8\n" +
-            " PARTITION BY HASH(`alias_c0`) \n" +
-            "PARTITIONS 3\n" +
-            " WITH COLUMN GROUP(all columns,each column)\n" +
-            "REFRESH COMPLETE\n" +
-            "START WITH sysdate()\n" +
-            "NEXT sysdate() + INTERVAL 1 DAY\n" +
-            "DISABLE QUERY REWRITE\n" +
-            "DISABLE ON QUERY COMPUTATION\n" +
-            "AS\n" +
-            "select\n" +
-            "\ttableAlias_0.`c_0` as alias_c0,\n" +
-            "\ttableAlias_0.`d_0` as alias_d0,\n" +
-            "\ttableAlias_1.`c_1` as alias_c1,\n" +
-            "\ttableAlias_1.`d_1` as alias_d1\n" +
-            "from\n" +
-            "\t`database_0`.`table_0` tableAlias_0\n" +
-            "\tleft join `database_1`.`table_1` tableAlias_1 on /* TODO enter attribute to join on here */";
+                "PARALLEL 8\n" +
+                " PARTITION BY HASH(`alias_c0`) \n" +
+                "PARTITIONS 3\n" +
+                " WITH COLUMN GROUP(all columns,each column)\n" +
+                "REFRESH COMPLETE\n" +
+                "START WITH sysdate()\n" +
+                "NEXT sysdate() + INTERVAL 1 DAY\n" +
+                "DISABLE QUERY REWRITE\n" +
+                "DISABLE ON QUERY COMPUTATION\n" +
+                "AS\n" +
+                "select\n" +
+                "\ttableAlias_0.`c_0` as alias_c0,\n" +
+                "\ttableAlias_0.`d_0` as alias_d0,\n" +
+                "\ttableAlias_1.`c_1` as alias_c1,\n" +
+                "\ttableAlias_1.`d_1` as alias_d1\n" +
+                "from\n" +
+                "\t`database_0`.`table_0` tableAlias_0\n" +
+                "\tleft join `database_1`.`table_1` tableAlias_1 on /* TODO enter attribute to join on here */";
         String actual = mysqlMViewTemplate.generateCreateObjectTemplate(dbmView);
         Assert.assertEquals(expect, actual);
     }
@@ -110,17 +100,17 @@ public class MysqlMViewTemplateTest {
         dbmView.setCreateColumns(prepareQueryColumns(2));
 
         String expect = "create materialized view `schema_0`.`mv_0`\n" +
-            "START WITH TIMESTAMP '2025-07-11 18:00:00'\n" +
-            "NEXT TIMESTAMP '2025-07-11 18:00:00' + INTERVAL 1 DAY\n" +
-            "AS\n" +
-            "select\n" +
-            "\ttableAlias_0.`c_0` as alias_c0,\n" +
-            "\ttableAlias_0.`d_0` as alias_d0,\n" +
-            "\ttableAlias_1.`c_1` as alias_c1,\n" +
-            "\ttableAlias_1.`d_1` as alias_d1\n" +
-            "from\n" +
-            "\t`database_0`.`table_0` tableAlias_0\n" +
-            "\tleft join `database_1`.`table_1` tableAlias_1 on /* TODO enter attribute to join on here */";
+                "START WITH TIMESTAMP '2025-07-11 18:00:00'\n" +
+                "NEXT TIMESTAMP '2025-07-11 18:00:00' + INTERVAL 1 DAY\n" +
+                "AS\n" +
+                "select\n" +
+                "\ttableAlias_0.`c_0` as alias_c0,\n" +
+                "\ttableAlias_0.`d_0` as alias_d0,\n" +
+                "\ttableAlias_1.`c_1` as alias_c1,\n" +
+                "\ttableAlias_1.`d_1` as alias_d1\n" +
+                "from\n" +
+                "\t`database_0`.`table_0` tableAlias_0\n" +
+                "\tleft join `database_1`.`table_1` tableAlias_1 on /* TODO enter attribute to join on here */";
         String actual = mysqlMViewTemplate.generateCreateObjectTemplate(dbmView);
         Assert.assertEquals(expect, actual);
     }

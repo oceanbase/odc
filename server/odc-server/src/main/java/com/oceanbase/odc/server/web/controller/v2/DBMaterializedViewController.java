@@ -105,7 +105,7 @@ public class DBMaterializedViewController {
     }
 
     @ApiOperation(value = "getCreateSql",
-            notes = "obtain the sql to create the materialized view, Sid example: sid:1000-1:d:db1:v:v1")
+            notes = "obtain the sql to create the materialized view, Sid example: sid:1000-1")
     @RequestMapping(value = "/getCreateSql/{sid:.*}", method = RequestMethod.PATCH)
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
     public OdcResult<ResourceSql> getCreateSql(@PathVariable String sid, @RequestBody @Valid DBMView resource) {

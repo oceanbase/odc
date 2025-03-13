@@ -197,7 +197,7 @@ public abstract class DBTableEditor implements DBObjectEditor<DBTable> {
 
     protected abstract SqlBuilder sqlBuilder();
 
-    public String getFullyQualifiedTableName(@NotNull DBTable table) {
+    protected String getFullyQualifiedTableName(@NotNull DBTable table) {
         SqlBuilder sqlBuilder = sqlBuilder();
         if (StringUtils.isNotEmpty(table.getSchemaName())) {
             sqlBuilder.identifier(table.getSchemaName()).append(".");

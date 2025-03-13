@@ -15,10 +15,10 @@
  */
 package com.oceanbase.tools.dbbrowser.template.mysql;
 
+import static com.oceanbase.tools.dbbrowser.model.DBConstraintType.PRIMARY_KEY;
+
 import java.text.SimpleDateFormat;
 import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotNull;
@@ -27,23 +27,18 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
-import com.oceanbase.tools.dbbrowser.editor.DBTableColumnEditor;
 import com.oceanbase.tools.dbbrowser.editor.DBTableConstraintEditor;
 import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLColumnEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLConstraintEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLDBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBMView;
 import com.oceanbase.tools.dbbrowser.model.DBMViewSyncSchedule;
-import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
-
-import static com.oceanbase.tools.dbbrowser.model.DBConstraintType.PRIMARY_KEY;
 
 /**
  * @description:
@@ -54,8 +49,6 @@ import static com.oceanbase.tools.dbbrowser.model.DBConstraintType.PRIMARY_KEY;
 public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
     private MySQLViewTemplate mySQLViewTemplate;
 
-    private DBTableColumnEditor dbTableColumnEditor;
-
     private DBTableConstraintEditor dbTableConstraintEditor;
 
     private DBTablePartitionEditor dbTablePartitionEditor;
@@ -63,7 +56,6 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
 
     public MysqlMViewTemplate() {
         mySQLViewTemplate = new MySQLViewTemplate();
-        dbTableColumnEditor = new MySQLColumnEditor();
         dbTableConstraintEditor = new MySQLConstraintEditor();
         dbTablePartitionEditor = new OBMySQLDBTablePartitionEditor();
     }
@@ -76,33 +68,37 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
         SqlBuilder sqlBuilder = new MySQLSqlBuilder();
         sqlBuilder.append("create materialized view ")
                 .append(getFullyQualifiedTableName(dbObject));
-        boolean isFirstSentence = true;
-        // 获取列构造
+        // build sql about primary key
         if (CollectionUtils.isNotEmpty(dbObject.getConstraints())) {
-            Validate.isTrue(dbObject.getConstraints().size() == 1&&dbObject.getConstraints().get(0).getType()==PRIMARY_KEY, "Only primary key is supported");
+            Validate.isTrue(
+                    dbObject.getConstraints().size() == 1 && dbObject.getConstraints().get(0).getType() == PRIMARY_KEY,
+                    "Only primary key is supported");
             DBTableConstraint dbTableConstraint = dbObject.getConstraints().get(0);
-            sqlBuilder.append("(").append(getPrimary(dbTableConstraintEditor.generateCreateDefinitionDDL(dbTableConstraint))).append(")");
+            sqlBuilder.append("(")
+                    .append(getPrimary(dbTableConstraintEditor.generateCreateDefinitionDDL(dbTableConstraint)))
+                    .append(")");
         }
-        // 构造物化视图并行度
+        // build sql about parallelism degree
         if (Objects.nonNull(dbObject.getParallelismDegree()) && dbObject.getParallelismDegree() > 1) {
             sqlBuilder.line().append("PARALLEL ").append(dbObject.getParallelismDegree());
         }
-        // 获取分区构造
+        // build sql about partition
         if (Objects.nonNull(dbObject.getPartition())) {
             sqlBuilder.line()
                     .append(dbTablePartitionEditor.generateCreateDefinitionDDL(dbObject.getPartition()));
         }
-        // 获取存储格式构造
+        // build sql about column group
         if (CollectionUtils.isNotEmpty(dbObject.getColumnGroups())) {
             sqlBuilder.line().append(" WITH COLUMN GROUP(")
                     .append(dbObject.getColumnGroups().stream().map(DBColumnGroupElement::toString)
                             .collect(Collectors.joining(",")))
                     .append(")");
         }
-        // 物化视图刷新方式
+        // build sql about sync data method
         if (Objects.nonNull(dbObject.getSyncDataMethod())) {
             sqlBuilder.line().append(dbObject.getSyncDataMethod().getCreateName());
         }
+        // build sql about sync schedule
         if (Objects.nonNull(dbObject.getSyncSchedule())) {
             DBMViewSyncSchedule syncSchedule = dbObject.getSyncSchedule();
             if (syncSchedule.getStartStrategy() == DBMViewSyncSchedule.StartStrategy.START_NOW) {
@@ -117,7 +113,7 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
                         .append(syncSchedule.getInterval()).append(" ").append(syncSchedule.getUnit());
             }
         }
-        // 查询改写
+        // build sql about query rewrite
         if (Objects.nonNull(dbObject.getEnableQueryRewrite())) {
             if (dbObject.getEnableQueryRewrite()) {
                 sqlBuilder.line().append("ENABLE QUERY REWRITE");
@@ -125,7 +121,7 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
                 sqlBuilder.line().append("DISABLE QUERY REWRITE");
             }
         }
-        // 实时计算
+        // build sql about query computation
         if (Objects.nonNull(dbObject.getEnableQueryComputation())) {
             if (dbObject.getEnableQueryComputation()) {
                 sqlBuilder.line().append("ENABLE ON QUERY COMPUTATION");
@@ -134,18 +130,9 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
             }
         }
         sqlBuilder.line().append("AS");
-        // 此阶段获取queryStatement
+        // build sql about query statement
         mySQLViewTemplate.generateQueryStatement(dbView, sqlBuilder);
         return sqlBuilder.toString();
-    }
-
-    private String getColumn(@NotNull String input) {
-        Pattern pattern = Pattern.compile("(`[^`]+`)");
-        Matcher matcher = pattern.matcher(input);
-        if (matcher.find()) {
-            return matcher.group(1);
-        }
-        return input;
     }
 
     private String getPrimary(@NotNull String input) {

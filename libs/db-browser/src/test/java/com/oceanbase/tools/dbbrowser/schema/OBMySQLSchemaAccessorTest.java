@@ -21,9 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
-import org.apache.commons.lang3.Validate;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -119,7 +117,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     public void listAllMVs_Success() {
         if (accessor.getClass().equals(OBMySQLSchemaAccessor.class)) {
             List<DBObjectIdentity> dbObjectIdentities = accessor.listAllMVs("");
-            Assert.assertTrue(dbObjectIdentities.size() >= 8);
+            Assert.assertTrue(dbObjectIdentities.size() >= 9);
         }
     }
 
@@ -147,8 +145,8 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
         if (accessor.getClass().equals(OBMySQLSchemaAccessor.class)) {
             DBMView test_mv_allSyntax = accessor.getMView(getOBMySQLDataBaseName(), "test_mv_allSyntax");
             Assert.assertEquals("test_mv_allSyntax", test_mv_allSyntax.getName());
-            Assert.assertEquals(4,test_mv_allSyntax.getColumns().size());
-            Assert.assertEquals(DBMViewSyncDataMethod.REFRESH_COMPLETE,test_mv_allSyntax.getSyncDataMethod());
+            Assert.assertEquals(4, test_mv_allSyntax.getColumns().size());
+            Assert.assertEquals(DBMViewSyncDataMethod.REFRESH_COMPLETE, test_mv_allSyntax.getSyncDataMethod());
             Assert.assertFalse(test_mv_allSyntax.getEnableQueryRewrite());
             Assert.assertFalse(test_mv_allSyntax.getEnableQueryComputation());
 
@@ -159,16 +157,16 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
             Assert.assertTrue(test_mv_queryRewrite.getEnableQueryRewrite());
 
             DBMView test_mv_complete = accessor.getMView(getOBMySQLDataBaseName(), "test_mv_complete");
-            Assert.assertEquals(DBMViewSyncDataMethod.REFRESH_COMPLETE,test_mv_complete.getSyncDataMethod());
+            Assert.assertEquals(DBMViewSyncDataMethod.REFRESH_COMPLETE, test_mv_complete.getSyncDataMethod());
 
             DBMView test_mv_fast = accessor.getMView(getOBMySQLDataBaseName(), "test_mv_fast");
-            Assert.assertEquals(DBMViewSyncDataMethod.REFRESH_FAST,test_mv_fast.getSyncDataMethod());
+            Assert.assertEquals(DBMViewSyncDataMethod.REFRESH_FAST, test_mv_fast.getSyncDataMethod());
 
             DBMView test_mv_force = accessor.getMView(getOBMySQLDataBaseName(), "test_mv_force");
-            Assert.assertEquals(DBMViewSyncDataMethod.REFRESH_FORCE,test_mv_force.getSyncDataMethod());
+            Assert.assertEquals(DBMViewSyncDataMethod.REFRESH_FORCE, test_mv_force.getSyncDataMethod());
 
             DBMView test_mv_never = accessor.getMView(getOBMySQLDataBaseName(), "test_mv_never");
-            Assert.assertEquals(DBMViewSyncDataMethod.NEVER_REFRESH,test_mv_never.getSyncDataMethod());
+            Assert.assertEquals(DBMViewSyncDataMethod.NEVER_REFRESH, test_mv_never.getSyncDataMethod());
 
         }
     }
@@ -564,27 +562,6 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
                 DataType.of("col25", "date", 0, null, 0, null),
                 DataType.of("col26", "datetime", 0, 0L, 0, null),
                 DataType.of("col27", "year", 0, 0L, 0, null)));
-    }
-
-    private static Optional<String> getObVersion() {
-        String sql = "SHOW VARIABLES LIKE 'version_comment'";
-        return jdbcTemplate.queryForObject(
-                sql,
-                (rs, rowNum) -> Optional.ofNullable(parseObVersionComment(rs.getString("Value"))));
-    }
-
-    private static String parseObVersionComment(String obVersionComment) {
-        Validate.notBlank(obVersionComment);
-        String[] obVersion = obVersionComment.split("\\s+");
-        if (obVersion == null) {
-            String errMsg = "version comment is empty, " + obVersionComment;
-            throw new RuntimeException(errMsg);
-        }
-        if (obVersion.length < 4) {
-            String errMsg = "failed to get version comment, " + obVersionComment;
-            throw new RuntimeException(errMsg);
-        }
-        return obVersion[1];
     }
 
     @Data

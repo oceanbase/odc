@@ -51,13 +51,6 @@ public class DBSchemaController {
     /**
      * used to display the table/view list when creating an application table/view permission work
      * order. In that scenario, the user does not have the session creation permission.
-     * 
-     * @param databaseId
-     * @param includePermittedAction
-     * @param types
-     * @return
-     * @throws SQLException
-     * @throws InterruptedException
      */
     @ApiOperation(value = "listTables", notes = "List tables with permitted actions")
     @RequestMapping(value = "/tables", method = RequestMethod.GET)

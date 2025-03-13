@@ -28,6 +28,6 @@ public class OracleMViewTemplate implements DBObjectTemplate<DBMView> {
 
     @Override
     public String generateCreateObjectTemplate(DBMView dbObject) {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

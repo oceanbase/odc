@@ -57,14 +57,15 @@ public class OBMySQLMVExtension implements MViewExtensionPoint {
         mView.setSchemaName(schemaName);
         mView.setName(mViewName);
         mView.setColumns(schemaAccessor.listTableColumns(schemaName, mViewName));
-        // TODO: sql语法不适配
+        // TODO: syntax does not match
         mView.setConstraints(schemaAccessor.listTableConstraints(schemaName, mViewName));
         mView.setIndexes(schemaAccessor.listTableIndexes(schemaName, mViewName));
         mView.setType(DBObjectType.MATERIALIZED_VIEW);
-        // TODO: 解析不了
+        // TODO: parser failed to parse
         mView.setPartition(parser.getPartition());
         mView.setDdl(ddl);
         try {
+            // TODO: parser failed to parse
             mView.setColumnGroups(schemaAccessor.listTableColumnGroups(schemaName, mViewName));
         } catch (Exception e) {
             // eat the exception

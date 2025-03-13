@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.db.model;
 
-import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
@@ -38,7 +37,6 @@ public class MVSyncDataReq {
     private String mvName;
     @NotNull
     DBMViewSyncDataMethod method;
-    @Min(1)
     private int parallelismDegree = 1;
 
     public DBMViewSyncDataParameter convertToDBMViewSyncDataParameter() {
