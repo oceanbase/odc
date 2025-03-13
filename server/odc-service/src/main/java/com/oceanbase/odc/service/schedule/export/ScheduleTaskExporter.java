@@ -143,7 +143,7 @@ public class ScheduleTaskExporter {
         // Ensure all archive file in same path
         ExportProperties deepClone = exportProperties.deepClone();
         deepClone.putToMetaData(FILE_NAME, entry.getKey().name());
-        exportProperties.putToMetaData(SCHEDULE_TYPE, entry.getKey());
+        deepClone.putToMetaData(SCHEDULE_TYPE, entry.getKey().name());
         return deepClone;
     }
 
