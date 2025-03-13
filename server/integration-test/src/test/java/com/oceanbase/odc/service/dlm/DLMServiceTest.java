@@ -28,7 +28,6 @@ import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.model.JoinTableConfig;
 import com.oceanbase.odc.service.dlm.model.OffsetConfig;
 import com.oceanbase.odc.service.dlm.model.PreviewSqlStatementsReq;
-import com.oceanbase.tools.migrator.common.configure.JoinCondition;
 
 import cn.hutool.core.lang.Assert;
 
