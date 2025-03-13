@@ -108,7 +108,7 @@ public class DBMaterializedViewController {
             notes = "obtain the sql to create the materialized view, Sid example: sid:1000-1:d:db1:v:v1")
     @RequestMapping(value = "/getCreateSql/{sid:.*}", method = RequestMethod.PATCH)
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
-    public OdcResult<ResourceSql> getCreateSql(@PathVariable String sid, @RequestBody DBMView resource) {
+    public OdcResult<ResourceSql> getCreateSql(@PathVariable String sid, @RequestBody @Valid DBMView resource) {
         return OdcResult.ok(ResourceSql.ofSql(dbMaterializedViewService.getCreateSql(
                 sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), resource)));
     }

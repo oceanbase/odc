@@ -48,11 +48,8 @@ public class MysqlMViewTemplateTest {
     public void generateCreateObjectTemplate_allInputs_success() {
         DBObjectTemplate<DBMView> mysqlMViewTemplate = new MysqlMViewTemplate();
         DBMView dbmView = new DBMView();
-        dbmView.setMVName("mv_0");
+        dbmView.setName("mv_0");
         dbmView.setSchemaName("schema_0");
-        // 物化视图列
-        List<DBTableColumn> dbTableColumns = prepareMViewColumns(2);
-        dbmView.setColumns(dbTableColumns);
         // 物化视图主键
         prepareMViewPrimary(dbmView);
         // 物化视图刷新并行度
@@ -76,29 +73,25 @@ public class MysqlMViewTemplateTest {
         dbmView.setOperations(Collections.singletonList("left join"));
         dbmView.setCreateColumns(prepareQueryColumns(2));
 
-        String expect = "create materialized view `schema_0`.`mv_0` (\n" +
-                "`col0`,\n" +
-                "`col1`,\n" +
-                "PRIMARY KEY (`col0`)\n" +
-                ") \n" +
-                "PARALLEL 8\n" +
-                " PARTITION BY HASH(`col0`) \n" +
-                "PARTITIONS 3\n" +
-                " WITH COLUMN GROUP(all columns,each column)\n" +
-                "REFRESH COMPLETE\n" +
-                "START WITH sysdate()\n" +
-                "NEXT sysdate() + INTERVAL 1 DAY\n" +
-                "DISABLE QUERY REWRITE\n" +
-                "DISABLE ON QUERY COMPUTATION\n" +
-                "AS\n" +
-                "select\n" +
-                "\ttableAlias_0.`c_0` as alias_c0,\n" +
-                "\ttableAlias_0.`d_0` as alias_d0,\n" +
-                "\ttableAlias_1.`c_1` as alias_c1,\n" +
-                "\ttableAlias_1.`d_1` as alias_d1\n" +
-                "from\n" +
-                "\t`database_0`.`table_0` tableAlias_0\n" +
-                "\tleft join `database_1`.`table_1` tableAlias_1 on /* TODO enter attribute to join on here */";
+        String expect = "create materialized view `schema_0`.`mv_0`(PRIMARY KEY (`alias_c0`))\n" +
+            "PARALLEL 8\n" +
+            " PARTITION BY HASH(`alias_c0`) \n" +
+            "PARTITIONS 3\n" +
+            " WITH COLUMN GROUP(all columns,each column)\n" +
+            "REFRESH COMPLETE\n" +
+            "START WITH sysdate()\n" +
+            "NEXT sysdate() + INTERVAL 1 DAY\n" +
+            "DISABLE QUERY REWRITE\n" +
+            "DISABLE ON QUERY COMPUTATION\n" +
+            "AS\n" +
+            "select\n" +
+            "\ttableAlias_0.`c_0` as alias_c0,\n" +
+            "\ttableAlias_0.`d_0` as alias_d0,\n" +
+            "\ttableAlias_1.`c_1` as alias_c1,\n" +
+            "\ttableAlias_1.`d_1` as alias_d1\n" +
+            "from\n" +
+            "\t`database_0`.`table_0` tableAlias_0\n" +
+            "\tleft join `database_1`.`table_1` tableAlias_1 on /* TODO enter attribute to join on here */";
         String actual = mysqlMViewTemplate.generateCreateObjectTemplate(dbmView);
         Assert.assertEquals(expect, actual);
     }
@@ -107,7 +100,7 @@ public class MysqlMViewTemplateTest {
     public void generateCreateObjectTemplate_startAtSchedule_success() {
         DBObjectTemplate<DBMView> mysqlMViewTemplate = new MysqlMViewTemplate();
         DBMView dbmView = new DBMView();
-        dbmView.setMVName("mv_0");
+        dbmView.setName("mv_0");
         dbmView.setSchemaName("schema_0");
         prepareMViewStartAtSchedule(dbmView);
 
@@ -117,19 +110,17 @@ public class MysqlMViewTemplateTest {
         dbmView.setCreateColumns(prepareQueryColumns(2));
 
         String expect = "create materialized view `schema_0`.`mv_0`\n" +
-                "START WITH TIMESTAMP '2025-07-11 18:00:00'\n" +
-                "NEXT TIMESTAMP '2025-07-11 18:00:00' + INTERVAL 1 DAY\n" +
-                "DISABLE QUERY REWRITE\n" +
-                "DISABLE ON QUERY COMPUTATION\n" +
-                "AS\n" +
-                "select\n" +
-                "\ttableAlias_0.`c_0` as alias_c0,\n" +
-                "\ttableAlias_0.`d_0` as alias_d0,\n" +
-                "\ttableAlias_1.`c_1` as alias_c1,\n" +
-                "\ttableAlias_1.`d_1` as alias_d1\n" +
-                "from\n" +
-                "\t`database_0`.`table_0` tableAlias_0\n" +
-                "\tleft join `database_1`.`table_1` tableAlias_1 on /* TODO enter attribute to join on here */";
+            "START WITH TIMESTAMP '2025-07-11 18:00:00'\n" +
+            "NEXT TIMESTAMP '2025-07-11 18:00:00' + INTERVAL 1 DAY\n" +
+            "AS\n" +
+            "select\n" +
+            "\ttableAlias_0.`c_0` as alias_c0,\n" +
+            "\ttableAlias_0.`d_0` as alias_d0,\n" +
+            "\ttableAlias_1.`c_1` as alias_c1,\n" +
+            "\ttableAlias_1.`d_1` as alias_d1\n" +
+            "from\n" +
+            "\t`database_0`.`table_0` tableAlias_0\n" +
+            "\tleft join `database_1`.`table_1` tableAlias_1 on /* TODO enter attribute to join on here */";
         String actual = mysqlMViewTemplate.generateCreateObjectTemplate(dbmView);
         Assert.assertEquals(expect, actual);
     }
@@ -166,7 +157,7 @@ public class MysqlMViewTemplateTest {
         DBTablePartition dbTablePartition = new DBTablePartition();
         DBTablePartitionOption dbTablePartitionOption = new DBTablePartitionOption();
         dbTablePartitionOption.setType(DBTablePartitionType.HASH);
-        dbTablePartitionOption.setExpression("`col0`");
+        dbTablePartitionOption.setExpression("`alias_c0`");
         dbTablePartitionOption.setPartitionsNum(3);
         dbTablePartition.setPartitionOption(dbTablePartitionOption);
         dbmView.setPartition(dbTablePartition);
@@ -175,19 +166,8 @@ public class MysqlMViewTemplateTest {
     private void prepareMViewPrimary(DBMView dbmView) {
         DBTableConstraint dbTableConstraint = new DBTableConstraint();
         dbTableConstraint.setType(DBConstraintType.PRIMARY_KEY);
-        dbTableConstraint.setColumnNames(Collections.singletonList("col0"));
+        dbTableConstraint.setColumnNames(Collections.singletonList("alias_c0"));
         dbmView.setConstraints(Collections.singletonList(dbTableConstraint));
-    }
-
-    private List<DBTableColumn> prepareMViewColumns(int size) {
-        List<DBTableColumn> viewColumns = new ArrayList<>();
-        for (int i = 0; i < size; i++) {
-            DBTableColumn viewColumn = new DBTableColumn();
-            viewColumn.setName("col" + i);
-            viewColumn.setNullable(true);
-            viewColumns.add(viewColumn);
-        }
-        return viewColumns;
     }
 
     private List<DBView.DBViewUnit> prepareViewUnit(int size) {

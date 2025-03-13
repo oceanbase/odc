@@ -18,6 +18,8 @@ package com.oceanbase.tools.dbbrowser.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.validation.constraints.NotEmpty;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -30,7 +32,8 @@ import lombok.Setter;
 @Setter
 @Getter
 public class DBMView implements DBObject {
-    private String mVName;
+    @NotEmpty
+    private String name;
     // if null, use defaultSchemaName in current connection
     private String schemaName;
     private String ddl;
@@ -41,9 +44,9 @@ public class DBMView implements DBObject {
     // 刷新计划
     private DBMViewSyncSchedule syncSchedule;
     // 查询改写，ob默认不开启
-    private Boolean enableQueryRewrite = Boolean.FALSE;
+    private Boolean enableQueryRewrite;
     // 实时计算，ob默认不开启
-    private Boolean enableQueryComputation = Boolean.FALSE;
+    private Boolean enableQueryComputation;
 
     /**
      * 复用视图，用于构造query statement
@@ -61,17 +64,19 @@ public class DBMView implements DBObject {
      */
 
     private List<DBTableColumn> columns;
+    private List<DBTableIndex> indexes;
     // 主键约束
     private List<DBTableConstraint> constraints;
     // 分区
     private DBTablePartition partition;
     // 存储格式
     private List<DBColumnGroupElement> columnGroups;
+    private DBObjectType type;
 
 
     @Override
     public String name() {
-        return this.mVName;
+        return this.name;
     }
 
     @Override
@@ -81,7 +86,7 @@ public class DBMView implements DBObject {
 
     public DBTable generateDBTable() {
         DBTable dbTable = new DBTable();
-        dbTable.setName(mVName);
+        dbTable.setName(name);
         dbTable.setColumns(columns);
         dbTable.setSchemaName(schemaName);
         dbTable.setPartition(partition);
@@ -91,7 +96,7 @@ public class DBMView implements DBObject {
 
     public DBView generateDBView() {
         DBView dbView = new DBView();
-        dbView.setViewName(mVName);
+        dbView.setViewName(name);
         dbView.setSchemaName(schemaName);
         dbView.setViewUnits(viewUnits);
         dbView.setCreateColumns(createColumns);

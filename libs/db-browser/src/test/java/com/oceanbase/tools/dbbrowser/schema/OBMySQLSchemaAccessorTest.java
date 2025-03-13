@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import com.oceanbase.tools.dbbrowser.model.DBMView;
 import org.apache.commons.lang3.Validate;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -36,6 +35,7 @@ import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
+import com.oceanbase.tools.dbbrowser.model.DBMView;
 import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataMethod;
 import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataParameter;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
@@ -119,7 +119,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     public void listAllMVs_Success() {
         if (accessor.getClass().equals(OBMySQLSchemaAccessor.class)) {
             List<DBObjectIdentity> dbObjectIdentities = accessor.listAllMVs("");
-            Assert.assertTrue(dbObjectIdentities.size() > 0);
+            Assert.assertTrue(dbObjectIdentities.size() >= 8);
         }
     }
 
@@ -127,7 +127,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     public void listMVs_Success() {
         if (accessor.getClass().equals(OBMySQLSchemaAccessor.class)) {
             List<DBObjectIdentity> dbObjectIdentities = accessor.listMVs(getOBMySQLDataBaseName());
-            Assert.assertEquals(1, dbObjectIdentities.size());
+            Assert.assertEquals(9, dbObjectIdentities.size());
         }
     }
 
@@ -135,7 +135,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     public void syncMVData_Success() {
         if (accessor.getClass().equals(OBMySQLSchemaAccessor.class)) {
             DBMViewSyncDataParameter DBMViewSyncDataParameter =
-                    new DBMViewSyncDataParameter(getOBMySQLDataBaseName(), "test_mv",
+                    new DBMViewSyncDataParameter(getOBMySQLDataBaseName(), "test_mv_allSyntax",
                             DBMViewSyncDataMethod.REFRESH_FORCE, 2);
             Boolean aBoolean = accessor.syncMVData(DBMViewSyncDataParameter);
             Assert.assertTrue(aBoolean);
@@ -145,9 +145,31 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     @Test
     public void getMView_Success() {
         if (accessor.getClass().equals(OBMySQLSchemaAccessor.class)) {
+            DBMView test_mv_allSyntax = accessor.getMView(getOBMySQLDataBaseName(), "test_mv_allSyntax");
+            Assert.assertEquals("test_mv_allSyntax", test_mv_allSyntax.getName());
+            Assert.assertEquals(4,test_mv_allSyntax.getColumns().size());
+            Assert.assertEquals(DBMViewSyncDataMethod.REFRESH_COMPLETE,test_mv_allSyntax.getSyncDataMethod());
+            Assert.assertFalse(test_mv_allSyntax.getEnableQueryRewrite());
+            Assert.assertFalse(test_mv_allSyntax.getEnableQueryComputation());
 
-            DBMView testMv = accessor.getMView(getOBMySQLDataBaseName(), "test_mv");
-            Assert.assertTrue(true);
+            DBMView test_mv_computation = accessor.getMView(getOBMySQLDataBaseName(), "test_mv_computation");
+            Assert.assertTrue(test_mv_computation.getEnableQueryComputation());
+
+            DBMView test_mv_queryRewrite = accessor.getMView(getOBMySQLDataBaseName(), "test_mv_queryRewrite");
+            Assert.assertTrue(test_mv_queryRewrite.getEnableQueryRewrite());
+
+            DBMView test_mv_complete = accessor.getMView(getOBMySQLDataBaseName(), "test_mv_complete");
+            Assert.assertEquals(DBMViewSyncDataMethod.REFRESH_COMPLETE,test_mv_complete.getSyncDataMethod());
+
+            DBMView test_mv_fast = accessor.getMView(getOBMySQLDataBaseName(), "test_mv_fast");
+            Assert.assertEquals(DBMViewSyncDataMethod.REFRESH_FAST,test_mv_fast.getSyncDataMethod());
+
+            DBMView test_mv_force = accessor.getMView(getOBMySQLDataBaseName(), "test_mv_force");
+            Assert.assertEquals(DBMViewSyncDataMethod.REFRESH_FORCE,test_mv_force.getSyncDataMethod());
+
+            DBMView test_mv_never = accessor.getMView(getOBMySQLDataBaseName(), "test_mv_never");
+            Assert.assertEquals(DBMViewSyncDataMethod.NEVER_REFRESH,test_mv_never.getSyncDataMethod());
+
         }
     }
 

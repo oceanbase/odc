@@ -25,7 +25,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.oceanbase.tools.dbbrowser.model.DBView;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcOperations;
@@ -44,6 +43,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
+import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.parser.SqlParser;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseSqlResult;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorSqlMappers;
@@ -116,7 +116,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
                 .value(schemaName).append(" AND MVIEW_NAME = ").value(mViewName);
 
         DBMView mView = new DBMView();
-        mView.setMVName(mViewName);
+        mView.setName(mViewName);
         mView.setSchemaName(schemaName);
         jdbcOperations.query(getOptions.toString(), (rs) -> {
             mView.setSyncDataMethod(DBMViewSyncDataMethod.getEnumByShowName(rs.getString("REFRESH_METHOD")));

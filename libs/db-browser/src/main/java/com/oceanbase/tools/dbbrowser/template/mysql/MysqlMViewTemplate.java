@@ -43,6 +43,8 @@ import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 
+import static com.oceanbase.tools.dbbrowser.model.DBConstraintType.PRIMARY_KEY;
+
 /**
  * @description:
  * @author: zijia.cj
@@ -68,7 +70,7 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
 
     @Override
     public String generateCreateObjectTemplate(DBMView dbObject) {
-        Validate.notBlank(dbObject.getMVName(), "Materialized view name can not be blank");
+        Validate.notBlank(dbObject.getName(), "Materialized view name can not be blank");
         DBView dbView = dbObject.generateDBView();
         mySQLViewTemplate.validOperations(dbView);
         SqlBuilder sqlBuilder = new MySQLSqlBuilder();
@@ -76,26 +78,10 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
                 .append(getFullyQualifiedTableName(dbObject));
         boolean isFirstSentence = true;
         // 获取列构造
-        if (Objects.nonNull(dbObject.getColumns())) {
-            for (DBTableColumn column : dbObject.getColumns()) {
-                if (isFirstSentence) {
-                    sqlBuilder.append(" (").line();
-                } else {
-                    sqlBuilder.append(",").line();
-                }
-                isFirstSentence = false;
-                sqlBuilder.append(getColumn(dbTableColumnEditor.generateCreateDefinitionDDL(column)));
-            }
-            // 获取主键构造
-            for (DBTableConstraint constraint : dbObject.getConstraints()) {
-                if (!isFirstSentence) {
-                    sqlBuilder.append(",").line();
-                }
-                isFirstSentence = false;
-                sqlBuilder.append(
-                        getPrimary(dbTableConstraintEditor.generateCreateDefinitionDDL(constraint)));
-            }
-            sqlBuilder.line().append(") ");
+        if (CollectionUtils.isNotEmpty(dbObject.getConstraints())) {
+            Validate.isTrue(dbObject.getConstraints().size() == 1&&dbObject.getConstraints().get(0).getType()==PRIMARY_KEY, "Only primary key is supported");
+            DBTableConstraint dbTableConstraint = dbObject.getConstraints().get(0);
+            sqlBuilder.append("(").append(getPrimary(dbTableConstraintEditor.generateCreateDefinitionDDL(dbTableConstraint))).append(")");
         }
         // 构造物化视图并行度
         if (Objects.nonNull(dbObject.getParallelismDegree()) && dbObject.getParallelismDegree() > 1) {
@@ -132,16 +118,20 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
             }
         }
         // 查询改写
-        if (Boolean.TRUE.equals(dbObject.getEnableQueryRewrite())) {
-            sqlBuilder.line().append("ENABLE QUERY REWRITE");
-        } else {
-            sqlBuilder.line().append("DISABLE QUERY REWRITE");
+        if (Objects.nonNull(dbObject.getEnableQueryRewrite())) {
+            if (dbObject.getEnableQueryRewrite()) {
+                sqlBuilder.line().append("ENABLE QUERY REWRITE");
+            } else {
+                sqlBuilder.line().append("DISABLE QUERY REWRITE");
+            }
         }
         // 实时计算
-        if (Boolean.TRUE.equals(dbObject.getEnableQueryComputation())) {
-            sqlBuilder.line().append("ENABLE ON QUERY COMPUTATION");
-        } else {
-            sqlBuilder.line().append("DISABLE ON QUERY COMPUTATION");
+        if (Objects.nonNull(dbObject.getEnableQueryComputation())) {
+            if (dbObject.getEnableQueryComputation()) {
+                sqlBuilder.line().append("ENABLE ON QUERY COMPUTATION");
+            } else {
+                sqlBuilder.line().append("DISABLE ON QUERY COMPUTATION");
+            }
         }
         sqlBuilder.line().append("AS");
         // 此阶段获取queryStatement
@@ -167,7 +157,7 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
         if (StringUtils.isNotEmpty(dbmView.getSchemaName())) {
             sqlBuilder.identifier(dbmView.getSchemaName()).append(".");
         }
-        sqlBuilder.identifier(dbmView.getMVName());
+        sqlBuilder.identifier(dbmView.getName());
         return sqlBuilder.toString();
     }
 }

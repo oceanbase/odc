@@ -23,6 +23,7 @@ import org.pf4j.Extension;
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.schema.api.MViewExtensionPoint;
+import com.oceanbase.odc.plugin.schema.obmysql.parser.OBMySQLGetDBTableByParser;
 import com.oceanbase.odc.plugin.schema.obmysql.utils.DBAccessorUtil;
 import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.editor.DBObjectOperator;
@@ -49,7 +50,26 @@ public class OBMySQLMVExtension implements MViewExtensionPoint {
 
     @Override
     public DBMView getDetail(Connection connection, String schemaName, String mViewName) {
-        return getSchemaAccessor(connection).getMView(schemaName, mViewName);
+        DBSchemaAccessor schemaAccessor = getSchemaAccessor(connection);
+        DBMView mView = schemaAccessor.getMView(schemaName, mViewName);
+        String ddl = schemaAccessor.getTableDDL(schemaName, mViewName);
+        OBMySQLGetDBTableByParser parser = new OBMySQLGetDBTableByParser(ddl);
+        mView.setSchemaName(schemaName);
+        mView.setName(mViewName);
+        mView.setColumns(schemaAccessor.listTableColumns(schemaName, mViewName));
+        // TODO: sql语法不适配
+        mView.setConstraints(schemaAccessor.listTableConstraints(schemaName, mViewName));
+        mView.setIndexes(schemaAccessor.listTableIndexes(schemaName, mViewName));
+        mView.setType(DBObjectType.MATERIALIZED_VIEW);
+        // TODO: 解析不了
+        mView.setPartition(parser.getPartition());
+        mView.setDdl(ddl);
+        try {
+            mView.setColumnGroups(schemaAccessor.listTableColumnGroups(schemaName, mViewName));
+        } catch (Exception e) {
+            // eat the exception
+        }
+        return mView;
     }
 
     @Override
