@@ -92,6 +92,10 @@
             <artifactId>woodstox-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>info.picocli</groupId>
+            <artifactId>picocli</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
         </dependency>
@@ -277,6 +281,9 @@
                                             <location>${project.basedir}/../../script/start-job.sh</location>
                                         </source>
                                         <source>
+                                            <location>${project.basedir}/../../script/start-supervisor.sh</location>
+                                        </source>
+                                        <source>
                                             <location>${project.basedir}/../../script/kill-odc.sh</location>
                                         </source>
                                         <source>
@@ -415,6 +422,9 @@
                                         </source>
                                         <source>
                                             <location>${project.basedir}/../../script/start-job.sh</location>
+                                        </source>
+                                        <source>
+                                            <location>${project.basedir}/../../script/start-supervisor.sh</location>
                                         </source>
                                         <source>
                                             <location>${project.basedir}/../../script/kill-odc.sh</location>

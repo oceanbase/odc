@@ -109,6 +109,8 @@ public class Database implements SecurityResource, OrganizationIsolated, Seriali
 
     private List<InnerUser> owners;
 
+    private String remark;
+
     @Override
     public String resourceId() {
         return this.id == null ? null : this.id.toString();

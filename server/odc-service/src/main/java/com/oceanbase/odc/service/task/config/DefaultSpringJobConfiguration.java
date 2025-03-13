@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.service.task.config;
 
+import java.util.Random;
+
 import org.quartz.Scheduler;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
@@ -24,13 +26,21 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.oceanbase.odc.common.event.LocalEventPublisher;
+import com.oceanbase.odc.metadb.task.ResourceAllocateInfoRepository;
+import com.oceanbase.odc.metadb.task.SupervisorEndpointRepository;
 import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
 import com.oceanbase.odc.service.resource.ResourceManager;
 import com.oceanbase.odc.service.task.TaskService;
+import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.dispatch.ImmediateJobDispatcher;
 import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
+import com.oceanbase.odc.service.task.resource.LocalProcessResource;
+import com.oceanbase.odc.service.task.resource.SupervisorAgentAllocator;
+import com.oceanbase.odc.service.task.resource.manager.TaskResourceManager;
+import com.oceanbase.odc.service.task.resource.manager.strategy.k8s.K8SResourceManageStrategy;
+import com.oceanbase.odc.service.task.resource.manager.strategy.process.ProcessResourceManageStrategy;
 import com.oceanbase.odc.service.task.schedule.DefaultTaskFrameworkDisabledHandler;
 import com.oceanbase.odc.service.task.schedule.JobCredentialProvider;
 import com.oceanbase.odc.service.task.schedule.StartJobRateLimiter;
@@ -40,7 +50,12 @@ import com.oceanbase.odc.service.task.schedule.provider.DefaultJobImageNameProvi
 import com.oceanbase.odc.service.task.service.SpringTransactionManager;
 import com.oceanbase.odc.service.task.service.StdTaskFrameworkService;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
+import com.oceanbase.odc.service.task.supervisor.DefaultJobEventListener;
+import com.oceanbase.odc.service.task.supervisor.PortDetector;
+import com.oceanbase.odc.service.task.supervisor.TaskSupervisorJobCaller;
+import com.oceanbase.odc.service.task.supervisor.proxy.LocalTaskSupervisorProxy;
 import com.oceanbase.odc.service.task.util.TaskExecutorClient;
+import com.oceanbase.odc.service.task.util.TaskSupervisorUtil;
 
 /**
  * @author yaobin
@@ -61,7 +76,14 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
         setJobImageNameProvider(new DefaultJobImageNameProvider(this::getTaskFrameworkProperties));
         setConnectionService(ctx.getBean(ConnectionService.class));
         setTaskService(ctx.getBean(TaskService.class));
-        setDaemonScheduler((Scheduler) ctx.getBean("taskFrameworkSchedulerFactoryBean"));
+        TaskFrameworkProperties taskFrameworkProperties = getTaskFrameworkProperties();
+        if (!taskFrameworkProperties.isEnableTaskSupervisorAgent()) {
+            setDaemonScheduler((Scheduler) ctx.getBean("taskFrameworkSchedulerFactoryBean"));
+            setTaskSupervisorScheduler((Scheduler) ctx.getBean("commonSchedulerFactoryBean"));
+        } else {
+            setTaskSupervisorScheduler((Scheduler) ctx.getBean("commonSchedulerFactoryBean"));
+        }
+
         setJobDispatcher(new ImmediateJobDispatcher(ctx.getBean(ResourceManager.class)));
         setResourceManager(ctx.getBean(ResourceManager.class));
         LocalEventPublisher publisher = new LocalEventPublisher();
@@ -71,14 +93,67 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
         }
         setTaskFrameworkService(tfs);
         setEventPublisher(publisher);
-
-        setTaskExecutorClient(new TaskExecutorClient());
+        TaskExecutorClient executorClient = new TaskExecutorClient();
+        setTaskExecutorClient(executorClient);
+        setTaskSupervisorJobCaller(
+                new TaskSupervisorJobCaller(new DefaultJobEventListener(), new LocalTaskSupervisorProxy(
+                        TaskSupervisorUtil.getDefaultSupervisorEndpoint(), JobConstants.ODC_AGENT_CLASS_NAME),
+                        executorClient));
         setTransactionManager(new SpringTransactionManager(ctx.getBean(TransactionTemplate.class)));
         initJobRateLimiter();
         setTaskFrameworkDisabledHandler(new DefaultTaskFrameworkDisabledHandler());
         setJasyptEncryptorConfigProperties(ctx.getBean(JasyptEncryptorConfigProperties.class));
         setHostProperties(ctx.getBean(HostProperties.class));
         setJobCredentialProvider(ctx.getBean(JobCredentialProvider.class));
+        if (TaskSupervisorUtil.isTaskSupervisorEnabled(taskFrameworkProperties)) {
+            initTaskSupervisor(taskFrameworkProperties);
+        }
+    }
+
+    protected void initTaskSupervisor(TaskFrameworkProperties taskFrameworkProperties) {
+        // init resource allocator and resource manager
+        TaskResourceManager taskResourceManager = null;
+        if (taskFrameworkProperties.getRunMode().isProcess()) {
+            // prepare local process resource
+            LocalProcessResource localProcessResource =
+                    new LocalProcessResource(ctx.getBean(SupervisorEndpointRepository.class));
+            localProcessResource.prepareLocalProcessResource();
+            taskResourceManager =
+                    new TaskResourceManager(ctx.getBean(SupervisorEndpointRepository.class), ctx.getBean(
+                            ResourceAllocateInfoRepository.class), new ProcessResourceManageStrategy(),
+                            taskFrameworkProperties);
+        } else {
+            // k8s mode
+            taskResourceManager =
+                    new TaskResourceManager(ctx.getBean(SupervisorEndpointRepository.class), ctx.getBean(
+                            ResourceAllocateInfoRepository.class),
+                            new K8SResourceManageStrategy(taskFrameworkProperties.getK8sProperties(),
+                                    ctx.getBean(ResourceManager.class),
+                                    ctx.getBean(SupervisorEndpointRepository.class),
+                                    taskFrameworkProperties.isEnableK8sLocalDebugMode()
+                                            ? this::getPortForLocalDebugSupervisorEndpoint
+                                            : taskFrameworkProperties.getK8sProperties()::getSupervisorListenPort),
+                            taskFrameworkProperties);
+        }
+
+        setTaskResourceManager(taskResourceManager);
+        setSupervisorAgentAllocator(
+                new SupervisorAgentAllocator(ctx.getBean(ResourceAllocateInfoRepository.class)));
+    }
+
+    private int getPortForLocalDebugSupervisorEndpoint() {
+        int basePort = PortDetector.getInstance().getPort();
+        Random random = new Random();
+        // back off random between 100 - 1000 to avoid supervisor conflict port with agent in same machine
+        int round = 0;
+        while (round++ < 100) {
+            int randomBack = (random.nextInt(1000) + 100) % 1000;
+            int port = (basePort + randomBack) % 65535;
+            if (!PortDetector.portInUse(port)) {
+                return port;
+            }
+        }
+        return basePort;
     }
 
     @Override
