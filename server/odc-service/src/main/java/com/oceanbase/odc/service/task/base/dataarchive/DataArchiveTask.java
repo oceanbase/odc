@@ -111,6 +111,9 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
                     log.info("{} job finished,dlmTableUnitId={}", dlmTableUnit.getType(),
                             dlmTableUnit.getDlmTableUnitId());
                     dlmTableUnit.setStatus(TaskStatus.DONE);
+                } else {
+                    log.warn("Job is canceled,dlmTableUnitId={},status={}", dlmTableUnit.getDlmTableUnitId(),
+                            dlmTableUnit.getStatus());
                 }
             } catch (Throwable e) {
                 dlmTableUnit.setStatus(isToStop ? TaskStatus.CANCELED : TaskStatus.FAILED);

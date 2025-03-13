@@ -57,6 +57,7 @@ public class DLMJobStore implements IJobStore {
         try {
             DruidDataSourceFactory druidDataSourceFactory = new DruidDataSourceFactory(metaDBConfig);
             dataSource = (DruidDataSource) druidDataSourceFactory.getDataSource();
+            log.info("Connect to the meta database success.");
         } catch (Exception e) {
             log.warn("Failed to connect to the meta database; closing save point.");
             enableBreakpointRecovery = false;
