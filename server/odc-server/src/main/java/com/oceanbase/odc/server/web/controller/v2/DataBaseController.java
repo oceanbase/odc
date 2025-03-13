@@ -35,6 +35,7 @@ import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.DatabaseSyncManager;
 import com.oceanbase.odc.service.connection.database.model.CreateDatabaseReq;
+import com.oceanbase.odc.service.connection.database.model.DBAccessHistoryReq;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.connection.database.model.DeleteDatabasesReq;
@@ -124,5 +125,19 @@ public class DataBaseController {
     public SuccessResponse<Boolean> modifyDatabasesOwners(@PathVariable Long projectId,
             @RequestBody ModifyDatabaseOwnerReq req) {
         return Responses.success(databaseService.modifyDatabasesOwners(projectId, req));
+    }
+
+    @ApiOperation(value = "recordDatabaseAccessHistory", notes = "record the most recently accessed database history ")
+    @RequestMapping(value = "/databases/batchRecordHistory", method = RequestMethod.POST)
+    public SuccessResponse<Boolean> recordDatabaseAccessHistory(@RequestBody DBAccessHistoryReq dbHistoryReq) {
+        return Responses.success(databaseService.recordDatabaseAccessHistory(dbHistoryReq));
+    }
+
+    @ApiOperation(value = "listDatabaseAccessHistories", notes = "list accessed database histories ")
+    @RequestMapping(value = "/databases/histories", method = RequestMethod.GET)
+    public SuccessResponse<List<Database>> listDatabaseAccessHistories(
+            @RequestParam(name = "limit", defaultValue = "10") Integer historiesLimit) {
+        DBAccessHistoryReq req = new DBAccessHistoryReq().setHistoryCount(historiesLimit);
+        return Responses.success(databaseService.listDatabaseAccessHistory(req));
     }
 }

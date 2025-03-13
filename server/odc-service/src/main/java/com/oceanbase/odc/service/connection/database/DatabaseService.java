@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -48,15 +49,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.common.event.LocalEventPublisher;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.permission.Permission;
@@ -65,6 +70,7 @@ import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
@@ -74,6 +80,8 @@ import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
+import com.oceanbase.odc.metadb.connection.DatabaseAccessHistoryEntity;
+import com.oceanbase.odc.metadb.connection.DatabaseAccessHistoryRepository;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.connection.DatabaseSpecs;
@@ -95,6 +103,7 @@ import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.ConnectionSyncHistoryService;
 import com.oceanbase.odc.service.connection.database.model.CreateDatabaseReq;
+import com.oceanbase.odc.service.connection.database.model.DBAccessHistoryReq;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncStatus;
 import com.oceanbase.odc.service.connection.database.model.DatabaseType;
@@ -225,6 +234,12 @@ public class DatabaseService {
 
     @Autowired
     private ConnectionSyncHistoryService connectionSyncHistoryService;
+
+    @Autowired
+    private DatabaseAccessHistoryRepository databaseAccessHistoryRepository;
+
+    @Autowired
+    private TransactionTemplate transactionTemplate;
 
     @Value("${odc.integration.bastion.enabled:false}")
     private boolean bastionEnabled;
@@ -897,6 +912,101 @@ public class DatabaseService {
         log.info("Refresh outdated pending objects status, syncDate={}, affectRows={}", syncDate, affectRows);
     }
 
+    @SkipAuthorize("internal usage")
+    public List<Database> listSkipPermissionCheck(@NonNull Collection<Long> ids, boolean includesPermittedAction) {
+        Set<Long> databaseIds =
+                ids.stream().filter(Objects::nonNull).collect(Collectors.toCollection(LinkedHashSet::new));
+        if (CollectionUtils.isEmpty(databaseIds)) {
+            return Collections.emptyList();
+        }
+        List<DatabaseEntity> databaseEntities = databaseRepository.findByIdsWithPreservedOrder(databaseIds);
+        Verify.equals(databaseIds.size(), databaseEntities.size(), "Database");
+        return entitiesToModels(new PageImpl<>(databaseEntities),
+                includesPermittedAction).getContent();
+    }
+
+
+    @SkipAuthorize("odc internal usage")
+    public boolean recordDatabaseAccessHistory(@NonNull DBAccessHistoryReq dbAccessHistoryReq) {
+        Set<Long> databaseIds = dbAccessHistoryReq.getDatabaseIds();
+        if (CollectionUtils.isEmpty(databaseIds)) {
+            return true;
+        }
+        final Date now = new Date();
+        final long userId = authenticationFacade.currentUserId();
+
+        Set<Long> joinedProjectIds = projectService.getMemberProjectIds(userId);
+        if (CollectionUtils.isEmpty(joinedProjectIds)) {
+            log.warn("No member project found for user, can't record database history, param={}",
+                    JsonUtils.toJson(dbAccessHistoryReq));
+            return false;
+        }
+        List<Database> dbs = entitiesToModels(
+                new PageImpl<>(databaseRepository.findByIdInAndProjectIdIn(databaseIds, joinedProjectIds)),
+                true).getContent();
+
+        Verify.equals(databaseIds.size(), dbs.size(), "Database");
+
+        for (Database db : dbs) {
+            horizontalDataPermissionValidator.checkCurrentOrganization(db);
+            if (CollectionUtils.isEmpty(db.getAuthorizedPermissionTypes())) {
+                log.warn("User not authorized to record database accessing history: dbId = {}, permissions = {}",
+                        db.getId(), JsonUtils.toJson(db.getAuthorizedPermissionTypes()));
+                throw new AccessDeniedException();
+            }
+        }
+
+        final List<DatabaseAccessHistoryEntity> toUpsertHistories =
+                dbs.stream().map(e -> {
+                    DatabaseAccessHistoryEntity databaseAccessHistoryEntity = new DatabaseAccessHistoryEntity();
+                    databaseAccessHistoryEntity.setLastAccessTime(now);
+                    databaseAccessHistoryEntity.setDatabaseId(e.getId());
+                    // If dataSource is null, may logical database
+                    if (e.getDataSource() != null) {
+                        databaseAccessHistoryEntity.setConnectionId(e.getDataSource().getId());
+                    }
+                    databaseAccessHistoryEntity.setUserId(userId);
+                    return databaseAccessHistoryEntity;
+                }).collect(Collectors.toList());
+
+        Integer affectRows = transactionTemplate.execute(status -> {
+            try {
+                return databaseAccessHistoryRepository.upsert(toUpsertHistories);
+            } catch (Exception e) {
+                log.warn("Failed to upsert database access history, databaseIds={}", JsonUtils.toJson(databaseIds), e);
+                status.setRollbackOnly();
+                return 0;
+            }
+        });
+        log.info("Record database access histories, expected total is {}, actual is {}",
+                dbs.size(), affectRows);
+        return Objects.equals(affectRows, dbs.size());
+    }
+
+    @SkipAuthorize("odc internal usage")
+    public List<Database> listDatabaseAccessHistory(@NonNull @Valid DBAccessHistoryReq dbAccessHistoryReq) {
+        final long userId = authenticationFacade.currentUserId();
+        if (dbAccessHistoryReq.getHistoryCount() == null) {
+            return Collections.emptyList();
+        }
+        Pageable page = PageRequest.of(0, dbAccessHistoryReq.getHistoryCount())
+                .withSort(Sort.by(DatabaseAccessHistoryEntity.LAST_ACCESS_TIME_NAME).descending());
+        List<DatabaseAccessHistoryEntity> dbHistoryEntities =
+                databaseAccessHistoryRepository.findByUserId(userId, page).getContent();
+        Set<Long> dbIds =
+                dbHistoryEntities.stream().map(DatabaseAccessHistoryEntity::getDatabaseId)
+                        .collect(Collectors.toCollection(LinkedHashSet::new));
+        List<Database> databases = listSkipPermissionCheck(dbIds, true);
+        Set<Long> joinedProjectIds = projectService.getMemberProjectIds(userId);
+        databases.forEach(d -> {
+            Project project = d.getProject();
+            if (project != null) {
+                project.setCurrentUserIsMember(joinedProjectIds.contains(project.getId()));
+            }
+        });
+        return databases;
+    }
+
     private void checkPermission(Long projectId, Long dataSourceId) {
         if (Objects.isNull(projectId) && Objects.isNull(dataSourceId)) {
             throw new AccessDeniedException("invalid projectId or dataSourceId");
@@ -960,7 +1070,7 @@ public class DatabaseService {
         if (CollectionUtils.isEmpty(entities.getContent())) {
             return Page.empty();
         }
-        Map<Long, List<Project>> projectId2Projects = projectService.mapByIdIn(entities.stream()
+        Map<Long, Project> projectId2Project = projectService.mapByIdIn(entities.stream()
                 .map(DatabaseEntity::getProjectId).collect(Collectors.toSet()));
         Map<Long, List<ConnectionConfig>> connectionId2Connections = connectionService.mapByIdIn(entities.stream()
                 .map(DatabaseEntity::getConnectionId).collect(Collectors.toSet()));
@@ -989,10 +1099,10 @@ public class DatabaseService {
         Map<Long, User> finalUserId2User = userId2User;
         return entities.map(entity -> {
             Database database = databaseMapper.entityToModel(entity);
-            List<Project> projects = projectId2Projects.getOrDefault(entity.getProjectId(), new ArrayList<>());
+            Project project = projectId2Project.get(entity.getProjectId());
             List<ConnectionConfig> connections =
                     connectionId2Connections.getOrDefault(entity.getConnectionId(), new ArrayList<>());
-            database.setProject(CollectionUtils.isEmpty(projects) ? null : projects.get(0));
+            database.setProject(project);
             database.setEnvironment(id2Environments.getOrDefault(entity.getEnvironmentId(), null));
             database.setDataSource(CollectionUtils.isEmpty(connections) ? null : connections.get(0));
             if (includesPermittedAction) {

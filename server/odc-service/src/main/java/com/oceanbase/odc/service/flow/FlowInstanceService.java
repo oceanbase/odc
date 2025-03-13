@@ -46,10 +46,13 @@ import org.flowable.engine.history.HistoricProcessInstance;
 import org.flowable.engine.history.HistoricProcessInstanceQuery;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -81,6 +84,7 @@ import com.oceanbase.odc.metadb.collaboration.EnvironmentEntity;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
+import com.oceanbase.odc.metadb.flow.FlowInstanceRepository.FlowInstanceProjection;
 import com.oceanbase.odc.metadb.flow.FlowInstanceSpecs;
 import com.oceanbase.odc.metadb.flow.FlowInstanceViewEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceViewRepository;
@@ -94,6 +98,7 @@ import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
+import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.common.util.SqlUtils;
@@ -103,6 +108,7 @@ import com.oceanbase.odc.service.connection.CloudMetadataClient;
 import com.oceanbase.odc.service.connection.CloudMetadataClient.CloudPermissionAction;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.DBAccessHistoryReq;
 import com.oceanbase.odc.service.connection.database.model.DBResource;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.UnauthorizedDBResource;
@@ -130,6 +136,7 @@ import com.oceanbase.odc.service.flow.model.FlowMetaInfo;
 import com.oceanbase.odc.service.flow.model.FlowNodeInstanceDetailResp.FlowNodeInstanceMapper;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
+import com.oceanbase.odc.service.flow.model.InnerQueryFlowInstanceParams;
 import com.oceanbase.odc.service.flow.model.QueryFlowInstanceParams;
 import com.oceanbase.odc.service.flow.processor.EnablePreprocess;
 import com.oceanbase.odc.service.flow.task.BaseRuntimeFlowableDelegate;
@@ -265,6 +272,11 @@ public class FlowInstanceService {
     private FlowPermissionHelper flowPermissionHelper;
     @Autowired
     private MeterManager meterManager;
+    @Autowired
+    @Lazy
+    private ProjectService projectService;
+    @Autowired
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     private static final long MAX_EXPORT_OBJECT_COUNT = 10000;
     private static final String ODC_SITE_URL = "odc.site.url";
@@ -396,7 +408,18 @@ public class FlowInstanceService {
             conns.forEach(con -> cloudMetadataClient.checkPermission(OBTenant.of(con.getClusterName(),
                     con.getTenantName()), con.getInstanceType(), false, CloudPermissionAction.READONLY));
         }
-        return Collections.singletonList(buildFlowInstance(riskLevels, createReq, conns));
+        List<FlowInstanceDetailResp> flowInstanceDetailResps = Collections.singletonList(
+                buildFlowInstance(riskLevels, createReq, conns));
+        if (Objects.nonNull(createReq.getDatabaseId())) {
+            try {
+                DBAccessHistoryReq dbAccessHistoryReq = new DBAccessHistoryReq().setDatabaseIds(
+                        Collections.singleton(createReq.getDatabaseId()));
+                databaseService.recordDatabaseAccessHistory(dbAccessHistoryReq);
+            } catch (Exception e) {
+                log.warn("Failed to record database access history, dbId={}", createReq.getDatabaseId(), e);
+            }
+        }
+        return flowInstanceDetailResps;
     }
 
     public Page<FlowInstanceDetailResp> list(@NotNull Pageable pageable, @NotNull QueryFlowInstanceParams params) {
@@ -1304,10 +1327,134 @@ public class FlowInstanceService {
         return flowInstanceRepository.findFlowInstanceIdByScheduleIdAndStatus(scheduleId, status);
     }
 
+    private List<ServiceTaskInstanceEntity> innerListDistinctServiceTaskInstances(
+            @NonNull InnerQueryFlowInstanceParams params) {
+        StringBuilder querySql = new StringBuilder();
+        HashMap<String, Object> queryParamMap = new HashMap<>();
+        queryParamMap.put("organizationId", authenticationFacade.currentOrganizationId());
+        querySql.append("SELECT flow_instance_id, task_type FROM flow_instance_node_task ");
+        querySql.append("WHERE organization_id = :organizationId ");
+        if (CollectionUtils.isNotEmpty(params.getTaskTypes())) {
+            queryParamMap.put("taskTypes",
+                    params.getTaskTypes().stream().map(Enum::name).collect(Collectors.toSet()));
+            querySql.append("AND task_type in (:taskTypes) ");
+        }
+        if (params.getStartTime() != null) {
+            queryParamMap.put("startTime", params.getStartTime());
+            querySql.append("AND create_time >= :startTime ");
+        }
+        if (params.getEndTime() != null) {
+            queryParamMap.put("endTime", params.getEndTime());
+            querySql.append("AND create_time <= :endTime ");
+        }
+        querySql.append("GROUP BY flow_instance_id;");
+        return namedParameterJdbcTemplate.query(
+                querySql.toString(), queryParamMap,
+                new BeanPropertyRowMapper<>(ServiceTaskInstanceEntity.class));
+    }
+
+    /**
+     * This query is actually a problem, currently can not be based on the type of ASYNC subtask to
+     * reverse the parent task is a AlterSchedule or MultiDatabaseChange. If the parent task is a
+     * AlterSchedule, In this case, parent_instance_id in the flow_instance table stores the id of
+     * schedule_schedule. In the case of MultiDatabaseChange, the id of the flow_instance table is
+     * stored. The two tables may be identical
+     */
+    public List<FlowInstanceState> listAlterScheduleSubTaskStates(@NonNull InnerQueryFlowInstanceParams params) {
+        Set<Long> joinedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
+        if (CollectionUtils.isEmpty(joinedProjectIds)) {
+            return Collections.emptyList();
+        }
+        /**
+         * Query flow_instance_node_task table to get {@link ServiceTaskInstanceEntity#getFlowInstanceId()}
+         * and {@link ServiceTaskInstanceEntity#getTaskType()}
+         */
+        List<ServiceTaskInstanceEntity> serviceTasks = innerListDistinctServiceTaskInstances(params);
+        if (CollectionUtils.isEmpty(serviceTasks)) {
+            return Collections.emptyList();
+        }
+        /**
+         * Get {@link ServiceTaskInstanceEntity#getFlowInstanceId()} in serviceTasks, check the
+         * flow_instance table and get {@link FlowInstanceEntity#getId()}
+         */
+        Set<Long> taskFlowInstanceIds = serviceTasks.stream().map(ServiceTaskInstanceEntity::getFlowInstanceId)
+                .collect(Collectors.toSet());
+        List<FlowInstanceProjection> flowInstances = flowInstanceRepository
+                .findByIdInAndProjectIdInAndParentInstanceIdIsNotNull(taskFlowInstanceIds, joinedProjectIds);
+        if (CollectionUtils.isEmpty(flowInstances)) {
+            return Collections.emptyList();
+        }
+
+        /**
+         * Check the {@link FlowInstanceEntity#getId()} in the flow_instance table based on
+         * {@link FlowInstanceEntity#getParentInstanceId()} to determine whether the task is AlterSchedule.
+         * The same parent_instance_id must correspond to the id of at least one flow_instance table. Query
+         * the id of the earliest parent_instance_id to check whether it is a AlterSchedule task
+         */
+        List<FlowInstanceProjection> parentFlowInstances =
+                flowInstanceRepository.findEarliestInstancesByIdInAndParentInstanceIdIn(taskFlowInstanceIds,
+                        flowInstances.stream().map(
+                                FlowInstanceProjection::getParentInstanceId).collect(
+                                        Collectors.toSet()));
+        if (CollectionUtils.isEmpty(parentFlowInstances)) {
+            return Collections.emptyList();
+        }
+
+        /**
+         * Finally we know that if a task in the flow_instance table has parent_instance_id with the above
+         * alterSchedule in the flow_instance_id table, If parent_instance_id is the same, the task is a
+         * subTask of the alterSchedule
+         */
+        final List<Long> alterScheduleFlowInstanceIds =
+                serviceTaskRepository.findFlowInstanceIdsByFlowInstanceIdInAndTaskType(
+                        parentFlowInstances.stream().map(FlowInstanceProjection::getId).collect(Collectors.toSet()),
+                        TaskType.ALTER_SCHEDULE);
+        if (CollectionUtils.isEmpty(alterScheduleFlowInstanceIds)) {
+            return Collections.emptyList();
+        }
+        Set<Long> realAlterScheduleParentInstanceIds =
+                parentFlowInstances.stream().filter(pf -> alterScheduleFlowInstanceIds.contains(pf.getId()))
+                        .map(
+                                FlowInstanceProjection::getParentInstanceId)
+                        .collect(
+                                Collectors.toSet());
+
+        /**
+         * Filter alterSchedule subtasks that match the value of parent_instance_id
+         */
+        final Map<Long, FlowStatus> flowInstanceId2FlowStatus = flowInstances.stream()
+                .filter(f -> realAlterScheduleParentInstanceIds.contains(f.getParentInstanceId())).collect(
+                        Collectors.toMap(FlowInstanceProjection::getId, FlowInstanceProjection::getStatus,
+                                (exist, val) -> exist));
+        final Map<Long, TaskType> flowInstanceId2TaskType =
+                serviceTasks.stream().filter(s -> flowInstanceId2FlowStatus.containsKey(s.getFlowInstanceId())).collect(
+                        Collectors.toMap(ServiceTaskInstanceEntity::getFlowInstanceId,
+                                ServiceTaskInstanceEntity::getTaskType, (exist, val) -> exist));
+        if (flowInstanceId2FlowStatus.isEmpty() || flowInstanceId2TaskType.isEmpty()) {
+            log.warn("The List flow instance states is abnormal");
+            return Collections.emptyList();
+        }
+        final List<FlowInstanceState> flowInstanceStates = new ArrayList<>();
+        flowInstanceId2FlowStatus.forEach((id, flowStatus) -> {
+            TaskType taskType = flowInstanceId2TaskType.get(id);
+            if (taskType != null && flowStatus != null) {
+                flowInstanceStates.add(new FlowInstanceState(taskType, flowStatus));
+            }
+        });
+        return flowInstanceStates;
+    }
+
     @Data
     public static class ShadowTableComparingUpdateEvent {
         private Long comparingTaskId;
         private Long flowInstanceId;
+    }
+
+    @Data
+    @AllArgsConstructor
+    public static class FlowInstanceState {
+        private TaskType taskType;
+        private FlowStatus status;
     }
 
     @Getter

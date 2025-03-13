@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.metadb.schedule;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -76,4 +77,6 @@ public interface ScheduleRepository extends OdcJpaRepository<ScheduleEntity, Lon
                 .and(OdcJpaRepository.eq(ScheduleEntity_.organizationId, params.getOrganizationId()));
         return findAll(specification, pageable);
     }
+
+    List<ScheduleEntity> findByIdInAndProjectIdIn(Collection<Long> ids, Collection<Long> projectIds);
 }
