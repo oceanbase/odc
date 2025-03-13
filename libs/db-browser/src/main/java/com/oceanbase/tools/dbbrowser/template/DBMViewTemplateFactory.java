@@ -16,7 +16,7 @@
 package com.oceanbase.tools.dbbrowser.template;
 
 import com.oceanbase.tools.dbbrowser.AbstractDBBrowserFactory;
-import com.oceanbase.tools.dbbrowser.model.DBMView;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.template.mysql.MysqlMViewTemplate;
 import com.oceanbase.tools.dbbrowser.template.oracle.OracleMViewTemplate;
 
@@ -26,40 +26,40 @@ import com.oceanbase.tools.dbbrowser.template.oracle.OracleMViewTemplate;
  * @date: 2025/3/10 23:15
  * @since: 4.3.4
  */
-public class DBMViewTemplateFactory extends AbstractDBBrowserFactory<DBObjectTemplate<DBMView>> {
+public class DBMViewTemplateFactory extends AbstractDBBrowserFactory<DBObjectTemplate<DBMaterializedView>> {
 
     @Override
-    public DBObjectTemplate<DBMView> buildForDoris() {
+    public DBObjectTemplate<DBMaterializedView> buildForDoris() {
         throw new UnsupportedOperationException("not support yet");
     }
 
     @Override
-    public DBObjectTemplate<DBMView> buildForMySQL() {
+    public DBObjectTemplate<DBMaterializedView> buildForMySQL() {
         throw new UnsupportedOperationException("not support yet");
     }
 
     @Override
-    public DBObjectTemplate<DBMView> buildForOBMySQL() {
+    public DBObjectTemplate<DBMaterializedView> buildForOBMySQL() {
         return new MysqlMViewTemplate();
     }
 
     @Override
-    public DBObjectTemplate<DBMView> buildForOBOracle() {
+    public DBObjectTemplate<DBMaterializedView> buildForOBOracle() {
         return new OracleMViewTemplate();
     }
 
     @Override
-    public DBObjectTemplate<DBMView> buildForOracle() {
+    public DBObjectTemplate<DBMaterializedView> buildForOracle() {
         throw new UnsupportedOperationException("not support yet");
     }
 
     @Override
-    public DBObjectTemplate<DBMView> buildForOdpSharding() {
+    public DBObjectTemplate<DBMaterializedView> buildForOdpSharding() {
         throw new UnsupportedOperationException("not support yet");
     }
 
     @Override
-    public DBObjectTemplate<DBMView> buildForPostgres() {
+    public DBObjectTemplate<DBMaterializedView> buildForPostgres() {
         throw new UnsupportedOperationException("not support yet");
     }
 }

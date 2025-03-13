@@ -18,8 +18,8 @@ package com.oceanbase.odc.service.db.model;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
-import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataMethod;
-import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewRefreshMethod;
 
 import lombok.Data;
 
@@ -36,14 +36,14 @@ public class MVSyncDataReq {
     @NotBlank
     private String mvName;
     @NotNull
-    DBMViewSyncDataMethod method;
-    private int parallelismDegree = 1;
+    DBMaterializedViewRefreshMethod method;
+    private Long parallelismDegree;
 
-    public DBMViewSyncDataParameter convertToDBMViewSyncDataParameter() {
-        DBMViewSyncDataParameter parameter = new DBMViewSyncDataParameter();
+    public DBMViewRefreshParameter convertToDBMViewRefreshParameter() {
+        DBMViewRefreshParameter parameter = new DBMViewRefreshParameter();
         parameter.setDatabaseName(databaseName);
         parameter.setMvName(mvName);
-        parameter.setMvSyncDataMethod(method);
+        parameter.setRefreshMethod(method);
         parameter.setParallelismDegree(parallelismDegree);
         return parameter;
     }

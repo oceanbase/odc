@@ -44,7 +44,7 @@ import com.oceanbase.odc.service.db.model.MVSyncDataReq;
 import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.odc.service.state.model.StateName;
 import com.oceanbase.odc.service.state.model.StatefulRoute;
-import com.oceanbase.tools.dbbrowser.model.DBMView;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import io.swagger.annotations.ApiOperation;
@@ -87,7 +87,7 @@ public class DBMaterializedViewController {
             notes = "obtain detail about the materialized view. Sid example: sid:1000-1:d:db1:v:v1")
     @RequestMapping(value = "/{sid:.*}", method = RequestMethod.GET)
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
-    public OdcResult<DBMView> detail(@PathVariable String sid) {
+    public OdcResult<DBMaterializedView> detail(@PathVariable String sid) {
         ResourceIdentifier i = ResourceIDParser.parse(sid);
         return OdcResult
                 .ok(dbMaterializedViewService.detail(sessionService.nullSafeGet(i.getSid(), true), i.getDatabase(),
@@ -108,7 +108,8 @@ public class DBMaterializedViewController {
             notes = "obtain the sql to create the materialized view, Sid example: sid:1000-1")
     @RequestMapping(value = "/getCreateSql/{sid:.*}", method = RequestMethod.PATCH)
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
-    public OdcResult<ResourceSql> getCreateSql(@PathVariable String sid, @RequestBody @Valid DBMView resource) {
+    public OdcResult<ResourceSql> getCreateSql(@PathVariable String sid,
+            @RequestBody @Valid DBMaterializedView resource) {
         return OdcResult.ok(ResourceSql.ofSql(dbMaterializedViewService.getCreateSql(
                 sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), resource)));
     }

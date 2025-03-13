@@ -28,8 +28,8 @@ import com.oceanbase.odc.plugin.schema.obmysql.utils.DBAccessorUtil;
 import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.editor.DBObjectOperator;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLObjectOperator;
-import com.oceanbase.tools.dbbrowser.model.DBMView;
-import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
@@ -49,9 +49,9 @@ public class OBMySQLMVExtension implements MViewExtensionPoint {
     }
 
     @Override
-    public DBMView getDetail(Connection connection, String schemaName, String mViewName) {
+    public DBMaterializedView getDetail(Connection connection, String schemaName, String mViewName) {
         DBSchemaAccessor schemaAccessor = getSchemaAccessor(connection);
-        DBMView mView = schemaAccessor.getMView(schemaName, mViewName);
+        DBMaterializedView mView = schemaAccessor.getMView(schemaName, mViewName);
         String ddl = schemaAccessor.getTableDDL(schemaName, mViewName);
         OBMySQLGetDBTableByParser parser = new OBMySQLGetDBTableByParser(ddl);
         mView.setSchemaName(schemaName);
@@ -60,7 +60,6 @@ public class OBMySQLMVExtension implements MViewExtensionPoint {
         // TODO: syntax does not match
         mView.setConstraints(schemaAccessor.listTableConstraints(schemaName, mViewName));
         mView.setIndexes(schemaAccessor.listTableIndexes(schemaName, mViewName));
-        mView.setType(DBObjectType.MATERIALIZED_VIEW);
         // TODO: parser failed to parse
         mView.setPartition(parser.getPartition());
         mView.setDdl(ddl);
@@ -79,12 +78,12 @@ public class OBMySQLMVExtension implements MViewExtensionPoint {
     }
 
     @Override
-    public String generateCreateTemplate(DBMView mView) {
+    public String generateCreateTemplate(DBMaterializedView mView) {
         return getTemplate().generateCreateObjectTemplate(mView);
     }
 
     @Override
-    public Boolean syncMVData(Connection connection, DBMViewSyncDataParameter parameter) {
+    public Boolean syncMVData(Connection connection, DBMViewRefreshParameter parameter) {
         return getSchemaAccessor(connection).syncMVData(parameter);
     }
 
@@ -96,7 +95,7 @@ public class OBMySQLMVExtension implements MViewExtensionPoint {
         return new MySQLObjectOperator(JdbcOperationsUtil.getJdbcOperations(connection));
     }
 
-    protected DBObjectTemplate<DBMView> getTemplate() {
+    protected DBObjectTemplate<DBMaterializedView> getTemplate() {
         return DBBrowser.objectTemplate().mViewTemplate()
                 .setType(DialectType.OB_MYSQL.getDBBrowserDialectTypeName()).create();
     }

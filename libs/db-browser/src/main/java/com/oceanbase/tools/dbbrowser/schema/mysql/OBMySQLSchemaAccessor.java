@@ -32,9 +32,9 @@ import org.springframework.jdbc.core.JdbcOperations;
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
-import com.oceanbase.tools.dbbrowser.model.DBMView;
-import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataMethod;
-import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewRefreshMethod;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBObjectWarningDescriptor;
@@ -84,7 +84,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     }
 
     @Override
-    public List<DBObjectIdentity> listAllMVs(String viewNameLike) {
+    public List<DBObjectIdentity> listAllMVsLike(String viewNameLike) {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
         sb.append(
                 "select OWNER AS schema_name, MVIEW_NAME AS name,'MATERIALIZED_VIEW' AS type FROM OCEANBASE.DBA_MVIEWS WHERE MVIEW_NAME LIKE ")
@@ -94,12 +94,12 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     }
 
     @Override
-    public Boolean syncMVData(DBMViewSyncDataParameter parameter) {
+    public Boolean syncMVData(DBMViewRefreshParameter parameter) {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
         sb.append("call DBMS_MVIEW.REFRESH('").append(parameter.getDatabaseName()).append(".")
                 .append(parameter.getMvName()).append("'");
-        if (Objects.nonNull(parameter.getMvSyncDataMethod())) {
-            sb.append(",").value(parameter.getMvSyncDataMethod().getValue());
+        if (Objects.nonNull(parameter.getRefreshMethod())) {
+            sb.append(",").value(parameter.getRefreshMethod().getValue());
         }
         if (Objects.nonNull(parameter.getParallelismDegree())) {
             sb.append(",").append("refresh_parallel => ").append(parameter.getParallelismDegree() + "");
@@ -110,16 +110,17 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     }
 
     @Override
-    public DBMView getMView(String schemaName, String mViewName) {
+    public DBMaterializedView getMView(String schemaName, String mViewName) {
         MySQLSqlBuilder getOptions = new MySQLSqlBuilder();
-        getOptions.append("SELECT * FROM OCEANBASE.DBA_MVIEWS WHERE OWNER = ")
+        getOptions.append(
+                "SELECT REWRITE_ENABLED,ON_QUERY_COMPUTATION,REFRESH_DOP FROM OCEANBASE.DBA_MVIEWS WHERE OWNER = ")
                 .value(schemaName).append(" AND MVIEW_NAME = ").value(mViewName);
 
-        DBMView mView = new DBMView();
+        DBMaterializedView mView = new DBMaterializedView();
         mView.setName(mViewName);
         mView.setSchemaName(schemaName);
         jdbcOperations.query(getOptions.toString(), (rs) -> {
-            mView.setSyncDataMethod(DBMViewSyncDataMethod.getEnumByShowName(rs.getString("REFRESH_METHOD")));
+            mView.setSyncDataMethod(DBMaterializedViewRefreshMethod.getEnumByShowName(rs.getString("REFRESH_METHOD")));
             mView.setEnableQueryRewrite(rs.getBoolean("REWRITE_ENABLED"));
             mView.setEnableQueryComputation(rs.getBoolean("ON_QUERY_COMPUTATION"));
             mView.setParallelismDegree(rs.getLong("REFRESH_DOP"));

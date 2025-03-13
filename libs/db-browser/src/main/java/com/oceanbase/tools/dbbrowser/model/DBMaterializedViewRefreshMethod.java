@@ -24,29 +24,29 @@ import lombok.Getter;
  * @since: 4.3.4
  */
 @Getter
-public enum DBMViewSyncDataMethod {
+public enum DBMaterializedViewRefreshMethod {
 
     REFRESH_FAST("REFRESH FAST", "FAST", "f"),
     REFRESH_FORCE("REFRESH FORCE", "FORCE", "?"),
     REFRESH_COMPLETE("REFRESH COMPLETE", "COMPLETE", "c"),
     REFRESH_ALWAYS("REFRESH ALWAYS", "ALWAYS", "a"),
     NEVER_REFRESH("NEVER REFRESH", "NEVER", "n"),
-    OTHERS("OTHERS", "OTHERS", "OTHERS");
+    OTHERS("UNKNOWN", "UNKNOWN", "UNKNOWN");
 
     private String createName;
     private String showName;
     private String value;
 
-    DBMViewSyncDataMethod(String createName, String showName, String value) {
+    DBMaterializedViewRefreshMethod(String createName, String showName, String value) {
         this.createName = createName;
         this.showName = showName;
         this.value = value;
     }
 
-    public static DBMViewSyncDataMethod getEnumByShowName(String name) {
-        DBMViewSyncDataMethod result = DBMViewSyncDataMethod.OTHERS;
-        DBMViewSyncDataMethod[] methods = DBMViewSyncDataMethod.values();
-        for (DBMViewSyncDataMethod method : methods) {
+    public static DBMaterializedViewRefreshMethod getEnumByShowName(String name) {
+        DBMaterializedViewRefreshMethod result = DBMaterializedViewRefreshMethod.OTHERS;
+        DBMaterializedViewRefreshMethod[] methods = DBMaterializedViewRefreshMethod.values();
+        for (DBMaterializedViewRefreshMethod method : methods) {
             if (method.getShowName().equalsIgnoreCase(name)) {
                 result = method;
                 break;

@@ -15,8 +15,6 @@
  */
 package com.oceanbase.tools.dbbrowser.model;
 
-import java.util.Date;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -24,35 +22,20 @@ import lombok.NoArgsConstructor;
 /**
  * @description:
  * @author: zijia.cj
- * @date: 2025/3/10 12:36
+ * @date: 2025/3/4 14:57
  * @since: 4.3.4
  */
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class DBMViewSyncSchedule {
+public class DBMViewRefreshParameter {
 
-    private StartStrategy startStrategy;
+    private String databaseName;
 
-    private Date startWith;
+    private String mvName;
 
-    private Long interval;
+    private DBMaterializedViewRefreshMethod refreshMethod;
 
-    private Unit unit;
-
-    public enum Unit {
-        SECOND,
-        MINUTE,
-        HOUR,
-        DAY,
-        WEEK,
-        MONTH,
-        YEAR;
-    }
-
-    public enum StartStrategy {
-        START_NOW,
-        START_AT;
-    }
+    private Long parallelismDegree;
 
 }

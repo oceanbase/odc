@@ -53,8 +53,8 @@ import com.oceanbase.odc.service.db.model.MVSyncDataReq;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
-import com.oceanbase.tools.dbbrowser.model.DBMView;
-import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
@@ -118,7 +118,7 @@ public class DBMaterializedViewService {
                     : new DatabaseAndTables();
         }).filter(item -> item.getDatabaseName() != null)
                 .sorted(Comparator.comparing(DatabaseAndTables::getDatabaseName)).collect(Collectors.toList());
-        List<DBObjectIdentity> mvIdentities = accessor.listAllMVs(tableNameLike);
+        List<DBObjectIdentity> mvIdentities = accessor.listAllMVsLike(tableNameLike);
         Map<String, List<String>> schema2mvs = new HashMap<>();
         mvIdentities.forEach(item -> {
             List<String> views = schema2mvs.computeIfAbsent(item.getSchemaName(), t -> new ArrayList<>());
@@ -137,26 +137,26 @@ public class DBMaterializedViewService {
     }
 
     public String getCreateSql(@NonNull ConnectionSession session,
-            @NonNull DBMView resource) {
+            @NonNull DBMaterializedView resource) {
         return session.getSyncJdbcExecutor(
                 ConnectionSessionConstants.BACKEND_DS_KEY)
                 .execute((ConnectionCallback<String>) con -> getDBMViewExtensionPoint(session)
                         .generateCreateTemplate(resource));
     }
 
-    public DBMView detail(ConnectionSession connectionSession, String schemaName, String viewName) {
+    public DBMaterializedView detail(ConnectionSession connectionSession, String schemaName, String viewName) {
         return connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.BACKEND_DS_KEY)
-                .execute((ConnectionCallback<DBMView>) con -> getDBMViewExtensionPoint(connectionSession)
+                .execute((ConnectionCallback<DBMaterializedView>) con -> getDBMViewExtensionPoint(connectionSession)
                         .getDetail(con, schemaName, viewName));
     }
 
     public Boolean syncData(@NotNull ConnectionSession connectionSession, @NotNull MVSyncDataReq mvSyncDataReq) {
-        DBMViewSyncDataParameter dbmvSyncDataParameter = mvSyncDataReq.convertToDBMViewSyncDataParameter();
+        DBMViewRefreshParameter syncDataParameter = mvSyncDataReq.convertToDBMViewRefreshParameter();
         return connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.BACKEND_DS_KEY)
                 .execute((ConnectionCallback<Boolean>) con -> getDBMViewExtensionPoint(connectionSession)
-                        .syncMVData(con, dbmvSyncDataParameter));
+                        .syncMVData(con, syncDataParameter));
     }
 
     private MViewExtensionPoint getDBMViewExtensionPoint(@NonNull ConnectionSession session) {

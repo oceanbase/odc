@@ -21,8 +21,8 @@ import java.util.Map;
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
-import com.oceanbase.tools.dbbrowser.model.DBMView;
-import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBPackage;
@@ -139,17 +139,17 @@ public interface DBSchemaAccessor {
     /**
      * List all materialized view as DBObjectIdentity in current datasource
      */
-    List<DBObjectIdentity> listAllMVs(String viewNameLike);
+    List<DBObjectIdentity> listAllMVsLike(String viewNameLike);
 
     /**
      * Synchronize materialized view data
      */
-    Boolean syncMVData(DBMViewSyncDataParameter parameter);
+    Boolean syncMVData(DBMViewRefreshParameter parameter);
 
     /**
      * Get materialized view details
      */
-    DBMView getMView(String schemaName, String mViewName);
+    DBMaterializedView getMView(String schemaName, String mViewName);
 
     /**
      * List all variables

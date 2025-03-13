@@ -31,18 +31,17 @@ import lombok.Setter;
  */
 @Setter
 @Getter
-public class DBMView implements DBObject {
+public class DBMaterializedView implements DBObject {
     @NotEmpty
     private String name;
     // if null, use defaultSchemaName in current connection
     private String schemaName;
     private String ddl;
-    private DBMViewSyncDataMethod syncDataMethod;
+    private DBMaterializedViewRefreshMethod syncDataMethod;
     private Long parallelismDegree;
-    private DBMViewSyncSchedule syncSchedule;
+    private DBMaterializedViewSyncSchedule syncSchedule;
     private Boolean enableQueryRewrite;
     private Boolean enableQueryComputation;
-    private DBObjectType type;
 
     /**
      * reuse properties in {@link DBView} to construct query statements

@@ -15,7 +15,7 @@
  */
 package com.oceanbase.tools.dbbrowser.template.oracle;
 
-import com.oceanbase.tools.dbbrowser.model.DBMView;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
 
 /**
@@ -24,10 +24,10 @@ import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
  * @date: 2025/3/11 20:50
  * @since: 4.3.4
  */
-public class OracleMViewTemplate implements DBObjectTemplate<DBMView> {
+public class OracleMViewTemplate implements DBObjectTemplate<DBMaterializedView> {
 
     @Override
-    public String generateCreateObjectTemplate(DBMView dbObject) {
+    public String generateCreateObjectTemplate(DBMaterializedView dbObject) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 }

@@ -25,9 +25,9 @@ import org.junit.Test;
 
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
-import com.oceanbase.tools.dbbrowser.model.DBMView;
-import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataMethod;
-import com.oceanbase.tools.dbbrowser.model.DBMViewSyncSchedule;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewRefreshMethod;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewSyncSchedule;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
@@ -45,23 +45,23 @@ import com.oceanbase.tools.dbbrowser.template.mysql.MysqlMViewTemplate;
 public class MysqlMViewTemplateTest {
     @Test
     public void generateCreateObjectTemplate_allInputs_success() {
-        DBObjectTemplate<DBMView> mysqlMViewTemplate = new MysqlMViewTemplate();
-        DBMView dbmView = new DBMView();
-        dbmView.setName("mv_0");
-        dbmView.setSchemaName("schema_0");
-        prepareMViewPrimary(dbmView);
-        dbmView.setParallelismDegree(8L);
-        prepareMViewPartition(dbmView);
-        prepareMViewColumnGroups(dbmView);
-        dbmView.setSyncDataMethod(DBMViewSyncDataMethod.REFRESH_COMPLETE);
-        prepareMViewStartNowSchedule(dbmView);
-        dbmView.setEnableQueryRewrite(false);
-        dbmView.setEnableQueryComputation(false);
+        DBObjectTemplate<DBMaterializedView> mysqlMViewTemplate = new MysqlMViewTemplate();
+        DBMaterializedView DBMaterializedView = new DBMaterializedView();
+        DBMaterializedView.setName("mv_0");
+        DBMaterializedView.setSchemaName("schema_0");
+        prepareMViewPrimary(DBMaterializedView);
+        DBMaterializedView.setParallelismDegree(8L);
+        prepareMViewPartition(DBMaterializedView);
+        prepareMViewColumnGroups(DBMaterializedView);
+        DBMaterializedView.setSyncDataMethod(DBMaterializedViewRefreshMethod.REFRESH_COMPLETE);
+        prepareMViewStartNowSchedule(DBMaterializedView);
+        DBMaterializedView.setEnableQueryRewrite(false);
+        DBMaterializedView.setEnableQueryComputation(false);
 
         List<DBView.DBViewUnit> viewUnits = prepareViewUnit(2);
-        dbmView.setViewUnits(viewUnits);
-        dbmView.setOperations(Collections.singletonList("left join"));
-        dbmView.setCreateColumns(prepareQueryColumns(2));
+        DBMaterializedView.setViewUnits(viewUnits);
+        DBMaterializedView.setOperations(Collections.singletonList("left join"));
+        DBMaterializedView.setCreateColumns(prepareQueryColumns(2));
 
         String expect = "create materialized view `schema_0`.`mv_0`(PRIMARY KEY (`alias_c0`))\n" +
                 "PARALLEL 8\n" +
@@ -82,22 +82,22 @@ public class MysqlMViewTemplateTest {
                 "from\n" +
                 "\t`database_0`.`table_0` tableAlias_0\n" +
                 "\tleft join `database_1`.`table_1` tableAlias_1 on /* TODO enter attribute to join on here */";
-        String actual = mysqlMViewTemplate.generateCreateObjectTemplate(dbmView);
+        String actual = mysqlMViewTemplate.generateCreateObjectTemplate(DBMaterializedView);
         Assert.assertEquals(expect, actual);
     }
 
     @Test
     public void generateCreateObjectTemplate_startAtSchedule_success() {
-        DBObjectTemplate<DBMView> mysqlMViewTemplate = new MysqlMViewTemplate();
-        DBMView dbmView = new DBMView();
-        dbmView.setName("mv_0");
-        dbmView.setSchemaName("schema_0");
-        prepareMViewStartAtSchedule(dbmView);
+        DBObjectTemplate<DBMaterializedView> mysqlMViewTemplate = new MysqlMViewTemplate();
+        DBMaterializedView DBMaterializedView = new DBMaterializedView();
+        DBMaterializedView.setName("mv_0");
+        DBMaterializedView.setSchemaName("schema_0");
+        prepareMViewStartAtSchedule(DBMaterializedView);
 
         List<DBView.DBViewUnit> viewUnits = prepareViewUnit(2);
-        dbmView.setViewUnits(viewUnits);
-        dbmView.setOperations(Collections.singletonList("left join"));
-        dbmView.setCreateColumns(prepareQueryColumns(2));
+        DBMaterializedView.setViewUnits(viewUnits);
+        DBMaterializedView.setOperations(Collections.singletonList("left join"));
+        DBMaterializedView.setCreateColumns(prepareQueryColumns(2));
 
         String expect = "create materialized view `schema_0`.`mv_0`\n" +
                 "START WITH TIMESTAMP '2025-07-11 18:00:00'\n" +
@@ -111,28 +111,28 @@ public class MysqlMViewTemplateTest {
                 "from\n" +
                 "\t`database_0`.`table_0` tableAlias_0\n" +
                 "\tleft join `database_1`.`table_1` tableAlias_1 on /* TODO enter attribute to join on here */";
-        String actual = mysqlMViewTemplate.generateCreateObjectTemplate(dbmView);
+        String actual = mysqlMViewTemplate.generateCreateObjectTemplate(DBMaterializedView);
         Assert.assertEquals(expect, actual);
     }
 
-    private void prepareMViewStartNowSchedule(DBMView dbmView) {
-        DBMViewSyncSchedule dbmViewSyncSchedule = new DBMViewSyncSchedule();
-        dbmViewSyncSchedule.setStartStrategy(DBMViewSyncSchedule.StartStrategy.START_NOW);
-        dbmViewSyncSchedule.setInterval(1L);
-        dbmViewSyncSchedule.setUnit(DBMViewSyncSchedule.Unit.DAY);
-        dbmView.setSyncSchedule(dbmViewSyncSchedule);
+    private void prepareMViewStartNowSchedule(DBMaterializedView DBMaterializedView) {
+        DBMaterializedViewSyncSchedule DBMaterializedViewSyncSchedule = new DBMaterializedViewSyncSchedule();
+        DBMaterializedViewSyncSchedule.setStartStrategy(DBMaterializedViewSyncSchedule.StartStrategy.START_NOW);
+        DBMaterializedViewSyncSchedule.setInterval(1L);
+        DBMaterializedViewSyncSchedule.setUnit(DBMaterializedViewSyncSchedule.Unit.DAY);
+        DBMaterializedView.setSyncSchedule(DBMaterializedViewSyncSchedule);
     }
 
-    private void prepareMViewStartAtSchedule(DBMView dbmView) {
-        DBMViewSyncSchedule dbmViewSyncSchedule = new DBMViewSyncSchedule();
-        dbmViewSyncSchedule.setStartStrategy(DBMViewSyncSchedule.StartStrategy.START_AT);
-        dbmViewSyncSchedule.setStartWith(new Date(1752228000000L));
-        dbmViewSyncSchedule.setInterval(1L);
-        dbmViewSyncSchedule.setUnit(DBMViewSyncSchedule.Unit.DAY);
-        dbmView.setSyncSchedule(dbmViewSyncSchedule);
+    private void prepareMViewStartAtSchedule(DBMaterializedView DBMaterializedView) {
+        DBMaterializedViewSyncSchedule DBMaterializedViewSyncSchedule = new DBMaterializedViewSyncSchedule();
+        DBMaterializedViewSyncSchedule.setStartStrategy(DBMaterializedViewSyncSchedule.StartStrategy.START_AT);
+        DBMaterializedViewSyncSchedule.setStartWith(new Date(1752228000000L));
+        DBMaterializedViewSyncSchedule.setInterval(1L);
+        DBMaterializedViewSyncSchedule.setUnit(DBMaterializedViewSyncSchedule.Unit.DAY);
+        DBMaterializedView.setSyncSchedule(DBMaterializedViewSyncSchedule);
     }
 
-    private void prepareMViewColumnGroups(DBMView dbmView) {
+    private void prepareMViewColumnGroups(DBMaterializedView DBMaterializedView) {
         List<DBColumnGroupElement> dbColumnGroupElements = new ArrayList<>();
         DBColumnGroupElement dbColumnGroupElement1 = new DBColumnGroupElement();
         dbColumnGroupElement1.setAllColumns(true);
@@ -140,24 +140,24 @@ public class MysqlMViewTemplateTest {
         dbColumnGroupElement2.setEachColumn(true);
         dbColumnGroupElements.add(dbColumnGroupElement1);
         dbColumnGroupElements.add(dbColumnGroupElement2);
-        dbmView.setColumnGroups(dbColumnGroupElements);
+        DBMaterializedView.setColumnGroups(dbColumnGroupElements);
     }
 
-    private static void prepareMViewPartition(DBMView dbmView) {
+    private static void prepareMViewPartition(DBMaterializedView DBMaterializedView) {
         DBTablePartition dbTablePartition = new DBTablePartition();
         DBTablePartitionOption dbTablePartitionOption = new DBTablePartitionOption();
         dbTablePartitionOption.setType(DBTablePartitionType.HASH);
         dbTablePartitionOption.setExpression("`alias_c0`");
         dbTablePartitionOption.setPartitionsNum(3);
         dbTablePartition.setPartitionOption(dbTablePartitionOption);
-        dbmView.setPartition(dbTablePartition);
+        DBMaterializedView.setPartition(dbTablePartition);
     }
 
-    private void prepareMViewPrimary(DBMView dbmView) {
+    private void prepareMViewPrimary(DBMaterializedView DBMaterializedView) {
         DBTableConstraint dbTableConstraint = new DBTableConstraint();
         dbTableConstraint.setType(DBConstraintType.PRIMARY_KEY);
         dbTableConstraint.setColumnNames(Collections.singletonList("alias_c0"));
-        dbmView.setConstraints(Collections.singletonList(dbTableConstraint));
+        DBMaterializedView.setConstraints(Collections.singletonList(dbTableConstraint));
     }
 
     private List<DBView.DBViewUnit> prepareViewUnit(int size) {

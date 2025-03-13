@@ -19,8 +19,8 @@ import java.util.List;
 
 import org.springframework.jdbc.core.JdbcOperations;
 
-import com.oceanbase.tools.dbbrowser.model.DBMView;
-import com.oceanbase.tools.dbbrowser.model.DBMViewSyncDataParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 
 /**
@@ -41,17 +41,17 @@ public class OBMySQLBetween432And4351SchemaAccessor extends OBMySQLSchemaAccesso
     }
 
     @Override
-    public List<DBObjectIdentity> listAllMVs(String viewNameLike) {
+    public List<DBObjectIdentity> listAllMVsLike(String viewNameLike) {
         throw new UnsupportedOperationException("not support yet");
     }
 
     @Override
-    public Boolean syncMVData(DBMViewSyncDataParameter parameter) {
+    public Boolean syncMVData(DBMViewRefreshParameter parameter) {
         throw new UnsupportedOperationException("not support yet");
     }
 
     @Override
-    public DBMView getMView(String schemaName, String mViewName) {
+    public DBMaterializedView getMView(String schemaName, String mViewName) {
         throw new UnsupportedOperationException("not support yet");
     }
 

@@ -32,8 +32,8 @@ import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLConstraintEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLDBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
-import com.oceanbase.tools.dbbrowser.model.DBMView;
-import com.oceanbase.tools.dbbrowser.model.DBMViewSyncSchedule;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewSyncSchedule;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
@@ -46,7 +46,7 @@ import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
  * @date: 2025/3/10 16:45
  * @since: 4.3.4
  */
-public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
+public class MysqlMViewTemplate implements DBObjectTemplate<DBMaterializedView> {
     private MySQLViewTemplate mySQLViewTemplate;
 
     private DBTableConstraintEditor dbTableConstraintEditor;
@@ -61,7 +61,7 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
     }
 
     @Override
-    public String generateCreateObjectTemplate(DBMView dbObject) {
+    public String generateCreateObjectTemplate(DBMaterializedView dbObject) {
         Validate.notBlank(dbObject.getName(), "Materialized view name can not be blank");
         DBView dbView = dbObject.generateDBView();
         mySQLViewTemplate.validOperations(dbView);
@@ -100,12 +100,12 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
         }
         // build sql about sync schedule
         if (Objects.nonNull(dbObject.getSyncSchedule())) {
-            DBMViewSyncSchedule syncSchedule = dbObject.getSyncSchedule();
-            if (syncSchedule.getStartStrategy() == DBMViewSyncSchedule.StartStrategy.START_NOW) {
+            DBMaterializedViewSyncSchedule syncSchedule = dbObject.getSyncSchedule();
+            if (syncSchedule.getStartStrategy() == DBMaterializedViewSyncSchedule.StartStrategy.START_NOW) {
                 sqlBuilder.line().append("START WITH sysdate()");
                 sqlBuilder.line().append("NEXT sysdate() + INTERVAL ").append(syncSchedule.getInterval()).append(" ")
                         .append(syncSchedule.getUnit());
-            } else if (syncSchedule.getStartStrategy() == DBMViewSyncSchedule.StartStrategy.START_AT) {
+            } else if (syncSchedule.getStartStrategy() == DBMaterializedViewSyncSchedule.StartStrategy.START_AT) {
                 SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 String formattedDate = formatter.format(syncSchedule.getStartWith());
                 sqlBuilder.line().append("START WITH TIMESTAMP '").append(formattedDate).append("'");
@@ -139,12 +139,12 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMView> {
         return input.replaceFirst("(?i)CONSTRAINT\\s*", "");
     }
 
-    private String getFullyQualifiedTableName(@NotNull DBMView dbmView) {
+    private String getFullyQualifiedTableName(@NotNull DBMaterializedView DBMaterializedView) {
         SqlBuilder sqlBuilder = new MySQLSqlBuilder();;
-        if (StringUtils.isNotEmpty(dbmView.getSchemaName())) {
-            sqlBuilder.identifier(dbmView.getSchemaName()).append(".");
+        if (StringUtils.isNotEmpty(DBMaterializedView.getSchemaName())) {
+            sqlBuilder.identifier(DBMaterializedView.getSchemaName()).append(".");
         }
-        sqlBuilder.identifier(dbmView.getName());
+        sqlBuilder.identifier(DBMaterializedView.getName());
         return sqlBuilder.toString();
     }
 }
