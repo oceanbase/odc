@@ -166,6 +166,7 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
                 joinCondition.setCondition(joinTableConfig.getJoinCondition());
                 return joinCondition;
             }).collect(Collectors.toList()));
+            jobParameter.setPrintSqlTrace(true);
             dlmTableUnit.setParameters(jobParameter);
             dlmTableUnit.setDlmTableUnitId(DlmJobIdUtil.generateHistoryJobId(req.getJobName(), req.getJobType().name(),
                     req.getScheduleTaskId(), dlmTableUnits.size()));
