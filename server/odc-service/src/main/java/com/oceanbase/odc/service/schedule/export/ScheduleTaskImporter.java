@@ -41,7 +41,6 @@ import com.oceanbase.odc.service.exporter.model.ExportConstants;
 import com.oceanbase.odc.service.exporter.model.ExportProperties;
 import com.oceanbase.odc.service.exporter.model.ExportRowDataMapper;
 import com.oceanbase.odc.service.exporter.model.ExportRowDataReader;
-import com.oceanbase.odc.service.exporter.model.ImportResult;
 import com.oceanbase.odc.service.exporter.utils.JsonExtractorFactory;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
@@ -95,10 +94,10 @@ public class ScheduleTaskImporter {
                 JsonExtractorFactory.buildJsonExtractor(objectStorageFacade, request.getBucketName(),
                         request.getObjectId(), request.getDecryptKey(), ".");
                 ExportRowDataReader<JsonNode> rowDataReader = extractor.getRowDataReader()) {
-            checkMetaData(extractor, rowDataReader);
-            checkScheduleType(rowDataReader, scheduleType);
+             checkMetaData(extractor, rowDataReader);
+             checkScheduleType(rowDataReader, scheduleType);
             return doImportSchedule(scheduleType, request.getProjectId(), rowDataReader,
-                    request.getImportableExportRowId());
+                    request.getImportableExportRowId(), request.getDecryptKey());
         } catch (IOException e) {
             throw new ExtractFileException(ErrorCodes.ExtractFileFailed, e.getMessage(), e);
         }
@@ -117,7 +116,7 @@ public class ScheduleTaskImporter {
                 JsonExtractorFactory.buildJsonExtractor(objectStorageFacade, request.getBucketName(),
                         request.getObjectId(), request.getDecryptKey(), ".");
                 ExportRowDataReader<JsonNode> rowDataReader = extractor.getRowDataReader()) {
-            checkMetaData(extractor, rowDataReader);
+            // checkMetaData(extractor, rowDataReader);
             List<ScheduleRowPreviewDto> previewDto = getScheduleImportPreviewDto(rowDataReader);
             return scheduleExportFacade.preview(request.getScheduleType(), request.getProjectId(),
                     rowDataReader.getProperties(), previewDto);
@@ -137,11 +136,12 @@ public class ScheduleTaskImporter {
         CreateFlowInstanceReq createFlowInstanceReq = ExportRowDataMapper.INSTANCE.toCreateFlowInstanceReq(projectId,
                 databaseId, TaskType.PARTITION_PLAN, partitionPlanConfig,
                 currentRowData.getDescription());
+        log.info("createFlowInstanceReq={}", JsonUtils.toJson(createFlowInstanceReq));
         flowInstanceService.create(createFlowInstanceReq);
     }
 
     private List<ImportTaskResult> doImportSchedule(ScheduleType scheduleType, Long projectId,
-            ExportRowDataReader<JsonNode> rowDataReader, Set<String> importableExportRowId)
+            ExportRowDataReader<JsonNode> rowDataReader, Set<String> importableExportRowId, String encrptKey)
             throws IOException {
         JsonNode currentRow = null;
         List<ImportTaskResult> results = new ArrayList<>();
@@ -150,16 +150,13 @@ public class ScheduleTaskImporter {
         while ((currentRow = rowDataReader.readRow()) != null) {
             try {
                 baseScheduleRowData = JsonUtils.fromJsonNode(currentRow, BaseScheduleRowData.class);
+                baseScheduleRowData.decrypt(encrptKey);
                 if (baseScheduleRowData == null) {
                     throw new ExtractFileException(ErrorCodes.ExtractFileFailed, "Can't extract rowData");
                 }
-                ImportResult importResult = importService.imported(properties, baseScheduleRowData.getRowId());
-                if (importResult != ImportResult.NOT_IMPORTED) {
-                    if (importResult == ImportResult.IMPORT_SUCCESS) {
-                        log.info("Skip import, row id {} has been imported success", baseScheduleRowData.getRowId());
-                    } else {
-                        log.info("Skip import, row id {} has been imported failed", baseScheduleRowData.getRowId());
-                    }
+                if (importService.imported(properties, baseScheduleRowData.getRowId())) {
+                    log.info("Skip import, row id {} has been imported success", baseScheduleRowData.getRowId());
+                    results.add(ImportTaskResult.success(baseScheduleRowData.getRowId(),"Have been imported."));
                     continue;
                 }
                 if (!importableExportRowId.contains(baseScheduleRowData.getRowId())) {
@@ -172,6 +169,7 @@ public class ScheduleTaskImporter {
                         () -> doImport(scheduleType, projectId, finalBaseScheduleRowData, finalCurrentRow, results));
             } catch (RuntimeException e) {
                 String rowId = Optional.ofNullable(baseScheduleRowData).map(BaseScheduleRowData::getRowId).orElse(null);
+                log.info("Import row failed, row id {}", rowId, e);
                 results.add(ImportTaskResult.failed(rowId, e.getMessage()));
             }
         }
@@ -201,8 +199,9 @@ public class ScheduleTaskImporter {
         CreateFlowInstanceReq createScheduleReq =
                 getCreateScheduleReq(scheduleType, projectId, currentRow, databaseId,
                         targetDatabaseId);
+        log.info("createFlowInstanceReq={}", JsonUtils.toJson(createScheduleReq));
         scheduleService.dispatchCreateSchedule(createScheduleReq);
-        results.add(ImportTaskResult.success(baseScheduleRowData.getRowId()));
+        results.add(ImportTaskResult.success(baseScheduleRowData.getRowId(),null));
         return true;
     }
 

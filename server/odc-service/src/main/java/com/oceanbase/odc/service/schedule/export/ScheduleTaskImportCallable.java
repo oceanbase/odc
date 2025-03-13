@@ -18,6 +18,8 @@ package com.oceanbase.odc.service.schedule.export;
 import java.util.List;
 
 import com.oceanbase.odc.common.task.RouteLogCallable;
+import com.oceanbase.odc.service.iam.model.User;
+import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 import com.oceanbase.odc.service.schedule.export.model.ImportTaskResult;
 import com.oceanbase.odc.service.schedule.export.model.ScheduleTaskImportRequest;
 
@@ -28,18 +30,21 @@ public class ScheduleTaskImportCallable extends RouteLogCallable<List<ImportTask
 
     private final ScheduleTaskImporter scheduleTaskImporter;
     private final ScheduleTaskImportRequest request;
+    private final User user;
 
-    public ScheduleTaskImportCallable(String taskId,
+    public ScheduleTaskImportCallable(User currentUser, String taskId,
             ScheduleTaskImporter scheduleTaskImporter, ScheduleTaskImportRequest request) {
         super(WORK_SPACE, taskId, LOG_NAME);
         this.scheduleTaskImporter = scheduleTaskImporter;
         this.request = request;
+        this.user = currentUser;
     }
 
     @Override
     public List<ImportTaskResult> doCall() {
         log.info("Let's start import schedule task, request: {}", request);
         try {
+            SecurityContextUtils.setCurrentUser(user);
             return scheduleTaskImporter.importSchedule(request);
         } catch (Exception e) {
             log.info("Import schedule task failed", e);

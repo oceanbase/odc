@@ -27,18 +27,19 @@ public class ImportTaskResult {
 
     private Boolean success;
 
-    private String failedReason;
+    private String remark;
 
-    public static ImportTaskResult success(String exportRowId) {
+    public static ImportTaskResult success(String exportRowId,String remark) {
         ImportTaskResult result = new ImportTaskResult();
         result.setSuccess(true);
+        result.setRemark(remark);
         result.setExportRowId(exportRowId);
         return result;
     }
 
     public static ImportTaskResult failed(String exportRowId, String failedReason) {
         ImportTaskResult result = new ImportTaskResult();
-        result.setFailedReason(failedReason);
+        result.setRemark(failedReason);
         result.setSuccess(false);
         result.setExportRowId(exportRowId);
         return result;

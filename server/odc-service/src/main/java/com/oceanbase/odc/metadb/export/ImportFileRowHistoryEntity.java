@@ -41,9 +41,6 @@ public class ImportFileRowHistoryEntity {
     @Column(name = "row_id")
     private String rowId;
 
-    @Column(name = "success")
-    private Boolean success;
-
     @Column(name = "create_time", insertable = false, updatable = false)
     private Date createTime;
 
