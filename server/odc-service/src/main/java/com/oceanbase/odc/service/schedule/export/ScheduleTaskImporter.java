@@ -112,7 +112,7 @@ public class ScheduleTaskImporter {
 
         ExportProperties metaData = rowDataReader.getProperties();
         String exportType = metaData.acquireExportType();
-        if (exportType == null || !exportType.equals(ExportConstants.SCHEDULE_ARCHIVE_TYPE)) {
+        if (exportType == null || !exportType.equals(ExportConstants.SCHEDULE_EXPORT_TYPE)) {
             throw new InvalidFileFormatException(ErrorCodes.IllegalFileName, "Export Type is not match");
         }
         // Cross-version import and export is not supported at present

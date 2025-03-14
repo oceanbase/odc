@@ -17,7 +17,7 @@ package com.oceanbase.odc.service.schedule.export;
 
 import static com.oceanbase.odc.service.exporter.model.ExportConstants.EXPORT_TYPE;
 import static com.oceanbase.odc.service.exporter.model.ExportConstants.FILE_NAME;
-import static com.oceanbase.odc.service.exporter.model.ExportConstants.SCHEDULE_ARCHIVE_TYPE;
+import static com.oceanbase.odc.service.exporter.model.ExportConstants.SCHEDULE_EXPORT_TYPE;
 import static com.oceanbase.odc.service.exporter.model.ExportConstants.SCHEDULE_TYPE;
 
 import java.io.File;
@@ -149,7 +149,7 @@ public class ScheduleTaskExporter {
 
     private ExportProperties generateArchiveProperties() {
         ExportProperties exportProperties = new ExportProperties();
-        exportProperties.putToMetaData(EXPORT_TYPE, SCHEDULE_ARCHIVE_TYPE);
+        exportProperties.putToMetaData(EXPORT_TYPE, SCHEDULE_EXPORT_TYPE);
         exportProperties.addDefaultMetaData();
         exportProperties.addFilePathProperties(exportConfiguration.getDefaultArchivePath());
         scheduleExportImportFacade.adaptProperties(exportProperties);
