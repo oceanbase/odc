@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.archiverist.model;
+package com.oceanbase.odc.service.schedule.export.model;
 
 import com.oceanbase.odc.service.exporter.model.Encryptable;
 
@@ -26,7 +26,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ExportedDatabase implements Encryptable {
     ExportedDataSource exportedDataSource;
-    String schema;
+    String databaseName;
 
     public static ExportedDatabase of(ExportedDataSource exportedDataSource, String schema) {
         return new ExportedDatabase(exportedDataSource, schema);

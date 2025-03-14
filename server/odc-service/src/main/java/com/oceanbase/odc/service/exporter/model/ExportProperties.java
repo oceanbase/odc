@@ -15,8 +15,8 @@
  */
 package com.oceanbase.odc.service.exporter.model;
 
-import static com.oceanbase.odc.service.exporter.model.ExportConstants.ARCHIVE_TYPE;
 import static com.oceanbase.odc.service.exporter.model.ExportConstants.CREATE_TIME;
+import static com.oceanbase.odc.service.exporter.model.ExportConstants.EXPORT_TYPE;
 import static com.oceanbase.odc.service.exporter.model.ExportConstants.FILE_NAME;
 import static com.oceanbase.odc.service.exporter.model.ExportConstants.FILE_PATH;
 import static com.oceanbase.odc.service.exporter.model.ExportConstants.FILE_ZIP_EXTENSION;
@@ -83,8 +83,8 @@ public class ExportProperties {
         return (String) getValue(CREATE_TIME);
     }
 
-    public String acquireType() {
-        return (String) getValue(ARCHIVE_TYPE);
+    public String acquireExportType() {
+        return (String) getValue(EXPORT_TYPE);
     }
 
     public String acquireFilePath() {
@@ -155,6 +155,14 @@ public class ExportProperties {
             return transientProperties.get(key);
         }
         return o;
+    }
+
+    public String getStringValue(String key) {
+        Object o = metaData.get(key);
+        if (o == null) {
+            return (String) transientProperties.get(key);
+        }
+        return (String) o;
     }
 
     public ExportProperties deepClone() {

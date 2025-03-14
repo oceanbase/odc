@@ -21,7 +21,7 @@ import java.io.IOException;
 
 public interface ExportRowDataReader<R> extends Closeable {
 
-    ExportProperties getMetaData();
+    ExportProperties getProperties();
 
     <D extends Encryptable> D readRow(Class<D> rowDataClass) throws IOException;
 

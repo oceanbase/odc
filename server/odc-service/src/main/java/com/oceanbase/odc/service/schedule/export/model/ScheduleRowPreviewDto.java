@@ -13,38 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.archiverist.model;
+package com.oceanbase.odc.service.schedule.export.model;
 
-import java.util.UUID;
+import javax.annotation.Nullable;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-
-import com.oceanbase.odc.service.exporter.model.Encryptable;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
-import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 
 import lombok.Data;
 
 @Data
-public class BaseScheduleRowData implements Encryptable {
+public class ScheduleRowPreviewDto {
 
-    private String rowId = UUID.randomUUID().toString();
-
-    @NotBlank
-    private String name;
-
-    @NotNull
+    private String rowId;
+    private String originId;
+    private String originProjectName;
     private ScheduleType type;
 
-    @NotNull
-    private TriggerConfig triggerConfig;
+    private ExportedDatabase database;
+    @Nullable
+    private ExportedDatabase targetDatabase;
 
-    private String description;
-
-    @Override
-    public void encrypt(String encryptKey) {}
-
-    @Override
-    public void decrypt(String encryptKey) {}
 }
