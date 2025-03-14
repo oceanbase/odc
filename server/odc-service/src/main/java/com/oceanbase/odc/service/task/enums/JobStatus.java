@@ -42,6 +42,10 @@ public enum JobStatus {
         return !isTerminated();
     }
 
+    public boolean isTerminating() {
+        return JobStatus.TIMEOUT == this || JobStatus.CANCELING == this || JobStatus.DO_CANCELING == this;
+    }
+
     public TaskStatus convertTaskStatus() {
 
         if (CANCELING == this || DO_CANCELING == this) {

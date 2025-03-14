@@ -594,6 +594,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         return jobRepository.updateReportResult(jse, currentJob.getId(), currentJob.getStatus());
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public void saveOrUpdateLogMetadata(TaskResult taskResult, Long jobId, JobStatus currentStatus) {
         if (taskResult.getLogMetadata() != null) {
             log.info("Save or update log metadata, jobId={}, currentStatus={}, taskResult={}",
