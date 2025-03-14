@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import com.oceanbase.tools.dbbrowser.util.VersionUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -65,10 +66,12 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     private static String dropMVs;
     private static String testProcedureDDL;
     private static String testFunctionDDL;
-    private static List<DataType> verifyDataTypes = new ArrayList<>();
-    private static List<ColumnAttributes> columnAttributes = new ArrayList<>();
+    private static final List<DataType> verifyDataTypes = new ArrayList<>();
+    private static final List<ColumnAttributes> columnAttributes = new ArrayList<>();
     private static final JdbcTemplate jdbcTemplate = new JdbcTemplate(getOBMySQLDataSource());
-    private static DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
+    private static final DBSchemaAccessors  dbSchemaAccessors = new DBSchemaAccessors(getOBMySQLDataSource());
+    private static final DBSchemaAccessor accessor = dbSchemaAccessors.createOBMysql();
+    private static final boolean isSupportMaterializedView = VersionUtils.isGreaterThanOrEqualsTo(dbSchemaAccessors.getVersion(),"4.3.5.1");
 
     @BeforeClass
     public static void setUp() throws Exception {
@@ -78,7 +81,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
         dropTables = loadAsString(BASE_PATH + "drop.sql");
         jdbcTemplate.execute(dropTables);
 
-        if (accessor.getClass().equals(OBMySQLSchemaAccessor.class)) {
+        if (isSupportMaterializedView) {
             dropMVs = loadAsString(BASE_PATH + "dropMV.sql");
             jdbcTemplate.execute(dropTables);
         }
@@ -93,7 +96,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
         testFunctionDDL = loadAsString(BASE_PATH + "testFunctionDDL.sql");
         batchExcuteSql(testFunctionDDL);
 
-        if (accessor.getClass().equals(OBMySQLSchemaAccessor.class)) {
+        if (isSupportMaterializedView) {
             String createMV = loadAsString(BASE_PATH + "testMVDDL.sql");
             jdbcTemplate.execute(createMV);
         }
@@ -102,8 +105,8 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     @AfterClass
     public static void tearDown() throws Exception {
         jdbcTemplate.execute(dropTables);
-        if (accessor.getClass().equals(OBMySQLSchemaAccessor.class)) {
-            jdbcTemplate.execute(dropTables);
+        if (isSupportMaterializedView) {
+            jdbcTemplate.execute(dropMVs);
         }
     }
 
@@ -115,7 +118,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listAllMVs_Success() {
-        if (accessor.getClass().equals(OBMySQLSchemaAccessor.class)) {
+        if (isSupportMaterializedView) {
             List<DBObjectIdentity> dbObjectIdentities = accessor.listAllMVsLike("");
             Assert.assertTrue(dbObjectIdentities.size() >= 9);
         }
@@ -123,7 +126,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listMVs_Success() {
-        if (accessor.getClass().equals(OBMySQLSchemaAccessor.class)) {
+        if (isSupportMaterializedView) {
             List<DBObjectIdentity> dbObjectIdentities = accessor.listMVs(getOBMySQLDataBaseName());
             Assert.assertEquals(9, dbObjectIdentities.size());
         }
@@ -131,7 +134,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void syncMVData_Success() {
-        if (accessor.getClass().equals(OBMySQLSchemaAccessor.class)) {
+        if (isSupportMaterializedView) {
             DBMViewRefreshParameter DBMViewRefreshParameter =
                     new DBMViewRefreshParameter(getOBMySQLDataBaseName(), "test_mv_allSyntax",
                             DBMaterializedViewRefreshMethod.REFRESH_FORCE, 2L);
@@ -142,7 +145,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void getMView_Success() {
-        if (accessor.getClass().equals(OBMySQLSchemaAccessor.class)) {
+        if (isSupportMaterializedView) {
             DBMaterializedView test_mv_allSyntax = accessor.getMView(getOBMySQLDataBaseName(), "test_mv_allSyntax");
             Assert.assertEquals("test_mv_allSyntax", test_mv_allSyntax.getName());
             Assert.assertEquals(4, test_mv_allSyntax.getColumns().size());

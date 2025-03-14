@@ -17,6 +17,7 @@ package com.oceanbase.tools.dbbrowser.util;
 
 import javax.sql.DataSource;
 
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -34,6 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DBSchemaAccessors {
 
     private final JdbcTemplate jdbcTemplate;
+    @Getter
     private String version;
 
     public DBSchemaAccessors(DataSource dataSource) {
