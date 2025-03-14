@@ -25,11 +25,13 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.YamlUtils;
@@ -37,6 +39,9 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.metadb.regulation.ruleset.RuleApplyingEntity;
 import com.oceanbase.odc.metadb.regulation.ruleset.RuleApplyingRepository;
 import com.oceanbase.odc.migrate.jdbc.common.R4237DefaultRuleApplyingMigrate.InnerDefaultRuleApplying;
+import com.oceanbase.odc.service.common.util.SpringContextUtil;
+import com.oceanbase.odc.service.config.OrganizationConfigFacade;
+import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.regulation.ruleset.model.QueryRuleMetadataParams;
 import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
@@ -67,6 +72,9 @@ public class RuleServiceTest extends ServiceTestEnv {
     @MockBean
     private RuleApplyingRepository ruleApplyingRepository;
 
+    @MockBean
+    private OrganizationConfigFacade organizationConfigFacade;
+
     @Before
     public void setUp() {
         this.defaultRuleApplyingEntities =
@@ -79,6 +87,8 @@ public class RuleServiceTest extends ServiceTestEnv {
     public void testListRules_UserChangesRule_ReturnChangedRule() {
         Mockito.when(ruleApplyingRepository.findByOrganizationIdAndRulesetId(Mockito.anyLong(), Mockito.anyLong()))
                 .thenReturn(listRuleApplyingEntities());
+        Mockito.when(organizationConfigFacade.getDefaultMaxQueryLimit(Mockito.anyInt()))
+            .thenReturn(10000);
 
         List<Rule> actual = ruleService.list(1L, QueryRuleMetadataParams.builder().build());
         List<InnerDefaultRuleApplying> rulesetName2Applyings = this.defaultRuleApplyingEntities.stream()
@@ -94,6 +104,8 @@ public class RuleServiceTest extends ServiceTestEnv {
     public void testListRules_UserNotChangeRule_ReturnDefaultRule() {
         Mockito.when(ruleApplyingRepository.findByOrganizationIdAndRulesetId(Mockito.anyLong(), Mockito.anyLong()))
                 .thenReturn(Collections.emptyList());
+        Mockito.when(organizationConfigFacade.getDefaultMaxQueryLimit(Mockito.anyInt()))
+            .thenReturn(10000);
 
         List<Rule> actual = ruleService.list(1L, QueryRuleMetadataParams.builder().build());
         List<InnerDefaultRuleApplying> rulesetName2Applyings = this.defaultRuleApplyingEntities.stream()
