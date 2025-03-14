@@ -64,8 +64,8 @@ public class PropertyMetadataMapper {
                 Integer defaultValue = Integer.valueOf(entity.getDefaultValues().get(0));
                 if (entity.getName().contains("sql-console.max-return-rows")) {
                     model.setDefaultValue(
-                        SpringContextUtil.getBean(OrganizationConfigFacade.class)
-                            .getDefaultMaxQueryLimit(defaultValue));
+                            SpringContextUtil.getBean(OrganizationConfigFacade.class)
+                                    .getDefaultMaxQueryLimit(defaultValue));
                 } else {
                     model.setDefaultValue(defaultValue);
                 }
