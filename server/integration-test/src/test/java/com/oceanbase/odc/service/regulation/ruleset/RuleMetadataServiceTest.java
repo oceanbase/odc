@@ -58,7 +58,7 @@ public class RuleMetadataServiceTest extends ServiceTestEnv {
     public void test_ListSqlConsoleRule_Success() {
         QueryRuleMetadataParams params = new QueryRuleMetadataParams();
         Mockito.when(organizationConfigFacade.getDefaultMaxQueryLimit(Mockito.any()))
-            .thenReturn(1000);
+                .thenReturn(1000);
         params.setRuleTypes(Arrays.asList(RuleType.SQL_CONSOLE));
         params.setLabels(
                 Maps.newHashMap(MetadataLabel.SUPPORTED_DIALECT_TYPE, Arrays.asList("OB_MYSQL", "OB_ORACLE")));
@@ -75,7 +75,7 @@ public class RuleMetadataServiceTest extends ServiceTestEnv {
     public void test_ListAll_Success() {
         QueryRuleMetadataParams params = new QueryRuleMetadataParams();
         Mockito.when(organizationConfigFacade.getDefaultMaxQueryLimit(Mockito.any()))
-            .thenReturn(1000);
+                .thenReturn(1000);
         int actual = ruleMetadataService.list(params).size();
         long expected = metadatas.size();
         Assert.assertEquals(expected, actual);
