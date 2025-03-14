@@ -22,13 +22,16 @@ import org.assertj.core.util.Maps;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.YamlUtils;
 import com.oceanbase.odc.metadb.regulation.ruleset.MetadataEntity;
+import com.oceanbase.odc.service.config.OrganizationConfigFacade;
 import com.oceanbase.odc.service.regulation.ruleset.model.MetadataLabel;
 import com.oceanbase.odc.service.regulation.ruleset.model.QueryRuleMetadataParams;
 import com.oceanbase.odc.service.regulation.ruleset.model.RuleType;
@@ -43,6 +46,8 @@ public class RuleMetadataServiceTest extends ServiceTestEnv {
     private List<MetadataEntity> metadatas;
     @Autowired
     private RuleMetadataService ruleMetadataService;
+    @MockBean
+    private OrganizationConfigFacade organizationConfigFacade;
 
     @Before
     public void setUp() {
@@ -52,6 +57,8 @@ public class RuleMetadataServiceTest extends ServiceTestEnv {
     @Test
     public void test_ListSqlConsoleRule_Success() {
         QueryRuleMetadataParams params = new QueryRuleMetadataParams();
+        Mockito.when(organizationConfigFacade.getDefaultMaxQueryLimit(Mockito.any()))
+            .thenReturn(1000);
         params.setRuleTypes(Arrays.asList(RuleType.SQL_CONSOLE));
         params.setLabels(
                 Maps.newHashMap(MetadataLabel.SUPPORTED_DIALECT_TYPE, Arrays.asList("OB_MYSQL", "OB_ORACLE")));
@@ -67,6 +74,8 @@ public class RuleMetadataServiceTest extends ServiceTestEnv {
     @Test
     public void test_ListAll_Success() {
         QueryRuleMetadataParams params = new QueryRuleMetadataParams();
+        Mockito.when(organizationConfigFacade.getDefaultMaxQueryLimit(Mockito.any()))
+            .thenReturn(1000);
         int actual = ruleMetadataService.list(params).size();
         long expected = metadatas.size();
         Assert.assertEquals(expected, actual);
