@@ -16,26 +16,25 @@
 package com.oceanbase.odc.server.web.controller.v2;
 
 import java.sql.SQLException;
+import java.util.Base64;
 import java.util.Collections;
 
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.oceanbase.odc.service.common.model.ResourceIdentifier;
+import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.service.common.model.ResourceSql;
 import com.oceanbase.odc.service.common.response.ListResponse;
-import com.oceanbase.odc.service.common.response.OdcResult;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
-import com.oceanbase.odc.service.common.util.ResourceIDParser;
-import com.oceanbase.odc.service.common.util.SidUtils;
 import com.oceanbase.odc.service.connection.table.model.QueryTableParams;
 import com.oceanbase.odc.service.connection.table.model.Table;
 import com.oceanbase.odc.service.db.DBMaterializedViewService;
@@ -57,7 +56,7 @@ import io.swagger.annotations.ApiOperation;
  */
 
 @RestController
-@RequestMapping("/api/v2/materializedView")
+@RequestMapping("/api/v2/connect/sessions")
 public class DBMaterializedViewController {
 
     @Autowired
@@ -65,64 +64,62 @@ public class DBMaterializedViewController {
     @Autowired
     private ConnectSessionService sessionService;
 
-    @ApiOperation(value = "list", notes = "obtain the list of materialized views. Sid example: sid:1000-1")
-    @RequestMapping(value = "/list/{sid:.*}", method = RequestMethod.GET)
-    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
-    public ListResponse<Table> list(@PathVariable String sid,
+    @ApiOperation(value = "list", notes = "obtain the list of materialized views.")
+    @GetMapping(value = "/{sessionId}/databases/materializedViews")
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
+    public ListResponse<Table> list(@PathVariable String sessionId,
             @RequestParam(name = "databaseId") Long databaseId,
             @RequestParam(name = "includePermittedAction", required = false,
                     defaultValue = "false") boolean includePermittedAction)
             throws SQLException, InterruptedException {
-        // sid:1000-1
-        ResourceIdentifier i = ResourceIDParser.parse(sid);
         QueryTableParams params = QueryTableParams.builder()
                 .databaseId(databaseId)
                 .types(Collections.singletonList(DBObjectType.MATERIALIZED_VIEW))
                 .includePermittedAction(includePermittedAction)
                 .build();
-        return Responses.list(dbMaterializedViewService.list(sessionService.nullSafeGet(i.getSid(), true), params));
+        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
+        return Responses.list(dbMaterializedViewService.list(session, params));
     }
 
-    @ApiOperation(value = "detail",
-            notes = "obtain detail about the materialized view. Sid example: sid:1000-1:d:db1:v:v1")
-    @RequestMapping(value = "/{sid:.*}", method = RequestMethod.GET)
-    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
-    public OdcResult<DBMaterializedView> detail(@PathVariable String sid) {
-        ResourceIdentifier i = ResourceIDParser.parse(sid);
-        return OdcResult
-                .ok(dbMaterializedViewService.detail(sessionService.nullSafeGet(i.getSid(), true), i.getDatabase(),
-                        i.getView()));
+    @ApiOperation(value = "detail", notes = "obtain detail about the materialized view.")
+    @GetMapping(value = "/{sessionId}/databases/{databaseName}/materializedViews/{mvName}")
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
+    public SuccessResponse<DBMaterializedView> detail(@PathVariable String sessionId,
+            @PathVariable(required = false) String databaseName,
+            @PathVariable String mvName) {
+        Base64.Decoder decoder = Base64.getDecoder();
+        mvName = new String(decoder.decode(mvName));
+        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
+        return Responses.success(dbMaterializedViewService.detail(session, databaseName, mvName));
     }
 
     @ApiOperation(value = "listBases",
-            notes = "obtain list of base tables under the current data source that are used to create the materialized view. Sid example: sid:1000-1")
-    @RequestMapping(value = "/listAllBases/{sid:.*}", method = RequestMethod.GET)
-    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
-    public OdcResult<AllMVBaseTables> listAllBases(@PathVariable String sid, @RequestParam String name) {
-        // sid:1000-1
-        return OdcResult.ok(dbMaterializedViewService.listAllBases(
-                sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), name));
+            notes = "obtain list of base tables under the current datasource that are used to create the materialized view.")
+    @GetMapping(value = "/{sessionId}/databases/materializedViews/listAllBases")
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
+    public SuccessResponse<AllMVBaseTables> listAllBases(@PathVariable String sessionId,
+            @RequestParam(required = false, defaultValue = "") String name) {
+        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
+        return Responses.success(dbMaterializedViewService.listAllBases(session, name));
     }
 
-    @ApiOperation(value = "getCreateSql",
-            notes = "obtain the sql to create the materialized view, Sid example: sid:1000-1")
-    @RequestMapping(value = "/getCreateSql/{sid:.*}", method = RequestMethod.PATCH)
-    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
-    public OdcResult<ResourceSql> getCreateSql(@PathVariable String sid,
-            @RequestBody @Valid DBMaterializedView resource) {
-        return OdcResult.ok(ResourceSql.ofSql(dbMaterializedViewService.getCreateSql(
-                sessionService.nullSafeGet(SidUtils.getSessionId(sid), true), resource)));
+    @ApiOperation(value = "generateCreateSql", notes = "obtain the sql to create the materialized view.")
+    @PostMapping(value = "/{sessionId}/databases/materializedViews/generateCreateDDL")
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
+    public SuccessResponse<ResourceSql> generateCreateSql(@PathVariable String sessionId,
+            @RequestBody DBMaterializedView materializedView) {
+        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
+        return Responses.success(ResourceSql.ofSql(dbMaterializedViewService.getCreateSql(
+                session, materializedView)));
     }
 
-    @ApiOperation(value = "syncData",
-            notes = "obtain the sql to create the materialized view, Sid example: sid:1000-1")
-    @RequestMapping(value = "/syncData/{sid:.*}", method = RequestMethod.POST)
-    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
-    public SuccessResponse<Boolean> syncData(@PathVariable String sid,
+    @ApiOperation(value = "refresh", notes = "refresh the materialized view.")
+    @PostMapping(value = "/{sessionId}/databases/materializedViews/refresh")
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
+    public SuccessResponse<Boolean> refresh(@PathVariable String sessionId,
             @RequestBody @Valid MVSyncDataReq mvSyncDataReq) {
-        ResourceIdentifier i = ResourceIDParser.parse(sid);
-        return Responses.success(dbMaterializedViewService.syncData(sessionService.nullSafeGet(i.getSid(), true),
-                mvSyncDataReq));
+        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
+        return Responses.success(dbMaterializedViewService.syncData(session, mvSyncDataReq));
     }
 
 }

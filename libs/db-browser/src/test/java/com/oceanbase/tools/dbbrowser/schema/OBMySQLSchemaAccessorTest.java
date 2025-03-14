@@ -22,7 +22,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import com.oceanbase.tools.dbbrowser.util.VersionUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -50,9 +49,9 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
 import com.oceanbase.tools.dbbrowser.model.DBVariable;
 import com.oceanbase.tools.dbbrowser.model.DBView;
-import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessors;
+import com.oceanbase.tools.dbbrowser.util.VersionUtils;
 
 import lombok.Data;
 
@@ -69,9 +68,10 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     private static final List<DataType> verifyDataTypes = new ArrayList<>();
     private static final List<ColumnAttributes> columnAttributes = new ArrayList<>();
     private static final JdbcTemplate jdbcTemplate = new JdbcTemplate(getOBMySQLDataSource());
-    private static final DBSchemaAccessors  dbSchemaAccessors = new DBSchemaAccessors(getOBMySQLDataSource());
+    private static final DBSchemaAccessors dbSchemaAccessors = new DBSchemaAccessors(getOBMySQLDataSource());
     private static final DBSchemaAccessor accessor = dbSchemaAccessors.createOBMysql();
-    private static final boolean isSupportMaterializedView = VersionUtils.isGreaterThanOrEqualsTo(dbSchemaAccessors.getVersion(),"4.3.5.1");
+    private static final boolean isSupportMaterializedView =
+            VersionUtils.isGreaterThanOrEqualsTo(dbSchemaAccessors.getVersion(), "4.3.5.1");
 
     @BeforeClass
     public static void setUp() throws Exception {

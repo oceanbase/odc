@@ -41,38 +41,36 @@ import io.swagger.annotations.ApiOperation;
  * @since: 4.3.4
  */
 @RestController
-@RequestMapping("/api/v2/materializedViewLog")
+@RequestMapping("/api/v2/connect/sessions")
 public class DBMaterializedViewLogController {
 
-    @ApiOperation(value = "list",
-            notes = "obtain the log list of the materialized view logs. Sid Example: sid:1000-1:d:db1")
-    @RequestMapping(value = "/list/{sid:.*}", method = RequestMethod.GET)
-    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
-    public OdcResult<List<DBViewResponse>> list(@PathVariable String sid) {
+    @ApiOperation(value = "list", notes = "obtain the log list of the materialized view logs.")
+    @RequestMapping(value = "/{sessionId}/databases/materializedViewLogs", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
+    public OdcResult<List<DBViewResponse>> list(@PathVariable String sessionId) {
         throw new NotImplementedException("not implemented");
     }
 
-    @ApiOperation(value = "detail",
-            notes = "obtain detail about materialized view log. sid example: sid:1000-1:d:db1:v:v1")
-    @RequestMapping(value = "/{sid:.*}", method = RequestMethod.GET)
-    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
-    public OdcResult<DBViewResponse> detail(@PathVariable String sid) {
+    @ApiOperation(value = "detail", notes = "obtain detail about materialized view log.")
+    @RequestMapping(value = "/{sessionId}/databases/{databaseName}/materializedViewLogs/{mvLogName}",
+            method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
+    public OdcResult<DBViewResponse> detail(@PathVariable String sessionId, @PathVariable String mvLogName) {
         throw new NotImplementedException("not implemented");
     }
 
-    @ApiOperation(value = "getCreateSql",
-            notes = "obtain the sql to create the materialized view log, Sid example: sid:1000-1:d:db1:v:v1")
-    @RequestMapping(value = "/getCreateSql/{sid:.*}", method = RequestMethod.PATCH)
-    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
-    public OdcResult<ResourceSql> getCreateSql(@PathVariable String sid, @RequestBody DBView resource) {
+    @ApiOperation(value = "getCreateSql", notes = "obtain the sql to create the materialized view log.")
+    @RequestMapping(value = "/{sessionId}/databases/materializedViewLogs/generateCreateDDL",
+            method = RequestMethod.PATCH)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
+    public OdcResult<ResourceSql> getCreateSql(@PathVariable String sessionId, @RequestBody DBView resource) {
         throw new NotImplementedException("not implemented");
     }
 
-    @ApiOperation(value = "syncData",
-            notes = "purge expired data of materialized view log, Sid example: sid:1000-1:d:db1:v:v1")
-    @RequestMapping(value = "/purgeExpiredData/{sid:.*}", method = RequestMethod.POST)
-    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sid")
-    public SuccessResponse<Boolean> purgeExpiredData(@PathVariable String sid) {
+    @ApiOperation(value = "purgeExpiredData", notes = "purge expired data of materialized view log")
+    @RequestMapping(value = "/{sessionId}/databases/materializedViewLogs/purgeExpiredData", method = RequestMethod.POST)
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
+    public SuccessResponse<Boolean> purgeExpiredData(@PathVariable String sessionId) {
         throw new NotImplementedException("not implemented");
     }
 
