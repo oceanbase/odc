@@ -84,7 +84,7 @@ public class RuleServiceTest extends ServiceTestEnv {
         Mockito.when(ruleApplyingRepository.findByOrganizationIdAndRulesetId(Mockito.anyLong(), Mockito.anyLong()))
                 .thenReturn(listRuleApplyingEntities());
         Mockito.when(organizationConfigFacade.getDefaultMaxQueryLimit(Mockito.anyInt()))
-                .thenReturn(10000);
+                .thenReturn(1000);
 
         List<Rule> actual = ruleService.list(1L, QueryRuleMetadataParams.builder().build());
         List<InnerDefaultRuleApplying> rulesetName2Applyings = this.defaultRuleApplyingEntities.stream()
@@ -101,7 +101,7 @@ public class RuleServiceTest extends ServiceTestEnv {
         Mockito.when(ruleApplyingRepository.findByOrganizationIdAndRulesetId(Mockito.anyLong(), Mockito.anyLong()))
                 .thenReturn(Collections.emptyList());
         Mockito.when(organizationConfigFacade.getDefaultMaxQueryLimit(Mockito.anyInt()))
-                .thenReturn(10000);
+                .thenReturn(1000);
 
         List<Rule> actual = ruleService.list(1L, QueryRuleMetadataParams.builder().build());
         List<InnerDefaultRuleApplying> rulesetName2Applyings = this.defaultRuleApplyingEntities.stream()
