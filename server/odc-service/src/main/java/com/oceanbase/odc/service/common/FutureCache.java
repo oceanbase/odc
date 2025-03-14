@@ -31,7 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 public class FutureCache {
 
     private final Cache<String, Future<?>> tempId2Future =
-            Caffeine.newBuilder().expireAfterWrite(15, TimeUnit.MINUTES)
+            Caffeine.newBuilder().expireAfterWrite(30, TimeUnit.MINUTES)
                     .removalListener((String key, Future<?> future, RemovalCause cause) -> {
                         if (future != null) {
                             future.cancel(true);
