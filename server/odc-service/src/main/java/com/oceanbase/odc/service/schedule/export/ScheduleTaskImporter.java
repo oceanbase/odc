@@ -47,7 +47,7 @@ import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.InvalidFileFormatException;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
-import com.oceanbase.odc.service.schedule.ScheduleExportFacade;
+import com.oceanbase.odc.service.schedule.ScheduleExportImportFacade;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.export.exception.DatabaseNonExistException;
 import com.oceanbase.odc.service.schedule.export.model.BaseScheduleRowData;
@@ -74,7 +74,7 @@ public class ScheduleTaskImporter {
     private BuildProperties buildProperties;
 
     @Autowired
-    private ScheduleExportFacade scheduleExportFacade;
+    private ScheduleExportImportFacade scheduleExportImportFacade;
 
     @Autowired
     private FlowInstanceService flowInstanceService;
@@ -104,6 +104,10 @@ public class ScheduleTaskImporter {
     }
 
     private void checkScheduleType(ExportRowDataReader<JsonNode> rowDataReader, ScheduleType scheduleType) {
+        Set<ScheduleType> scheduleTypes = scheduleExportImportFacade.supportedScheduleTypes();
+        if (!scheduleTypes.contains(scheduleType)) {
+            throw new UnsupportedOperationException("Unsupported schedule type: " + scheduleType);
+        }
         ExportProperties properties = rowDataReader.getProperties();
         String exportScheduleType = properties.getStringValue(SCHEDULE_TYPE);
         if (!exportScheduleType.equals(scheduleType.name())) {
@@ -116,9 +120,9 @@ public class ScheduleTaskImporter {
                 JsonExtractorFactory.buildJsonExtractor(objectStorageFacade, request.getBucketName(),
                         request.getObjectId(), request.getDecryptKey(), ".");
                 ExportRowDataReader<JsonNode> rowDataReader = extractor.getRowDataReader()) {
-            // checkMetaData(extractor, rowDataReader);
+            checkMetaData(extractor, rowDataReader);
             List<ScheduleRowPreviewDto> previewDto = getScheduleImportPreviewDto(rowDataReader);
-            return scheduleExportFacade.preview(request.getScheduleType(), request.getProjectId(),
+            return scheduleExportImportFacade.preview(request.getScheduleType(), request.getProjectId(),
                     rowDataReader.getProperties(), previewDto);
         } catch (IOException e) {
             throw new ExtractFileException(ErrorCodes.ExtractFileFailed, e.getMessage(), e);
@@ -136,8 +140,11 @@ public class ScheduleTaskImporter {
         CreateFlowInstanceReq createFlowInstanceReq = ExportRowDataMapper.INSTANCE.toCreateFlowInstanceReq(projectId,
                 databaseId, TaskType.PARTITION_PLAN, partitionPlanConfig,
                 currentRowData.getDescription());
-        log.info("createFlowInstanceReq={}", JsonUtils.toJson(createFlowInstanceReq));
+        log.info("Start to create partitionPlan, createFlowInstanceReq={}, rowId={}",
+                JsonUtils.toJson(createFlowInstanceReq), currentRowData.getRowId());
         flowInstanceService.create(createFlowInstanceReq);
+        log.info("Create partitionPlan Success, rowId={}", currentRowData.getRowId());
+
     }
 
     private List<ImportTaskResult> doImportSchedule(ScheduleType scheduleType, Long projectId,
@@ -150,10 +157,11 @@ public class ScheduleTaskImporter {
         while ((currentRow = rowDataReader.readRow()) != null) {
             try {
                 baseScheduleRowData = JsonUtils.fromJsonNode(currentRow, BaseScheduleRowData.class);
-                baseScheduleRowData.decrypt(encrptKey);
                 if (baseScheduleRowData == null) {
                     throw new ExtractFileException(ErrorCodes.ExtractFileFailed, "Can't extract rowData");
                 }
+                baseScheduleRowData.decrypt(encrptKey);
+                log.info("Start to process row, rowId={}", baseScheduleRowData.getRowId());
                 if (importService.imported(properties, baseScheduleRowData.getRowId())) {
                     log.info("Skip import, row id {} has been imported success", baseScheduleRowData.getRowId());
                     results.add(ImportTaskResult.success(baseScheduleRowData.getRowId(), "Have been imported."));
@@ -173,6 +181,9 @@ public class ScheduleTaskImporter {
                 results.add(ImportTaskResult.failed(rowId, e.getMessage()));
             }
         }
+        if (results.isEmpty()) {
+            throw new ExtractFileException(ErrorCodes.ExtractFileFailed, "RowId non in importFile");
+        }
         return results;
     }
 
@@ -181,12 +192,17 @@ public class ScheduleTaskImporter {
         Long databaseId = null;
         Long targetDatabaseId = null;
         try {
-            databaseId = scheduleExportFacade.getOrCreateDatabaseId(projectId, baseScheduleRowData.getDatabase());
+            databaseId = scheduleExportImportFacade.getOrCreateDatabaseId(projectId, baseScheduleRowData.getDatabase());
+            log.info("Get or create database id success {}", databaseId);
             if (baseScheduleRowData.getTargetDatabase() != null) {
-                targetDatabaseId = scheduleExportFacade.getOrCreateDatabaseId(projectId,
+                targetDatabaseId = scheduleExportImportFacade.getOrCreateDatabaseId(projectId,
                         baseScheduleRowData.getTargetDatabase());
+                log.info("Get or create targetDatabaseId id success {}", targetDatabaseId);
+
             }
         } catch (DatabaseNonExistException e) {
+            log.info("Get or create database id failed, databaseId={}, targetDatabasesId={}", databaseId,
+                    targetDatabaseId, e);
             results.add(ImportTaskResult.failed(baseScheduleRowData.getRowId(), "Database not exist"));
             return false;
         }
@@ -199,8 +215,10 @@ public class ScheduleTaskImporter {
         CreateFlowInstanceReq createScheduleReq =
                 getCreateScheduleReq(scheduleType, projectId, currentRow, databaseId,
                         targetDatabaseId);
-        log.info("createFlowInstanceReq={}", JsonUtils.toJson(createScheduleReq));
+        log.info("Start to create schedule, createFlowInstanceReq={}, rowId={}", JsonUtils.toJson(createScheduleReq),
+                baseScheduleRowData.getRowId());
         scheduleService.dispatchCreateSchedule(createScheduleReq);
+        log.info("Create schedule success, rowId={}", baseScheduleRowData.getRowId());
         results.add(ImportTaskResult.success(baseScheduleRowData.getRowId(), null));
         return true;
     }
@@ -220,7 +238,7 @@ public class ScheduleTaskImporter {
         }
     }
 
-    //todo 需要处理sql文件上传
+    // todo 需要处理sql文件上传
     private CreateFlowInstanceReq getSqlPlanReq(JsonNode row, Long projectId, Long databaseId) {
         SqlPlanScheduleRowData currentRowData = JsonUtils.fromJsonNode(row, SqlPlanScheduleRowData.class);
         if (currentRowData == null) {

@@ -15,19 +15,32 @@
  */
 package com.oceanbase.odc.service.common;
 
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.stereotype.Component;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.RemovalCause;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Component
+@Slf4j
 public class FutureCache {
 
-    Cache<String, Future<?>> tempId2Future =
-            Caffeine.newBuilder().expireAfterWrite(15, TimeUnit.MINUTES).build();
+    private final Cache<String, Future<?>> tempId2Future =
+            Caffeine.newBuilder().expireAfterWrite(15, TimeUnit.MINUTES)
+                    .removalListener((String key, Future<?> future, RemovalCause cause) -> {
+                        if (future != null) {
+                            future.cancel(true);
+                        }
+                        log.info("Remove future cause={}, futureKey={},", cause, key);
+                    })
+                    .build();
 
     public void put(String id, Future<?> future) {
         tempId2Future.put(id, future);

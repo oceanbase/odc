@@ -67,7 +67,7 @@ public interface ExportRowDataMapper {
     @Mapping(target = "name", source = "scheduleEntity.name")
     @Mapping(source = "scheduleEntity.id", target = "originScheduleId")
     @Mapping(source = "projectName", target = "originProjectName")
-    @Mapping(source = "targetDatabase",target = "targetDatabase")
+    @Mapping(source = "targetDatabase", target = "targetDatabase")
     DataArchiveScheduleRowData toDataArchiveRowData(ScheduleEntity scheduleEntity, DataArchiveParameters parameters,
             ExportedDatabase database,
             ExportedDatabase targetDatabase, String projectName);

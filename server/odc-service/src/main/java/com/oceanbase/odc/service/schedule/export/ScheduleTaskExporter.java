@@ -63,7 +63,7 @@ import com.oceanbase.odc.service.exporter.model.ExportedFile;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
-import com.oceanbase.odc.service.schedule.ScheduleExportFacade;
+import com.oceanbase.odc.service.schedule.ScheduleExportImportFacade;
 import com.oceanbase.odc.service.schedule.export.model.DataArchiveScheduleRowData;
 import com.oceanbase.odc.service.schedule.export.model.DataDeleteScheduleRowData;
 import com.oceanbase.odc.service.schedule.export.model.ExportedDataSource;
@@ -87,7 +87,7 @@ public class ScheduleTaskExporter {
     private DatabaseService databaseService;
 
     @Autowired
-    private ScheduleExportFacade scheduleExportFacade;
+    private ScheduleExportImportFacade scheduleExportImportFacade;
 
     @Autowired
     private Exporter exporter;
@@ -152,7 +152,7 @@ public class ScheduleTaskExporter {
         exportProperties.putToMetaData(EXPORT_TYPE, SCHEDULE_ARCHIVE_TYPE);
         exportProperties.addDefaultMetaData();
         exportProperties.addFilePathProperties(exportConfiguration.getDefaultArchivePath());
-        scheduleExportFacade.adaptProperties(exportProperties);
+        scheduleExportImportFacade.adaptProperties(exportProperties);
         return exportProperties;
     }
 
@@ -281,7 +281,7 @@ public class ScheduleTaskExporter {
         Database database = databaseService.detailSkipPermissionCheck(databaseId);
         ConnectionConfig dataSource = database.getDataSource();
         ExportedDataSource exportedDataSource = ExportedDataSource.fromConnectionConfig(dataSource);
-        scheduleExportFacade.exportDatasourceAdapt(exportedDataSource);
+        scheduleExportImportFacade.exportDatasourceAdapt(exportedDataSource);
         return ExportedDatabase.of(exportedDataSource, database.getName());
     }
 

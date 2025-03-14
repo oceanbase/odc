@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.schedule;
 
 import java.util.List;
+import java.util.Set;
 
 import com.oceanbase.odc.service.exporter.model.ExportProperties;
 import com.oceanbase.odc.service.schedule.export.exception.DatabaseNonExistException;
@@ -25,7 +26,9 @@ import com.oceanbase.odc.service.schedule.export.model.ImportScheduleTaskView;
 import com.oceanbase.odc.service.schedule.export.model.ScheduleRowPreviewDto;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 
-public interface ScheduleExportFacade {
+public interface ScheduleExportImportFacade {
+
+    Set<ScheduleType> supportedScheduleTypes();
 
     void adaptProperties(ExportProperties exportProperties);
 

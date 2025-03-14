@@ -15,7 +15,9 @@
  */
 package com.oceanbase.odc.service.schedule;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -71,9 +73,14 @@ public class ScheduleTaskConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean(ScheduleExportFacade.class)
-    public ScheduleExportFacade defaultScheduleArchiveFacade() {
-        return new ScheduleExportFacade() {
+    @ConditionalOnMissingBean(ScheduleExportImportFacade.class)
+    public ScheduleExportImportFacade defaultScheduleArchiveFacade() {
+        return new ScheduleExportImportFacade() {
+
+            @Override
+            public Set<ScheduleType> supportedScheduleTypes() {
+                return Collections.emptySet();
+            }
 
             @Override
             public void adaptProperties(ExportProperties exportProperties) {}

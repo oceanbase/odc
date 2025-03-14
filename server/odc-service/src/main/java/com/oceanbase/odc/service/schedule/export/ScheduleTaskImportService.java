@@ -96,6 +96,9 @@ public class ScheduleTaskImportService {
 
     public List<ImportTaskResult> getImportTaskResults(String importId) {
         Future<?> future = futureCache.get(importId);
+        if (future == null) {
+            return null;
+        }
         if (!future.isDone()) {
             return Collections.emptyList();
         }
