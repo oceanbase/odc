@@ -71,8 +71,7 @@ public final class JsonExtractorFactory {
         return jsonExtractor;
     }
 
-    @SneakyThrows
-    public static JsonExtractor buildJsonExtractor(ExportedFile exportedFile, String tempPath) {
+    public static JsonExtractor buildJsonExtractor(ExportedFile exportedFile, String tempPath) throws IOException {
         JsonExtractor jsonExtractor = new JsonExtractor();
         // Create a random directory within the specified destination path
         Path randomDir = Files.createTempDirectory(new File(tempPath).toPath(), "unzipped-");
