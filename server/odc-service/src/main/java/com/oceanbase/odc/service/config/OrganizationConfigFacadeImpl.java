@@ -54,8 +54,9 @@ public class OrganizationConfigFacadeImpl implements OrganizationConfigFacade {
     }
 
     @Override
-    public Integer getDefaultMaxQueryLimit() {
-        return Integer.parseInt(getOrganizationConfig(OrganizationConfigKeys.DEFAULT_MAX_QUERY_LIMIT));
+    public Integer getDefaultMaxQueryLimit(Integer defaultConfig) {
+        Integer orgConfig = Integer.parseInt(getOrganizationConfig(OrganizationConfigKeys.DEFAULT_MAX_QUERY_LIMIT));
+        return (defaultConfig > orgConfig) ? orgConfig : defaultConfig;
     }
 
     @Override
@@ -66,17 +67,17 @@ public class OrganizationConfigFacadeImpl implements OrganizationConfigFacade {
     @Override
     public boolean getDefaultRollbackPlanEnabled() {
         return getOrganizationConfig(OrganizationConfigKeys.DEFAULT_ROLLBACK_PLAN_ENABLED)
-            .equalsIgnoreCase("false");
+                .equalsIgnoreCase("false");
     }
 
     @Override
     public boolean getDefaultImportTaskStructureReplacementEnabled() {
         return getOrganizationConfig(OrganizationConfigKeys.DEFAULT_IMPORT_TASK_STRUCTURE_REPLACEMENT_ENABLED)
-            .equalsIgnoreCase("true");
+                .equalsIgnoreCase("true");
     }
 
     @Override
-    public String getTaskDescription() {
+    public String getDefaultTaskDescription() {
         return getOrganizationConfig(OrganizationConfigKeys.DEFAULT_TASK_DESCRIPTION_PROMPT);
     }
 }

@@ -19,7 +19,7 @@ public interface OrganizationConfigFacade {
 
     String getOrganizationConfig(String key);
 
-    Integer getDefaultMaxQueryLimit();
+    Integer getDefaultMaxQueryLimit(Integer defaultConfig);
 
     Integer getDefaultQueryLimit();
 
@@ -27,6 +27,6 @@ public interface OrganizationConfigFacade {
 
     boolean getDefaultImportTaskStructureReplacementEnabled();
 
-    String getTaskDescription();
+    String getDefaultTaskDescription();
 
 }
