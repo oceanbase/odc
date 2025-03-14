@@ -28,7 +28,6 @@ import com.oceanbase.odc.service.exporter.impl.JsonExtractor;
 import com.oceanbase.odc.service.exporter.model.ExportedFile;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
