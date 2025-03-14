@@ -23,7 +23,4 @@ public interface OrganizationConfigRepository extends JpaRepository<Organization
 
     List<OrganizationConfigEntity> findByOrganizationId(Long organizationId);
 
-    int update(OrganizationConfigEntity organizationConfigEntity);
-
-    int insert(OrganizationConfigEntity organizationConfigEntity);
 }

@@ -15,8 +15,8 @@
  */
 package com.oceanbase.odc.service.config;
 
-import static com.oceanbase.odc.service.config.OrganizationConfigKeys.DEFAULT_QUERY_LIMIT;
 import static com.oceanbase.odc.service.config.OrganizationConfigKeys.DEFAULT_MAX_QUERY_LIMIT;
+import static com.oceanbase.odc.service.config.OrganizationConfigKeys.DEFAULT_QUERY_LIMIT;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
@@ -41,7 +40,6 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
-import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.metadb.config.OrganizationConfigEntity;
 import com.oceanbase.odc.metadb.config.OrganizationConfigRepository;
 import com.oceanbase.odc.service.config.model.Configuration;
@@ -66,48 +64,41 @@ public class OrganizationConfigService {
 
     private List<Configuration> defaultConfigurations;
     private Map<String, ConfigurationMeta> configKeyToConfigMeta;
-    private LoadingCache<Long, Map<String, Configuration>> orgIdToConfigurationsCache = Caffeine.newBuilder()
+    private final LoadingCache<Long, Map<String, Configuration>> orgIdToConfigurationsCache = Caffeine.newBuilder()
             .maximumSize(300).expireAfterWrite(60, TimeUnit.SECONDS)
             .build(this::internalQuery);
-    private List<Consumer<Configuration>> configurationConsumers = new ArrayList<>();
-
-    @SkipAuthorize("odc internal usage")
-    public List<Consumer<Configuration>> getConfigurationConsumer() {
-        return this.configurationConsumers;
-    }
 
     @PostConstruct
     public void init() {
-        List<ConfigurationMeta> allConfigMetas = organizationConfigMetaService.listAllConfigMetas();
-        this.defaultConfigurations = allConfigMetas.stream().map(
-                meta -> new Configuration(meta.getKey(), meta.getDefaultValue()))
+        List<ConfigurationMeta> organizationConfigMetas = organizationConfigMetaService.listAllConfigMetas();
+
+        this.defaultConfigurations = organizationConfigMetas.stream()
+                .map(meta -> new Configuration(meta.getKey(), meta.getDefaultValue()))
                 .collect(Collectors.toList());
-        this.configKeyToConfigMeta = allConfigMetas.stream()
+        this.configKeyToConfigMeta = organizationConfigMetas.stream()
                 .collect(Collectors.toMap(ConfigurationMeta::getKey, e -> e));
         log.info("Default organization configurations: {}", defaultConfigurations);
     }
 
     /**
-     * Query the organization configuration of the current organization
-     * and merge with the default values.
+     * Query the organization configurations of the current organization and merge with the default
+     * organization configurations.
      */
     @PreAuthenticate(actions = "read", resourceType = "ODC_ORGANIZATION_CONFIG", isForAll = true)
     public List<Configuration> queryList(@NotNull Long organizationId) {
         Map<String, Configuration> keyToConfiguration = Optional
-            .ofNullable(organizationConfigRepository.findByOrganizationId(organizationId))
-            .orElse(Collections.emptyList())
-            .stream().map(Configuration::convert2DTO)
-            .collect(Collectors.toMap(Configuration::getKey, e -> e));
+                .ofNullable(organizationConfigRepository.findByOrganizationId(organizationId))
+                .orElse(Collections.emptyList())
+                .stream().map(Configuration::convert2DTO)
+                .collect(Collectors.toMap(Configuration::getKey, e -> e));
 
         List<Configuration> configurations = queryListDefault();
-        List<Consumer<Configuration>> configurationConsumers = getConfigurationConsumer();
 
         configurations.forEach(configuration -> {
             keyToConfiguration.computeIfPresent(configuration.getKey(), (key, config) -> {
                 configuration.setValue(config.getValue());
                 return config;
             });
-            configurationConsumers.forEach(consumer -> consumer.accept(configuration));
         });
 
         return configurations;
@@ -126,34 +117,22 @@ public class OrganizationConfigService {
     }
 
     /**
-     * Batch update the organization configuration with the changes
-     * and clear the cache.
+     * Batch update the organization configuration with the changes and clear the cache.
      */
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(actions = "update", resourceType = "ODC_ORGANIZATION_CONFIG", isForAll = true)
-    public List<Configuration> batchUpdate(@NotNull Long organizationId,
+    public List<Configuration> batchUpdate(@NotNull Long organizationId, @NotNull Long userId,
             @NotEmpty List<Configuration> configurations) {
         configurations.forEach(this::validateConfiguration);
         validateSqlQueryLimit(configurations);
         List<OrganizationConfigEntity> organizationConfigEntities = configurations.stream()
-                .map(record -> record.convert2DO(organizationId))
+                .map(record -> record.convert2DO(organizationId, userId))
                 .collect(Collectors.toList());
         organizationConfigRepository.saveAll(organizationConfigEntities);
         log.info("Update organization configurations, organizationId={}, configurations={}",
                 organizationId, configurations);
         evictOrgConfigurationsCache(organizationId);
         return queryList(organizationId);
-    }
-
-    /**
-     * Delete the organization configuration of the current organization
-     * and clear the cache.
-     */
-    @PreAuthenticate(actions = "delete", resourceType = "ODC_ORGANIZATION_CONFIG", isForAll = true)
-    public void deleteOrgConfigurations(@NotNull Long organizationId) {
-        organizationConfigRepository.deleteById(organizationId);
-        evictOrgConfigurationsCache(organizationId);
-        log.info("Delete organization configurations, organizationId={}", organizationId);
     }
 
     public Map<String, Configuration> getOrgConfigurationsFromCache(Long organizationId) {
@@ -169,7 +148,7 @@ public class OrganizationConfigService {
 
         if (Long.parseLong(queryLimit) > Long.parseLong(maxQueryLimit)) {
             throw new IllegalArgumentException(
-                "Query limit exceeds the max value: " + queryLimit + " > " + maxQueryLimit);
+                    "Query limit exceeds the max value: " + queryLimit + " > " + maxQueryLimit);
         }
     }
 
@@ -193,28 +172,6 @@ public class OrganizationConfigService {
     private Map<String, Configuration> internalQuery(Long organizationId) {
         return queryList(organizationId).stream()
                 .collect(Collectors.toMap(Configuration::getKey, c -> c));
-    }
-
-    private static List<Configuration> mergeConfigurations(List<Configuration> defaultConfigurations,
-        List<Configuration> updateConfigurations) {
-        List<Configuration> mergedConfigurations = new ArrayList<>();
-        for (Configuration defaultConfig : defaultConfigurations) {
-            Configuration mergedConfig = new Configuration();
-            mergedConfig.setKey(defaultConfig.getKey());
-            for (Configuration updateConfig : updateConfigurations) {
-                if (Objects.nonNull(updateConfig.getKey())
-                    && Objects.equals(updateConfig.getKey(), defaultConfig.getKey())) {
-                    if (Objects.nonNull(updateConfig.getValue())) {
-                        mergedConfig.setValue(updateConfig.getValue());
-                    }
-                }
-            }
-            if (Objects.isNull(mergedConfig.getValue()) && Objects.nonNull(defaultConfig.getValue())) {
-                mergedConfig.setValue(defaultConfig.getValue());
-            }
-            mergedConfigurations.add(mergedConfig);
-        }
-        return mergedConfigurations;
     }
 
 }
