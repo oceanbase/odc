@@ -134,6 +134,7 @@ public class JsonExtractor implements Extractor<JsonNode> {
     @Override
     public void close() {
         OdcFileUtil.deleteFiles(new File(tempFilePath));
+        log.info("JsonExtractor deleted temp file {}", tempFilePath);
     }
 
 

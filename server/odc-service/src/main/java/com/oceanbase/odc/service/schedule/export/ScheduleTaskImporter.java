@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.stereotype.Component;
 
@@ -88,14 +89,19 @@ public class ScheduleTaskImporter {
     @Autowired
     private ImportService importService;
 
+    @Value("${odc.server.export.import.temp-path:./data/export}")
+    private String importTempPath;
+
     public List<ImportTaskResult> importSchedule(ScheduleTaskImportRequest request) {
         ScheduleType scheduleType = request.getScheduleType();
         try (JsonExtractor extractor =
                 JsonExtractorFactory.buildJsonExtractor(objectStorageFacade, request.getBucketName(),
-                        request.getObjectId(), request.getDecryptKey(), ".");
+                        request.getObjectId(), request.getDecryptKey(), importTempPath);
                 ExportRowDataReader<JsonNode> rowDataReader = extractor.getRowDataReader()) {
+
             checkMetaData(extractor, rowDataReader);
             checkScheduleType(rowDataReader, scheduleType);
+
             return doImportSchedule(scheduleType, request.getProjectId(), rowDataReader,
                     request.getImportableExportRowId(), request.getDecryptKey());
         } catch (IOException e) {
@@ -118,7 +124,7 @@ public class ScheduleTaskImporter {
     public List<ImportScheduleTaskView> preview(ScheduleTaskImportRequest request) {
         try (JsonExtractor extractor =
                 JsonExtractorFactory.buildJsonExtractor(objectStorageFacade, request.getBucketName(),
-                        request.getObjectId(), request.getDecryptKey(), ".");
+                        request.getObjectId(), request.getDecryptKey(), importTempPath);
                 ExportRowDataReader<JsonNode> rowDataReader = extractor.getRowDataReader()) {
             checkMetaData(extractor, rowDataReader);
             List<ScheduleRowPreviewDto> previewDto = getScheduleImportPreviewDto(rowDataReader);
@@ -160,8 +166,8 @@ public class ScheduleTaskImporter {
                 if (baseScheduleRowData == null) {
                     throw new ExtractFileException(ErrorCodes.ExtractFileFailed, "Can't extract rowData");
                 }
-                baseScheduleRowData.decrypt(encrptKey);
                 log.info("Start to process row, rowId={}", baseScheduleRowData.getRowId());
+                baseScheduleRowData.decrypt(encrptKey);
                 if (importService.imported(properties, baseScheduleRowData.getRowId())) {
                     log.info("Skip import, row id {} has been imported success", baseScheduleRowData.getRowId());
                     results.add(ImportTaskResult.success(baseScheduleRowData.getRowId(), "Have been imported."));
@@ -210,6 +216,7 @@ public class ScheduleTaskImporter {
         if (scheduleType == ScheduleType.PARTITION_PLAN) {
             // The partition plan creates flow first
             doImportPartitionPlan(currentRow, projectId, databaseId);
+            results.add(ImportTaskResult.success(baseScheduleRowData.getRowId(), null));
             return true;
         }
         CreateFlowInstanceReq createScheduleReq =
@@ -238,7 +245,6 @@ public class ScheduleTaskImporter {
         }
     }
 
-    // todo 需要处理sql文件上传
     private CreateFlowInstanceReq getSqlPlanReq(JsonNode row, Long projectId, Long databaseId) {
         SqlPlanScheduleRowData currentRowData = JsonUtils.fromJsonNode(row, SqlPlanScheduleRowData.class);
         if (currentRowData == null) {
