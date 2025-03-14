@@ -27,10 +27,6 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
 import lombok.extern.slf4j.Slf4j;
 
-// todo
-// 1. 实现空间配置多级覆盖
-// 2. 实现优先级配置，功能级 > 用户级 > 空间级
-// 3. 空间级恢复默认后，用户级 功能级 均需要以默认值为基准
 @Slf4j
 @Service
 @SkipAuthorize("odc internal usage")
