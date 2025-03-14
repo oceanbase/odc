@@ -29,6 +29,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.service.common.FutureCache;
+import com.oceanbase.odc.service.exporter.exception.ExtractFileException;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
@@ -82,8 +83,14 @@ public class ScheduleTaskImportService {
         try {
             futureCache.invalid(previewId);
             return (List<ImportScheduleTaskView>) future.get();
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException("Get import result failed", e);
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof ExtractFileException) {
+                throw (ExtractFileException) e.getCause();
+            }
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -108,8 +115,13 @@ public class ScheduleTaskImportService {
         try {
             futureCache.invalid(importId);
             return (List<ImportTaskResult>) future.get();
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException("Get preview result failed", e);
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof ExtractFileException) {
+                throw (ExtractFileException) e.getCause();
+            }
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 

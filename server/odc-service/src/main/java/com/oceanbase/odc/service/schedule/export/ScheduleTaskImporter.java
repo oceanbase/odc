@@ -17,12 +17,14 @@ package com.oceanbase.odc.service.schedule.export;
 
 import static com.oceanbase.odc.service.exporter.model.ExportConstants.SCHEDULE_TYPE;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.info.BuildProperties;
@@ -68,7 +70,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
-public class ScheduleTaskImporter {
+public class ScheduleTaskImporter implements InitializingBean {
+
 
     @Autowired
     private BuildProperties buildProperties;
@@ -88,7 +91,7 @@ public class ScheduleTaskImporter {
     @Autowired
     private ImportService importService;
 
-    @Value("${odc.server.export.import.temp-path:./data/export}")
+    @Value("${odc.server.export.import.temp-path:./data/import}")
     private String importTempPath;
 
     public List<ImportScheduleTaskView> preview(ScheduleTaskImportRequest request) {
@@ -180,7 +183,7 @@ public class ScheduleTaskImporter {
                 JsonNode finalCurrentRow = currentRow;
                 importService.importAndSaveHistory(properties, baseScheduleRowData.getRowId(),
                         () -> doImport(scheduleType, projectId, finalBaseScheduleRowData, finalCurrentRow, results));
-            } catch (RuntimeException e) {
+            } catch (Exception e) {
                 String rowId = Optional.ofNullable(baseScheduleRowData).map(BaseScheduleRowData::getRowId).orElse(null);
                 log.info("Import row failed, row id {}", rowId, e);
                 results.add(ImportTaskResult.failed(rowId, e.getMessage()));
@@ -323,4 +326,11 @@ public class ScheduleTaskImporter {
         }
     }
 
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        File file = new File(importTempPath);
+        if (!file.exists()) {
+            file.mkdir();
+        }
+    }
 }

@@ -47,23 +47,19 @@ public class ImportService {
     }
 
     @Transactional
-    public void importAndSaveHistory(String fileSignature, String rowId, Callable<Boolean> doImport) {
-        try {
-            Boolean success = doImport.call();
-            if (success) {
-                ImportFileRowHistoryEntity exportFileRowHistoryEntity = new ImportFileRowHistoryEntity();
-                exportFileRowHistoryEntity.setFileSignature(fileSignature);
-                exportFileRowHistoryEntity.setRowId(rowId);
-                importFileRowHistoryRepository.save(exportFileRowHistoryEntity);
-            }
-        } catch (Exception e) {
-            log.error("Save import history failed", e);
-            throw new RuntimeException(e);
+    public void importAndSaveHistory(String fileSignature, String rowId, Callable<Boolean> doImport) throws Exception {
+        Boolean success = doImport.call();
+        if (success) {
+            ImportFileRowHistoryEntity exportFileRowHistoryEntity = new ImportFileRowHistoryEntity();
+            exportFileRowHistoryEntity.setFileSignature(fileSignature);
+            exportFileRowHistoryEntity.setRowId(rowId);
+            importFileRowHistoryRepository.save(exportFileRowHistoryEntity);
         }
     }
 
     @Transactional
-    public void importAndSaveHistory(ExportProperties exportProperties, String rowId, Callable<Boolean> doImport) {
+    public void importAndSaveHistory(ExportProperties exportProperties, String rowId, Callable<Boolean> doImport)
+            throws Exception {
         String fileSignature = exportProperties.getStringValue(SIGNATURE);
         importAndSaveHistory(fileSignature, rowId, doImport);
     }

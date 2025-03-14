@@ -24,10 +24,12 @@ import lombok.Data;
 @Data
 public class ImportDatabaseView {
     private String cloudProvider;
+    private String region;
     private ConnectType type;
     private String instanceId;
     private String instanceNickName;
     private String tenantId;
+    private String tenantNickName;
     private String host;
     private Integer port;
     private String username;

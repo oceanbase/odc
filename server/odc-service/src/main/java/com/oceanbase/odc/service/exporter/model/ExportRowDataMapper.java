@@ -116,6 +116,7 @@ public interface ExportRowDataMapper {
     @Mapping(target = "port", source = "exportedDatabase.exportedDataSource.port")
     @Mapping(target = "username", source = "exportedDatabase.exportedDataSource.username")
     @Mapping(target = "name", source = "exportedDatabase.exportedDataSource.name")
+    @Mapping(target = "region", source = "exportedDatabase.exportedDataSource.region")
     ImportDatabaseView toImportDatabaseView(ExportedDatabase exportedDatabase, String matchedDatasourceName);
 
 
