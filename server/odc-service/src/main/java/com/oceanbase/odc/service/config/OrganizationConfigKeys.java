@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,5 +25,5 @@ public class OrganizationConfigKeys {
     public static final String DEFAULT_TASK_DESCRIPTION_PROMPT = "odc.task.default.taskDescriptionPrompt";
 
     public static final String DEFAULT_IMPORT_TASK_STRUCTURE_REPLACEMENT_ENABLED =
-        "odc.task.default.importTaskStructureReplacementEnabled";
+            "odc.task.default.importTaskStructureReplacementEnabled";
 }
