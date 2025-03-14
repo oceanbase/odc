@@ -189,7 +189,7 @@ public class LocalJsonExporterTest {
             build = testRowDataExportRowDataAppender.build();
         }
         ExportedFile exportedFile = new ExportedFile(build.getFile(),
-                new BCryptPasswordEncoder().encode(PasswordUtils.random()), true);
+                new BCryptPasswordEncoder().encode(PasswordUtils.random()));
 
         try (Extractor<JsonNode> extractor = JsonExtractorFactory.buildJsonExtractor(exportedFile, ".");) {
             Assert.assertFalse(extractor.checkSignature());

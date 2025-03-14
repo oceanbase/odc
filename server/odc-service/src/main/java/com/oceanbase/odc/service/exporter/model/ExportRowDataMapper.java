@@ -99,9 +99,9 @@ public interface ExportRowDataMapper {
             PartitionPlanScheduleRowData partitionPlanScheduleRowData);
 
 
-    @Mapping(target = "datasourceView",
+    @Mapping(target = "databaseView",
             expression = "java(toImportDatabaseView(scheduleRowPreviewDto.getDatabase(),matchedDatasourceName))")
-    @Mapping(target = "targetDatasourceView",
+    @Mapping(target = "targetDatabaseView",
             expression = "java(toImportDatabaseView(scheduleRowPreviewDto.getTargetDatabase(),matchedTargetDatasourceName))")
     @Mapping(target = "exportRowId", source = "scheduleRowPreviewDto.rowId")
     ImportScheduleTaskView toImportScheduleTaskView(ScheduleRowPreviewDto scheduleRowPreviewDto, Boolean importable,

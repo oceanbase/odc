@@ -22,7 +22,6 @@ import com.oceanbase.odc.service.exporter.model.Encryptable;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Data
@@ -32,7 +31,6 @@ public class ExportedDataSource implements Encryptable {
     private String cloudProvider;
     private String region;
     private ConnectType type;
-    @EqualsAndHashCode.Exclude
     private String name;
     private String instanceId;
     private String tenantId;

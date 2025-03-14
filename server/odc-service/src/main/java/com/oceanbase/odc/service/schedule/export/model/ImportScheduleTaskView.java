@@ -55,7 +55,7 @@ public class ImportScheduleTaskView {
 
 
     private ImportDatabaseView databaseView;
-    @Nullable
 
+    @Nullable
     private ImportDatabaseView targetDatabaseView;
 }
