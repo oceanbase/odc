@@ -20,6 +20,7 @@ import java.util.List;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.Size;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
@@ -87,7 +88,8 @@ public class ScriptController {
     }
 
     @RequestMapping(value = "/scripts/batchDownload", method = RequestMethod.POST)
-    public ResponseEntity<InputStreamResource> batchDownload(@NotEmpty @RequestBody List<Long> ids) throws IOException {
+    public ResponseEntity<InputStreamResource> batchDownload(
+            @NotEmpty @RequestBody @Size(min = 1, max = 200) List<Long> ids) throws IOException {
         return scriptService.batchDownload(ids);
     }
 
