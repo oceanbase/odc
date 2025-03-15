@@ -19,7 +19,11 @@ public interface OrganizationConfigFacade {
 
     String getOrganizationConfig(String key);
 
-    Integer getDefaultMaxQueryLimit(Integer defaultConfig);
+    Integer compareWithMaxQueryLimit(Integer defaultConfig);
+
+    Integer compareWithQueryLimit(String currentConfig);
+
+    Integer getDefaultMaxQueryLimit();
 
     Integer getDefaultQueryLimit();
 

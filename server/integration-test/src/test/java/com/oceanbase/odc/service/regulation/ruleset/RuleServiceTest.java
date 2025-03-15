@@ -83,7 +83,7 @@ public class RuleServiceTest extends ServiceTestEnv {
     public void testListRules_UserChangesRule_ReturnChangedRule() {
         Mockito.when(ruleApplyingRepository.findByOrganizationIdAndRulesetId(Mockito.anyLong(), Mockito.anyLong()))
                 .thenReturn(listRuleApplyingEntities());
-        Mockito.when(organizationConfigFacade.getDefaultMaxQueryLimit(Mockito.anyInt()))
+        Mockito.when(organizationConfigFacade.compareWithMaxQueryLimit(Mockito.anyInt()))
                 .thenReturn(1000);
 
         List<Rule> actual = ruleService.list(1L, QueryRuleMetadataParams.builder().build());
@@ -100,7 +100,7 @@ public class RuleServiceTest extends ServiceTestEnv {
     public void testListRules_UserNotChangeRule_ReturnDefaultRule() {
         Mockito.when(ruleApplyingRepository.findByOrganizationIdAndRulesetId(Mockito.anyLong(), Mockito.anyLong()))
                 .thenReturn(Collections.emptyList());
-        Mockito.when(organizationConfigFacade.getDefaultMaxQueryLimit(Mockito.anyInt()))
+        Mockito.when(organizationConfigFacade.compareWithMaxQueryLimit(Mockito.anyInt()))
                 .thenReturn(1000);
 
         List<Rule> actual = ruleService.list(1L, QueryRuleMetadataParams.builder().build());

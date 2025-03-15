@@ -71,6 +71,7 @@ import com.oceanbase.odc.core.task.ExecuteMonitorTaskManager;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentEntity;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.service.common.util.SidUtils;
+import com.oceanbase.odc.service.config.OrganizationConfigFacade;
 import com.oceanbase.odc.service.config.UserConfigFacade;
 import com.oceanbase.odc.service.connection.CloudMetadataClient;
 import com.oceanbase.odc.service.connection.CloudMetadataClient.CloudPermissionAction;
@@ -163,6 +164,8 @@ public class ConnectSessionService {
     private StateHostGenerator stateHostGenerator;
     @Autowired
     private DBSessionManageFacade dbSessionManageFacade;
+    @Autowired
+    private OrganizationConfigFacade organizationConfigFacade;
     private final Map<String, Lock> sessionId2Lock = new ConcurrentHashMap<>();
 
     @PostConstruct
@@ -496,7 +499,7 @@ public class ConnectSessionService {
         processor.setDelimiter(userConfigFacade.getDefaultDelimiter());
         ConnectionSessionUtil.setSqlCommentProcessor(connectionSession, processor);
 
-        ConnectionSessionUtil.setQueryLimit(connectionSession, userConfigFacade.getDefaultQueryLimit());
+        ConnectionSessionUtil.setQueryLimit(connectionSession, organizationConfigFacade.getDefaultQueryLimit());
         ConnectionSessionUtil.setUserId(connectionSession, authenticationFacade.currentUserId());
         if (connectionSession.getDialectType().isOracle()) {
             ConnectionSessionUtil.initConsoleSessionTimeZone(connectionSession, connectProperties.getDefaultTimeZone());

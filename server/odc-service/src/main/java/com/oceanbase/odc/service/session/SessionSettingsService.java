@@ -34,6 +34,7 @@ import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.LimitMetric;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
+import com.oceanbase.odc.service.config.OrganizationConfigFacade;
 import com.oceanbase.odc.service.session.model.SessionSettings;
 
 /**
@@ -51,6 +52,9 @@ public class SessionSettingsService {
     @Autowired
     private SessionProperties sessionProperties;
 
+    @Autowired
+    private OrganizationConfigFacade organizationConfigFacade;
+
     public SessionSettings getSessionSettings(@NotNull ConnectionSession session) {
         SessionSettings settings = new SessionSettings();
         Boolean autocommit = false;
@@ -67,9 +71,10 @@ public class SessionSettingsService {
 
     public SessionSettings setSessionSettings(@NotNull ConnectionSession session,
             @NotNull @Valid SessionSettings settings) {
-        if (sessionProperties.getResultSetMaxRows() >= 0) {
+        Integer wait2UpdateQueryLimit = settings.getQueryLimit();
+        if (organizationConfigFacade.getDefaultMaxQueryLimit() >= 0) {
             PreConditions.lessThanOrEqualTo("queryLimit", LimitMetric.TRANSACTION_QUERY_LIMIT,
-                    settings.getQueryLimit(), sessionProperties.getResultSetMaxRows());
+                    wait2UpdateQueryLimit, organizationConfigFacade.getDefaultMaxQueryLimit());
         }
         if (!ConnectionSessionUtil.isLogicalSession(session)) {
             JdbcOperations jdbcOperations = session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
@@ -86,8 +91,9 @@ public class SessionSettingsService {
             processor.setDelimiter(settings.getDelimiter());
         }
         Integer queryLimit = ConnectionSessionUtil.getQueryLimit(session);
-        if (!Objects.equals(settings.getQueryLimit(), queryLimit)) {
-            ConnectionSessionUtil.setQueryLimit(session, settings.getQueryLimit());
+        if (!Objects.equals(wait2UpdateQueryLimit, queryLimit)) {
+            wait2UpdateQueryLimit = organizationConfigFacade.compareWithQueryLimit(wait2UpdateQueryLimit.toString());
+            ConnectionSessionUtil.setQueryLimit(session, wait2UpdateQueryLimit);
         }
         return settings;
     }

@@ -50,18 +50,28 @@ public class OrganizationConfigFacadeImpl implements OrganizationConfigFacade {
     }
 
     @Override
-    public Integer getDefaultMaxQueryLimit(Integer currentConfig) {
+    public Integer compareWithMaxQueryLimit(Integer currentConfig) {
         Integer orgConfig = Integer.parseInt(getOrganizationConfig(OrganizationConfigKeys.DEFAULT_MAX_QUERY_LIMIT));
         if (currentConfig > orgConfig) {
             log.warn("The current configuration value: {} is greater than"
-                     + "the max query limit value in the organization configurations: {}",
+                    + "the max query limit value in the organization configurations: {}",
                     currentConfig, orgConfig);
             throw new IllegalArgumentException(
-                "This configuration value cannot exceed "
-                + "the max query limit in the organization configurations: "
-                + orgConfig);
+                    "This configuration value cannot exceed "
+                            + "the max query limit in the organization configurations: "
+                            + orgConfig);
         }
         return currentConfig;
+    }
+
+    @Override
+    public Integer compareWithQueryLimit(String currentConfig) {
+        return Math.min(getDefaultQueryLimit(), Integer.parseInt(currentConfig));
+    }
+
+    @Override
+    public Integer getDefaultMaxQueryLimit() {
+        return Integer.parseInt(getOrganizationConfig(OrganizationConfigKeys.DEFAULT_MAX_QUERY_LIMIT));
     }
 
     @Override

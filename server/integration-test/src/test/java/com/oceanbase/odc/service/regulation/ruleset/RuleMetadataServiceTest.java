@@ -57,7 +57,7 @@ public class RuleMetadataServiceTest extends ServiceTestEnv {
     @Test
     public void test_ListSqlConsoleRule_Success() {
         QueryRuleMetadataParams params = new QueryRuleMetadataParams();
-        Mockito.when(organizationConfigFacade.getDefaultMaxQueryLimit(Mockito.any()))
+        Mockito.when(organizationConfigFacade.compareWithMaxQueryLimit(Mockito.any()))
                 .thenReturn(1000);
         params.setRuleTypes(Arrays.asList(RuleType.SQL_CONSOLE));
         params.setLabels(
@@ -74,7 +74,7 @@ public class RuleMetadataServiceTest extends ServiceTestEnv {
     @Test
     public void test_ListAll_Success() {
         QueryRuleMetadataParams params = new QueryRuleMetadataParams();
-        Mockito.when(organizationConfigFacade.getDefaultMaxQueryLimit(Mockito.any()))
+        Mockito.when(organizationConfigFacade.compareWithMaxQueryLimit(Mockito.any()))
                 .thenReturn(1000);
         int actual = ruleMetadataService.list(params).size();
         long expected = metadatas.size();

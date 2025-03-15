@@ -319,7 +319,7 @@ public class RuleService {
         if (metaKey.contains("sql-console.max-return-rows")) {
             Integer currentValue = (Integer) properties.values().iterator().next();
             try {
-                Integer newValue = organizationConfigFacade.getDefaultMaxQueryLimit(currentValue);
+                Integer newValue = organizationConfigFacade.compareWithMaxQueryLimit(currentValue);
                 Map<String, Object> result = new HashMap<>();
                 result.put(metaKey, newValue);
                 return result;
