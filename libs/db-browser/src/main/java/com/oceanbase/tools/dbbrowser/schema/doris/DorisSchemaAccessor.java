@@ -343,7 +343,7 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public Boolean syncMVData(DBMViewRefreshParameter parameter) {
+    public Boolean refreshMVData(DBMViewRefreshParameter parameter) {
         throw new UnsupportedOperationException("not support yet");
     }
 

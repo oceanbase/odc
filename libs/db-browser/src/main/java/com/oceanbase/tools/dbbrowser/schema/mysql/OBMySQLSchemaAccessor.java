@@ -94,7 +94,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     }
 
     @Override
-    public Boolean syncMVData(DBMViewRefreshParameter parameter) {
+    public Boolean refreshMVData(DBMViewRefreshParameter parameter) {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
         sb.append("call DBMS_MVIEW.REFRESH('").append(parameter.getDatabaseName()).append(".")
                 .append(parameter.getMvName()).append("'");

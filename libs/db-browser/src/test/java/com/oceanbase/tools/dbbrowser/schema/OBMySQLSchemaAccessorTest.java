@@ -133,12 +133,12 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
-    public void syncMVData_Success() {
+    public void refreshMVData_Success() {
         if (isSupportMaterializedView) {
             DBMViewRefreshParameter DBMViewRefreshParameter =
                     new DBMViewRefreshParameter(getOBMySQLDataBaseName(), "test_mv_allSyntax",
                             DBMaterializedViewRefreshMethod.REFRESH_FORCE, 2L);
-            Boolean aBoolean = accessor.syncMVData(DBMViewRefreshParameter);
+            Boolean aBoolean = accessor.refreshMVData(DBMViewRefreshParameter);
             Assert.assertTrue(aBoolean);
         }
     }

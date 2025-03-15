@@ -144,7 +144,7 @@ public interface DBSchemaAccessor {
     /**
      * Synchronize materialized view data
      */
-    Boolean syncMVData(DBMViewRefreshParameter parameter);
+    Boolean refreshMVData(DBMViewRefreshParameter parameter);
 
     /**
      * Get materialized view details

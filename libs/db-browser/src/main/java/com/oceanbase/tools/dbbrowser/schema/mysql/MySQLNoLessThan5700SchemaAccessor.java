@@ -358,7 +358,7 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public Boolean syncMVData(DBMViewRefreshParameter parameter) {
+    public Boolean refreshMVData(DBMViewRefreshParameter parameter) {
         throw new UnsupportedOperationException("not support yet");
     }
 
