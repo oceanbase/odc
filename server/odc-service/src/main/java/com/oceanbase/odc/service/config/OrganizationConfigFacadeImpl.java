@@ -1,0 +1,98 @@
+/*
+ * Copyright (c) 2023 OceanBase.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.oceanbase.odc.service.config;
+
+import java.util.Map;
+import java.util.Objects;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.service.config.model.Configuration;
+import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@Service
+@SkipAuthorize("odc internal usage")
+public class OrganizationConfigFacadeImpl implements OrganizationConfigFacade {
+
+    @Autowired
+    private OrganizationConfigService organizationConfigService;
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
+
+    @Override
+    public String getOrganizationConfig(String key) {
+        long currentOrgId = authenticationFacade.currentOrganizationId();
+        Map<String, Configuration> orgIdToConfigurations =
+                organizationConfigService.getOrgConfigurationsFromCache(currentOrgId);
+        Configuration configuration = orgIdToConfigurations.get(key);
+        if (Objects.isNull(configuration)) {
+            throw new IllegalStateException("organization configuration not found: " + key);
+        }
+        return configuration.getValue();
+    }
+
+    @Override
+    public Integer compareWithMaxQueryLimit(Integer currentConfig) {
+        Integer orgConfig = Integer.parseInt(getOrganizationConfig(OrganizationConfigKeys.DEFAULT_MAX_QUERY_LIMIT));
+        if (currentConfig > orgConfig) {
+            log.warn("The current configuration value: {} is greater than"
+                    + "the max query limit value in the organization configurations: {}",
+                    currentConfig, orgConfig);
+            throw new IllegalArgumentException(
+                    "This configuration value cannot exceed "
+                            + "the max query limit in the organization configurations: "
+                            + orgConfig);
+        }
+        return currentConfig;
+    }
+
+    @Override
+    public Integer compareWithQueryLimit(String currentConfig) {
+        return Math.min(getDefaultQueryLimit(), Integer.parseInt(currentConfig));
+    }
+
+    @Override
+    public Integer getDefaultMaxQueryLimit() {
+        return Integer.parseInt(getOrganizationConfig(OrganizationConfigKeys.DEFAULT_MAX_QUERY_LIMIT));
+    }
+
+    @Override
+    public Integer getDefaultQueryLimit() {
+        return Integer.parseInt(getOrganizationConfig(OrganizationConfigKeys.DEFAULT_QUERY_LIMIT));
+    }
+
+    @Override
+    public boolean getDefaultRollbackPlanEnabled() {
+        return getOrganizationConfig(OrganizationConfigKeys.DEFAULT_ROLLBACK_PLAN_ENABLED)
+                .equalsIgnoreCase("false");
+    }
+
+    @Override
+    public boolean getDefaultImportTaskStructureReplacementEnabled() {
+        return getOrganizationConfig(OrganizationConfigKeys.DEFAULT_IMPORT_TASK_STRUCTURE_REPLACEMENT_ENABLED)
+                .equalsIgnoreCase("true");
+    }
+
+    @Override
+    public String getDefaultTaskDescription() {
+        return getOrganizationConfig(OrganizationConfigKeys.DEFAULT_TASK_DESCRIPTION_PROMPT);
+    }
+}

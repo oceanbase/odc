@@ -37,6 +37,7 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.metadb.regulation.ruleset.RuleApplyingEntity;
 import com.oceanbase.odc.metadb.regulation.ruleset.RuleApplyingRepository;
 import com.oceanbase.odc.migrate.jdbc.common.R4237DefaultRuleApplyingMigrate.InnerDefaultRuleApplying;
+import com.oceanbase.odc.service.config.OrganizationConfigFacade;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.regulation.ruleset.model.QueryRuleMetadataParams;
 import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
@@ -67,6 +68,9 @@ public class RuleServiceTest extends ServiceTestEnv {
     @MockBean
     private RuleApplyingRepository ruleApplyingRepository;
 
+    @MockBean
+    private OrganizationConfigFacade organizationConfigFacade;
+
     @Before
     public void setUp() {
         this.defaultRuleApplyingEntities =
@@ -79,6 +83,8 @@ public class RuleServiceTest extends ServiceTestEnv {
     public void testListRules_UserChangesRule_ReturnChangedRule() {
         Mockito.when(ruleApplyingRepository.findByOrganizationIdAndRulesetId(Mockito.anyLong(), Mockito.anyLong()))
                 .thenReturn(listRuleApplyingEntities());
+        Mockito.when(organizationConfigFacade.compareWithMaxQueryLimit(Mockito.anyInt()))
+                .thenReturn(1000);
 
         List<Rule> actual = ruleService.list(1L, QueryRuleMetadataParams.builder().build());
         List<InnerDefaultRuleApplying> rulesetName2Applyings = this.defaultRuleApplyingEntities.stream()
@@ -94,6 +100,8 @@ public class RuleServiceTest extends ServiceTestEnv {
     public void testListRules_UserNotChangeRule_ReturnDefaultRule() {
         Mockito.when(ruleApplyingRepository.findByOrganizationIdAndRulesetId(Mockito.anyLong(), Mockito.anyLong()))
                 .thenReturn(Collections.emptyList());
+        Mockito.when(organizationConfigFacade.compareWithMaxQueryLimit(Mockito.anyInt()))
+                .thenReturn(1000);
 
         List<Rule> actual = ruleService.list(1L, QueryRuleMetadataParams.builder().build());
         List<InnerDefaultRuleApplying> rulesetName2Applyings = this.defaultRuleApplyingEntities.stream()

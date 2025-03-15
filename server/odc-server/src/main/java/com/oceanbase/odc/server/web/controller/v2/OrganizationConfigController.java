@@ -17,14 +17,17 @@ package com.oceanbase.odc.server.web.controller.v2;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.common.response.ListResponse;
+import com.oceanbase.odc.service.common.response.Responses;
+import com.oceanbase.odc.service.config.OrganizationConfigService;
 import com.oceanbase.odc.service.config.model.Configuration;
+import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
 import io.swagger.annotations.ApiOperation;
 
@@ -38,6 +41,11 @@ import io.swagger.annotations.ApiOperation;
 @RequestMapping("/api/v2/config/organization")
 public class OrganizationConfigController {
 
+    @Autowired
+    private OrganizationConfigService service;
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
+
     /**
      * Get organization configurations
      *
@@ -47,7 +55,8 @@ public class OrganizationConfigController {
             notes = "get organization configuration in present organization")
     @RequestMapping(value = "/configurations", method = RequestMethod.GET)
     public ListResponse<Configuration> listCurrentOrganizationConfigs() {
-        throw new NotImplementedException("not implemented");
+        Long currentOrganizationId = authenticationFacade.currentOrganizationId();
+        return Responses.list(service.queryList(currentOrganizationId));
     }
 
     /**
@@ -60,7 +69,9 @@ public class OrganizationConfigController {
             notes = "batch update organization configurations in present organization")
     @RequestMapping(value = "/configurations", method = RequestMethod.PATCH)
     public ListResponse<Configuration> updateOrganizationConfigs(@RequestBody List<Configuration> configurations) {
-        throw new NotImplementedException("not implemented");
+        Long currentOrganizationId = authenticationFacade.currentOrganizationId();
+        Long currentUserId = authenticationFacade.currentUserId();
+        return Responses.list(service.batchUpdate(currentOrganizationId, currentUserId, configurations));
     }
 
     /**
@@ -72,7 +83,7 @@ public class OrganizationConfigController {
             notes = "get default configurations in present organization")
     @RequestMapping(value = "/default/configurations", method = RequestMethod.GET)
     public ListResponse<Configuration> listDefaultOrganizationConfigs() {
-        throw new NotImplementedException("not implemented");
+        return Responses.list(service.queryListDefault());
     }
 
 }
