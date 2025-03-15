@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.regulation.ruleset;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -49,8 +50,10 @@ import com.oceanbase.odc.metadb.regulation.ruleset.DefaultRuleApplyingRepository
 import com.oceanbase.odc.metadb.regulation.ruleset.RuleApplyingEntity;
 import com.oceanbase.odc.metadb.regulation.ruleset.RuleApplyingRepository;
 import com.oceanbase.odc.service.common.model.Stats;
+import com.oceanbase.odc.service.config.OrganizationConfigFacade;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.regulation.ruleset.model.PropertyMetadata;
 import com.oceanbase.odc.service.regulation.ruleset.model.QueryRuleMetadataParams;
 import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
 import com.oceanbase.odc.service.regulation.ruleset.model.RuleMetadata;
@@ -90,6 +93,9 @@ public class RuleService {
 
     @Autowired
     private LoadingCache<Long, List<Rule>> rulesetId2RulesCache;
+
+    @Autowired
+    private OrganizationConfigFacade organizationConfigFacade;
 
     @SkipAuthorize("odc internal usage")
     public List<Rule> list(@NonNull Long rulesetId, @NonNull QueryRuleMetadataParams params) {
@@ -195,7 +201,7 @@ public class RuleService {
             saved = savedOpt.get();
             saved.setLevel(rule.getLevel());
             saved.setEnabled(rule.getEnabled());
-            saved.setPropertiesJson(JsonUtils.toJson(rule.getProperties()));
+            saved.setPropertiesJson(JsonUtils.toJson(adaptiveProperties(rule)));
             if (Objects.nonNull(rule.getAppliedDialectTypes())) {
                 saved.setAppliedDialectTypes(
                         rule.getAppliedDialectTypes().stream().map(DialectType::name).collect(Collectors.toList()));
@@ -307,6 +313,19 @@ public class RuleService {
         }
         rule.setOrganizationId(ruleApplyingEntity.getOrganizationId());
         return rule;
+    }
+
+    private Map<String, Object> adaptiveProperties(Rule rule) {
+        Map<String, Object> properties = rule.getProperties();
+        String metaKey = properties.keySet().iterator().next();
+        Integer currentValue = (Integer) properties.values().iterator().next();
+        if (metaKey.contains("sql-console.max-return-rows")) {
+            Integer newValue = organizationConfigFacade.getDefaultMaxQueryLimit(currentValue);
+            Map<String, Object> result = new HashMap<>();
+            result.put(metaKey, newValue);
+            return result;
+        }
+        return rule.getProperties();
     }
 
 }
