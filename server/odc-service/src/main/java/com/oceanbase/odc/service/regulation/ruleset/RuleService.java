@@ -53,7 +53,6 @@ import com.oceanbase.odc.service.common.model.Stats;
 import com.oceanbase.odc.service.config.OrganizationConfigFacade;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
-import com.oceanbase.odc.service.regulation.ruleset.model.PropertyMetadata;
 import com.oceanbase.odc.service.regulation.ruleset.model.QueryRuleMetadataParams;
 import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
 import com.oceanbase.odc.service.regulation.ruleset.model.RuleMetadata;
