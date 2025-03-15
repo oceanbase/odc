@@ -48,6 +48,10 @@ public class DBSchemaController {
     @Autowired
     private TableService tableService;
 
+    /**
+     * used to display the table/view list when creating an application table/view permission work
+     * order. In that scenario, the user does not have the session creation permission.
+     */
     @ApiOperation(value = "listTables", notes = "List tables with permitted actions")
     @RequestMapping(value = "/tables", method = RequestMethod.GET)
     public ListResponse<Table> list(@RequestParam(name = "databaseId") Long databaseId,

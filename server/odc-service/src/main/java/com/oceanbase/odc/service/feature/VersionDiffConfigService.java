@@ -55,6 +55,7 @@ public class VersionDiffConfigService {
     private static final String SUPPORT_KILL_QUERY = "support_kill_query";
     private static final String SUPPORT_PL_DEBUG = "support_pl_debug";
     private static final String SUPPORT_EXTERNAL_TABLE = "support_external_table";
+    private static final String SUPPORT_MATERIALIZED_VIEW = "support_materialized_view";
     private static final String COLUMN_DATA_TYPE = "column_data_type";
     private static final String ARM_OB_PREFIX = "aarch64";
     private static final String ARM_OB_SUPPORT_PL_DEBUG_MIN_VERSION = "3.2.3";
@@ -161,9 +162,17 @@ public class VersionDiffConfigService {
     }
 
     public boolean isExternalTableSupported(@NonNull DialectType dialectType, @NonNull String versionNumber) {
+        return isFeatureSupported(dialectType, SUPPORT_EXTERNAL_TABLE, versionNumber);
+    }
+
+    public boolean isMViewSupported(@NonNull DialectType dialectType, @NonNull String versionNumber) {
+        return isFeatureSupported(dialectType, SUPPORT_MATERIALIZED_VIEW, versionNumber);
+    }
+
+    private boolean isFeatureSupported(DialectType dialectType, String configKey, String versionNumber) {
         VersionDiffConfig config = new VersionDiffConfig();
         config.setDbMode(dialectType.name());
-        config.setConfigKey(SUPPORT_EXTERNAL_TABLE);
+        config.setConfigKey(configKey);
         List<VersionDiffConfig> list = versionDiffConfigDAO.query(config);
         String minVersion = CollectionUtils.isNotEmpty(list) ? list.get(0).getMinVersion() : null;
         if ((dialectType == DialectType.OB_MYSQL || dialectType == DialectType.OB_ORACLE)

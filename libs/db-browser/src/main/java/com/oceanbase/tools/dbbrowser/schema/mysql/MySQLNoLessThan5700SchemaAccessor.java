@@ -58,6 +58,8 @@ import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
 import com.oceanbase.tools.dbbrowser.model.DBIndexType;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
@@ -343,6 +345,26 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
             }
             throw ex;
         }
+    }
+
+    @Override
+    public List<DBObjectIdentity> listMViews(String schemaName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public List<DBObjectIdentity> listAllMViewsLike(String viewNameLike) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public Boolean refreshMVData(DBMViewRefreshParameter parameter) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public DBMaterializedView getMView(String schemaName, String mViewName) {
+        throw new UnsupportedOperationException("not support yet");
     }
 
     @Override
