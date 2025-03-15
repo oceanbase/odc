@@ -102,8 +102,12 @@ public class PropertyMetadataMapper {
     private static Integer adaptiveDefaultValue(PropertyMetadataEntity entity) {
         String defaultValue = entity.getDefaultValues().get(0);
         if (entity.getName().contains("sql-console.max-return-rows")) {
-            return SpringContextUtil.getBean(OrganizationConfigFacade.class)
-                    .getDefaultMaxQueryLimit(Integer.parseInt(defaultValue));
+            OrganizationConfigFacade orgConfigFacade = SpringContextUtil.getBean(OrganizationConfigFacade.class);
+            try {
+                return orgConfigFacade.getDefaultMaxQueryLimit(Integer.parseInt(defaultValue));
+            } catch (IllegalArgumentException e) {
+                return Integer.parseInt(defaultValue);
+            }
         } else {
             return Integer.parseInt(defaultValue);
         }

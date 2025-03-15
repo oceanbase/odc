@@ -200,7 +200,7 @@ public class RuleService {
             saved = savedOpt.get();
             saved.setLevel(rule.getLevel());
             saved.setEnabled(rule.getEnabled());
-            saved.setPropertiesJson(JsonUtils.toJson(adaptiveProperties(rule)));
+            saved.setPropertiesJson(JsonUtils.toJson(adaptiveProperties(rule.getProperties())));
             if (Objects.nonNull(rule.getAppliedDialectTypes())) {
                 saved.setAppliedDialectTypes(
                         rule.getAppliedDialectTypes().stream().map(DialectType::name).collect(Collectors.toList()));
@@ -314,17 +314,20 @@ public class RuleService {
         return rule;
     }
 
-    private Map<String, Object> adaptiveProperties(Rule rule) {
-        Map<String, Object> properties = rule.getProperties();
+    private Map<String, Object> adaptiveProperties(Map<String, Object> properties) {
         String metaKey = properties.keySet().iterator().next();
-        Integer currentValue = (Integer) properties.values().iterator().next();
         if (metaKey.contains("sql-console.max-return-rows")) {
-            Integer newValue = organizationConfigFacade.getDefaultMaxQueryLimit(currentValue);
-            Map<String, Object> result = new HashMap<>();
-            result.put(metaKey, newValue);
-            return result;
+            Integer currentValue = (Integer) properties.values().iterator().next();
+            try {
+                Integer newValue = organizationConfigFacade.getDefaultMaxQueryLimit(currentValue);
+                Map<String, Object> result = new HashMap<>();
+                result.put(metaKey, newValue);
+                return result;
+            } catch (IllegalArgumentException e) {
+                return properties;
+            }
         }
-        return rule.getProperties();
+        return properties;
     }
 
 }
