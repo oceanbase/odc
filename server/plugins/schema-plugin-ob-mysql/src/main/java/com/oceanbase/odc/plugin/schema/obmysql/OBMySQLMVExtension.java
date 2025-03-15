@@ -83,7 +83,7 @@ public class OBMySQLMVExtension implements MViewExtensionPoint {
     }
 
     @Override
-    public Boolean syncMVData(Connection connection, DBMViewRefreshParameter parameter) {
+    public Boolean refresh(Connection connection, DBMViewRefreshParameter parameter) {
         return getSchemaAccessor(connection).syncMVData(parameter);
     }
 

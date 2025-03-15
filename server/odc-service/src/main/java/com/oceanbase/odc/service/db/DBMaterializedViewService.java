@@ -49,7 +49,7 @@ import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.db.model.AllMVBaseTables;
 import com.oceanbase.odc.service.db.model.DatabaseAndMVs;
 import com.oceanbase.odc.service.db.model.DatabaseAndTables;
-import com.oceanbase.odc.service.db.model.MVSyncDataReq;
+import com.oceanbase.odc.service.db.model.MViewRefreshReq;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.session.ConnectConsoleService;
@@ -151,12 +151,12 @@ public class DBMaterializedViewService {
                         .getDetail(con, schemaName, viewName));
     }
 
-    public Boolean syncData(@NotNull ConnectionSession connectionSession, @NotNull MVSyncDataReq mvSyncDataReq) {
-        DBMViewRefreshParameter syncDataParameter = mvSyncDataReq.convertToDBMViewRefreshParameter();
+    public Boolean refresh(@NotNull ConnectionSession connectionSession, @NotNull MViewRefreshReq refreshReq) {
+        DBMViewRefreshParameter syncDataParameter = refreshReq.convertToDBMViewRefreshParameter();
         return connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.BACKEND_DS_KEY)
                 .execute((ConnectionCallback<Boolean>) con -> getDBMViewExtensionPoint(connectionSession)
-                        .syncMVData(con, syncDataParameter));
+                        .refresh(con, syncDataParameter));
     }
 
     private MViewExtensionPoint getDBMViewExtensionPoint(@NonNull ConnectionSession session) {

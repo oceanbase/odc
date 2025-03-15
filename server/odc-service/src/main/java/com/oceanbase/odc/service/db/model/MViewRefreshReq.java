@@ -30,7 +30,7 @@ import lombok.Data;
  * @since: 4.3.4
  */
 @Data
-public class MVSyncDataReq {
+public class MViewRefreshReq {
     @NotBlank
     private String databaseName;
     @NotBlank

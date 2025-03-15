@@ -32,7 +32,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class DBMaterializedViewSyncSchedule {
+public class DBMaterializedViewRefreshSchedule {
 
     private StartStrategy startStrategy;
 

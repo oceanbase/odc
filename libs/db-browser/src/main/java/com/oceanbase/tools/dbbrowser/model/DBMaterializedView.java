@@ -37,9 +37,9 @@ public class DBMaterializedView implements DBObject {
     // if null, use defaultSchemaName in current connection
     private String schemaName;
     private String ddl;
-    private DBMaterializedViewRefreshMethod syncDataMethod;
+    private DBMaterializedViewRefreshMethod refreshMethod;
     private Long parallelismDegree;
-    private DBMaterializedViewSyncSchedule syncSchedule;
+    private DBMaterializedViewRefreshSchedule refreshSchedule;
     private Boolean enableQueryRewrite;
     private Boolean enableQueryComputation;
 

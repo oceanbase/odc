@@ -33,7 +33,7 @@ import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLConstraintEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLDBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
-import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewSyncSchedule;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewRefreshSchedule;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
@@ -52,7 +52,6 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMaterializedView> 
     private DBTableConstraintEditor dbTableConstraintEditor;
 
     private DBTablePartitionEditor dbTablePartitionEditor;
-
 
     public MysqlMViewTemplate() {
         mySQLViewTemplate = new MySQLViewTemplate();
@@ -95,17 +94,17 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMaterializedView> 
                     .append(")");
         }
         // build sql about sync data method
-        if (Objects.nonNull(dbObject.getSyncDataMethod())) {
-            sqlBuilder.line().append(dbObject.getSyncDataMethod().getCreateName());
+        if (Objects.nonNull(dbObject.getRefreshMethod())) {
+            sqlBuilder.line().append(dbObject.getRefreshMethod().getCreateName());
         }
         // build sql about sync schedule
-        if (Objects.nonNull(dbObject.getSyncSchedule())) {
-            DBMaterializedViewSyncSchedule syncSchedule = dbObject.getSyncSchedule();
-            if (syncSchedule.getStartStrategy() == DBMaterializedViewSyncSchedule.StartStrategy.START_NOW) {
+        if (Objects.nonNull(dbObject.getRefreshSchedule())) {
+            DBMaterializedViewRefreshSchedule syncSchedule = dbObject.getRefreshSchedule();
+            if (syncSchedule.getStartStrategy() == DBMaterializedViewRefreshSchedule.StartStrategy.START_NOW) {
                 sqlBuilder.line().append("START WITH sysdate()");
                 sqlBuilder.line().append("NEXT sysdate() + INTERVAL ").append(syncSchedule.getInterval()).append(" ")
                         .append(syncSchedule.getUnit());
-            } else if (syncSchedule.getStartStrategy() == DBMaterializedViewSyncSchedule.StartStrategy.START_AT) {
+            } else if (syncSchedule.getStartStrategy() == DBMaterializedViewRefreshSchedule.StartStrategy.START_AT) {
                 SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 String formattedDate = formatter.format(syncSchedule.getStartWith());
                 sqlBuilder.line().append("START WITH TIMESTAMP '").append(formattedDate).append("'");

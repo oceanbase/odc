@@ -31,7 +31,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.service.common.model.ResourceSql;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
@@ -39,7 +38,7 @@ import com.oceanbase.odc.service.connection.table.model.QueryTableParams;
 import com.oceanbase.odc.service.connection.table.model.Table;
 import com.oceanbase.odc.service.db.DBMaterializedViewService;
 import com.oceanbase.odc.service.db.model.AllMVBaseTables;
-import com.oceanbase.odc.service.db.model.MVSyncDataReq;
+import com.oceanbase.odc.service.db.model.MViewRefreshReq;
 import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.odc.service.state.model.StateName;
 import com.oceanbase.odc.service.state.model.StatefulRoute;
@@ -64,11 +63,11 @@ public class DBMaterializedViewController {
     @Autowired
     private ConnectSessionService sessionService;
 
-    @ApiOperation(value = "list", notes = "obtain the list of materialized views.")
-    @GetMapping(value = "/{sessionId}/databases/materializedViews")
+    @ApiOperation(value = "list", notes = "obtain a list of all materialized views under the specified database.")
+    @GetMapping(value = "/{sessionId}/databases/{databaseId}/materializedViews")
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public ListResponse<Table> list(@PathVariable String sessionId,
-            @RequestParam(name = "databaseId") Long databaseId,
+            @PathVariable Long databaseId,
             @RequestParam(name = "includePermittedAction", required = false,
                     defaultValue = "false") boolean includePermittedAction)
             throws SQLException, InterruptedException {
@@ -81,11 +80,11 @@ public class DBMaterializedViewController {
         return Responses.list(dbMaterializedViewService.list(session, params));
     }
 
-    @ApiOperation(value = "detail", notes = "obtain detail about the materialized view.")
+    @ApiOperation(value = "detail", notes = "obtain details for the specified materialized view.")
     @GetMapping(value = "/{sessionId}/databases/{databaseName}/materializedViews/{mvName}")
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public SuccessResponse<DBMaterializedView> detail(@PathVariable String sessionId,
-            @PathVariable(required = false) String databaseName,
+            @PathVariable String databaseName,
             @PathVariable String mvName) {
         Base64.Decoder decoder = Base64.getDecoder();
         mvName = new String(decoder.decode(mvName));
@@ -93,9 +92,9 @@ public class DBMaterializedViewController {
         return Responses.success(dbMaterializedViewService.detail(session, databaseName, mvName));
     }
 
-    @ApiOperation(value = "listBases",
-            notes = "obtain list of base tables under the current datasource that are used to create the materialized view.")
-    @GetMapping(value = "/{sessionId}/databases/materializedViews/listAllBases")
+    @ApiOperation(value = "listAllBases",
+            notes = "obtain list of all base tables under the current datasource that are used to create the materialized view.")
+    @GetMapping(value = "/{sessionId}/materializedViews/listAllBases")
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public SuccessResponse<AllMVBaseTables> listAllBases(@PathVariable String sessionId,
             @RequestParam(required = false, defaultValue = "") String name) {
@@ -104,22 +103,30 @@ public class DBMaterializedViewController {
     }
 
     @ApiOperation(value = "generateCreateSql", notes = "obtain the sql to create the materialized view.")
-    @PostMapping(value = "/{sessionId}/databases/materializedViews/generateCreateDDL")
+    @PostMapping(value = "/{sessionId}/databases/{databaseName}/materializedViews/{mvName}/generateCreateDDL")
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
-    public SuccessResponse<ResourceSql> generateCreateSql(@PathVariable String sessionId,
+    public SuccessResponse<String> generateCreateSql(@PathVariable String sessionId,
+            @PathVariable String databaseName,
+            @PathVariable String mvName,
             @RequestBody DBMaterializedView materializedView) {
+        materializedView.setName(mvName);
+        materializedView.setSchemaName(databaseName);
         ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
-        return Responses.success(ResourceSql.ofSql(dbMaterializedViewService.getCreateSql(
-                session, materializedView)));
+        return Responses.success(dbMaterializedViewService.getCreateSql(
+                session, materializedView));
     }
 
-    @ApiOperation(value = "refresh", notes = "refresh the materialized view.")
-    @PostMapping(value = "/{sessionId}/databases/materializedViews/refresh")
+    @ApiOperation(value = "refresh", notes = "refresh data of the materialized view.")
+    @PostMapping(value = "/{sessionId}/databases/{databaseName}/materializedViews/{mvName}/refresh")
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public SuccessResponse<Boolean> refresh(@PathVariable String sessionId,
-            @RequestBody @Valid MVSyncDataReq mvSyncDataReq) {
+            @PathVariable String databaseName,
+            @PathVariable String mvName,
+            @RequestBody @Valid MViewRefreshReq refreshReq) {
+        refreshReq.setMvName(mvName);
+        refreshReq.setDatabaseName(databaseName);
         ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
-        return Responses.success(dbMaterializedViewService.syncData(session, mvSyncDataReq));
+        return Responses.success(dbMaterializedViewService.refresh(session, refreshReq));
     }
 
 }

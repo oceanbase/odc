@@ -39,6 +39,6 @@ public interface MViewExtensionPoint extends ExtensionPoint {
 
     String generateCreateTemplate(DBMaterializedView mView);
 
-    Boolean syncMVData(Connection connection, DBMViewRefreshParameter parameter);
+    Boolean refresh(Connection connection, DBMViewRefreshParameter parameter);
 
 }

@@ -150,7 +150,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
             Assert.assertEquals("test_mv_allSyntax", test_mv_allSyntax.getName());
             Assert.assertEquals(4, test_mv_allSyntax.getColumns().size());
             Assert.assertEquals(DBMaterializedViewRefreshMethod.REFRESH_COMPLETE,
-                    test_mv_allSyntax.getSyncDataMethod());
+                    test_mv_allSyntax.getRefreshMethod());
             Assert.assertFalse(test_mv_allSyntax.getEnableQueryRewrite());
             Assert.assertFalse(test_mv_allSyntax.getEnableQueryComputation());
 
@@ -163,16 +163,16 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
 
             DBMaterializedView test_mv_complete = accessor.getMView(getOBMySQLDataBaseName(), "test_mv_complete");
             Assert.assertEquals(DBMaterializedViewRefreshMethod.REFRESH_COMPLETE,
-                    test_mv_complete.getSyncDataMethod());
+                    test_mv_complete.getRefreshMethod());
 
             DBMaterializedView test_mv_fast = accessor.getMView(getOBMySQLDataBaseName(), "test_mv_fast");
-            Assert.assertEquals(DBMaterializedViewRefreshMethod.REFRESH_FAST, test_mv_fast.getSyncDataMethod());
+            Assert.assertEquals(DBMaterializedViewRefreshMethod.REFRESH_FAST, test_mv_fast.getRefreshMethod());
 
             DBMaterializedView test_mv_force = accessor.getMView(getOBMySQLDataBaseName(), "test_mv_force");
-            Assert.assertEquals(DBMaterializedViewRefreshMethod.REFRESH_FORCE, test_mv_force.getSyncDataMethod());
+            Assert.assertEquals(DBMaterializedViewRefreshMethod.REFRESH_FORCE, test_mv_force.getRefreshMethod());
 
             DBMaterializedView test_mv_never = accessor.getMView(getOBMySQLDataBaseName(), "test_mv_never");
-            Assert.assertEquals(DBMaterializedViewRefreshMethod.NEVER_REFRESH, test_mv_never.getSyncDataMethod());
+            Assert.assertEquals(DBMaterializedViewRefreshMethod.NEVER_REFRESH, test_mv_never.getRefreshMethod());
 
         }
     }

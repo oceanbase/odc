@@ -120,7 +120,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
         mView.setName(mViewName);
         mView.setSchemaName(schemaName);
         jdbcOperations.query(getOptions.toString(), (rs) -> {
-            mView.setSyncDataMethod(DBMaterializedViewRefreshMethod.getEnumByShowName(rs.getString("REFRESH_METHOD")));
+            mView.setRefreshMethod(DBMaterializedViewRefreshMethod.getEnumByShowName(rs.getString("REFRESH_METHOD")));
             mView.setEnableQueryRewrite(rs.getBoolean("REWRITE_ENABLED"));
             mView.setEnableQueryComputation(rs.getBoolean("ON_QUERY_COMPUTATION"));
             mView.setParallelismDegree(rs.getLong("REFRESH_DOP"));

@@ -28,7 +28,7 @@ import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewRefreshMethod;
-import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewSyncSchedule;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewRefreshSchedule;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
@@ -54,7 +54,7 @@ public class MysqlMViewTemplateTest {
         DBMaterializedView.setParallelismDegree(8L);
         prepareMViewPartition(DBMaterializedView);
         prepareMViewColumnGroups(DBMaterializedView);
-        DBMaterializedView.setSyncDataMethod(DBMaterializedViewRefreshMethod.REFRESH_COMPLETE);
+        DBMaterializedView.setRefreshMethod(DBMaterializedViewRefreshMethod.REFRESH_COMPLETE);
         prepareMViewStartNowSchedule(DBMaterializedView);
         DBMaterializedView.setEnableQueryRewrite(false);
         DBMaterializedView.setEnableQueryComputation(false);
@@ -117,20 +117,20 @@ public class MysqlMViewTemplateTest {
     }
 
     private void prepareMViewStartNowSchedule(DBMaterializedView DBMaterializedView) {
-        DBMaterializedViewSyncSchedule syncSchedule = new DBMaterializedViewSyncSchedule();
-        syncSchedule.setStartStrategy(DBMaterializedViewSyncSchedule.StartStrategy.START_NOW);
+        DBMaterializedViewRefreshSchedule syncSchedule = new DBMaterializedViewRefreshSchedule();
+        syncSchedule.setStartStrategy(DBMaterializedViewRefreshSchedule.StartStrategy.START_NOW);
         syncSchedule.setInterval(1L);
         syncSchedule.setUnit(TimeUnit.DAY);
-        DBMaterializedView.setSyncSchedule(syncSchedule);
+        DBMaterializedView.setRefreshSchedule(syncSchedule);
     }
 
     private void prepareMViewStartAtSchedule(DBMaterializedView DBMaterializedView) {
-        DBMaterializedViewSyncSchedule syncSchedule = new DBMaterializedViewSyncSchedule();
-        syncSchedule.setStartStrategy(DBMaterializedViewSyncSchedule.StartStrategy.START_AT);
+        DBMaterializedViewRefreshSchedule syncSchedule = new DBMaterializedViewRefreshSchedule();
+        syncSchedule.setStartStrategy(DBMaterializedViewRefreshSchedule.StartStrategy.START_AT);
         syncSchedule.setStartWith(new Date(1752228000000L));
         syncSchedule.setInterval(1L);
         syncSchedule.setUnit(TimeUnit.DAY);
-        DBMaterializedView.setSyncSchedule(syncSchedule);
+        DBMaterializedView.setRefreshSchedule(syncSchedule);
     }
 
     private void prepareMViewColumnGroups(DBMaterializedView DBMaterializedView) {
