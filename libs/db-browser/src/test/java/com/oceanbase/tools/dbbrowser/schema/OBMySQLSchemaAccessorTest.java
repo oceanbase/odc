@@ -56,6 +56,10 @@ import com.oceanbase.tools.dbbrowser.util.VersionUtils;
 import lombok.Data;
 
 /**
+ * TODO: all implementation classes of {@link DBSchemaAccessor} should have a separate test class to
+ * test their methods, and the methods in their test class will only be triggered when the version
+ * of the test data source matches their requirements.
+ * 
  * @author jingtian
  */
 public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
@@ -119,15 +123,15 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     @Test
     public void listAllMVs_Success() {
         if (isSupportMaterializedView) {
-            List<DBObjectIdentity> dbObjectIdentities = accessor.listAllMVsLike("");
+            List<DBObjectIdentity> dbObjectIdentities = accessor.listAllMViewsLike("");
             Assert.assertTrue(dbObjectIdentities.size() >= 9);
         }
     }
 
     @Test
-    public void listMVs_Success() {
+    public void listMViews_Success() {
         if (isSupportMaterializedView) {
-            List<DBObjectIdentity> dbObjectIdentities = accessor.listMVs(getOBMySQLDataBaseName());
+            List<DBObjectIdentity> dbObjectIdentities = accessor.listMViews(getOBMySQLDataBaseName());
             Assert.assertEquals(9, dbObjectIdentities.size());
         }
     }

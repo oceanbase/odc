@@ -165,14 +165,14 @@ public class VersionDiffConfigService {
         return isFeatureSupported(dialectType, SUPPORT_EXTERNAL_TABLE, versionNumber);
     }
 
-    public boolean isMVSupported(@NonNull DialectType dialectType, @NonNull String versionNumber) {
+    public boolean isMViewSupported(@NonNull DialectType dialectType, @NonNull String versionNumber) {
         return isFeatureSupported(dialectType, SUPPORT_MATERIALIZED_VIEW, versionNumber);
     }
 
-    private boolean isFeatureSupported(DialectType dialectType, String supportExternalTable, String versionNumber) {
+    private boolean isFeatureSupported(DialectType dialectType, String configKey, String versionNumber) {
         VersionDiffConfig config = new VersionDiffConfig();
         config.setDbMode(dialectType.name());
-        config.setConfigKey(supportExternalTable);
+        config.setConfigKey(configKey);
         List<VersionDiffConfig> list = versionDiffConfigDAO.query(config);
         String minVersion = CollectionUtils.isNotEmpty(list) ? list.get(0).getMinVersion() : null;
         if ((dialectType == DialectType.OB_MYSQL || dialectType == DialectType.OB_ORACLE)

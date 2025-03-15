@@ -118,7 +118,7 @@ public class DBMaterializedViewService {
                     : new DatabaseAndTables();
         }).filter(item -> item.getDatabaseName() != null)
                 .sorted(Comparator.comparing(DatabaseAndTables::getDatabaseName)).collect(Collectors.toList());
-        List<DBObjectIdentity> mvIdentities = accessor.listAllMVsLike(tableNameLike);
+        List<DBObjectIdentity> mvIdentities = accessor.listAllMViewsLike(tableNameLike);
         Map<String, List<String>> schema2mvs = new HashMap<>();
         mvIdentities.forEach(item -> {
             List<String> views = schema2mvs.computeIfAbsent(item.getSchemaName(), t -> new ArrayList<>());
@@ -144,11 +144,11 @@ public class DBMaterializedViewService {
                         .generateCreateTemplate(resource));
     }
 
-    public DBMaterializedView detail(ConnectionSession connectionSession, String schemaName, String viewName) {
+    public DBMaterializedView detail(ConnectionSession connectionSession, String schemaName, String mViewName) {
         return connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.BACKEND_DS_KEY)
                 .execute((ConnectionCallback<DBMaterializedView>) con -> getDBMViewExtensionPoint(connectionSession)
-                        .getDetail(con, schemaName, viewName));
+                        .getDetail(con, schemaName, mViewName));
     }
 
     public Boolean refresh(@NotNull ConnectionSession connectionSession, @NotNull MViewRefreshReq refreshReq) {

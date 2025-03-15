@@ -76,7 +76,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     }
 
     @Override
-    public List<DBObjectIdentity> listMVs(String schemaName) {
+    public List<DBObjectIdentity> listMViews(String schemaName) {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
         sb.append("select MVIEW_NAME FROM OCEANBASE.DBA_MVIEWS WHERE OWNER = ").value(schemaName);
         return jdbcOperations.query(sb.toString(),
@@ -84,7 +84,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     }
 
     @Override
-    public List<DBObjectIdentity> listAllMVsLike(String viewNameLike) {
+    public List<DBObjectIdentity> listAllMViewsLike(String viewNameLike) {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
         sb.append(
                 "select OWNER AS schema_name, MVIEW_NAME AS name,'MATERIALIZED_VIEW' AS type FROM OCEANBASE.DBA_MVIEWS WHERE MVIEW_NAME LIKE ")

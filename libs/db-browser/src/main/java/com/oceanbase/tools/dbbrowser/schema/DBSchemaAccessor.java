@@ -134,12 +134,12 @@ public interface DBSchemaAccessor {
     /**
      * List all materialized view as DBObjectIdentity in the specified schema
      */
-    List<DBObjectIdentity> listMVs(String schemaName);
+    List<DBObjectIdentity> listMViews(String schemaName);
 
     /**
      * List all materialized view as DBObjectIdentity in current datasource
      */
-    List<DBObjectIdentity> listAllMVsLike(String viewNameLike);
+    List<DBObjectIdentity> listAllMViewsLike(String viewNameLike);
 
     /**
      * Synchronize materialized view data

@@ -71,7 +71,7 @@ public class MysqlMViewTemplateTest {
                 " WITH COLUMN GROUP(all columns,each column)\n" +
                 "REFRESH COMPLETE\n" +
                 "START WITH sysdate()\n" +
-                "NEXT sysdate() + INTERVAL 1 day\n" +
+                "NEXT sysdate() + INTERVAL 1 DAY\n" +
                 "DISABLE QUERY REWRITE\n" +
                 "DISABLE ON QUERY COMPUTATION\n" +
                 "AS\n" +
@@ -102,7 +102,7 @@ public class MysqlMViewTemplateTest {
 
         String expect = "create materialized view `schema_0`.`mv_0`\n" +
                 "START WITH TIMESTAMP '2025-07-11 18:00:00'\n" +
-                "NEXT TIMESTAMP '2025-07-11 18:00:00' + INTERVAL 1 day\n" +
+                "NEXT TIMESTAMP '2025-07-11 18:00:00' + INTERVAL 1 WEEK\n" +
                 "AS\n" +
                 "select\n" +
                 "\ttableAlias_0.`c_0` as alias_c0,\n" +
@@ -120,7 +120,7 @@ public class MysqlMViewTemplateTest {
         DBMaterializedViewRefreshSchedule syncSchedule = new DBMaterializedViewRefreshSchedule();
         syncSchedule.setStartStrategy(DBMaterializedViewRefreshSchedule.StartStrategy.START_NOW);
         syncSchedule.setInterval(1L);
-        syncSchedule.setUnit(TimeUnit.DAY);
+        syncSchedule.setUnit(DBMaterializedViewRefreshSchedule.TimeUnit.DAY);
         DBMaterializedView.setRefreshSchedule(syncSchedule);
     }
 
@@ -129,7 +129,7 @@ public class MysqlMViewTemplateTest {
         syncSchedule.setStartStrategy(DBMaterializedViewRefreshSchedule.StartStrategy.START_AT);
         syncSchedule.setStartWith(new Date(1752228000000L));
         syncSchedule.setInterval(1L);
-        syncSchedule.setUnit(TimeUnit.DAY);
+        syncSchedule.setUnit(DBMaterializedViewRefreshSchedule.TimeUnit.WEEK);
         DBMaterializedView.setRefreshSchedule(syncSchedule);
     }
 

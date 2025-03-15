@@ -42,6 +42,16 @@ public class DBMaterializedViewRefreshSchedule {
 
     private TimeUnit unit;
 
+    public enum TimeUnit {
+        SECOND,
+        MINUTE,
+        HOUR,
+        DAY,
+        WEEK,
+        MONTH,
+        YEAR;
+    }
+
     public enum StartStrategy {
         START_NOW,
         START_AT;

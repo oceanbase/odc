@@ -170,7 +170,7 @@ public class TableService {
                 }
             }
             if (types.contains(DBObjectType.MATERIALIZED_VIEW)
-                    && versionDiffConfigService.isMVSupported(dataSource.getDialectType(), version)) {
+                    && versionDiffConfigService.isMViewSupported(dataSource.getDialectType(), version)) {
                 MViewExtensionPoint mvExtension = SchemaPluginUtil.getMViewExtension(dataSource.getDialectType());
                 if (mvExtension != null) {
                     Set<String> latestViewNames = mvExtension.list(conn, database.getName())

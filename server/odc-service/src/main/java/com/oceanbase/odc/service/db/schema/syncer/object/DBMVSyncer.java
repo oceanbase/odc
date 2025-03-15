@@ -90,7 +90,7 @@ public class DBMVSyncer extends AbstractDBObjectSyncer<MViewExtensionPoint> {
             InformationExtensionPoint point =
                     ConnectionPluginUtil.getInformationExtension(dialectType);
             String databaseProductVersion = point.getDBVersion(connection);
-            return versionDiffConfigService.isMVSupported(dialectType, databaseProductVersion)
+            return versionDiffConfigService.isMViewSupported(dialectType, databaseProductVersion)
                     && getExtensionPoint(dialectType) != null;
         } catch (Exception e) {
             log.warn("check external table support failed", e);

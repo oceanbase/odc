@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.common.model.ResourceSql;
-import com.oceanbase.odc.service.common.response.OdcResult;
+import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.db.model.DBViewResponse;
 import com.oceanbase.odc.service.state.model.StateName;
@@ -45,9 +45,9 @@ import io.swagger.annotations.ApiOperation;
 public class DBMaterializedViewLogController {
 
     @ApiOperation(value = "list", notes = "obtain the log list of the materialized view logs.")
-    @RequestMapping(value = "/{sessionId}/databases/materializedViewLogs", method = RequestMethod.GET)
+    @RequestMapping(value = "/{sessionId}/databases/{databaseId}/materializedViewLogs", method = RequestMethod.GET)
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
-    public OdcResult<List<DBViewResponse>> list(@PathVariable String sessionId) {
+    public ListResponse<List<DBViewResponse>> list(@PathVariable String sessionId, @PathVariable Long databaseId) {
         throw new NotImplementedException("not implemented");
     }
 
@@ -55,22 +55,29 @@ public class DBMaterializedViewLogController {
     @RequestMapping(value = "/{sessionId}/databases/{databaseName}/materializedViewLogs/{mvLogName}",
             method = RequestMethod.GET)
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
-    public OdcResult<DBViewResponse> detail(@PathVariable String sessionId, @PathVariable String mvLogName) {
+    public SuccessResponse<DBViewResponse> detail(@PathVariable String sessionId,
+            @PathVariable String databaseName,
+            @PathVariable String mvLogName) {
         throw new NotImplementedException("not implemented");
     }
 
     @ApiOperation(value = "getCreateSql", notes = "obtain the sql to create the materialized view log.")
-    @RequestMapping(value = "/{sessionId}/databases/materializedViewLogs/generateCreateDDL",
+    @RequestMapping(value = "/{sessionId}/databases/{databaseName}/materializedViewLogs/{mvLogName}/generateCreateDDL",
             method = RequestMethod.PATCH)
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
-    public OdcResult<ResourceSql> getCreateSql(@PathVariable String sessionId, @RequestBody DBView resource) {
+    public SuccessResponse<ResourceSql> getCreateSql(@PathVariable String sessionId,
+            @PathVariable String databaseName,
+            @PathVariable String mvLogName,
+            @RequestBody DBView resource) {
         throw new NotImplementedException("not implemented");
     }
 
-    @ApiOperation(value = "purgeExpiredData", notes = "purge expired data of materialized view log")
-    @RequestMapping(value = "/{sessionId}/databases/materializedViewLogs/purgeExpiredData", method = RequestMethod.POST)
+    @ApiOperation(value = "purge", notes = "purge expired data of materialized view log")
+    @RequestMapping(value = "/{sessionId}/databases/{databaseName}/materializedViewLogs/{mvLogName}/purge",
+            method = RequestMethod.POST)
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
-    public SuccessResponse<Boolean> purgeExpiredData(@PathVariable String sessionId) {
+    public SuccessResponse<Boolean> purge(@PathVariable String sessionId, @PathVariable String databaseName,
+            @PathVariable String mvLogName) {
         throw new NotImplementedException("not implemented");
     }
 

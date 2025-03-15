@@ -45,7 +45,7 @@ import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
 public class OBMySQLMVExtension implements MViewExtensionPoint {
     @Override
     public List<DBObjectIdentity> list(Connection connection, String schemaName) {
-        return getSchemaAccessor(connection).listMVs(schemaName);
+        return getSchemaAccessor(connection).listMViews(schemaName);
     }
 
     @Override
@@ -84,7 +84,7 @@ public class OBMySQLMVExtension implements MViewExtensionPoint {
 
     @Override
     public Boolean refresh(Connection connection, DBMViewRefreshParameter parameter) {
-        return getSchemaAccessor(connection).syncMVData(parameter);
+        return getSchemaAccessor(connection).refreshMVData(parameter);
     }
 
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
