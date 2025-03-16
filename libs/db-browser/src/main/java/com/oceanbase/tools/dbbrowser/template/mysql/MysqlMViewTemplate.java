@@ -93,23 +93,23 @@ public class MysqlMViewTemplate implements DBObjectTemplate<DBMaterializedView> 
                             .collect(Collectors.joining(",")))
                     .append(")");
         }
-        // build sql about sync data method
+        // build sql about refresh method
         if (Objects.nonNull(dbObject.getRefreshMethod())) {
             sqlBuilder.line().append(dbObject.getRefreshMethod().getCreateName());
         }
-        // build sql about sync schedule
+        // build sql about refresh schedule
         if (Objects.nonNull(dbObject.getRefreshSchedule())) {
-            DBMaterializedViewRefreshSchedule syncSchedule = dbObject.getRefreshSchedule();
-            if (syncSchedule.getStartStrategy() == DBMaterializedViewRefreshSchedule.StartStrategy.START_NOW) {
+            DBMaterializedViewRefreshSchedule refreshSchedule = dbObject.getRefreshSchedule();
+            if (refreshSchedule.getStartStrategy() == DBMaterializedViewRefreshSchedule.StartStrategy.START_NOW) {
                 sqlBuilder.line().append("START WITH sysdate()");
-                sqlBuilder.line().append("NEXT sysdate() + INTERVAL ").append(syncSchedule.getInterval()).append(" ")
-                        .append(syncSchedule.getUnit());
-            } else if (syncSchedule.getStartStrategy() == DBMaterializedViewRefreshSchedule.StartStrategy.START_AT) {
+                sqlBuilder.line().append("NEXT sysdate() + INTERVAL ").append(refreshSchedule.getInterval()).append(" ")
+                        .append(refreshSchedule.getUnit());
+            } else if (refreshSchedule.getStartStrategy() == DBMaterializedViewRefreshSchedule.StartStrategy.START_AT) {
                 SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                String formattedDate = formatter.format(syncSchedule.getStartWith());
+                String formattedDate = formatter.format(refreshSchedule.getStartWith());
                 sqlBuilder.line().append("START WITH TIMESTAMP '").append(formattedDate).append("'");
                 sqlBuilder.line().append("NEXT TIMESTAMP '").append(formattedDate).append("' + INTERVAL ")
-                        .append(syncSchedule.getInterval()).append(" ").append(syncSchedule.getUnit());
+                        .append(refreshSchedule.getInterval()).append(" ").append(refreshSchedule.getUnit());
             }
         }
         // build sql about query rewrite
