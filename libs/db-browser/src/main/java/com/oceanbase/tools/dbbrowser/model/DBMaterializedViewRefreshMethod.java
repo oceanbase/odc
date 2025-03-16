@@ -15,6 +15,9 @@
  */
 package com.oceanbase.tools.dbbrowser.model;
 
+import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLSchemaAccessor;
+import com.oceanbase.tools.dbbrowser.template.mysql.MysqlMViewTemplate;
+
 import lombok.Getter;
 
 /**
@@ -33,8 +36,17 @@ public enum DBMaterializedViewRefreshMethod {
     NEVER_REFRESH("NEVER REFRESH", "NEVER", "n"),
     OTHERS("UNKNOWN", "UNKNOWN", "UNKNOWN");
 
+    /**
+     * used in {@link MysqlMViewTemplate#generateCreateObjectTemplate(DBMaterializedView)}
+     */
     private String createName;
+    /**
+     * used in {@link OBMySQLSchemaAccessor#getMView(String, String)}
+     */
     private String showName;
+    /**
+     * used in {@link OBMySQLSchemaAccessor#refreshMVData(DBMViewRefreshParameter)}
+     */
     private String value;
 
     DBMaterializedViewRefreshMethod(String createName, String showName, String value) {
