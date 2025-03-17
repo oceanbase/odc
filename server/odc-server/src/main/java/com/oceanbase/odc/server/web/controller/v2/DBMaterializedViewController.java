@@ -94,7 +94,7 @@ public class DBMaterializedViewController {
 
     @ApiOperation(value = "listAllBases",
             notes = "obtain list of all base tables under the current datasource that are used to create the materialized view.")
-    @GetMapping(value = "/{sessionId}/listMaterializedViewsBases")
+    @GetMapping(value = "/{sessionId}/listMaterializedViewBases")
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public SuccessResponse<AllMVBaseTables> listAllBases(@PathVariable String sessionId,
             @RequestParam(required = false, defaultValue = "") String name) {
