@@ -32,7 +32,7 @@ public interface ScheduleExportImportFacade {
 
     void adaptProperties(ExportProperties exportProperties);
 
-    void exportDatasourceAdapt(ExportedDataSource exportedDataSource);
+    void adaptExportDatasource(ExportedDataSource exportedDataSource);
 
     List<ImportScheduleTaskView> preview(ScheduleType scheduleType, Long projectId, ExportProperties exportProperties,
             List<ScheduleRowPreviewDto> dtos);

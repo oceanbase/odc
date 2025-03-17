@@ -87,7 +87,7 @@ public class ScheduleTaskConfiguration {
             }
 
             @Override
-            public void exportDatasourceAdapt(ExportedDataSource exportedDataSource) {
+            public void adaptExportDatasource(ExportedDataSource exportedDataSource) {
                 throw new UnsupportedOperationException("Community Edition is not supported yet");
             }
 

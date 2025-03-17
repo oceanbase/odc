@@ -281,7 +281,7 @@ public class ScheduleTaskExporter {
         Database database = databaseService.detailSkipPermissionCheck(databaseId);
         ConnectionConfig dataSource = database.getDataSource();
         ExportedDataSource exportedDataSource = ExportedDataSource.fromConnectionConfig(dataSource);
-        scheduleExportImportFacade.exportDatasourceAdapt(exportedDataSource);
+        scheduleExportImportFacade.adaptExportDatasource(exportedDataSource);
         return ExportedDatabase.of(exportedDataSource, database.getName());
     }
 
