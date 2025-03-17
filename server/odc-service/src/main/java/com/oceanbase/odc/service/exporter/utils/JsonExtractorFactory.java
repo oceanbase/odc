@@ -35,7 +35,6 @@ public final class JsonExtractorFactory {
 
     public static File getConfigJson(String path) {
         File configJson = new File(path, "config.json");
-
         if (configJson.exists() && configJson.isFile()) {
             return configJson;
         } else {
@@ -46,15 +45,11 @@ public final class JsonExtractorFactory {
     public static JsonExtractor buildJsonExtractor(ObjectStorageFacade objectStorageFacade, String bucketName,
             String objectId, String secret, String tempFilePath) throws IOException {
         JsonExtractor jsonExtractor = new JsonExtractor();
-        // Create a random directory within the specified destination path
-        Path randomDir = Files.createTempDirectory(new File(tempFilePath).toPath(), "unzipped-");
-
-        // Create a temporary file to save the InputStream contents
-        File tempZipFile = File.createTempFile("tempZip", ".zip", randomDir.toFile());
-        jsonExtractor.setTempFilePath(randomDir.toFile().getPath());
+        TempRandomFile tempRandomFile = getTempRandomFile(tempFilePath, jsonExtractor);
+        jsonExtractor.setTempFilePath(tempRandomFile.randomDir.toFile().getPath());
 
         // Write the InputStream to the temporary zip file
-        try (FileOutputStream fos = new FileOutputStream(tempZipFile);
+        try (FileOutputStream fos = new FileOutputStream(tempRandomFile.tempZipFile);
                 InputStream inputStream = objectStorageFacade.loadObject(bucketName, objectId).getContent()) {
             byte[] buffer = new byte[1024];
             int len;
@@ -62,6 +57,39 @@ public final class JsonExtractorFactory {
                 fos.write(buffer, 0, len);
             }
         }
+        return getJsonExtractor(secret, tempRandomFile.tempZipFile, tempRandomFile.randomDir, jsonExtractor);
+    }
+
+    public static JsonExtractor buildJsonExtractor(ExportedFile exportedFile, String tempPath) throws IOException {
+        JsonExtractor jsonExtractor = new JsonExtractor();
+        TempRandomFile tempRandomFile = getTempRandomFile(tempPath, jsonExtractor);
+        jsonExtractor.setTempFilePath(tempRandomFile.randomDir.toFile().getPath());
+
+        // Write the InputStream to the temporary zip file
+        try (FileOutputStream fos = new FileOutputStream(tempRandomFile.tempZipFile);
+                InputStream inputStream = Files.newInputStream(exportedFile.getFile().toPath())) {
+            byte[] buffer = new byte[1024];
+            int len;
+            while ((len = inputStream.read(buffer)) != -1) {
+                fos.write(buffer, 0, len);
+            }
+        }
+        return getJsonExtractor(exportedFile.getSecret(), tempRandomFile.tempZipFile, tempRandomFile.randomDir,
+                jsonExtractor);
+    }
+
+    private static TempRandomFile getTempRandomFile(String tempFilePath, JsonExtractor jsonExtractor)
+            throws IOException {
+        // Create a random directory within the specified destination path
+        Path randomDir = Files.createTempDirectory(new File(tempFilePath).toPath(), "unzipped-");
+
+        // Create a temporary file to save the InputStream contents
+        File tempZipFile = File.createTempFile("tempZip", ".zip", randomDir.toFile());
+        return new TempRandomFile(randomDir, tempZipFile);
+    }
+
+    private static JsonExtractor getJsonExtractor(String secret, File tempZipFile, Path randomDir,
+            JsonExtractor jsonExtractor) throws IOException {
         FileZipper.unzipFileToPath(tempZipFile, randomDir);
         File configJson = getConfigJson(jsonExtractor.getTempFilePath());
         Verify.notNull(configJson, "Invalid file format, lack of config json.");
@@ -70,30 +98,14 @@ public final class JsonExtractorFactory {
         return jsonExtractor;
     }
 
-    public static JsonExtractor buildJsonExtractor(ExportedFile exportedFile, String tempPath) throws IOException {
-        JsonExtractor jsonExtractor = new JsonExtractor();
-        // Create a random directory within the specified destination path
-        Path randomDir = Files.createTempDirectory(new File(tempPath).toPath(), "unzipped-");
+    private static class TempRandomFile {
+        public final Path randomDir;
+        public final File tempZipFile;
 
-        // Create a temporary file to save the InputStream contents
-        File tempZipFile = File.createTempFile("tempZip", ".zip", randomDir.toFile());
-        jsonExtractor.setTempFilePath(randomDir.toFile().getPath());
-
-        // Write the InputStream to the temporary zip file
-        try (FileOutputStream fos = new FileOutputStream(tempZipFile);
-                InputStream inputStream = Files.newInputStream(exportedFile.getFile().toPath())) {
-            byte[] buffer = new byte[1024];
-            int len;
-            while ((len = inputStream.read(buffer)) != -1) {
-                fos.write(buffer, 0, len);
-            }
+        public TempRandomFile(Path randomDir, File tempZipFile) {
+            this.randomDir = randomDir;
+            this.tempZipFile = tempZipFile;
         }
-        FileZipper.unzipFileToPath(tempZipFile, randomDir);
-        File configJson = getConfigJson(jsonExtractor.getTempFilePath());
-        Verify.notNull(configJson, "Invalid file format, lack of config json.");
-        log.info("Files extracted to: {}", randomDir.toAbsolutePath());
-        jsonExtractor.setExportedFile(new ExportedFile(configJson, exportedFile.getSecret()));
-        return jsonExtractor;
     }
 
 

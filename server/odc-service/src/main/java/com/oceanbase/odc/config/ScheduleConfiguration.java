@@ -314,7 +314,7 @@ public class ScheduleConfiguration {
     @Bean(name = "scheduleImportExecutor")
     public ThreadPoolTaskExecutor scheduleImportExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        int minPoolSize = Math.max(SystemUtils.availableProcessors(), 8);
+        int minPoolSize = Math.max(SystemUtils.availableProcessors(), 4);
         executor.setCorePoolSize(minPoolSize);
         executor.setMaxPoolSize(minPoolSize * 2);
         executor.setQueueCapacity(10);
