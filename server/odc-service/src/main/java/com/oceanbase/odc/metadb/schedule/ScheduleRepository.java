@@ -32,6 +32,7 @@ import org.springframework.data.repository.query.Param;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 
 /**
  * @Author：tinker
@@ -79,4 +80,6 @@ public interface ScheduleRepository extends OdcJpaRepository<ScheduleEntity, Lon
     }
 
     List<ScheduleEntity> findByIdInAndProjectIdIn(Collection<Long> ids, Collection<Long> projectIds);
+
+    List<ScheduleEntity> findByProjectIdInAndTypeIn(Collection<Long> projectIds, Collection<ScheduleType> types);
 }

@@ -1334,6 +1334,10 @@ public class FlowInstanceService {
         queryParamMap.put("organizationId", authenticationFacade.currentOrganizationId());
         querySql.append("SELECT flow_instance_id, task_type FROM flow_instance_node_task ");
         querySql.append("WHERE organization_id = :organizationId ");
+        if (CollectionUtils.isNotEmpty(params.getFlowInstanceIds())) {
+            queryParamMap.put("flowInstanceIds", params.getFlowInstanceIds());
+            querySql.append("AND flow_instance_id in (:flowInstanceIds) ");
+        }
         if (CollectionUtils.isNotEmpty(params.getTaskTypes())) {
             queryParamMap.put("taskTypes",
                     params.getTaskTypes().stream().map(Enum::name).collect(Collectors.toSet()));
@@ -1360,84 +1364,34 @@ public class FlowInstanceService {
      * schedule_schedule. In the case of MultiDatabaseChange, the id of the flow_instance table is
      * stored. The two tables may be identical
      */
-    public List<FlowInstanceState> listAlterScheduleSubTaskStates(@NonNull InnerQueryFlowInstanceParams params) {
+    public List<FlowInstanceState> listAlterScheduleSubTaskStates(
+            @NonNull InnerQueryFlowInstanceParams params) {
         Set<Long> joinedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
-        if (CollectionUtils.isEmpty(joinedProjectIds)) {
-            return Collections.emptyList();
-        }
-        /**
-         * Query flow_instance_node_task table to get {@link ServiceTaskInstanceEntity#getFlowInstanceId()}
-         * and {@link ServiceTaskInstanceEntity#getTaskType()}
-         */
-        List<ServiceTaskInstanceEntity> serviceTasks = innerListDistinctServiceTaskInstances(params);
-        if (CollectionUtils.isEmpty(serviceTasks)) {
-            return Collections.emptyList();
-        }
-        /**
-         * Get {@link ServiceTaskInstanceEntity#getFlowInstanceId()} in serviceTasks, check the
-         * flow_instance table and get {@link FlowInstanceEntity#getId()}
-         */
-        Set<Long> taskFlowInstanceIds = serviceTasks.stream().map(ServiceTaskInstanceEntity::getFlowInstanceId)
-                .collect(Collectors.toSet());
-        List<FlowInstanceProjection> flowInstances = flowInstanceRepository
-                .findByIdInAndProjectIdInAndParentInstanceIdIsNotNull(taskFlowInstanceIds, joinedProjectIds);
-        if (CollectionUtils.isEmpty(flowInstances)) {
+        if (CollectionUtils.isEmpty(joinedProjectIds) || CollectionUtils.isEmpty(params.getParentInstanceIds())) {
             return Collections.emptyList();
         }
 
-        /**
-         * Check the {@link FlowInstanceEntity#getId()} in the flow_instance table based on
-         * {@link FlowInstanceEntity#getParentInstanceId()} to determine whether the task is AlterSchedule.
-         * The same parent_instance_id must correspond to the id of at least one flow_instance table. Query
-         * the id of the earliest parent_instance_id to check whether it is a AlterSchedule task
-         */
-        List<FlowInstanceProjection> parentFlowInstances =
-                flowInstanceRepository.findEarliestInstancesByIdInAndParentInstanceIdIn(taskFlowInstanceIds,
-                        flowInstances.stream().map(
-                                FlowInstanceProjection::getParentInstanceId).collect(
-                                        Collectors.toSet()));
-        if (CollectionUtils.isEmpty(parentFlowInstances)) {
+        Map<Long, FlowStatus> flowInstanceId2Status = flowInstanceRepository.findProjectionByParentInstanceIdIn(
+                params.getParentInstanceIds()).stream()
+                .collect(Collectors.toMap(FlowInstanceProjection::getId, FlowInstanceProjection::getStatus,
+                        (exist, replace) -> exist));
+        if (CollectionUtils.isEmpty(flowInstanceId2Status.keySet())) {
             return Collections.emptyList();
         }
 
-        /**
-         * Finally we know that if a task in the flow_instance table has parent_instance_id with the above
-         * alterSchedule in the flow_instance_id table, If parent_instance_id is the same, the task is a
-         * subTask of the alterSchedule
-         */
-        final List<Long> alterScheduleFlowInstanceIds =
-                serviceTaskRepository.findFlowInstanceIdsByFlowInstanceIdInAndTaskType(
-                        parentFlowInstances.stream().map(FlowInstanceProjection::getId).collect(Collectors.toSet()),
-                        TaskType.ALTER_SCHEDULE);
-        if (CollectionUtils.isEmpty(alterScheduleFlowInstanceIds)) {
-            return Collections.emptyList();
-        }
-        Set<Long> realAlterScheduleParentInstanceIds =
-                parentFlowInstances.stream().filter(pf -> alterScheduleFlowInstanceIds.contains(pf.getId()))
-                        .map(
-                                FlowInstanceProjection::getParentInstanceId)
-                        .collect(
-                                Collectors.toSet());
+        params.setFlowInstanceIds(flowInstanceId2Status.keySet());
+        Map<Long, TaskType> flowInstanceId2SubTaskType = innerListDistinctServiceTaskInstances(params)
+                .stream().collect(Collectors.toMap(ServiceTaskInstanceEntity::getFlowInstanceId,
+                        ServiceTaskInstanceEntity::getTaskType, (exist, replace) -> exist));
 
-        /**
-         * Filter alterSchedule subtasks that match the value of parent_instance_id
-         */
-        final Map<Long, FlowStatus> flowInstanceId2FlowStatus = flowInstances.stream()
-                .filter(f -> realAlterScheduleParentInstanceIds.contains(f.getParentInstanceId())).collect(
-                        Collectors.toMap(FlowInstanceProjection::getId, FlowInstanceProjection::getStatus,
-                                (exist, val) -> exist));
-        final Map<Long, TaskType> flowInstanceId2TaskType =
-                serviceTasks.stream().filter(s -> flowInstanceId2FlowStatus.containsKey(s.getFlowInstanceId())).collect(
-                        Collectors.toMap(ServiceTaskInstanceEntity::getFlowInstanceId,
-                                ServiceTaskInstanceEntity::getTaskType, (exist, val) -> exist));
-        if (flowInstanceId2FlowStatus.isEmpty() || flowInstanceId2TaskType.isEmpty()) {
-            log.warn("The List flow instance states is abnormal");
+        if (CollectionUtils.isEmpty(flowInstanceId2SubTaskType.keySet())) {
             return Collections.emptyList();
         }
+
         final List<FlowInstanceState> flowInstanceStates = new ArrayList<>();
-        flowInstanceId2FlowStatus.forEach((id, flowStatus) -> {
-            TaskType taskType = flowInstanceId2TaskType.get(id);
-            if (taskType != null && flowStatus != null) {
+        flowInstanceId2Status.forEach((id, flowStatus) -> {
+            TaskType taskType = flowInstanceId2SubTaskType.get(id);
+            if (flowStatus != null && taskType != null) {
                 flowInstanceStates.add(new FlowInstanceState(taskType, flowStatus));
             }
         });

@@ -82,8 +82,6 @@ public interface FlowInstanceRepository
 
     List<FlowInstanceEntity> findByParentInstanceId(Long parentInstanceId);
 
-    List<FlowInstanceEntity> findByIdInAndProjectIdIn(Collection<Long> ids, Collection<Long> projectIds);
-
     @Query(value = "select distinct i.* from flow_instance i left join flow_instance_node_task t "
             + "on i.id=t.flow_instance_id where t.task_task_id=:taskId", nativeQuery = true)
     List<FlowInstanceEntity> findByTaskId(@Param("taskId") Long taskId);
@@ -106,6 +104,12 @@ public interface FlowInstanceRepository
     Set<FlowInstanceEntity> findByScheduleIdAndStatus(@Param("scheduleIds") Set<Long> scheduleIds,
             @Param("status") FlowStatus status);
 
+    @Query(value = "select id, parent_instance_id as parentInstanceId, status from flow_instance where parent_instance_id in (:parentInstanceId)",
+            nativeQuery = true)
+    List<FlowInstanceProjection> findProjectionByParentInstanceIdIn(
+            @Param("parentInstanceId") Collection<Long> parentInstanceId);
+
+
     @Query("select e.parentInstanceId as parentInstanceId, count(1) as count from FlowInstanceEntity e where e.parentInstanceId in (?1) group by parentInstanceId")
     List<ParentInstanceIdCount> findByParentInstanceIdIn(Collection<Long> parentInstanceId);
 
@@ -115,30 +119,6 @@ public interface FlowInstanceRepository
 
         Integer getCount();
     }
-
-    @Query(value = "SELECT id, parent_instance_id as parentInstanceId, status " +
-            "FROM flow_instance " +
-            "WHERE id IN (:flowInstanceIds) " +
-            "  AND project_id IN (:projectIds) " +
-            "  AND parent_instance_id IS NOT NULL", nativeQuery = true)
-    List<FlowInstanceProjection> findByIdInAndProjectIdInAndParentInstanceIdIsNotNull(
-            @Param("flowInstanceIds") Collection<Long> flowInstanceIds,
-            @Param("projectIds") Collection<Long> projectIds);
-
-    @Query(value = "WITH FlowInstances AS ( " +
-            "    SELECT " +
-            "       id, parent_instance_id, ROW_NUMBER() OVER (PARTITION BY parent_instance_id ORDER BY create_time ASC) AS rn "
-            +
-            "    FROM flow_instance " +
-            "    WHERE parent_instance_id IN (:parentInstanceIds) " +
-            "      AND id NOT IN (:flowInstanceIds) " +
-            ") " +
-            "SELECT id, parent_instance_id as parentInstanceId " +
-            "FROM FlowInstances " +
-            "WHERE rn = 1", nativeQuery = true)
-    List<FlowInstanceProjection> findEarliestInstancesByIdInAndParentInstanceIdIn(
-            @Param("flowInstanceIds") Collection<Long> flowInstanceIds,
-            @Param("parentInstanceIds") Collection<Long> parentInstanceIds);
 
     interface FlowInstanceProjection {
         Long getId();

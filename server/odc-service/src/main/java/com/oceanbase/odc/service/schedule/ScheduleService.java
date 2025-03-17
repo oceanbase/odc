@@ -1169,16 +1169,32 @@ public class ScheduleService {
 
     private List<AlterScheduleSubTaskStat> listAlterScheduleSubTaskStatWithoutTaskFramework(
             @NonNull QueryAlterScheduleStatParams params) {
+        Set<Long> joinedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
+        if (CollectionUtils.isEmpty(joinedProjectIds)) {
+            return Collections.emptyList();
+        }
         /**
          * ODC 4.3.4 only {@link ScheduleType.SQL_PLAN} and {@link ScheduleType.PARTITION_PLAN} isn't used
          * to taskFramework, and the subtask type of {@link ScheduleType.SQL_PLAN} is {@link TaskType.ASYNC}
          */
+        params.setScheduleTypes(ObjectUtil.defaultIfNull(params.getScheduleTypes(), Collections.emptySet()));
+        params.getScheduleTypes().retainAll(Arrays.asList(ScheduleType.SQL_PLAN, ScheduleType.PARTITION_PLAN));
+        if (CollectionUtils.isEmpty(params.getScheduleTypes())) {
+            return Collections.emptyList();
+        }
+        Set<Long> alterScheduleIds = filterAlterSchedules(
+                scheduleRepository.findByProjectIdInAndTypeIn(joinedProjectIds, params.getScheduleTypes()))
+                        .stream().map(ScheduleEntity::getId).collect(Collectors.toSet());
+        if (CollectionUtils.isEmpty(alterScheduleIds)) {
+            return Collections.emptyList();
+        }
+
         InnerQueryFlowInstanceParams innerQueryFlowInstanceParams = InnerQueryFlowInstanceParams.builder()
+                .parentInstanceIds(alterScheduleIds)
                 .taskTypes(Sets.newHashSet(TaskType.ASYNC, TaskType.PARTITION_PLAN))
                 .startTime(params.getStartTime())
                 .endTime(params.getEndTime())
                 .build();
-
         List<FlowInstanceState> flowInstanceStates = flowInstanceService.listAlterScheduleSubTaskStates(
                 innerQueryFlowInstanceParams);
         if (CollectionUtils.isEmpty(flowInstanceStates)) {

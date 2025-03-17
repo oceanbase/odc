@@ -30,6 +30,7 @@ import lombok.Data;
 @Data
 @Builder
 public class QueryAlterScheduleStatParams {
+    private Set<Long> alterScheduleIds;
     private Set<ScheduleType> scheduleTypes;
     private Date startTime;
     private Date endTime;
