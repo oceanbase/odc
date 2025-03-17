@@ -143,6 +143,7 @@ public class DataBaseController {
             @RequestParam(name = "limit", defaultValue = "10") Integer historiesLimit) {
         DBAccessHistoryReq req = new DBAccessHistoryReq().setHistoryCount(historiesLimit);
         return Responses.list(databaseService.listDatabaseAccessHistory(req));
+    }
 
     @ApiOperation(value = "updateDatabaseRemark", notes = "update databases remark")
     @RequestMapping(value = "/databases/batchUpdateRemarks", method = RequestMethod.POST)
