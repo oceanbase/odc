@@ -874,3 +874,6 @@ ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES('odc.task.dlm.session-limiting-ratio', '25',
 'The ratio of oracle/mysql active sessions to the maximum number of connections allowed' )
 ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES('odc.task.isAutoRecoveryTimeoutJob', 'true',
+'Enable auto recovery timeout job or not, default value true' )
+ON DUPLICATE KEY UPDATE `id` = `id`;
