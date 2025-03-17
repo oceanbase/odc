@@ -76,10 +76,11 @@ public interface TaskFrameworkService {
     long countRunningJobs(TaskRunMode runMode);
 
     // api for start job v1
-    int startSuccess(Long id, ResourceID resourceID, String executorIdentifier, JobContext jobContext);
+    int startSuccess(Long id, ResourceID resourceID, int executorListenPort, String executorIdentifier,
+            JobContext jobContext);
 
     // api for start job v2
-    int startSuccess(Long id, String executorIdentifier, JobContext jobContext);
+    int startSuccess(Long id, int executorListenPort, String executorIdentifier, JobContext jobContext);
 
     int beforeStart(Long id);
 

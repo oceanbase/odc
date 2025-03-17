@@ -51,6 +51,7 @@ import com.oceanbase.odc.service.task.supervisor.TaskCallerResult;
 import com.oceanbase.odc.service.task.supervisor.TaskSupervisor;
 import com.oceanbase.odc.service.task.supervisor.endpoint.ExecutorEndpoint;
 import com.oceanbase.odc.service.task.supervisor.endpoint.SupervisorEndpoint;
+import com.oceanbase.odc.service.task.util.JobUtils;
 
 import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -173,6 +174,7 @@ public class DoFinishJobV2 implements Job {
         ExecutorIdentifier identifier = ExecutorIdentifierParser.parser(executorIdentifierStr);
         ExecutorEndpoint executorEndpoint =
                 new ExecutorEndpoint("command", supervisorEndpoint.getHost(), supervisorEndpoint.getPort(),
+                        JobUtils.getODCServerPort(configuration),
                         identifier.getPort(), executorIdentifierStr);
         JobContext jobContext = new DefaultJobContextBuilder().build(jobEntity, configuration);
         TaskCallerResult taskCallerResult = configuration.getTaskSupervisorJobCaller().destroyTask(supervisorEndpoint,
@@ -195,7 +197,7 @@ public class DoFinishJobV2 implements Job {
         if (StringUtils.equals(StringUtils.trim(identifier.getHost()),
                 StringUtils.trim(SystemUtils.getLocalIpAddress()))) {
             // in same machine, kill it
-            TaskSupervisor taskSupervisor = new TaskSupervisor(null, null);
+            TaskSupervisor taskSupervisor = new TaskSupervisor(null, null, null);
             taskSupervisor.destroyTask(identifier);
             return true;
         } else {

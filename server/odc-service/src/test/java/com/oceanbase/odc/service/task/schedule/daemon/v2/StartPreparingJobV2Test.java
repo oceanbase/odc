@@ -50,7 +50,7 @@ public class StartPreparingJobV2Test extends DaemonV2TestBase {
         Mockito.when(supervisorAgentAllocator.checkAllocateSupervisorEndpointState(ArgumentMatchers.any())).thenReturn(
                 Optional.of(supervisorEndpoint));
         ExecutorEndpoint executorEndpoint = new ExecutorEndpoint("agent", supervisorEndpoint.getHost(),
-                supervisorEndpoint.getPort(), 8888, "identifier");
+                supervisorEndpoint.getPort(), 8989, 8888, "identifier");
         Mockito.when(taskSupervisorJobCaller.startTask(ArgumentMatchers.any(), ArgumentMatchers.any(),
                 ArgumentMatchers.any())).thenReturn(executorEndpoint);
         startPreparingJobV2 = new StartPreparingJobV2();

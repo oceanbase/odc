@@ -62,8 +62,8 @@ public class LocalMockK8sJobClient implements K8sJobClientSelector {
         private final TaskSupervisor taskSupervisor;
 
         public LocalProcessClient() {
-            taskSupervisor = new TaskSupervisor(new SupervisorEndpoint(SystemUtils.getLocalIpAddress(), 8989),
-                    "com.oceanbase.odc.supervisor.SupervisorAgent");
+            taskSupervisor = new TaskSupervisor(new SupervisorEndpoint(SystemUtils.getLocalIpAddress(), 8999),
+                    8989, "com.oceanbase.odc.supervisor.SupervisorAgent");
             taskSupervisor.setJobInfoSerializer(null);
         }
 
@@ -76,7 +76,8 @@ public class LocalMockK8sJobClient implements K8sJobClientSelector {
                         JobCallerBuilder.buildK8sEnv(jobContext, LogUtils.getBaseLogPath()));
                 ExecutorInfo executorInfo = jobCaller.doStart(
                         jobContext);
-                ExecutorIdentifier executorIdentifier = executorInfo.getExecutorIdentifier();
+                ExecutorEndpoint endpoint = executorInfo.getExecutorEndpoint();
+                ExecutorIdentifier executorIdentifier = ExecutorIdentifierParser.parser(endpoint.getIdentifier());
 
                 return new K8sPodResource(k8sResourceContext.getRegion(), k8sResourceContext.getGroup(),
                         k8sResourceContext.type(),

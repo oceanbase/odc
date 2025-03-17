@@ -113,7 +113,7 @@ public class TaskSupervisorServerTest {
 
     @Test
     public void testNoneStartCommandProcess() throws IOException {
-        ExecutorEndpoint endpoint = new ExecutorEndpoint("command", "127.0.0.1", 8989, 12345, "identifier");
+        ExecutorEndpoint endpoint = new ExecutorEndpoint("command", "127.0.0.1", 8999, 8989, 12345, "identifier");
         for (CommandType commandType : CommandType.values()) {
             if (commandType == CommandType.START) {
                 continue;

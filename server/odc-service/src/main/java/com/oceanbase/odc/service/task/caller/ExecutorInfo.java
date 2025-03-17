@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.task.caller;
 
 import com.oceanbase.odc.service.resource.ResourceID;
+import com.oceanbase.odc.service.task.supervisor.endpoint.ExecutorEndpoint;
 
 import lombok.Data;
 
@@ -26,5 +27,5 @@ import lombok.Data;
 @Data
 public class ExecutorInfo {
     private final ResourceID resourceID;
-    private final ExecutorIdentifier executorIdentifier;
+    private final ExecutorEndpoint executorEndpoint;
 }
