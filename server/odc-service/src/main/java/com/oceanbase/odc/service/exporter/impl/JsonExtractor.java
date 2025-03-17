@@ -199,7 +199,7 @@ public class JsonExtractor implements Extractor<JsonNode> {
                     jsonParser.skipChildren();
                 }
             }
-            throw new IllegalStateException("Missing required fields in JSON data");
+            return null;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
