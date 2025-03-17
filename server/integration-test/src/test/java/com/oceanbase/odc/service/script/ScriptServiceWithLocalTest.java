@@ -75,23 +75,7 @@ public class ScriptServiceWithLocalTest extends ServiceTestEnv {
     }
 
     @Test
-    public void testBatchDownload_SingleFile() throws IOException {
-        List<ScriptMeta> scriptMetas = scriptService.batchPutScript(
-                Collections.singletonList(createMultipartFile(file1Name, file1Content)));
-        assertEquals(1, scriptMetas.size());
-        List<Long> scriptIds = scriptMetas.stream().map(ScriptMeta::getId).collect(Collectors.toList());
-        ResponseEntity<InputStreamResource> entity = scriptService.batchDownload(scriptIds);
-        assertNotNull(entity);
-        String filename = Objects.requireNonNull(entity.getHeaders().getContentDisposition().getFilename());
-        assertEquals(file1Name, filename);
-
-        InputStreamResource body = entity.getBody();
-        assertNotNull(body);
-        assertEquals(file1Content, readFullyAsString(body.getInputStream(), StandardCharsets.UTF_8.toString()));
-    }
-
-    @Test
-    public void testBatchDownload_MultiFiles() throws IOException {
+    public void testBatchDownload() throws IOException {
         List<ScriptMeta> scriptMetas = scriptService.batchPutScript(
                 Arrays.asList(createMultipartFile(file1Name, file1Content),
                         createMultipartFile(file2Name, file2Content)));

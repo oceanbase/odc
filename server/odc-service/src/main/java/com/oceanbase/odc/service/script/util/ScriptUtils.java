@@ -17,7 +17,9 @@ package com.oceanbase.odc.service.script.util;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.UUID;
@@ -38,7 +40,7 @@ import cn.hutool.core.lang.Tuple;
  */
 public class ScriptUtils {
     private static final String SCRIPT_BATCH_DOWNLOAD_DIRECTORY = "temp_dir/script_download";
-    private static final SimpleDateFormat FORMAT = new SimpleDateFormat("yyyyMMddHHmmss");
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
     public static String getPersonalBucketName(String userIdStr) {
         PreConditions.notEmpty(userIdStr, "userIdStr");
@@ -47,9 +49,9 @@ public class ScriptUtils {
 
     public static Tuple getScriptBatchDownloadDirectoryAndZipFile() {
         int hashCode = UUID.randomUUID().hashCode();
-        FORMAT.setTimeZone(TimeZone.getDefault());
+        ZonedDateTime nowInShanghai = ZonedDateTime.now(ZoneId.systemDefault());
         String name = String.format("%s_%s", AuditEventAction.DOWNLOAD_SCRIPT.getLocalizedMessage(),
-                FORMAT.format(new Date()));
+                nowInShanghai.format(FORMATTER));
         return new Tuple(String.format("%s/%s/%s/", SCRIPT_BATCH_DOWNLOAD_DIRECTORY, hashCode, name),
                 String.format("%s/%s/%s.zip", SCRIPT_BATCH_DOWNLOAD_DIRECTORY, hashCode, name));
     }

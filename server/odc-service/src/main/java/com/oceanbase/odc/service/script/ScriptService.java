@@ -322,19 +322,15 @@ public class ScriptService {
             log.info("nothing to download, scriptIds={}", scriptIds);
             throw new BadRequestException("Can't find valid Scripts to download");
         }
-        if (scriptMetas.size() == 1) {
-            ScriptMetaEntity objectMetadata = scriptMetas.get(0);
-            StorageObject storageObject =
-                    objectStorageFacade.loadObject(objectMetadata.getBucketName(), objectMetadata.getObjectId());
-            return WebResponseUtils.getFileAttachmentResponseEntity(new InputStreamResource(storageObject.getContent()),
-                    objectMetadata.getObjectName());
-        }
         Tuple downloadDirAndZipFileTuple = ScriptUtils.getScriptBatchDownloadDirectoryAndZipFile();
         String downloadDirStr = downloadDirAndZipFileTuple.get(0);
         String zipFileStr = downloadDirAndZipFileTuple.get(1);
 
         try {
-            File downloadDir = ScriptUtils.createFileWithParent(downloadDirStr, true);
+            File downloadDir = new File(downloadDirStr);
+            if (!downloadDir.exists()) {
+                FileUtils.forceMkdir(downloadDir);
+            }
             for (ScriptMetaEntity objectMetadata : scriptMetas) {
                 StorageObject storageObject =
                         objectStorageFacade.loadObject(objectMetadata.getBucketName(), objectMetadata.getObjectId());
