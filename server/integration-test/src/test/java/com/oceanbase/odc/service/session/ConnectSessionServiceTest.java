@@ -99,7 +99,7 @@ public class ConnectSessionServiceTest extends AuthorityTestEnv {
         Mockito.when(connectionService.getForConnectionSkipPermissionCheck(connectionId))
                 .thenReturn(buildTestConnection(DialectType.OB_ORACLE));
         Mockito.when(organizationConfigFacade.getDefaultQueryLimit())
-            .thenReturn(1000);
+                .thenReturn(1000);
         ConnectionSession connectionSession = sessionService.create(connectionId, null);
 
         Assert.assertNotNull(connectionSession.getId());
@@ -109,7 +109,7 @@ public class ConnectSessionServiceTest extends AuthorityTestEnv {
     @Test
     public void testCreateSessionForPublicConnection_sessionCreated() {
         Mockito.when(organizationConfigFacade.getDefaultQueryLimit())
-            .thenReturn(1000);
+                .thenReturn(1000);
         ConnectionConfig connectionConfig = buildTestConnection(DialectType.OB_ORACLE);
         connectionConfig.setVisibleScope(ConnectionVisibleScope.ORGANIZATION);
 
@@ -122,7 +122,7 @@ public class ConnectSessionServiceTest extends AuthorityTestEnv {
     @Test
     public void testCreateSessionForReadonlyPublicConnection_sessionCreated() {
         Mockito.when(organizationConfigFacade.getDefaultQueryLimit())
-            .thenReturn(1000);
+                .thenReturn(1000);
         ConnectionConfig connectionConfig = buildTestConnection(DialectType.OB_ORACLE);
         connectionConfig.setVisibleScope(ConnectionVisibleScope.ORGANIZATION);
         connectionConfig.setReadonlyUsername(connectionConfig.getUsername());
@@ -140,7 +140,7 @@ public class ConnectSessionServiceTest extends AuthorityTestEnv {
     @Test
     public void testCreateSessionWithSysyUser_sessionCreated() {
         Mockito.when(organizationConfigFacade.getDefaultQueryLimit())
-            .thenReturn(1000);
+                .thenReturn(1000);
         ConnectionConfig connectionConfig = buildTestConnection(DialectType.OB_ORACLE);
         connectionConfig.setSysTenantUsername(null);
         Mockito.when(connectionService.getForConnectionSkipPermissionCheck(connectionId)).thenReturn(connectionConfig);
@@ -154,7 +154,7 @@ public class ConnectSessionServiceTest extends AuthorityTestEnv {
     @Test
     public void testGetSession_sessionGetted() {
         Mockito.when(organizationConfigFacade.getDefaultQueryLimit())
-            .thenReturn(1000);
+                .thenReturn(1000);
         ConnectionSession connectionSession = createSession();
         ConnectionSession gettedSession = sessionService.nullSafeGet(connectionSession.getId());
 
@@ -164,7 +164,7 @@ public class ConnectSessionServiceTest extends AuthorityTestEnv {
     @Test
     public void testGetSession_nullGetted() {
         Mockito.when(organizationConfigFacade.getDefaultQueryLimit())
-            .thenReturn(1000);
+                .thenReturn(1000);
         DefaultConnectSessionIdGenerator idGenerator = new DefaultConnectSessionIdGenerator();
         CreateSessionReq req = new CreateSessionReq();
         req.setDsId(123456L);
@@ -179,7 +179,7 @@ public class ConnectSessionServiceTest extends AuthorityTestEnv {
     @Test
     public void testGetSession_NotFoundExceptionGetted() {
         Mockito.when(organizationConfigFacade.getDefaultQueryLimit())
-            .thenReturn(1000);
+                .thenReturn(1000);
         ConnectionSession connectionSession = createSession();
         when(authenticationFacade.currentUserId()).thenReturn(userId + 10);
         thrown.expect(NotFoundException.class);
@@ -190,7 +190,7 @@ public class ConnectSessionServiceTest extends AuthorityTestEnv {
     @Test
     public void testCloseSession_SuccessClosed() {
         Mockito.when(organizationConfigFacade.getDefaultQueryLimit())
-            .thenReturn(1000);
+                .thenReturn(1000);
         ConnectionSession connectionSession = createSession();
         sessionService.close(connectionSession.getId());
     }
@@ -198,7 +198,7 @@ public class ConnectSessionServiceTest extends AuthorityTestEnv {
     @Test
     public void testGetClosedSession_NullGetted() {
         Mockito.when(organizationConfigFacade.getDefaultQueryLimit())
-            .thenReturn(1000);
+                .thenReturn(1000);
         ConnectionSession connectionSession = createSession();
         sessionService.close(connectionSession.getId());
         thrown.expect(NotFoundException.class);
