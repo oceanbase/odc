@@ -13,4 +13,4 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-CREATE INDEX idx_job_group_create_time ON schedule_task (job_group, create_time);
+CREATE INDEX idx_schedule_task_job_group_create_time ON schedule_task (job_group, create_time);

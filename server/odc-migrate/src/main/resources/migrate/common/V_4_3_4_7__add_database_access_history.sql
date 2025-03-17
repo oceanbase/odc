@@ -21,6 +21,6 @@ create table if not exists database_access_history(
     last_access_time DATETIME NOT NULL COMMENT 'Last access time',
     create_time      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Create time',
     update_time      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Last Update time',
-    INDEX `idx_user_lat` (`user_id`, `last_access_time`),
-    UNIQUE KEY uq_user_dbid_cid (`user_id`, `database_id`)
+    INDEX `idx_database_access_history_uid_lat` (`user_id`, `last_access_time`),
+    UNIQUE KEY uk_database_access_history_uid_did (`user_id`, `database_id`)
   ) COMMENT = 'user access history of database table';

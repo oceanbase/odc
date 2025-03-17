@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.core.shared.constant.ConnectType;
+import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.PaginatedResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
@@ -134,10 +135,10 @@ public class DataBaseController {
     }
 
     @ApiOperation(value = "listDatabaseAccessHistories", notes = "list accessed database histories ")
-    @RequestMapping(value = "/databases/histories", method = RequestMethod.GET)
-    public SuccessResponse<List<Database>> listDatabaseAccessHistories(
+    @RequestMapping(value = "/databaseAccessHistories", method = RequestMethod.GET)
+    public ListResponse<Database> listDatabaseAccessHistories(
             @RequestParam(name = "limit", defaultValue = "10") Integer historiesLimit) {
         DBAccessHistoryReq req = new DBAccessHistoryReq().setHistoryCount(historiesLimit);
-        return Responses.success(databaseService.listDatabaseAccessHistory(req));
+        return Responses.list(databaseService.listDatabaseAccessHistory(req));
     }
 }

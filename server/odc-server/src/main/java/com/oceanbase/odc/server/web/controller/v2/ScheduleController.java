@@ -287,7 +287,7 @@ public class ScheduleController {
     }
 
     @RequestMapping(value = "/alterScheduleStat", method = RequestMethod.GET)
-    public SuccessResponse<List<SingleAlterScheduleTaskStat>> getAlterScheduleStat(
+    public ListResponse<SingleAlterScheduleTaskStat> getAlterScheduleStat(
             @RequestParam(required = false, name = "types") Set<ScheduleType> types,
             @RequestParam(required = false, name = "startTime") Date startTime,
             @RequestParam(required = false, name = "endTime") Date endTime) {
@@ -296,6 +296,6 @@ public class ScheduleController {
                 .startTime(startTime)
                 .endTime(endTime)
                 .build();
-        return Responses.success(scheduleService.listAlterScheduleTaskStat(req));
+        return Responses.list(scheduleService.listAlterScheduleTaskStat(req));
     }
 }
