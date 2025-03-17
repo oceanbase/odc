@@ -40,6 +40,7 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
+import com.oceanbase.odc.service.config.OrganizationConfigFacade;
 import com.oceanbase.odc.service.db.model.EditPLReq;
 import com.oceanbase.odc.service.db.model.EditPLResp;
 import com.oceanbase.odc.service.session.ConnectSessionService;
@@ -59,6 +60,8 @@ public class DBPLModifyHelperTest extends ServiceTestEnv {
 
     @MockBean
     private ConnectSessionService sessionService;
+    @MockBean
+    private OrganizationConfigFacade configFacade;
 
     @Autowired
     private DBPLModifyHelper dbplModifyHelper;
@@ -125,6 +128,8 @@ public class DBPLModifyHelperTest extends ServiceTestEnv {
         SqlCommentProcessor sqlCommentProcessor = new SqlCommentProcessor(DialectType.OB_MYSQL, true, true, true);
         testConnectionSession.setAttribute(ConnectionSessionConstants.SQL_COMMENT_PROCESSOR_KEY, sqlCommentProcessor);
         String sessionId = testConnectionSession.getId();
+        Mockito.when(configFacade.getDefaultQueryLimit()).thenReturn(1000);
+        Mockito.when(configFacade.getDefaultMaxQueryLimit()).thenReturn(1000);
         Mockito.when(sessionService.nullSafeGet(sessionId, true)).thenReturn(testConnectionSession);
         Mockito.when(sessionService.nullSafeGet(sessionId)).thenReturn(testConnectionSession);
     }
