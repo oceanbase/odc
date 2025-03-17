@@ -92,9 +92,9 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
     @Test
     public void getAsyncResult_killSessionSql_successResult() throws Exception {
         Mockito.when(organizationConfigFacade.getDefaultQueryLimit())
-            .thenReturn(1000);
+                .thenReturn(1000);
         Mockito.when(organizationConfigFacade.getDefaultMaxQueryLimit())
-            .thenReturn(1000);
+                .thenReturn(1000);
         String sql = "kill session /*";
         injectAsyncJdbcExecutor(JdbcGeneralResult.successResult(SqlTuple.newTuple(sql)));
         SqlAsyncExecuteResp resp = consoleService.streamExecute(sessionid, getSqlAsyncExecuteReq(sql));
