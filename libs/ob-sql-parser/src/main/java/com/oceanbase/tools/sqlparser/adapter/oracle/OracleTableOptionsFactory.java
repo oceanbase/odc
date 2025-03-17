@@ -186,6 +186,8 @@ public class OracleTableOptionsFactory extends OBParserBaseVisitor<TableOptions>
             } else if (ctx.INTERVAL() != null) {
                 target.setAutoRefresh(ctx.INTERVAL().getText());
             }
+        } else if (ctx.ENABLE_MACRO_BLOCK_BLOOM_FILTER() != null) {
+            target.setEnableMacroBlockBloomFilter(Boolean.valueOf(ctx.BOOL_VALUE().getText()));
         }
         return target;
     }
