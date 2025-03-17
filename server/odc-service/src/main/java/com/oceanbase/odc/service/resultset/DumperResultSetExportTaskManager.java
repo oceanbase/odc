@@ -135,8 +135,8 @@ public class DumperResultSetExportTaskManager implements ResultSetExportTaskMana
             if (maskingService.isMaskingEnabled()) {
                 parameter.setRowDataMaskingAlgorithms(getRowDataMaskingAlgorithms(parameter.getSql(), session));
             }
-            //Long maxRows = Long.valueOf(
-            //        organizationConfigFacade.compareWithQueryLimit(parameter.getMaxRows().toString()));
+            // Long maxRows = Long.valueOf(
+            // organizationConfigFacade.compareWithQueryLimit(parameter.getMaxRows().toString()));
             parameter.setSql(SqlRewriteUtil.addQueryLimit(parameter.getSql(), session, parameter.getMaxRows()));
 
             ResultSetExportTask task = new ResultSetExportTask(workingDir, logDir, parameter, session,
