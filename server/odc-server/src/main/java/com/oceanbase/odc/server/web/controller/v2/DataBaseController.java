@@ -17,6 +17,8 @@ package com.oceanbase.odc.server.web.controller.v2;
 
 import java.util.List;
 
+import javax.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
@@ -41,6 +43,7 @@ import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.connection.database.model.DeleteDatabasesReq;
 import com.oceanbase.odc.service.connection.database.model.ModifyDatabaseOwnerReq;
+import com.oceanbase.odc.service.connection.database.model.ModifyDatabaseRemarkReq;
 import com.oceanbase.odc.service.connection.database.model.QueryDatabaseParams;
 import com.oceanbase.odc.service.connection.database.model.TransferDatabasesReq;
 
@@ -140,5 +143,11 @@ public class DataBaseController {
             @RequestParam(name = "limit", defaultValue = "10") Integer historiesLimit) {
         DBAccessHistoryReq req = new DBAccessHistoryReq().setHistoryCount(historiesLimit);
         return Responses.list(databaseService.listDatabaseAccessHistory(req));
+
+    @ApiOperation(value = "updateDatabaseRemark", notes = "update databases remark")
+    @RequestMapping(value = "/databases/batchUpdateRemarks", method = RequestMethod.POST)
+    public SuccessResponse<Boolean> modifyDatabaseRemark(@Valid @RequestBody ModifyDatabaseRemarkReq req) {
+        return Responses
+                .success(databaseService.modifyDatabaseRemark(req.getDatabaseIds(), req.getDatabaseRemark()));
     }
 }

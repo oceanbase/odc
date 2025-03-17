@@ -16,11 +16,17 @@
 package com.oceanbase.odc.service.db.schema.syncer.object;
 
 import java.sql.Connection;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.metadb.iam.PermissionEntity;
+import com.oceanbase.odc.metadb.iam.PermissionRepository;
+import com.oceanbase.odc.metadb.iam.UserPermissionRepository;
 import com.oceanbase.odc.plugin.schema.api.ViewExtensionPoint;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
@@ -34,6 +40,12 @@ import lombok.NonNull;
  */
 @Component
 public class DBViewSyncer extends AbstractDBObjectSyncer<ViewExtensionPoint> {
+
+    @Autowired
+    private PermissionRepository permissionRepository;
+
+    @Autowired
+    private UserPermissionRepository userPermissionRepository;
 
     @Override
     protected Set<String> getLatestObjectNames(@NonNull ViewExtensionPoint extensionPoint,
@@ -50,6 +62,15 @@ public class DBViewSyncer extends AbstractDBObjectSyncer<ViewExtensionPoint> {
     @Override
     public DBObjectType getObjectType() {
         return DBObjectType.VIEW;
+    }
+
+    @Override
+    protected void preDelete(@NonNull Set<Long> toBeDeletedIds) {
+        List<PermissionEntity> permissions =
+                permissionRepository.findByResourceTypeAndResourceIdIn(ResourceType.ODC_TABLE, toBeDeletedIds);
+        Set<Long> permissionIds = permissions.stream().map(PermissionEntity::getId).collect(Collectors.toSet());
+        permissionRepository.deleteByIds(permissionIds);
+        userPermissionRepository.deleteByPermissionIds(permissionIds);
     }
 
 }

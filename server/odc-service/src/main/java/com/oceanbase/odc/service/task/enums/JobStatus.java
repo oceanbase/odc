@@ -32,14 +32,20 @@ public enum JobStatus {
     CANCELING,
     DO_CANCELING,
     CANCELED,
+    EXEC_TIMEOUT,
     DONE;
 
     public boolean isTerminated() {
-        return JobStatus.CANCELED == this || JobStatus.FAILED == this || JobStatus.DONE == this;
+        return JobStatus.CANCELED == this || JobStatus.FAILED == this || JobStatus.DONE == this
+                || JobStatus.EXEC_TIMEOUT == this;
     }
 
     public boolean isExecuting() {
         return !isTerminated();
+    }
+
+    public boolean isTerminating() {
+        return JobStatus.TIMEOUT == this || JobStatus.CANCELING == this || JobStatus.DO_CANCELING == this;
     }
 
     public TaskStatus convertTaskStatus() {

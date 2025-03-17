@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.task.schedule.daemon.v2;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -44,6 +45,7 @@ import com.oceanbase.odc.service.task.executor.TaskResult;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.state.JobStatusFsm;
+import com.oceanbase.odc.service.task.util.JobDateUtils;
 import com.oceanbase.odc.service.task.util.JobUtils;
 import com.oceanbase.odc.service.task.util.TaskExecutorClient;
 import com.oceanbase.odc.service.task.util.TaskResultWrap;
@@ -158,6 +160,7 @@ public class PullTaskResultJobV2 implements Job {
 
         TaskResult previous = JsonUtils.fromJson(jobEntity.getResultJson(), TaskResult.class);
         // always try update heartbeat
+        // TODO(lx): this operation can be merged into one update with following db operation if needed
         taskFrameworkService.updateHeartbeatWithExpectStatus(jobEntity.getId(), jobEntity.getStatus());
 
         if (!result.isProgressChanged(previous) || result.getStatus() == TaskStatus.PREPARING) {
@@ -171,10 +174,9 @@ public class PullTaskResultJobV2 implements Job {
         taskFrameworkService.saveOrUpdateLogMetadata(result, jobEntity.getId(), jobEntity.getStatus());
 
         // not upload result
-        // TODO(lx): DO_CANCELING should add time out here?
         // if a task alive, but always not terminate like not upload log meta. this situation should add a
         // timeout
-        if (MapUtils.isEmpty(result.getLogMetadata())) {
+        if (result.getStatus().isTerminated() && MapUtils.isEmpty(result.getLogMetadata())) {
             log.info("Job is finished but log have not uploaded, continue monitor result, jobId={}, currentStatus={}",
                     jobEntity.getId(), jobEntity.getStatus());
             return;
@@ -220,7 +222,9 @@ public class PullTaskResultJobV2 implements Job {
         JobStatus expectedJobStatus = jobStatusFsm.determinateJobStatus(jobEntity.getStatus(), result.getStatus());
         // has received canceling command and receive task last response
         // changed it to canceled no matter what task returned
-        if (jobEntity.getStatus() == JobStatus.DO_CANCELING) {
+        if (jobEntity.getStatus() == JobStatus.DO_CANCELING && cancelTaskDoneOrTimeout(jobEntity, result)) {
+            log.info("job cancel has done or timeout, taskResult={}, jobCancelingTime={}", result,
+                    jobEntity.getCancellingTime());
             expectedJobStatus = JobStatus.CANCELED;
         }
         int rows = taskFrameworkService.updateTaskResult(result, jobEntity, expectedJobStatus);
@@ -229,5 +233,21 @@ public class PullTaskResultJobV2 implements Job {
             return;
         }
         taskFrameworkService.publishEvent(result, jobEntity, expectedJobStatus);
+    }
+
+    protected boolean cancelTaskDoneOrTimeout(JobEntity jobEntity, TaskResult result) {
+        // task result has received
+        if (MapUtils.isNotEmpty(result.getLogMetadata())) {
+            return true;
+        }
+        // check if reached timeout
+        Date cancelingTime = jobEntity.getCancellingTime();
+        if (null == cancelingTime) {
+            return true;
+        }
+        long baseTimeMills = cancelingTime.getTime();
+        // max exceed 30 seconds to timeout
+        return JobDateUtils.getCurrentDate().getTime() - baseTimeMills > TimeUnit.MILLISECONDS.convert(
+                30, TimeUnit.SECONDS);
     }
 }
