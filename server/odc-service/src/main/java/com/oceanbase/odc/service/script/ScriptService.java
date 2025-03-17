@@ -120,7 +120,7 @@ public class ScriptService {
 
     private ScriptMetaMapper scriptMetaMapper = ScriptMetaMapper.INSTANCE;
     protected final Cache<String, Set<String>> tempPathsInBatchDownloadCache =
-            Caffeine.newBuilder().maximumSize(10000).expireAfterWrite(5, TimeUnit.MINUTES)
+            Caffeine.newBuilder().maximumSize(500).expireAfterWrite(5, TimeUnit.SECONDS)
                     .<String, Set<String>>removalListener((key, tempPaths, cause) -> {
                         if (CollectionUtils.isEmpty(tempPaths)) {
                             return;
@@ -312,6 +312,7 @@ public class ScriptService {
     }
 
     public ResponseEntity<InputStreamResource> batchDownload(List<Long> scriptIds) throws IOException {
+        tempPathsInBatchDownloadCache.cleanUp();
         String bucketName = ScriptUtils.getPersonalBucketName(authenticationFacade.currentUserIdStr());
         List<ScriptMetaEntity> scriptMetas = new ArrayList<>();
         for (Long scriptId : scriptIds) {

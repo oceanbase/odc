@@ -110,19 +110,4 @@ public class ScriptServiceWithLocalTest extends ServiceTestEnv {
         InputStream inputStream = new ByteArrayInputStream(content.getBytes());
         return new MockMultipartFile(fileName, fileName, "text/plain", inputStream);
     }
-
-    private String readFullyAsString(InputStream inputStream, String encoding) throws IOException {
-        StringBuilder sb = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, encoding))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (sb.length() > 0) {
-                    sb.append("\n");
-                }
-                sb.append(line);
-
-            }
-        }
-        return sb.toString();
-    }
 }
