@@ -27,6 +27,8 @@ import org.springframework.jdbc.core.JdbcOperations;
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBPackage;
@@ -180,6 +182,26 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
     @Override
     public List<String> showSystemViews(String schemaName) {
         throw new UnsupportedOperationException("Not supported yet");
+    }
+
+    @Override
+    public List<DBObjectIdentity> listMViews(String schemaName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public List<DBObjectIdentity> listAllMViewsLike(String viewNameLike) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public Boolean refreshMVData(DBMViewRefreshParameter parameter) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public DBMaterializedView getMView(String schemaName, String mViewName) {
+        throw new UnsupportedOperationException("not support yet");
     }
 
     @Override
