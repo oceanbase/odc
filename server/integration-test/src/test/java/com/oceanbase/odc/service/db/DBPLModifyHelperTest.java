@@ -136,6 +136,8 @@ public class DBPLModifyHelperTest extends ServiceTestEnv {
 
     @Test
     public void editProcedureForOBMysql_normal_successResult() throws Exception {
+        Mockito.when(configFacade.getDefaultQueryLimit()).thenReturn(1000);
+        Mockito.when(configFacade.getDefaultMaxQueryLimit()).thenReturn(1000);
         ConnectionSession testConnectionSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
         String editTestProcedure = "CREATE PROCEDURE " + ODC_TEST_PROCEDURE + "(IN num1 INT, OUT square1 INT)\n"
                 + "BEGIN\n"
@@ -151,6 +153,8 @@ public class DBPLModifyHelperTest extends ServiceTestEnv {
 
     @Test
     public void editProcedureForOBMysql_odcTempProcedureHaveExisted_failResult() throws Exception {
+        Mockito.when(configFacade.getDefaultQueryLimit()).thenReturn(1000);
+        Mockito.when(configFacade.getDefaultMaxQueryLimit()).thenReturn(1000);
         ConnectionSession testConnectionSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
         SyncJdbcExecutor syncJdbcExecutor = testConnectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.CONSOLE_DS_KEY);
@@ -174,6 +178,8 @@ public class DBPLModifyHelperTest extends ServiceTestEnv {
 
     @Test
     public void editFunctionForOBMysql_normal_successResult() throws Exception {
+        Mockito.when(configFacade.getDefaultQueryLimit()).thenReturn(1000);
+        Mockito.when(configFacade.getDefaultMaxQueryLimit()).thenReturn(1000);
         ConnectionSession testConnectionSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
         String editTestFunction = "CREATE FUNCTION " + ODC_TEST_FUNCTION + "(num1 INT) \n"
                 + "RETURNS INT\n"
@@ -189,6 +195,8 @@ public class DBPLModifyHelperTest extends ServiceTestEnv {
 
     @Test
     public void editFunctionForOBMysql_odcTempFunctionHaveExisted_failResultResult() throws Exception {
+        Mockito.when(configFacade.getDefaultQueryLimit()).thenReturn(1000);
+        Mockito.when(configFacade.getDefaultMaxQueryLimit()).thenReturn(1000);
         ConnectionSession testConnectionSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
         SyncJdbcExecutor syncJdbcExecutor = testConnectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.CONSOLE_DS_KEY);
