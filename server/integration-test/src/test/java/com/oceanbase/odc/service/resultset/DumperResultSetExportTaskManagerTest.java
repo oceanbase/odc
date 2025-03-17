@@ -59,8 +59,6 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
 
     @Autowired
     private DumperResultSetExportTaskManager manager;
-    @Autowired
-    private OrganizationConfigFacade organizationConfigFacade;
 
     @Before
     public void init() {
