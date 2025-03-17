@@ -16,18 +16,14 @@
 package com.oceanbase.odc.service.script.util;
 
 import java.io.File;
-import java.io.IOException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.UUID;
 
-import org.apache.commons.io.FileUtils;
-
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.AuditEventAction;
-import com.oceanbase.odc.core.shared.exception.InternalServerError;
 import com.oceanbase.odc.service.script.model.ScriptConstants;
 
 import cn.hutool.core.lang.Tuple;
@@ -57,19 +53,5 @@ public class ScriptUtils {
 
     public static String getScriptBatchDownloadDirectory() {
         return SCRIPT_BATCH_DOWNLOAD_DIRECTORY;
-    }
-
-    public static File createFileWithParent(String pathStr, boolean isDirectory) {
-        File file = new File(pathStr);
-        try {
-            if (isDirectory) {
-                FileUtils.forceMkdir(file);
-            } else {
-                FileUtils.touch(file);
-            }
-            return file;
-        } catch (IOException e) {
-            throw new InternalServerError("create file error,pathStr: " + pathStr, e);
-        }
     }
 }

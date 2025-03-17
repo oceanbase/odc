@@ -120,7 +120,7 @@ public class ScriptService {
 
     private ScriptMetaMapper scriptMetaMapper = ScriptMetaMapper.INSTANCE;
     protected final Cache<String, Set<String>> tempPathsInBatchDownloadCache =
-            Caffeine.newBuilder().maximumSize(500).expireAfterWrite(5, TimeUnit.SECONDS)
+            Caffeine.newBuilder().maximumSize(500).expireAfterWrite(5, TimeUnit.MINUTES)
                     .<String, Set<String>>removalListener((key, tempPaths, cause) -> {
                         if (CollectionUtils.isEmpty(tempPaths)) {
                             return;
