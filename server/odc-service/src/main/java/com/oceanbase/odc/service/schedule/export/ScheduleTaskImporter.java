@@ -136,6 +136,7 @@ public class ScheduleTaskImporter implements InitializingBean {
             checkMetaData(extractor, rowDataReader);
             checkScheduleType(rowDataReader, scheduleType);
 
+            log.info("Let's start import schedule,request={}", request);
             return doImportSchedule(scheduleType, request.getProjectId(), rowDataReader,
                     request.getImportableExportRowId(), request.getDecryptKey());
         } catch (IOException e) {

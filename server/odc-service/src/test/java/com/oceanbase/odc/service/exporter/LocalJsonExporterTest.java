@@ -148,7 +148,6 @@ public class LocalJsonExporterTest {
         metadata.putTransientProperties(ExportConstants.FILE_NAME, "test4");
         ExportedFile build = null;
         String secret = new BCryptPasswordEncoder().encode(PasswordUtils.random());
-        System.out.println(secret);
         try (ExportRowDataAppender testRowDataExportRowDataAppender =
                 archiver.buildRowDataAppender(metadata,
                         secret)) {
@@ -204,9 +203,10 @@ public class LocalJsonExporterTest {
         metadata.putTransientProperties(ExportConstants.FILE_PATH, "./");
         metadata.putTransientProperties(ExportConstants.FILE_NAME, "test2");
         ExportedFile build = null;
+        String secret = new BCryptPasswordEncoder().encode(PasswordUtils.random());
         try (
                 ExportRowDataAppender testRowDataExportRowDataAppender =
-                        archiver.buildRowDataAppender(metadata)) {
+                        archiver.buildRowDataAppender(metadata, secret)) {
             testRowDataExportRowDataAppender.append(new TestEncryptable("1", "1"));
             testRowDataExportRowDataAppender.append(new TestEncryptable("2", "2"));
             testRowDataExportRowDataAppender.append(new TestEncryptable("3", "3"));

@@ -59,7 +59,7 @@ public class JsonExtractor implements Extractor<JsonNode> {
     @Override
     public boolean checkSignature() {
         if (exportedFile.getSecret() == null) {
-            return true;
+            throw new IllegalStateException("Exported file has no secret");
         }
         JsonFactory jsonFactory = new JsonFactory();
         ObjectMapper objectMapper = new ObjectMapper();
