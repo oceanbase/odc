@@ -316,18 +316,14 @@ public class RuleService {
 
     private Map<String, Object> adaptiveProperties(Map<String, Object> properties) {
         String metaKey = properties.keySet().iterator().next();
-        if (metaKey.contains("sql-console.max-return-rows")) {
-            Integer currentValue = (Integer) properties.values().iterator().next();
-            try {
-                Integer newValue = organizationConfigFacade.compareWithMaxQueryLimit(currentValue);
-                Map<String, Object> result = new HashMap<>();
-                result.put(metaKey, newValue);
-                return result;
-            } catch (IllegalArgumentException e) {
-                return properties;
-            }
+        if (!metaKey.contains("sql-console.max-return-rows")) {
+            return properties;
         }
-        return properties;
+        Integer currentValue = (Integer) properties.values().iterator().next();
+        Integer newValue = organizationConfigFacade.compareWithMaxQueryLimit(currentValue);
+        Map<String, Object> result = new HashMap<>();
+        result.put(metaKey, newValue);
+        return result;
     }
 
 }

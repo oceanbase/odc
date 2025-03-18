@@ -61,7 +61,7 @@ public class PropertyMetadataMapper {
                 model.setDefaultValue(Collections.emptyList());
             } else {
                 Verify.equals(1, entity.getDefaultValues().size(), "defaultValues.size");
-                model.setDefaultValue(adaptiveDefaultValue(entity));
+                model.setDefaultValue(adaptiveMaxQueryLimit(entity));
             }
             if (CollectionUtils.isNotEmpty(candidates)) {
                 model.setCandidates(candidates.stream().map(Integer::parseInt).collect(Collectors.toList()));
@@ -99,17 +99,12 @@ public class PropertyMetadataMapper {
         return model;
     }
 
-    private static Integer adaptiveDefaultValue(PropertyMetadataEntity entity) {
+    private static Integer adaptiveMaxQueryLimit(PropertyMetadataEntity entity) {
         String defaultValue = entity.getDefaultValues().get(0);
-        if (entity.getName().contains("sql-console.max-return-rows")) {
-            OrganizationConfigFacade orgConfigFacade = SpringContextUtil.getBean(OrganizationConfigFacade.class);
-            try {
-                return orgConfigFacade.compareWithMaxQueryLimit(Integer.parseInt(defaultValue));
-            } catch (IllegalArgumentException e) {
-                return Integer.parseInt(defaultValue);
-            }
-        } else {
+        if (!entity.getName().contains("sql-console.max-return-rows")) {
             return Integer.parseInt(defaultValue);
         }
+        OrganizationConfigFacade orgConfigFacade = SpringContextUtil.getBean(OrganizationConfigFacade.class);
+        return orgConfigFacade.compareWithMaxQueryLimit(Integer.parseInt(defaultValue));
     }
 }

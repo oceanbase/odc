@@ -123,8 +123,7 @@ public class OrganizationConfigService {
     @PreAuthenticate(actions = "update", resourceType = "ODC_ORGANIZATION_CONFIG", isForAll = true)
     public List<Configuration> batchUpdate(@NotNull Long organizationId, @NotNull Long userId,
             @NotEmpty List<Configuration> configurations) {
-        configurations.forEach(this::validateConfiguration);
-        validateSqlQueryLimit(configurations);
+        validateConfiguration(configurations);
         List<OrganizationConfigEntity> organizationConfigEntities = configurations.stream()
                 .map(record -> record.convert2DO(organizationId, userId))
                 .collect(Collectors.toList());
@@ -139,7 +138,14 @@ public class OrganizationConfigService {
         return orgIdToConfigurationsCache.get(organizationId);
     }
 
-    private void validateSqlQueryLimit(List<Configuration> configurations) {
+    private void validateConfiguration(List<Configuration> configurations) {
+        configurations.forEach(config -> {
+            ConfigurationMeta meta = configKeyToConfigMeta.get(config.getKey());
+            if (Objects.isNull(meta)) {
+                throw new IllegalArgumentException("Invalid configuration key: " + config.getKey());
+            }
+            ConfigValueValidator.validate(meta, config.getValue());
+        });
         Map<String, Configuration> configMap = configurations.stream()
                 .collect(Collectors.toMap(Configuration::getKey, c -> c));
 
@@ -150,14 +156,6 @@ public class OrganizationConfigService {
             throw new IllegalArgumentException(
                     "Query limit exceeds the max value: " + queryLimit + " > " + maxQueryLimit);
         }
-    }
-
-    private void validateConfiguration(Configuration configuration) {
-        ConfigurationMeta meta = configKeyToConfigMeta.get(configuration.getKey());
-        if (Objects.isNull(meta)) {
-            throw new IllegalArgumentException("Invalid configuration key: " + configuration.getKey());
-        }
-        ConfigValueValidator.validate(meta, configuration.getValue());
     }
 
     private void evictOrgConfigurationsCache(@NotNull Long organizationId) {
