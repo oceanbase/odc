@@ -53,6 +53,7 @@ import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.supervisor.DefaultJobEventListener;
 import com.oceanbase.odc.service.task.supervisor.PortDetector;
 import com.oceanbase.odc.service.task.supervisor.TaskSupervisorJobCaller;
+import com.oceanbase.odc.service.task.supervisor.endpoint.SupervisorEndpoint;
 import com.oceanbase.odc.service.task.supervisor.proxy.LocalTaskSupervisorProxy;
 import com.oceanbase.odc.service.task.util.TaskExecutorClient;
 import com.oceanbase.odc.service.task.util.TaskSupervisorUtil;
@@ -95,28 +96,33 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
         setEventPublisher(publisher);
         TaskExecutorClient executorClient = new TaskExecutorClient();
         setTaskExecutorClient(executorClient);
-        setTaskSupervisorJobCaller(
-                new TaskSupervisorJobCaller(new DefaultJobEventListener(), new LocalTaskSupervisorProxy(
-                        TaskSupervisorUtil.getDefaultSupervisorEndpoint(), JobConstants.ODC_AGENT_CLASS_NAME),
-                        executorClient));
+        HostProperties hostProperties = ctx.getBean(HostProperties.class);
+        setHostProperties(hostProperties);
+        Integer odcListenPort = Integer.valueOf(hostProperties.getPort());
         setTransactionManager(new SpringTransactionManager(ctx.getBean(TransactionTemplate.class)));
         initJobRateLimiter();
         setTaskFrameworkDisabledHandler(new DefaultTaskFrameworkDisabledHandler());
         setJasyptEncryptorConfigProperties(ctx.getBean(JasyptEncryptorConfigProperties.class));
-        setHostProperties(ctx.getBean(HostProperties.class));
         setJobCredentialProvider(ctx.getBean(JobCredentialProvider.class));
         if (TaskSupervisorUtil.isTaskSupervisorEnabled(taskFrameworkProperties)) {
-            initTaskSupervisor(taskFrameworkProperties);
+            initTaskSupervisor(taskFrameworkProperties, odcListenPort, executorClient);
         }
     }
 
-    protected void initTaskSupervisor(TaskFrameworkProperties taskFrameworkProperties) {
+    protected void initTaskSupervisor(TaskFrameworkProperties taskFrameworkProperties, Integer supervisorOwnerPort,
+            TaskExecutorClient executorClient) {
+        SupervisorEndpoint localSupervisorEndpoint = TaskSupervisorUtil.getDefaultSupervisorEndpoint();
+        setTaskSupervisorJobCaller(
+                new TaskSupervisorJobCaller(new DefaultJobEventListener(), new LocalTaskSupervisorProxy(
+                        localSupervisorEndpoint, supervisorOwnerPort, JobConstants.ODC_AGENT_CLASS_NAME),
+                        executorClient));
         // init resource allocator and resource manager
         TaskResourceManager taskResourceManager = null;
         if (taskFrameworkProperties.getRunMode().isProcess()) {
             // prepare local process resource
             LocalProcessResource localProcessResource =
-                    new LocalProcessResource(ctx.getBean(SupervisorEndpointRepository.class));
+                    new LocalProcessResource(ctx.getBean(SupervisorEndpointRepository.class), localSupervisorEndpoint,
+                            supervisorOwnerPort);
             localProcessResource.prepareLocalProcessResource();
             taskResourceManager =
                     new TaskResourceManager(ctx.getBean(SupervisorEndpointRepository.class), ctx.getBean(

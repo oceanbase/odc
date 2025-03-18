@@ -36,7 +36,11 @@ import com.oceanbase.odc.metadb.resource.ResourceEntity;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
+import com.oceanbase.odc.service.task.caller.DefaultExecutorIdentifier;
+import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
+import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
 import com.oceanbase.odc.service.task.caller.JobEnvironmentEncryptor;
+import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.enums.JobStatus;
@@ -48,6 +52,7 @@ import com.oceanbase.odc.service.task.jasypt.DefaultJasyptEncryptor;
 import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
+import com.oceanbase.odc.service.task.supervisor.endpoint.ExecutorEndpoint;
 
 import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -235,5 +240,27 @@ public class JobUtils {
     public static String getLogBasePath(String mountPath) {
         return StringUtils.isNotBlank(mountPath) ? mountPath
                 : JobConstants.ODC_EXECUTOR_DEFAULT_MOUNT_PATH;
+    }
+
+    public static Integer getODCServerPort(JobConfiguration configuration) {
+        String portString = Optional.ofNullable(configuration.getHostProperties().getPort())
+                .orElse(DefaultExecutorIdentifier.DEFAULT_PORT + "");
+        return Integer.valueOf(portString);
+    }
+
+    // for process mode, correct real listen port to odc server port, for log request route
+    public static ExecutorIdentifier getCorrectedExecutorIdentifier(ExecutorEndpoint endpoint,
+            JobConfiguration configuration) {
+        ExecutorIdentifier executorIdentifier = ExecutorIdentifierParser.parser(endpoint.getIdentifier());
+        if (configuration.getTaskFrameworkProperties().getRunMode() == TaskRunMode.PROCESS) {
+            return DefaultExecutorIdentifier.builder().host(executorIdentifier.getHost())
+                    .port(endpoint.getSupervisorOwnerPort())
+                    .protocol(executorIdentifier.getProtocol())
+                    .namespace(executorIdentifier.getNamespace())
+                    .executorName(executorIdentifier.getExecutorName())
+                    .build();
+        } else {
+            return executorIdentifier;
+        }
     }
 }

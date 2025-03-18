@@ -40,6 +40,7 @@ import com.oceanbase.odc.service.task.supervisor.TaskSupervisor;
 import com.oceanbase.odc.service.task.supervisor.endpoint.ExecutorEndpoint;
 import com.oceanbase.odc.service.task.supervisor.endpoint.SupervisorEndpoint;
 import com.oceanbase.odc.service.task.util.HttpClientUtils;
+import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -59,11 +60,10 @@ public class ProcessJobCaller extends BaseJobCaller {
 
     private final TaskSupervisor taskSupervisor;
 
-    public ProcessJobCaller(ProcessConfig processConfig, String mainClassName) {
+    public ProcessJobCaller(ProcessConfig processConfig, TaskSupervisor taskSupervisor) {
         this.processConfig = processConfig;
         // only serve local task supervisor
-        this.taskSupervisor = new TaskSupervisor(new SupervisorEndpoint(SystemUtils.getLocalIpAddress(),
-                DefaultExecutorIdentifier.DEFAULT_PORT), mainClassName);
+        this.taskSupervisor = taskSupervisor;
     }
 
     @Override
@@ -74,13 +74,14 @@ public class ProcessJobCaller extends BaseJobCaller {
         return new ExecutorInfo(
                 new ResourceID(LOCAL_RESOURCE_LOCATION, "process", "processnamespace",
                         executorIdentifier.getExecutorName()),
-                executorIdentifier);
+                executorEndpoint);
     }
 
     @Override
     protected void doFinish(JobIdentity ji, ExecutorIdentifier ei, ResourceID resourceID)
             throws JobException {
-        ExecutorEndpoint executorEndpoint = buildExecutorEndpoint(ei);
+        JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
+        ExecutorEndpoint executorEndpoint = buildExecutorEndpoint(ei, configuration);
         JobContext jobContext = createJobContext(ji);
         if (isSameTaskSupervisor(executorEndpoint, taskSupervisor.getSupervisorEndpoint())) {
             taskSupervisor.destroyTask(executorEndpoint, jobContext);
@@ -89,7 +90,6 @@ public class ProcessJobCaller extends BaseJobCaller {
         }
 
         if (!isRemoteTaskSupervisorAlive(executorEndpoint)) {
-            JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
             JobEntity jobEntity = configuration.getTaskFrameworkService().find(ji.getId());
             if (jobEntity.getStatus() == JobStatus.RUNNING) {
                 // Cannot connect to target identifier,we cannot kill the process,
@@ -131,7 +131,8 @@ public class ProcessJobCaller extends BaseJobCaller {
     }
 
     public boolean canBeFinish(JobIdentity ji, ExecutorIdentifier ei, ResourceID resourceID) {
-        ExecutorEndpoint executorEndpoint = buildExecutorEndpoint(ei);
+        JobConfiguration configuration = JobConfigurationHolder.getJobConfiguration();
+        ExecutorEndpoint executorEndpoint = buildExecutorEndpoint(ei, configuration);
         // same machine can operate the task
         if (isSameTaskSupervisor(executorEndpoint, taskSupervisor.getSupervisorEndpoint())) {
             return true;
@@ -175,11 +176,13 @@ public class ProcessJobCaller extends BaseJobCaller {
         };
     }
 
-    protected ExecutorEndpoint buildExecutorEndpoint(ExecutorIdentifier executorIdentifier) {
+    protected ExecutorEndpoint buildExecutorEndpoint(ExecutorIdentifier executorIdentifier,
+            JobConfiguration configuration) {
         return new ExecutorEndpoint(
                 TaskSupervisor.COMMAND_PROTOCOL_NAME,
                 executorIdentifier.getHost(),
                 DefaultExecutorIdentifier.DEFAULT_PORT,
+                JobUtils.getODCServerPort(configuration),
                 executorIdentifier.getPort(),
                 executorIdentifier.toString());
     }

@@ -81,9 +81,9 @@ public class SupervisorApplicationTest {
         supervisorApplication.start(new String[] {});
         String ip = SystemUtils.getLocalIpAddress();
         remoteSupervisorEndpoint = new SupervisorEndpoint(ip, allocatePort);
-        localSupervisorEndpoint = new SupervisorEndpoint(ip, 8989);
+        localSupervisorEndpoint = new SupervisorEndpoint(ip, 8999);
         localTaskSupervisorProxy =
-                new LocalTaskSupervisorProxy(localSupervisorEndpoint, JobConstants.ODC_AGENT_CLASS_NAME);
+                new LocalTaskSupervisorProxy(localSupervisorEndpoint, 8989, JobConstants.ODC_AGENT_CLASS_NAME);
         JobEventHandler jobEventHandler = Mockito.mock(JobEventHandler.class);
         taskSupervisorJobCaller =
                 new TaskSupervisorJobCaller(jobEventHandler, localTaskSupervisorProxy, new TaskExecutorClient());
