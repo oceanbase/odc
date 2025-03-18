@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule;
+package com.oceanbase.odc.service.schedule.export.exception;
 
-import com.oceanbase.odc.service.exporter.model.ExportProperties;
+public class DatabaseNonExistException extends Exception {
 
-public interface ScheduleExportFacade {
+    public DatabaseNonExistException() {}
 
-    void adapt(ExportProperties exportProperties);
-
+    public DatabaseNonExistException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

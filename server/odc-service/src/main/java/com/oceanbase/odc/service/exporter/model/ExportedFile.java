@@ -35,12 +35,4 @@ public class ExportedFile {
     @Exclude
     private String secret;
 
-    private boolean checkConfigJsonSignature = true;
-
-    public ExportedFile(File file, String secret) {
-        this.file = file;
-        this.secret = secret;
-
-    }
-
 }

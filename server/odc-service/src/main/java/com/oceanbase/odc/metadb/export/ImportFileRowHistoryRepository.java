@@ -13,32 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.export.model;
+package com.oceanbase.odc.metadb.export;
 
-import java.util.Set;
+import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 
-import com.oceanbase.odc.service.schedule.model.ScheduleType;
+public interface ImportFileRowHistoryRepository extends OdcJpaRepository<ImportFileRowHistoryEntity, Long> {
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class ScheduleTaskImportRequest {
-
-    private String bucketName;
-
-    private String objectId;
-
-    private ScheduleType scheduleType;
-
-    private Long projectId;
-
-    @ToString.Exclude
-    private String decryptKey;
-
-    private Set<String> importableExportRowId;
+    boolean existsByFileSignatureAndRowId(String fileSignature, String rowId);
 }
