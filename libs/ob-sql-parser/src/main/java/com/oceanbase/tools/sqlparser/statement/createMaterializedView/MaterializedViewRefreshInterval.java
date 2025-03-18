@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.tools.sqlparser.statement.createMaterializedView;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -25,7 +25,7 @@ import lombok.NoArgsConstructor;
 /**
  * @description:
  * @author: zijia.cj
- * @date: 2025/3/18 01:54
+ * @date: 2025/3/18 09:54
  * @since: 4.3.4
  */
 @Data

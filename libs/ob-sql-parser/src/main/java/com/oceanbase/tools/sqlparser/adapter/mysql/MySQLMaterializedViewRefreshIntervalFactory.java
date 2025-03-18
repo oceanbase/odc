@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,29 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.tools.sqlparser.adapter.mysql;
+
+import java.util.Objects;
 
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.createMaterializedView.MaterializedViewRefreshInterval;
-import lombok.NonNull;
 
-import java.util.Objects;
+import lombok.NonNull;
 
 /**
  * @description:
  * @author: zijia.cj
- * @date: 2025/3/18 01:59
+ * @date: 2025/3/18 09:59
  * @since: 4.3.4
  */
-public class MySQLMaterializedViewRefreshIntervalFactory extends OBParserBaseVisitor<MaterializedViewRefreshInterval> implements StatementFactory<MaterializedViewRefreshInterval> {
+public class MySQLMaterializedViewRefreshIntervalFactory extends OBParserBaseVisitor<MaterializedViewRefreshInterval>
+        implements StatementFactory<MaterializedViewRefreshInterval> {
     private final OBParser.Mv_refresh_intervalContext mvRefreshIntervalContext;
 
-    public MySQLMaterializedViewRefreshIntervalFactory(@NonNull OBParser.Mv_refresh_intervalContext mvRefreshIntervalContext) {
+    public MySQLMaterializedViewRefreshIntervalFactory(
+            @NonNull OBParser.Mv_refresh_intervalContext mvRefreshIntervalContext) {
         this.mvRefreshIntervalContext = mvRefreshIntervalContext;
     }
+
     @Override
     public MaterializedViewRefreshInterval generate() {
         return visit(this.mvRefreshIntervalContext);
@@ -44,10 +47,10 @@ public class MySQLMaterializedViewRefreshIntervalFactory extends OBParserBaseVis
     @Override
     public MaterializedViewRefreshInterval visitMv_refresh_interval(OBParser.Mv_refresh_intervalContext ctx) {
         MaterializedViewRefreshInterval materializedViewRefreshInterval = new MaterializedViewRefreshInterval();
-        if(Objects.nonNull(ctx.mv_start_clause())){
+        if (Objects.nonNull(ctx.mv_start_clause())) {
             materializedViewRefreshInterval.setStartTime(ctx.mv_start_clause().bit_expr().getText());
         }
-        if(Objects.nonNull(ctx.mv_next_clause())){
+        if (Objects.nonNull(ctx.mv_next_clause())) {
             materializedViewRefreshInterval.setInterval(Long.valueOf(ctx.mv_next_clause().bit_expr().expr().getText()));
             materializedViewRefreshInterval.setTimeUnit(ctx.mv_next_clause().bit_expr().date_unit().getText());
         }

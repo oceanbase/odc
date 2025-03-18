@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.tools.sqlparser.adapter.mysql;
 
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
-import com.oceanbase.tools.sqlparser.statement.createMaterializedView.CreateMaterializedView;
-import com.oceanbase.tools.sqlparser.statement.createMaterializedView.MaterializedViewRefreshInterval;
 import com.oceanbase.tools.sqlparser.statement.createMaterializedView.MaterializedViewRefreshOnClause;
+
 import lombok.NonNull;
 
 /**
@@ -30,10 +28,12 @@ import lombok.NonNull;
  * @date: 2025/3/18 10:11
  * @since: 4.3.4
  */
-public class MySQLMaterializedViewRefreshOnClauseFactory extends OBParserBaseVisitor<MaterializedViewRefreshOnClause> implements StatementFactory<MaterializedViewRefreshOnClause> {
+public class MySQLMaterializedViewRefreshOnClauseFactory extends OBParserBaseVisitor<MaterializedViewRefreshOnClause>
+        implements StatementFactory<MaterializedViewRefreshOnClause> {
     private final OBParser.Mv_refresh_on_clauseContext mvRefreshOnClauseContext;
 
-    public MySQLMaterializedViewRefreshOnClauseFactory(@NonNull OBParser.Mv_refresh_on_clauseContext mvRefreshOnClauseContext) {
+    public MySQLMaterializedViewRefreshOnClauseFactory(
+            @NonNull OBParser.Mv_refresh_on_clauseContext mvRefreshOnClauseContext) {
         this.mvRefreshOnClauseContext = mvRefreshOnClauseContext;
     }
 
