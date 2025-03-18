@@ -34,6 +34,7 @@ import com.oceanbase.odc.service.exporter.model.ExportProperties;
 import com.oceanbase.odc.service.exporter.model.ExportRowDataAppender;
 import com.oceanbase.odc.service.exporter.model.ExportRowDataReader;
 import com.oceanbase.odc.service.exporter.model.ExportedFile;
+import com.oceanbase.odc.service.exporter.utils.JsonExtractorFactory;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -57,9 +58,9 @@ public class LocalJsonExporterTest {
             testRowDataExportRowDataAppender.append(new TestEncryptable("3", "3"));
             build = testRowDataExportRowDataAppender.build();
         }
-        try (JsonExtractor extractor = JsonExtractor.buildJsonExtractor(build, ".");
+        try (JsonExtractor extractor = JsonExtractorFactory.buildJsonExtractor(build, ".");
                 ExportRowDataReader<JsonNode> rowDataReader = extractor.getRowDataReader()) {
-            ExportProperties metaData = rowDataReader.getMetaData();
+            ExportProperties metaData = rowDataReader.getProperties();
             Assert.assertEquals(metaData.getValue("TEST"), "test");
             Assert.assertEquals(metaData.getValue("TEST2"), 123456);
             Assert.assertNull(metaData.getValue(ExportConstants.FILE_PATH));
@@ -81,7 +82,7 @@ public class LocalJsonExporterTest {
             testRowDataExportRowDataAppender.append(new TestEncryptable("3", "3"));
             build = testRowDataExportRowDataAppender.build();
         }
-        try (JsonExtractor extractor = JsonExtractor.buildJsonExtractor(build, ".");
+        try (JsonExtractor extractor = JsonExtractorFactory.buildJsonExtractor(build, ".");
                 ExportRowDataReader<JsonNode> rowDataReader = extractor.getRowDataReader()) {
             Assert.assertEquals(rowDataReader.readRow(TestEncryptable.class), new TestEncryptable("1", "1"));
             Assert.assertEquals(rowDataReader.readRow(TestEncryptable.class), new TestEncryptable("2", "2"));
@@ -106,7 +107,7 @@ public class LocalJsonExporterTest {
             testRowDataExportRowDataAppender.append(new TestEncryptable("3", "3"));
             build = testRowDataExportRowDataAppender.build();
         }
-        try (Extractor<JsonNode> extractor = JsonExtractor.buildJsonExtractor(build, ".");
+        try (Extractor<JsonNode> extractor = JsonExtractorFactory.buildJsonExtractor(build, ".");
                 ExportRowDataReader<JsonNode> rowDataReader = extractor.getRowDataReader()) {
             Assert.assertEquals(rowDataReader.readRow(TestEncryptable.class), new TestEncryptable("1", "1"));
             Assert.assertEquals(rowDataReader.readRow(TestEncryptable.class), new TestEncryptable("2", "2"));
@@ -133,7 +134,7 @@ public class LocalJsonExporterTest {
             testRowDataExportRowDataAppender.append(new TestEncryptable("3", "3"));
             build = testRowDataExportRowDataAppender.build();
         }
-        try (Extractor<JsonNode> extractor = JsonExtractor.buildJsonExtractor(build, ".");) {
+        try (Extractor<JsonNode> extractor = JsonExtractorFactory.buildJsonExtractor(build, ".");) {
             Assert.assertTrue(extractor.checkSignature());
         }
         FileUtils.deleteQuietly(build.getFile());
@@ -147,7 +148,6 @@ public class LocalJsonExporterTest {
         metadata.putTransientProperties(ExportConstants.FILE_NAME, "test4");
         ExportedFile build = null;
         String secret = new BCryptPasswordEncoder().encode(PasswordUtils.random());
-        System.out.println(secret);
         try (ExportRowDataAppender testRowDataExportRowDataAppender =
                 archiver.buildRowDataAppender(metadata,
                         secret)) {
@@ -160,7 +160,7 @@ public class LocalJsonExporterTest {
             testRowDataExportRowDataAppender.addAdditionFile("test2.zip", file);
             build = testRowDataExportRowDataAppender.build();
         }
-        try (Extractor<JsonNode> extractor = JsonExtractor.buildJsonExtractor(build, ".");) {
+        try (Extractor<JsonNode> extractor = JsonExtractorFactory.buildJsonExtractor(build, ".");) {
             ExportRowDataReader<JsonNode> rowDataReader = extractor.getRowDataReader();
             File file = rowDataReader.getFile("test2.zip");
             Assert.assertTrue(file.exists());
@@ -188,9 +188,9 @@ public class LocalJsonExporterTest {
             build = testRowDataExportRowDataAppender.build();
         }
         ExportedFile exportedFile = new ExportedFile(build.getFile(),
-                new BCryptPasswordEncoder().encode(PasswordUtils.random()), true);
+                new BCryptPasswordEncoder().encode(PasswordUtils.random()));
 
-        try (Extractor<JsonNode> extractor = JsonExtractor.buildJsonExtractor(exportedFile, ".");) {
+        try (Extractor<JsonNode> extractor = JsonExtractorFactory.buildJsonExtractor(exportedFile, ".");) {
             Assert.assertFalse(extractor.checkSignature());
         }
         FileUtils.deleteQuietly(build.getFile());
@@ -203,16 +203,17 @@ public class LocalJsonExporterTest {
         metadata.putTransientProperties(ExportConstants.FILE_PATH, "./");
         metadata.putTransientProperties(ExportConstants.FILE_NAME, "test2");
         ExportedFile build = null;
+        String secret = new BCryptPasswordEncoder().encode(PasswordUtils.random());
         try (
                 ExportRowDataAppender testRowDataExportRowDataAppender =
-                        archiver.buildRowDataAppender(metadata)) {
+                        archiver.buildRowDataAppender(metadata, secret)) {
             testRowDataExportRowDataAppender.append(new TestEncryptable("1", "1"));
             testRowDataExportRowDataAppender.append(new TestEncryptable("2", "2"));
             testRowDataExportRowDataAppender.append(new TestEncryptable("3", "3"));
             build = testRowDataExportRowDataAppender.build();
 
         }
-        try (JsonExtractor extractor = JsonExtractor.buildJsonExtractor(build, ".")) {
+        try (JsonExtractor extractor = JsonExtractorFactory.buildJsonExtractor(build, ".")) {
             Assert.assertTrue(extractor.checkSignature());
         }
         FileUtils.deleteQuietly(build.getFile());

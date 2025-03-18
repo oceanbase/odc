@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.archiverist.model;
+package com.oceanbase.odc.service.schedule.export.model;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import javax.validation.constraints.NotNull;
 
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.model.OffsetConfig;
@@ -34,12 +32,6 @@ import lombok.Data;
 public class DataArchiveScheduleRowData extends BaseScheduleRowData {
 
     private String name;
-
-    @NotNull
-    private ExportedDatabase sourceDatabase;
-
-    @NotNull
-    private ExportedDatabase targetDataBase;
 
     private List<OffsetConfig> variables;
 

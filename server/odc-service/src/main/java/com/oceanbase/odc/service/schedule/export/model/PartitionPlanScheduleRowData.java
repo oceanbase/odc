@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.archiverist.model;
+package com.oceanbase.odc.service.schedule.export.model;
 
 import java.util.List;
 
@@ -26,7 +26,6 @@ import lombok.Data;
 @Data
 public class PartitionPlanScheduleRowData extends BaseScheduleRowData {
     private boolean enabled = true;
-    private ExportedDatabase database;
     private Long timeoutMillis;
     private TaskErrorStrategy errorStrategy = TaskErrorStrategy.CONTINUE;
     private TriggerConfig creationTrigger;

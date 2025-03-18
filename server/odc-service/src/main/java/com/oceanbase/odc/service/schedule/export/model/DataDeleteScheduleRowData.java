@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.archiverist.model;
+package com.oceanbase.odc.service.schedule.export.model;
 
 import java.util.List;
 
@@ -29,10 +29,6 @@ import lombok.Data;
 @Data
 public class DataDeleteScheduleRowData extends BaseScheduleRowData {
 
-    @NotNull
-    private ExportedDatabase database;
-
-    private ExportedDatabase targetDatabase;
 
     private List<OffsetConfig> variables;
 
@@ -61,23 +57,4 @@ public class DataDeleteScheduleRowData extends BaseScheduleRowData {
 
     private boolean fullDatabase = false;
 
-    @Override
-    public void encrypt(String encryptKey) {
-        if (database != null) {
-            database.encrypt(encryptKey);
-        }
-        if (targetDatabase != null) {
-            targetDatabase.encrypt(encryptKey);
-        }
-    }
-
-    @Override
-    public void decrypt(String encryptKey) {
-        if (database != null) {
-            database.decrypt(encryptKey);
-        }
-        if (targetDatabase != null) {
-            targetDatabase.decrypt(encryptKey);
-        }
-    }
 }

@@ -17,13 +17,15 @@ package com.oceanbase.odc.server.web.controller.v2;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.oceanbase.odc.core.shared.exception.UnsupportedException;
+import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
+import com.oceanbase.odc.service.schedule.export.ScheduleTaskImportService;
 import com.oceanbase.odc.service.schedule.export.model.ImportScheduleTaskView;
 import com.oceanbase.odc.service.schedule.export.model.ImportTaskResult;
 import com.oceanbase.odc.service.schedule.export.model.ScheduleTaskImportRequest;
@@ -34,9 +36,12 @@ import com.oceanbase.odc.service.state.model.StatefulRoute;
 @RestController
 public class ImportController {
 
+    @Autowired
+    private ScheduleTaskImportService scheduleTaskImportService;
+
     @RequestMapping(value = "/startSchedulePreviewTask", method = RequestMethod.POST)
     public SuccessResponse<String> startPreviewImportTask(@RequestBody ScheduleTaskImportRequest request) {
-        throw new UnsupportedException();
+        return Responses.success(scheduleTaskImportService.startPreviewImportTask(request));
     }
 
     /**
@@ -45,12 +50,12 @@ public class ImportController {
     @RequestMapping(value = "/getSchedulePreviewResult", method = RequestMethod.GET)
     @StatefulRoute(stateName = StateName.UUID_STATEFUL_ID, stateIdExpression = "#previewId")
     public SuccessResponse<List<ImportScheduleTaskView>> getPreviewImportTask(String previewId) {
-        throw new UnsupportedException();
+        return Responses.success(scheduleTaskImportService.getPreviewTaskResults(previewId));
     }
 
     @RequestMapping(value = "/startScheduleImportTask", method = RequestMethod.POST)
     public SuccessResponse<String> startImportTask(@RequestBody ScheduleTaskImportRequest request) {
-        throw new UnsupportedException();
+        return Responses.success(scheduleTaskImportService.startImportTask(request));
     }
 
     /**
@@ -59,7 +64,7 @@ public class ImportController {
     @RequestMapping(value = "/getScheduleImportResult", method = RequestMethod.GET)
     @StatefulRoute(stateName = StateName.UUID_STATEFUL_ID, stateIdExpression = "#importTaskId")
     public SuccessResponse<List<ImportTaskResult>> getImportResult(String importTaskId) {
-        throw new UnsupportedException();
+        return Responses.success(scheduleTaskImportService.getImportTaskResults(importTaskId));
     }
 
     /**
@@ -68,6 +73,6 @@ public class ImportController {
     @RequestMapping(value = "/getScheduleImportLog", method = RequestMethod.GET)
     @StatefulRoute(stateName = StateName.UUID_STATEFUL_ID, stateIdExpression = "#importTaskId")
     public SuccessResponse<String> getImportLog(String importTaskId) {
-        throw new UnsupportedException();
+        return Responses.success(scheduleTaskImportService.getImportLog(importTaskId));
     }
 }
