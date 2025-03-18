@@ -53,6 +53,7 @@ import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
 import com.oceanbase.tools.sqlparser.statement.Statement;
+import com.oceanbase.tools.sqlparser.statement.creatematerializedview.CreateMaterializedView;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 
 import lombok.NonNull;
@@ -313,6 +314,12 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
         Statement statement = SqlParser.parseMysqlStatement(ddl);
         if (statement instanceof CreateTable) {
             CreateTable stmt = (CreateTable) statement;
+            return stmt.getColumnGroupElements() == null ? Collections.emptyList()
+                    : stmt.getColumnGroupElements().stream()
+                            .map(DBColumnGroupElement::ofColumnGroupElement).collect(Collectors.toList());
+        }
+        if (statement instanceof CreateMaterializedView) {
+            CreateMaterializedView stmt = (CreateMaterializedView) statement;
             return stmt.getColumnGroupElements() == null ? Collections.emptyList()
                     : stmt.getColumnGroupElements().stream()
                             .map(DBColumnGroupElement::ofColumnGroupElement).collect(Collectors.toList());

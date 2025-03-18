@@ -23,7 +23,7 @@ import org.pf4j.Extension;
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.schema.api.MViewExtensionPoint;
-import com.oceanbase.odc.plugin.schema.obmysql.parser.OBMySQLGetDBTableByParser;
+import com.oceanbase.odc.plugin.schema.obmysql.parser.OBMySQLGetDBMViewByParser;
 import com.oceanbase.odc.plugin.schema.obmysql.utils.DBAccessorUtil;
 import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.editor.DBObjectOperator;
@@ -53,18 +53,18 @@ public class OBMySQLMVExtension implements MViewExtensionPoint {
         DBSchemaAccessor schemaAccessor = getSchemaAccessor(connection);
         DBMaterializedView mView = schemaAccessor.getMView(schemaName, mViewName);
         String ddl = schemaAccessor.getTableDDL(schemaName, mViewName);
-        OBMySQLGetDBTableByParser parser = new OBMySQLGetDBTableByParser(ddl);
+        OBMySQLGetDBMViewByParser parser = new OBMySQLGetDBMViewByParser(ddl);
         mView.setSchemaName(schemaName);
         mView.setName(mViewName);
         mView.setColumns(schemaAccessor.listTableColumns(schemaName, mViewName));
         // TODO: syntax does not match
         mView.setConstraints(schemaAccessor.listTableConstraints(schemaName, mViewName));
         mView.setIndexes(schemaAccessor.listTableIndexes(schemaName, mViewName));
-        // TODO: parser failed to parse
+        // TODO: parser failed to parse.done
         mView.setPartition(parser.getPartition());
         mView.setDdl(ddl);
         try {
-            // TODO: parser failed to parse
+            // TODO: parser failed to parse.done
             mView.setColumnGroups(schemaAccessor.listTableColumnGroups(schemaName, mViewName));
         } catch (Exception e) {
             // eat the exception

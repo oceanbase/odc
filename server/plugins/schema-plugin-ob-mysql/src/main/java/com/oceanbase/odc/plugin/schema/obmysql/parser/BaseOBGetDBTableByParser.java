@@ -29,6 +29,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
 import com.oceanbase.tools.sqlparser.statement.Expression;
+import com.oceanbase.tools.sqlparser.statement.creatematerializedview.CreateMaterializedView;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 import com.oceanbase.tools.sqlparser.statement.createtable.Partition;
 import com.oceanbase.tools.sqlparser.statement.createtable.PartitionElement;
@@ -59,11 +60,16 @@ public abstract class BaseOBGetDBTableByParser implements GetDBTableByParser {
         List<DBTablePartitionDefinition> partitionDefinitions = new ArrayList<>();
         partition.setPartitionDefinitions(partitionDefinitions);
 
-        if (Objects.isNull(getCreateTableStmt())) {
+        if (Objects.isNull(getCreateTableStmt()) && Objects.isNull(getCreateMaterializedViewStmt())) {
             partition.setWarning("Failed to parse table ddl");
             return partition;
         }
-        Partition partitionStmt = getCreateTableStmt().getPartition();
+        Partition partitionStmt = null;
+        if (Objects.nonNull(getCreateTableStmt())) {
+            partitionStmt = getCreateTableStmt().getPartition();
+        } else if (Objects.nonNull(getCreateMaterializedViewStmt())) {
+            partitionStmt = getCreateMaterializedViewStmt().getPartition();
+        }
         if (Objects.isNull(partitionStmt)) {
             return partition;
         }
@@ -253,6 +259,8 @@ public abstract class BaseOBGetDBTableByParser implements GetDBTableByParser {
     protected abstract String removeIdentifiers(String str);
 
     protected abstract CreateTable getCreateTableStmt();
+
+    protected abstract CreateMaterializedView getCreateMaterializedViewStmt();
 
     @Override
     public List<DBTableIndex> listIndexes() {

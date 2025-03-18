@@ -47,6 +47,7 @@ import com.oceanbase.tools.sqlparser.SQLParser;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.createindex.CreateIndex;
+import com.oceanbase.tools.sqlparser.statement.creatematerializedview.CreateMaterializedView;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 import com.oceanbase.tools.sqlparser.statement.createtable.HashPartition;
@@ -100,6 +101,11 @@ public class OBOracleGetDBTableByParser extends BaseOBGetDBTableByParser {
     @Override
     public CreateTable getCreateTableStmt() {
         return this.createTableStmt;
+    }
+
+    @Override
+    protected CreateMaterializedView getCreateMaterializedViewStmt() {
+        return null;
     }
 
     private CreateTable parseTableDDL(@NonNull String schemaName, @NonNull String tableName) {

@@ -32,6 +32,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
 import com.oceanbase.tools.dbbrowser.parser.SqlParser;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Statement;
+import com.oceanbase.tools.sqlparser.statement.creatematerializedview.CreateMaterializedView;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 import com.oceanbase.tools.sqlparser.statement.createtable.HashPartition;
@@ -87,8 +88,13 @@ public class OBMySQLGetDBTableByParser extends BaseOBGetDBTableByParser {
     }
 
     @Override
-    public CreateTable getCreateTableStmt() {
+    protected CreateTable getCreateTableStmt() {
         return this.createTableStmt;
+    }
+
+    @Override
+    protected CreateMaterializedView getCreateMaterializedViewStmt() {
+        return null;
     }
 
     /**
