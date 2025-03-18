@@ -63,6 +63,22 @@ import com.oceanbase.tools.sqlparser.statement.update.UpdateAssign;
 public class OBMySQLParserTest {
 
     @Test
+    public void parse_mv_parseSucceed() {
+        SQLParser parser = new OBMySQLParser();
+        Statement actual = parser.parse(new StringReader("CREATE MATERIALIZED VIEW `force` (PRIMARY KEY (col1)) DEFAULT CHARSET = gbk ROW_FORMAT = DYNAMIC COMPRESSION = 'zstd_1.3.8' REPLICA_NUM = 1 BLOCK_SIZE = 16384 USE_BLOOM_FILTER = FALSE ENABLE_MACRO_BLOCK_BLOOM_FILTER = FALSE TABLET_SIZE = 134217728 PCTFREE = 10 PARALLEL 5\n" +
+            " partition by hash(col1)\n" +
+            "(partition `p0`,\n" +
+            "partition `p1`,\n" +
+            "partition `p2`) WITH COLUMN GROUP(all columns, each column) REFRESH FORCE ON DEMAND START WITH sysdate() NEXT sysdate() + INTERVAL 1 DAY ENABLE QUERY REWRITE  AS select `zijia`.`test_mv_base`.`col1` AS `col1`,`zijia`.`test_mv_base`.`col2` AS `col2` from `zijia`.`test_mv_base`"));
+
+        ColumnReference r = new ColumnReference(null, "col", "*");
+        Projection p = new Projection(r, "abc");
+        NameReference from = new NameReference(null, "dual", null);
+        Select expect = new Select(new SelectBody(Collections.singletonList(p), Collections.singletonList(from)));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void parse_selectStatement_parseSucceed() {
         SQLParser parser = new OBMySQLParser();
         Statement actual = parser.parse(new StringReader("select col.* abc from dual;"));
