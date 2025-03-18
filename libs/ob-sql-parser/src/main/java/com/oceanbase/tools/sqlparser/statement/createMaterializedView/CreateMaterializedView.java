@@ -37,16 +37,7 @@ import java.util.List;
 @Setter
 @EqualsAndHashCode(callSuper = false)
 public class CreateMaterializedView extends BaseStatement {
-    private String name;
-    // if null, use defaultSchemaName in current connection
-    private String schemaName;
-    private String ddl;
-    private String refreshMethod;
     private TableOptions tableOptions;
-    private int start;
-    private String next;
-    private Boolean enableQueryRewrite;
-    private Boolean enableQueryComputation;
     private Partition partition;
     private List<ColumnGroupElement> columnGroupElements;
     private CreateMaterializedViewOpts createMaterializedViewOpts;

@@ -17,26 +17,23 @@
 package com.oceanbase.tools.sqlparser.statement.createMaterializedView;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
-import com.oceanbase.tools.sqlparser.statement.createtable.TableOptions;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 
 /**
  * @description:
  * @author: zijia.cj
- * @date: 2025/3/17 23:59
+ * @date: 2025/3/18 10:06
  * @since: 4.3.4
  */
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class CreateMaterializedViewOpts extends BaseStatement {
-    // This property is set to false if there is no relevant content in the sql
-    private boolean enableQueryRewrite;
-    // This property is set to false if there is no relevant content in the sql
-    private boolean enableQueryComputation;
-    private MaterializedViewRefreshOpts materializedViewRefreshOpts;
+public class MaterializedViewRefreshOnClause extends BaseStatement {
+    private String refreshMode;
 }

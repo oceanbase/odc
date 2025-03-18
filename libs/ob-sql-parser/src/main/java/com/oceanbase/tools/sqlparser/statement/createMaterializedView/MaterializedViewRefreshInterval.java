@@ -17,8 +17,10 @@
 package com.oceanbase.tools.sqlparser.statement.createMaterializedView;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 /**
  * @description:
@@ -27,6 +29,8 @@ import lombok.EqualsAndHashCode;
  * @since: 4.3.4
  */
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 public class MaterializedViewRefreshInterval extends BaseStatement {
     private String startTime;

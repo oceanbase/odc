@@ -21,6 +21,7 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.createMaterializedView.CreateMaterializedView;
 import com.oceanbase.tools.sqlparser.statement.createMaterializedView.CreateMaterializedViewOpts;
+import com.oceanbase.tools.sqlparser.statement.createMaterializedView.MaterializedViewRefreshOnClause;
 import com.oceanbase.tools.sqlparser.statement.createMaterializedView.MaterializedViewRefreshOpts;
 import lombok.NonNull;
 
@@ -32,10 +33,10 @@ import java.util.Objects;
  * @date: 2025/3/18 01:20
  * @since: 4.3.4
  */
-public class MaterializedViewRefreshOptsFactory extends OBParserBaseVisitor<MaterializedViewRefreshOpts> implements StatementFactory<MaterializedViewRefreshOpts> {
+public class MySQLMaterializedViewRefreshOptsFactory extends OBParserBaseVisitor<MaterializedViewRefreshOpts> implements StatementFactory<MaterializedViewRefreshOpts> {
     private final OBParser.Mview_refresh_optContext mViewRefreshOptContext;
 
-    public MaterializedViewRefreshOptsFactory(@NonNull OBParser.Mview_refresh_optContext mViewRefreshOptContext) {
+    public MySQLMaterializedViewRefreshOptsFactory(@NonNull OBParser.Mview_refresh_optContext mViewRefreshOptContext) {
         this.mViewRefreshOptContext = mViewRefreshOptContext;
     }
     @Override
@@ -51,11 +52,10 @@ public class MaterializedViewRefreshOptsFactory extends OBParserBaseVisitor<Mate
             materializedViewRefreshOpts.setRefreshMethod(ctx.mv_refresh_method().getText());
         }
         if(Objects.nonNull(ctx.mv_refresh_on_clause())){
-
-
+            materializedViewRefreshOpts.setRefreshOn(new MySQLMaterializedViewRefreshOnClauseFactory(ctx.mv_refresh_on_clause()).generate());
         }
         if(Objects.nonNull(ctx.mv_refresh_interval())){
-            materializedViewRefreshOpts.setRefreshInterval(new MaterializedViewRefreshIntervalFactory(ctx.mv_refresh_interval()).generate());
+            materializedViewRefreshOpts.setRefreshInterval(new MySQLMaterializedViewRefreshIntervalFactory(ctx.mv_refresh_interval()).generate());
         }
         return materializedViewRefreshOpts;
     }

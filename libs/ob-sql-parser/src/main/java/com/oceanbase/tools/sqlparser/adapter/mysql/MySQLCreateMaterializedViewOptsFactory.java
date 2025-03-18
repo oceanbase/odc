@@ -63,7 +63,7 @@ public class MySQLCreateMaterializedViewOptsFactory extends OBParserBaseVisitor<
             }
         }
         if(Objects.nonNull(ctx.mview_refresh_opt())){
-            createMaterializedViewOpts.setMaterializedViewRefreshOpts(new MaterializedViewRefreshOptsFactory(ctx.mview_refresh_opt()).generate());
+            createMaterializedViewOpts.setMaterializedViewRefreshOpts(new MySQLMaterializedViewRefreshOptsFactory(ctx.mview_refresh_opt()).generate());
         }
 
         return createMaterializedViewOpts;

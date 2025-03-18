@@ -20,10 +20,18 @@ import com.oceanbase.tools.sqlparser.adapter.mysql.MySQLCreateMaterializedViewFa
 import com.oceanbase.tools.sqlparser.obmysql.OBLexer;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser;
 import com.oceanbase.tools.sqlparser.statement.createMaterializedView.CreateMaterializedView;
+import com.oceanbase.tools.sqlparser.statement.createMaterializedView.CreateMaterializedViewOpts;
+import com.oceanbase.tools.sqlparser.statement.createMaterializedView.MaterializedViewRefreshInterval;
+import com.oceanbase.tools.sqlparser.statement.createMaterializedView.MaterializedViewRefreshOnClause;
+import com.oceanbase.tools.sqlparser.statement.createMaterializedView.MaterializedViewRefreshOpts;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.apache.commons.lang3.Validate;
+import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.Optional;
 
 /**
  * @description:
@@ -33,8 +41,7 @@ import org.junit.Test;
  */
 public class MySQLCreateMaterializedViewFactoryTest {
     @Test
-    public void generate_CreateMv1_generateSucceed() {
-
+    public void generate_CreateMaterializedView_generateSucceed() {
         OBParser.Create_mview_stmtContext context = getCreateMaterializedViewContext(
             "CREATE MATERIALIZED VIEW `zijia`.`test_mv_allsyntax` (PRIMARY KEY (prim)) DEFAULT CHARSET = gbk ROW_FORMAT = DYNAMIC COMPRESSION = 'zstd_1.3.8' REPLICA_NUM = 1 BLOCK_SIZE = 16384 USE_BLOOM_FILTER = FALSE ENABLE_MACRO_BLOCK_BLOOM_FILTER = FALSE TABLET_SIZE = 134217728 PCTFREE = 10 PARALLEL 5\n"
                 +
@@ -42,8 +49,12 @@ public class MySQLCreateMaterializedViewFactoryTest {
                 "(partition `p0`) WITH COLUMN GROUP(all columns, each column) REFRESH COMPLETE ON DEMAND START WITH sysdate() NEXT sysdate() + INTERVAL 1 DAY ENABLE QUERY REWRITE ENABLE ON QUERY COMPUTATION AS select `zijia`.`test_mv_base`.`col1` AS `prim`,`zijia`.`test_mv_base`.`col2` AS `col2`,`zijia`.`test_mv_base`.`col3` AS `col3`,`zijia`.`test_mv_base`.`col4` AS `col4` from `zijia`.`test_mv_base`");
         MySQLCreateMaterializedViewFactory factory = new MySQLCreateMaterializedViewFactory(context);
         CreateMaterializedView generate = factory.generate();
-
-        System.out.println("");
+        MaterializedViewRefreshInterval materializedViewRefreshInterval = new MaterializedViewRefreshInterval("sysdate()", 1L, "DAY");
+        MaterializedViewRefreshOpts materializedViewRefreshOpts = new MaterializedViewRefreshOpts("COMPLETE", materializedViewRefreshInterval, new MaterializedViewRefreshOnClause("DEMAND"));
+        CreateMaterializedViewOpts createMaterializedViewOpts = new CreateMaterializedViewOpts(true, true, materializedViewRefreshOpts);
+        Assert.assertEquals(createMaterializedViewOpts, generate.getCreateMaterializedViewOpts());
+        Assert.assertEquals(Integer.valueOf(5), generate.getTableOptions().getParallel());
+        Assert.assertEquals("prim", generate.getPartition().getPartitionTargets().get(0).getText());
     }
 
     @Test

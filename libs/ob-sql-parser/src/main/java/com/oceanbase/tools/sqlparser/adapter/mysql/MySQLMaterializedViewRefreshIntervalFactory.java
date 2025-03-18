@@ -19,9 +19,7 @@ package com.oceanbase.tools.sqlparser.adapter.mysql;
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
-import com.oceanbase.tools.sqlparser.statement.createMaterializedView.CreateMaterializedView;
 import com.oceanbase.tools.sqlparser.statement.createMaterializedView.MaterializedViewRefreshInterval;
-import com.oceanbase.tools.sqlparser.statement.createMaterializedView.MaterializedViewRefreshOpts;
 import lombok.NonNull;
 
 import java.util.Objects;
@@ -32,10 +30,10 @@ import java.util.Objects;
  * @date: 2025/3/18 01:59
  * @since: 4.3.4
  */
-public class MaterializedViewRefreshIntervalFactory extends OBParserBaseVisitor<MaterializedViewRefreshInterval> implements StatementFactory<MaterializedViewRefreshInterval> {
+public class MySQLMaterializedViewRefreshIntervalFactory extends OBParserBaseVisitor<MaterializedViewRefreshInterval> implements StatementFactory<MaterializedViewRefreshInterval> {
     private final OBParser.Mv_refresh_intervalContext mvRefreshIntervalContext;
 
-    public MaterializedViewRefreshIntervalFactory(@NonNull OBParser.Mv_refresh_intervalContext mvRefreshIntervalContext) {
+    public MySQLMaterializedViewRefreshIntervalFactory(@NonNull OBParser.Mv_refresh_intervalContext mvRefreshIntervalContext) {
         this.mvRefreshIntervalContext = mvRefreshIntervalContext;
     }
     @Override
