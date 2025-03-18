@@ -44,8 +44,8 @@ import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.ChangeScheduleResp;
 import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
 import com.oceanbase.odc.service.schedule.model.OperationType;
-import com.oceanbase.odc.service.schedule.model.QueryAlterScheduleStatParams;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleParams;
+import com.oceanbase.odc.service.schedule.model.QueryScheduleStatParams;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleTaskParams;
 import com.oceanbase.odc.service.schedule.model.Schedule;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeLog;
@@ -56,8 +56,8 @@ import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskListOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverview;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskStat;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
-import com.oceanbase.odc.service.schedule.model.SingleAlterScheduleTaskStat;
 import com.oceanbase.odc.service.schedule.model.UpdateScheduleReq;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
@@ -286,16 +286,16 @@ public class ScheduleController {
         return Responses.single(scheduleService.updateDlmRateLimit(id, limiterConfig));
     }
 
-    @RequestMapping(value = "/alterScheduleStat", method = RequestMethod.GET)
-    public ListResponse<SingleAlterScheduleTaskStat> getAlterScheduleStat(
+    @RequestMapping(value = "/scheduleTaskStats", method = RequestMethod.GET)
+    public ListResponse<ScheduleTaskStat> getScheduleStats(
             @RequestParam(required = false, name = "types") Set<ScheduleType> types,
             @RequestParam(required = false, name = "startTime") Date startTime,
             @RequestParam(required = false, name = "endTime") Date endTime) {
-        QueryAlterScheduleStatParams req = QueryAlterScheduleStatParams.builder()
+        QueryScheduleStatParams req = QueryScheduleStatParams.builder()
                 .scheduleTypes(types)
                 .startTime(startTime)
                 .endTime(endTime)
                 .build();
-        return Responses.list(scheduleService.listAlterScheduleTaskStat(req));
+        return Responses.list(scheduleService.listScheduleTaskStat(req));
     }
 }

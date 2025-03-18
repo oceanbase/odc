@@ -1364,7 +1364,7 @@ public class FlowInstanceService {
      * schedule_schedule. In the case of MultiDatabaseChange, the id of the flow_instance table is
      * stored. The two tables may be identical
      */
-    public List<FlowInstanceState> listAlterScheduleSubTaskStates(
+    public List<FlowInstanceState> listSubTaskStates(
             @NonNull InnerQueryFlowInstanceParams params) {
         Set<Long> joinedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
         if (CollectionUtils.isEmpty(joinedProjectIds) || CollectionUtils.isEmpty(params.getParentInstanceIds())) {

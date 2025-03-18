@@ -35,7 +35,7 @@ import lombok.experimental.Accessors;
 @Data
 @Builder
 @Accessors(chain = true)
-public class AlterScheduleSubTaskStat {
+public class ScheduleSubTaskStat {
     private ScheduleType type;
     private Integer successExecutionCount;
     private Integer failedExecutionCount;
@@ -43,32 +43,32 @@ public class AlterScheduleSubTaskStat {
     private Integer executingCount;
     private Integer otherCount;
 
-    public static AlterScheduleSubTaskStat init(@NonNull ScheduleType type) {
+    public static ScheduleSubTaskStat init(@NonNull ScheduleType type) {
         return empty().setType(type);
     }
 
-    public static AlterScheduleSubTaskStat init(@NonNull TaskType type) {
+    public static ScheduleSubTaskStat init(@NonNull TaskType type) {
         if (type == TaskType.ASYNC) {
             return empty().setType(ScheduleType.SQL_PLAN);
         } else if (type == TaskType.PARTITION_PLAN) {
             return empty().setType(ScheduleType.PARTITION_PLAN);
         }
-        throw new UnsupportedException("Unsupported task type: " + type);
+        throw new UnsupportedException("Unsupported sub task type: " + type);
     }
 
-    public void merge(AlterScheduleSubTaskStat stat) {
+    public void merge(ScheduleSubTaskStat stat) {
         if (stat == null || stat.getType() != type) {
             return;
         }
-        this.successExecutionCount += ObjectUtil.defaultIfNull(stat.getSuccessExecutionCount(), 0);
-        this.failedExecutionCount += ObjectUtil.defaultIfNull(stat.getFailedExecutionCount(), 0);
-        this.waitingExecutionCount += ObjectUtil.defaultIfNull(stat.getWaitingExecutionCount(), 0);
-        this.executingCount += ObjectUtil.defaultIfNull(stat.getExecutingCount(), 0);
-        this.otherCount += ObjectUtil.defaultIfNull(stat.getOtherCount(), 0);
+        this.successExecutionCount = safeAdd(this.successExecutionCount, stat.getSuccessExecutionCount());
+        this.failedExecutionCount = safeAdd(this.failedExecutionCount, stat.getFailedExecutionCount());
+        this.waitingExecutionCount = safeAdd(this.waitingExecutionCount, stat.getWaitingExecutionCount());
+        this.executingCount = safeAdd(this.executingCount, stat.getExecutingCount());
+        this.otherCount = safeAdd(this.otherCount, stat.getOtherCount());
     }
 
-    public static AlterScheduleSubTaskStat empty() {
-        return AlterScheduleSubTaskStat.builder()
+    public static ScheduleSubTaskStat empty() {
+        return ScheduleSubTaskStat.builder()
                 .successExecutionCount(0)
                 .failedExecutionCount(0)
                 .waitingExecutionCount(0)
@@ -80,20 +80,20 @@ public class AlterScheduleSubTaskStat {
     public void count(@NonNull TaskStatus scheduleTaskStatus) {
         switch (scheduleTaskStatus) {
             case PREPARING:
-                this.addWaitingExecutionCount();
+                this.increaseWaitingExecutionCount();
                 break;
             case RUNNING:
-                this.addExecutingCount();
+                this.increaseExecutingCount();
                 break;
             case ABNORMAL:
             case FAILED:
-                this.addFailedExecutionCount();
+                this.increaseFailedExecutionCount();
                 break;
             case DONE:
-                this.addSuccessExecutionCount();
+                this.increaseSuccessExecutionCount();
                 break;
             default:
-                this.addOtherCount();
+                this.increaseOtherCount();
                 break;
         }
     }
@@ -107,44 +107,48 @@ public class AlterScheduleSubTaskStat {
             case EXECUTION_FAILED:
             case EXECUTION_EXPIRED:
             case PRE_CHECK_FAILED:
-                this.addFailedExecutionCount();
+                this.increaseFailedExecutionCount();
                 break;
             case COMPLETED:
             case EXECUTION_SUCCEEDED:
-                this.addSuccessExecutionCount();
+                this.increaseSuccessExecutionCount();
                 break;
             case CREATED:
             case APPROVING:
             case WAIT_FOR_EXECUTION:
             case WAIT_FOR_CONFIRM:
-                this.addWaitingExecutionCount();
+                this.increaseWaitingExecutionCount();
                 break;
             case EXECUTING:
-                this.addExecutingCount();
+                this.increaseExecutingCount();
                 break;
             default:
-                this.addOtherCount();
+                this.increaseOtherCount();
                 break;
         }
     }
 
-    public void addSuccessExecutionCount() {
-        this.successExecutionCount = ObjectUtil.defaultIfNull(this.getSuccessExecutionCount(), 0) + 1;
+    public void increaseSuccessExecutionCount() {
+        this.successExecutionCount = safeAdd(this.successExecutionCount, 1);
     }
 
-    public void addFailedExecutionCount() {
-        this.failedExecutionCount = ObjectUtil.defaultIfNull(this.getFailedExecutionCount(), 0) + 1;
+    public void increaseFailedExecutionCount() {
+        this.failedExecutionCount = safeAdd(this.failedExecutionCount, 1);
     }
 
-    public void addWaitingExecutionCount() {
-        this.waitingExecutionCount = ObjectUtil.defaultIfNull(this.getWaitingExecutionCount(), 0) + 1;
+    public void increaseWaitingExecutionCount() {
+        this.waitingExecutionCount = safeAdd(this.waitingExecutionCount, 1);
     }
 
-    public void addExecutingCount() {
-        this.executingCount = ObjectUtil.defaultIfNull(this.getExecutingCount(), 0) + 1;
+    public void increaseExecutingCount() {
+        this.executingCount = safeAdd(this.executingCount, 1);
     }
 
-    public void addOtherCount() {
-        this.otherCount = ObjectUtil.defaultIfNull(this.getOtherCount(), 0) + 1;
+    public void increaseOtherCount() {
+        this.otherCount = safeAdd(this.otherCount, 1);
+    }
+
+    private static Integer safeAdd(Integer source, Integer step) {
+        return ObjectUtil.defaultIfNull(source, 0) + ObjectUtil.defaultIfNull(step, 0);
     }
 }

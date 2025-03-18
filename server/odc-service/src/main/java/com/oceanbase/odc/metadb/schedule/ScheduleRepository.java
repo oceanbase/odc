@@ -79,7 +79,9 @@ public interface ScheduleRepository extends OdcJpaRepository<ScheduleEntity, Lon
         return findAll(specification, pageable);
     }
 
-    List<ScheduleEntity> findByIdInAndProjectIdIn(Collection<Long> ids, Collection<Long> projectIds);
+    List<ScheduleEntity> findByOrganizationIdAndIdInAndProjectIdIn(Long organizationId, Collection<Long> ids,
+            Collection<Long> projectIds);
 
-    List<ScheduleEntity> findByProjectIdInAndTypeIn(Collection<Long> projectIds, Collection<ScheduleType> types);
+    List<ScheduleEntity> findByOrganizationIdAndProjectIdInAndTypeIn(Long organizationId, Collection<Long> projectIds,
+            Collection<ScheduleType> types);
 }

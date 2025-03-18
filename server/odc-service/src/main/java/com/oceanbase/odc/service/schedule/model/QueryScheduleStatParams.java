@@ -15,31 +15,23 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
+import java.util.Date;
+import java.util.Set;
+
 import lombok.Builder;
 import lombok.Data;
-import lombok.NonNull;
-import lombok.experimental.Accessors;
 
 /**
  * @Author: ysj
- * @Date: 2025/2/24 16:12
+ * @Date: 2025/2/25 10:06
  * @Since: 4.3.4
- * @Description: Is used to collect statistics on Alter Schedule Task and its subTasks, Ref
- *               {@link ScheduleType}
+ * @Description:
  */
 @Data
 @Builder
-@Accessors(chain = true)
-public class SingleAlterScheduleTaskStat {
-    private ScheduleType type;
-    private Integer successEnabledCount;
-    private AlterScheduleSubTaskStat taskStat;
-
-    public static SingleAlterScheduleTaskStat init(@NonNull ScheduleType type) {
-        return SingleAlterScheduleTaskStat.builder()
-                .type(type)
-                .successEnabledCount(0)
-                .taskStat(AlterScheduleSubTaskStat.init(type))
-                .build();
-    }
+public class QueryScheduleStatParams {
+    private Set<Long> scheduleIds;
+    private Set<ScheduleType> scheduleTypes;
+    private Date startTime;
+    private Date endTime;
 }

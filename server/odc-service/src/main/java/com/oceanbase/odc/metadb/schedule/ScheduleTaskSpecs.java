@@ -59,17 +59,4 @@ public class ScheduleTaskSpecs {
         return SpecificationUtil.columnLate("fireTime", fireTime);
     }
 
-    public static Specification<ScheduleTaskEntity> createTimeBetween(Date startTime, Date endTime) {
-        return (root, query, builder) -> {
-            if (startTime != null && endTime != null) {
-                return builder.between(root.get("createTime"), startTime, endTime);
-            } else if (startTime != null) {
-                return builder.greaterThanOrEqualTo(root.get("createTime"), startTime);
-            } else if (endTime != null) {
-                return builder.lessThanOrEqualTo(root.get("createTime"), endTime);
-            }
-            return builder.conjunction();
-        };
-    }
-
 }
