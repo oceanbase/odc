@@ -22,9 +22,10 @@ import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
 import com.oceanbase.tools.sqlparser.statement.createtable.Partition;
 import com.oceanbase.tools.sqlparser.statement.createtable.TableOptions;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.NoArgsConstructor;
 
 /**
  * @description:
@@ -32,8 +33,9 @@ import lombok.Setter;
  * @date: 2025/3/17 20:28
  * @since: 4.3.4
  */
-@Getter
-@Setter
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 public class CreateMaterializedView extends BaseStatement {
     private TableOptions tableOptions;
