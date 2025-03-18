@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.tools.sqlparser.statement.createMaterializedView;
+package com.oceanbase.tools.sqlparser.statement.creatematerializedview;
 
 import java.util.List;
 

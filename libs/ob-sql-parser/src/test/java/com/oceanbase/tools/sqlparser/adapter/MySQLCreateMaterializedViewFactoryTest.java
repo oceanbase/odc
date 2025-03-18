@@ -28,11 +28,11 @@ import com.oceanbase.tools.sqlparser.adapter.mysql.MySQLMaterializedViewRefreshO
 import com.oceanbase.tools.sqlparser.adapter.mysql.MySQLMaterializedViewRefreshOptsFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBLexer;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser;
-import com.oceanbase.tools.sqlparser.statement.createMaterializedView.CreateMaterializedView;
-import com.oceanbase.tools.sqlparser.statement.createMaterializedView.CreateMaterializedViewOpts;
-import com.oceanbase.tools.sqlparser.statement.createMaterializedView.MaterializedViewRefreshInterval;
-import com.oceanbase.tools.sqlparser.statement.createMaterializedView.MaterializedViewRefreshOnClause;
-import com.oceanbase.tools.sqlparser.statement.createMaterializedView.MaterializedViewRefreshOpts;
+import com.oceanbase.tools.sqlparser.statement.creatematerializedview.CreateMaterializedView;
+import com.oceanbase.tools.sqlparser.statement.creatematerializedview.CreateMaterializedViewOpts;
+import com.oceanbase.tools.sqlparser.statement.creatematerializedview.MaterializedViewRefreshInterval;
+import com.oceanbase.tools.sqlparser.statement.creatematerializedview.MaterializedViewRefreshOnClause;
+import com.oceanbase.tools.sqlparser.statement.creatematerializedview.MaterializedViewRefreshOpts;
 
 /**
  * @description:

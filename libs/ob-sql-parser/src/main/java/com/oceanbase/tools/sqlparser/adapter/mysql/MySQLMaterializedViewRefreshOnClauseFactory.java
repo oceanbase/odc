@@ -18,7 +18,7 @@ package com.oceanbase.tools.sqlparser.adapter.mysql;
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
-import com.oceanbase.tools.sqlparser.statement.createMaterializedView.MaterializedViewRefreshOnClause;
+import com.oceanbase.tools.sqlparser.statement.creatematerializedview.MaterializedViewRefreshOnClause;
 
 import lombok.NonNull;
 

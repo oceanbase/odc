@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.tools.sqlparser.statement.createMaterializedView;
+package com.oceanbase.tools.sqlparser.statement.creatematerializedview;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
 
@@ -25,14 +25,17 @@ import lombok.NoArgsConstructor;
 /**
  * @description:
  * @author: zijia.cj
- * @date: 2025/3/18 10:06
+ * @date: 2025/3/17 20:59
  * @since: 4.3.4
  */
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class MaterializedViewRefreshOnClause extends BaseStatement {
-    private String refreshMode;
+public class CreateMaterializedViewOpts extends BaseStatement {
+    // This property is set to false if there is no relevant content in the sql
+    private boolean enableQueryRewrite;
+    // This property is set to false if there is no relevant content in the sql
+    private boolean enableQueryComputation;
+    private MaterializedViewRefreshOpts materializedViewRefreshOpts;
 }

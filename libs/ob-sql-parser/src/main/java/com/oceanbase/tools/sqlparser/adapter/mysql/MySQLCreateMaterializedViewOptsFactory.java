@@ -20,7 +20,7 @@ import java.util.Objects;
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
-import com.oceanbase.tools.sqlparser.statement.createMaterializedView.CreateMaterializedViewOpts;
+import com.oceanbase.tools.sqlparser.statement.creatematerializedview.CreateMaterializedViewOpts;
 
 import lombok.NonNull;
 

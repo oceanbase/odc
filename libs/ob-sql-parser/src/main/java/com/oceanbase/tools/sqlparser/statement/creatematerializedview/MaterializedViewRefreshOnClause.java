@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.tools.sqlparser.statement.createMaterializedView;
+package com.oceanbase.tools.sqlparser.statement.creatematerializedview;
 
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
 
@@ -25,15 +25,14 @@ import lombok.NoArgsConstructor;
 /**
  * @description:
  * @author: zijia.cj
- * @date: 2025/3/18 09:54
+ * @date: 2025/3/18 10:06
  * @since: 4.3.4
  */
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class MaterializedViewRefreshInterval extends BaseStatement {
-    private String startTime;
-    private Long interval;
-    private String timeUnit;
+public class MaterializedViewRefreshOnClause extends BaseStatement {
+    private String refreshMode;
 }

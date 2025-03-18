@@ -22,7 +22,7 @@ import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_mview_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
-import com.oceanbase.tools.sqlparser.statement.createMaterializedView.CreateMaterializedView;
+import com.oceanbase.tools.sqlparser.statement.creatematerializedview.CreateMaterializedView;
 
 import lombok.NonNull;
 
