@@ -71,6 +71,8 @@ public class DataDeleteJob extends AbstractDlmJob {
                 : dataDeleteParameters.getTargetDatabaseId()));
         parameters.getSourceDs().setQueryTimeout(dataDeleteParameters.getQueryTimeout());
         parameters.getTargetDs().setQueryTimeout(dataDeleteParameters.getQueryTimeout());
+        parameters.getSourceDs().setCpuLimit(dataDeleteParameters.getCpuLimit());
+        parameters.getTargetDs().setCpuLimit(dataDeleteParameters.getCpuLimit());
         parameters.setShardingStrategy(dataDeleteParameters.getShardingStrategy());
         parameters.setFireTime(context.getFireTime());
 
