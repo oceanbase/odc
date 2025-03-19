@@ -39,6 +39,7 @@ import lombok.NonNull;
  */
 public class DefaultSqlChecker extends BaseSqlChecker {
 
+    private final List<SqlCheckRule> allRules;
     private final List<SqlCheckRule> rules;
     private final AbstractSyntaxTreeFactory factory;
 
@@ -47,6 +48,15 @@ public class DefaultSqlChecker extends BaseSqlChecker {
         super(dialectType, delimiter);
         this.rules = rules;
         this.factory = AbstractSyntaxTreeFactories.getAstFactory(dialectType, 0);
+        this.allRules = rules;
+    }
+
+    public DefaultSqlChecker(@NonNull DialectType dialectType,
+            String delimiter, @NonNull List<SqlCheckRule> rules, @NonNull List<SqlCheckRule> allRules) {
+        super(dialectType, delimiter);
+        this.rules = rules;
+        this.factory = AbstractSyntaxTreeFactories.getAstFactory(dialectType, 0);
+        this.allRules = allRules;
     }
 
     public DefaultSqlChecker(@NonNull ConnectionSession session, String delimiter) {
@@ -64,6 +74,12 @@ public class DefaultSqlChecker extends BaseSqlChecker {
     protected List<CheckViolation> doCheck(Statement statement, SqlCheckContext context) {
         return this.rules.stream().filter(r -> r.getSupportsDialectTypes().contains(dialectType))
                 .flatMap(rule -> rule.check(statement, context).stream()).collect(Collectors.toList());
+    }
+
+    @Override
+    protected List<SqlCheckRule> getAllRules() {
+        return this.allRules.stream().filter(r -> r.getSupportsDialectTypes().contains(dialectType))
+                .collect(Collectors.toList());
     }
 
 }

@@ -57,6 +57,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.google.common.collect.Sets;
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.common.i18n.I18n;
 import com.oceanbase.odc.common.json.JsonUtils;
@@ -130,6 +131,7 @@ import com.oceanbase.odc.service.flow.model.FlowMetaInfo;
 import com.oceanbase.odc.service.flow.model.FlowNodeInstanceDetailResp.FlowNodeInstanceMapper;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
+import com.oceanbase.odc.service.flow.model.PreCheckTaskResult;
 import com.oceanbase.odc.service.flow.model.QueryFlowInstanceParams;
 import com.oceanbase.odc.service.flow.processor.EnablePreprocess;
 import com.oceanbase.odc.service.flow.task.BaseRuntimeFlowableDelegate;
@@ -539,11 +541,23 @@ public class FlowInstanceService {
     }
 
     public FlowInstanceDetailResp detail(@NotNull Long id) {
-        return mapFlowInstanceWithReadPermission(id, flowInstance -> {
+        FlowInstanceDetailResp flowInstanceDetailResp = mapFlowInstanceWithReadPermission(id, flowInstance -> {
             FlowInstanceMapper instanceMapper = mapperFactory.generateMapperByInstance(flowInstance, false);
             FlowNodeInstanceMapper nodeInstanceMapper = mapperFactory.generateNodeMapperByInstance(flowInstance, false);
             return instanceMapper.map(flowInstance, nodeInstanceMapper);
         });
+        // Only DatabaseChange supports to get DML affectedRows
+        if (flowInstanceDetailResp != null && flowInstanceDetailResp.getType() == TaskType.ASYNC) {
+            Optional<TaskEntity> preCheckOp = getPreCheckTaskByFlowInstanceId(id);
+            if (preCheckOp.isPresent()) {
+                PreCheckTaskResult preCheckTaskResult = JsonUtils.fromJson(preCheckOp.get().getResultJson(),
+                        PreCheckTaskResult.class);
+                if (preCheckTaskResult != null && preCheckTaskResult.getSqlCheckResult() != null) {
+                    flowInstanceDetailResp.setAffectedRows(preCheckTaskResult.getSqlCheckResult().getAffectedRows());
+                }
+            }
+        }
+        return flowInstanceDetailResp;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -752,6 +766,21 @@ public class FlowInstanceService {
         Verify.singleton(taskIds, "Multi task for one instance is not allowed, id " + id);
         Long taskId = taskIds.iterator().next();
         return taskService.detail(taskId);
+    }
+
+    public Optional<TaskEntity> getPreCheckTaskByFlowInstanceId(@NonNull Long flowInstanceId) {
+        List<ServiceTaskInstanceEntity> serviceTasks = serviceTaskRepository.findByFlowInstanceIdIn(
+                Sets.newHashSet(flowInstanceId))
+                .stream()
+                .filter(s -> s.getTaskType() == TaskType.PRE_CHECK || s.getTaskType() == TaskType.SQL_CHECK)
+                .collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(serviceTasks)) {
+            return Optional.empty();
+        }
+        Verify.singleton(serviceTasks,
+                "Multi preCheckTask or sqlCheckTask for one instance is not allowed, flowInstanceId " + flowInstanceId);
+        TaskEntity task = taskService.detail(serviceTasks.get(0).getTargetTaskId());
+        return Optional.of(task);
     }
 
     private void checkCreateFlowInstancePermission(CreateFlowInstanceReq req) {

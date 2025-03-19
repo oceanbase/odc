@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -60,6 +61,7 @@ import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.sqlcheck.model.MultipleSqlCheckReq;
 import com.oceanbase.odc.service.sqlcheck.model.MultipleSqlCheckResult;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckReq;
+import com.oceanbase.odc.service.sqlcheck.model.SqlCheckResponse;
 import com.oceanbase.odc.service.sqlcheck.rule.SqlCheckRules;
 
 import lombok.NonNull;
@@ -89,7 +91,26 @@ public class SqlCheckService {
     @Autowired
     private DatabaseService databaseService;
 
-    public List<CheckResult> check(@NotNull ConnectionSession session,
+    public SqlCheckResponse<CheckResult> check(@NotNull ConnectionSession session,
+            @NotNull @Valid SqlCheckReq req) {
+        Long ruleSetId = ConnectionSessionUtil.getRuleSetId(session);
+        if (ruleSetId == null) {
+            return SqlCheckResponse.empty();
+        }
+        List<Rule> rules = this.ruleService.list(ruleSetId, QueryRuleMetadataParams.builder().build());
+        List<SqlCheckRule> sqlCheckRules = getRules(rules, session);
+        if (CollectionUtils.isEmpty(sqlCheckRules)) {
+            return SqlCheckResponse.empty();
+        }
+        DefaultSqlChecker sqlChecker = new DefaultSqlChecker(session.getDialectType(), req.getDelimiter(),
+                sqlCheckRules, getAllRules(rules, session));
+        long affectedRows = sqlChecker.getAffectedRows(req.getScriptContent());
+        List<CheckViolation> checkViolations = sqlChecker.check(req.getScriptContent());
+        fullFillRiskLevel(rules, checkViolations);
+        return SqlCheckResponse.of(affectedRows, SqlCheckUtil.buildCheckResults(checkViolations));
+    }
+
+    public List<CheckResult> checkForMultipleSql(@NotNull ConnectionSession session,
             @NotNull @Valid SqlCheckReq req) {
         Long ruleSetId = ConnectionSessionUtil.getRuleSetId(session);
         if (ruleSetId == null) {
@@ -100,7 +121,8 @@ public class SqlCheckService {
         if (CollectionUtils.isEmpty(sqlCheckRules)) {
             return Collections.emptyList();
         }
-        SqlChecker sqlChecker = new DefaultSqlChecker(session.getDialectType(), req.getDelimiter(), sqlCheckRules);
+        DefaultSqlChecker sqlChecker = new DefaultSqlChecker(session.getDialectType(), req.getDelimiter(),
+                sqlCheckRules);
         List<CheckViolation> checkViolations = sqlChecker.check(req.getScriptContent());
         fullFillRiskLevel(rules, checkViolations);
         return SqlCheckUtil.buildCheckResults(checkViolations);
@@ -118,7 +140,7 @@ public class SqlCheckService {
                 SqlCheckReq sqlCheckReq = new SqlCheckReq();
                 sqlCheckReq.setDelimiter(req.getDelimiter());
                 sqlCheckReq.setScriptContent(req.getScriptContent());
-                List<CheckResult> check = check(session, sqlCheckReq);
+                List<CheckResult> check = checkForMultipleSql(session, sqlCheckReq);
                 MultipleSqlCheckResult multipleSqlCheckResult = new MultipleSqlCheckResult();
                 if (CollectionUtils.isEmpty(check)) {
                     return Collections.emptyList();
@@ -135,10 +157,10 @@ public class SqlCheckService {
         return multipleSqlCheckResults;
     }
 
-    public List<CheckViolation> check(@NotNull Long environmentId, @NonNull String databaseName,
+    public SqlCheckResponse<CheckViolation> check(@NotNull Long environmentId, @NonNull String databaseName,
             @NotNull List<OffsetString> sqls, @NotNull ConnectionConfig config) {
         if (CollectionUtils.isEmpty(sqls)) {
-            return Collections.emptyList();
+            return SqlCheckResponse.empty();
         }
         Environment env = this.environmentService.detail(environmentId);
         List<Rule> rules = this.ruleService.list(env.getRulesetId(), QueryRuleMetadataParams.builder().build());
@@ -148,7 +170,7 @@ public class SqlCheckService {
         try (SingleConnectionDataSource dataSource = (SingleConnectionDataSource) factory.getDataSource()) {
             JdbcTemplate jdbc = new JdbcTemplate(dataSource);
             List<SqlCheckRule> checkRules = getRules(rules, () -> SqlCheckUtil.getDbVersion(config, dataSource),
-                    config.getDialectType(), jdbc);
+                    config.getDialectType(), jdbc, getRulePredicate());
             DefaultSqlChecker sqlChecker = new DefaultSqlChecker(config.getDialectType(), null, checkRules);
             List<CheckViolation> checkViolations = new ArrayList<>();
             for (OffsetString sql : sqls) {
@@ -156,28 +178,27 @@ public class SqlCheckService {
                 fullFillRiskLevel(rules, violations);
                 checkViolations.addAll(violations);
             }
-            return checkViolations;
+            return SqlCheckResponse.of(sqlChecker.getAffectedRows(sqls), checkViolations);
         }
     }
 
     public List<SqlCheckRule> getRules(List<Rule> rules, @NonNull ConnectionSession session) {
         return getRules(rules, () -> ConnectionSessionUtil.getVersion(session), session.getDialectType(),
-                session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY));
+                session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY), getRulePredicate());
+    }
+
+    public List<SqlCheckRule> getAllRules(List<Rule> rules, @NonNull ConnectionSession session) {
+        return getRules(rules, () -> ConnectionSessionUtil.getVersion(session), session.getDialectType(),
+                session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY), rule -> true);
     }
 
     public List<SqlCheckRule> getRules(List<Rule> rules, Supplier<String> dbVersionSupplier,
-            @NonNull DialectType dialectType, @NonNull JdbcOperations jdbc) {
+            @NonNull DialectType dialectType, @NonNull JdbcOperations jdbc, @NonNull Predicate<Rule> filter) {
         if (CollectionUtils.isEmpty(rules)) {
             return Collections.emptyList();
         }
         List<SqlCheckRuleFactory> candidates = SqlCheckRules.getAllFactories(dialectType, jdbc);
-        return rules.stream().filter(rule -> {
-            RuleMetadata metadata = rule.getMetadata();
-            if (metadata == null || !Boolean.TRUE.equals(rule.getEnabled())) {
-                return false;
-            }
-            return Objects.equals(metadata.getType(), RuleType.SQL_CHECK);
-        }).map(rule -> {
+        return rules.stream().filter(filter).map(rule -> {
             try {
                 return SqlCheckRules.createByRule(candidates, dbVersionSupplier, dialectType, rule);
             } catch (Exception e) {
@@ -203,6 +224,20 @@ public class SqlCheckService {
             }
         });
         return violatedRules;
+    }
+
+    private Predicate<Rule> getRulePredicate() {
+        return rule -> {
+            RuleMetadata metadata = rule.getMetadata();
+            if (metadata == null) {
+                return false;
+            } else if ((!Boolean.TRUE.equals(rule.getEnabled()))
+                    && !"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-affected-rows.name}"
+                            .equals(metadata.getName())) {
+                return false;
+            }
+            return Objects.equals(metadata.getType(), RuleType.SQL_CHECK);
+        };
     }
 
 }

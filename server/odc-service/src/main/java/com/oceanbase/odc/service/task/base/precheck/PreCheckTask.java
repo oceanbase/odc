@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -109,15 +110,16 @@ public class PreCheckTask extends TaskBase<FlowTaskResult> {
             List<OffsetString> sqls = new ArrayList<>();
             this.overLimit = getSqlContentUntilOverLimit(sqls, this.parameters.getMaxReadContentBytes());
             List<UnauthorizedDBResource> unauthorizedDBResources = new ArrayList<>();
-            List<CheckViolation> violations = new ArrayList<>();
+            PreCheckResult preCheckResult = PreCheckResult.empty();
             if (CollectionUtils.isNotEmpty(sqls)) {
-                violations.addAll(checkViolations(sqls));
+                preCheckResult = checkAndGetPreCheckResult(sqls);
                 log.info("SQL check successfully, taskId={}", taskId);
                 unauthorizedDBResources.addAll(filterUnAuthorizedDatabase(sqls));
                 log.info("Database permission check successfully, taskId={}", taskId);
             }
             this.permissionCheckResult = new DatabasePermissionCheckResult(unauthorizedDBResources);
-            this.sqlCheckResult = SqlCheckTaskResult.success(violations);
+            this.sqlCheckResult = SqlCheckTaskResult.success(preCheckResult.getCheckViolations());
+            this.sqlCheckResult.setAffectedRows(preCheckResult.getAffectedRows());
             this.success = true;
             log.info("Pre-check task end up running, task id: {}", taskId);
         } catch (Throwable e) {
@@ -240,9 +242,9 @@ public class PreCheckTask extends TaskBase<FlowTaskResult> {
         return false;
     }
 
-    private List<CheckViolation> checkViolations(List<OffsetString> sqls) {
+    private PreCheckResult checkAndGetPreCheckResult(List<OffsetString> sqls) {
         if (CollectionUtils.isEmpty(sqls)) {
-            return Collections.emptyList();
+            return PreCheckResult.empty();
         }
         ConnectionConfig config = this.parameters.getConnectionConfig();
         List<Rule> rules = this.parameters.getRules();
@@ -253,32 +255,32 @@ public class PreCheckTask extends TaskBase<FlowTaskResult> {
         try (SingleConnectionDataSource dataSource = (SingleConnectionDataSource) factory.getDataSource()) {
             JdbcTemplate jdbc = new JdbcTemplate(dataSource);
             List<SqlCheckRule> checkRules =
-                    getRules(rules, () -> SqlCheckUtil.getDbVersion(config, dataSource), config.getDialectType(), jdbc);
-            DefaultSqlChecker sqlChecker = new DefaultSqlChecker(config.getDialectType(), null, checkRules);
+                    getRules(rules, () -> SqlCheckUtil.getDbVersion(config, dataSource), config.getDialectType(), jdbc,
+                            filterRulePredicate());
+            List<SqlCheckRule> allRules =
+                    getRules(rules, () -> SqlCheckUtil.getDbVersion(config, dataSource), config.getDialectType(), jdbc,
+                            rule -> true);
+            DefaultSqlChecker sqlChecker = new DefaultSqlChecker(config.getDialectType(), null, checkRules, allRules);
             List<CheckViolation> checkViolations = new ArrayList<>();
             for (OffsetString sql : sqls) {
                 List<CheckViolation> violations = sqlChecker.check(Collections.singletonList(sql), checkContext);
                 fullFillRiskLevel(rules, violations);
                 checkViolations.addAll(violations);
             }
-            return checkViolations;
+            return PreCheckResult.empty()
+                    .setCheckViolations(checkViolations)
+                    .setAffectedRows(sqlChecker.getAffectedRows(sqls));
         }
     }
 
     private List<SqlCheckRule> getRules(List<Rule> rules, Supplier<String> dbVersionSupplier,
             @NonNull DialectType dialectType,
-            @NonNull JdbcOperations jdbc) {
+            @NonNull JdbcOperations jdbc, @NonNull Predicate<Rule> filter) {
         if (CollectionUtils.isEmpty(rules)) {
             return Collections.emptyList();
         }
         List<SqlCheckRuleFactory> candidates = SqlCheckRules.getAllFactories(dialectType, jdbc);
-        return rules.stream().filter(rule -> {
-            RuleMetadata metadata = rule.getMetadata();
-            if (metadata == null || !Boolean.TRUE.equals(rule.getEnabled())) {
-                return false;
-            }
-            return Objects.equals(metadata.getType(), RuleType.SQL_CHECK);
-        }).map(rule -> {
+        return rules.stream().filter(filter).map(rule -> {
             try {
                 return SqlCheckRules.createByRule(candidates, dbVersionSupplier, dialectType, rule);
             } catch (Exception e) {
@@ -316,6 +318,16 @@ public class PreCheckTask extends TaskBase<FlowTaskResult> {
                 // Ignore
             }
         }
+    }
+
+    private Predicate<Rule> filterRulePredicate() {
+        return rule -> {
+            RuleMetadata metadata = rule.getMetadata();
+            if (metadata == null || !Boolean.TRUE.equals(rule.getEnabled())) {
+                return false;
+            }
+            return Objects.equals(metadata.getType(), RuleType.SQL_CHECK);
+        };
     }
 
 }

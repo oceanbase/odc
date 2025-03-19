@@ -39,4 +39,8 @@ public interface SqlCheckRule {
 
     List<DialectType> getSupportsDialectTypes();
 
+    default SqlCheckRule getRule() {
+        return this;
+    }
+
 }
