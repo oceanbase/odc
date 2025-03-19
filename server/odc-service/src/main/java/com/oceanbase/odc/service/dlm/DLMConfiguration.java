@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.dlm;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
 
 import com.oceanbase.tools.migrator.common.enums.ShardingStrategy;
@@ -32,6 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Getter
 @Configuration
+@RefreshScope
 public class DLMConfiguration {
 
     @Value("${odc.task.dlm.single-task-read-write-ratio:0.5}")
