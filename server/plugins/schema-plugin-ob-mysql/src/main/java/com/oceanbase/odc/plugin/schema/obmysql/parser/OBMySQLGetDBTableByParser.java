@@ -87,7 +87,7 @@ public class OBMySQLGetDBTableByParser extends BaseOBGetDBTableByParser {
     }
 
     @Override
-    protected CreateTable getCreateTableStmt() {
+    public CreateTable getCreateTableStmt() {
         return this.createTableStmt;
     }
 
