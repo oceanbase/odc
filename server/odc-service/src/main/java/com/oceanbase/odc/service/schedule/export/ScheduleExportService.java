@@ -17,8 +17,8 @@
 package com.oceanbase.odc.service.schedule.export;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +28,7 @@ import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.common.security.PasswordUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.service.common.util.OdcFileUtil;
 import com.oceanbase.odc.service.exporter.model.ExportProperties;
 import com.oceanbase.odc.service.exporter.model.ExportedFile;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -39,7 +40,7 @@ import com.oceanbase.odc.service.schedule.model.ScheduleType;
 
 @Service
 public class ScheduleExportService {
-    public static final String ASYNC_TASK_BASE_BUCKET = "async";
+    public static final String ASYNC_TASK_BASE_BUCKET = "scheduleExport";
     private static final Logger log = LoggerFactory.getLogger(ScheduleExportService.class);
 
     @Autowired
@@ -56,38 +57,39 @@ public class ScheduleExportService {
         return ASYNC_TASK_BASE_BUCKET.concat(File.separator).concat(userIdStr);
     }
 
-    public ExportedFile export(ScheduleTaskExportRequest request) {
+    public FileExportResponse export(ScheduleTaskExportRequest request) {
         ExportProperties properties = scheduleTaskExporter.generateExportProperties();
         String encryptKey = new BCryptPasswordEncoder().encode(PasswordUtils.random());
 
+        ExportedFile exportedFile = null;
         if (request.getScheduleType().equals(ScheduleType.PARTITION_PLAN)) {
-            return scheduleTaskExporter.exportPartitionPlan(encryptKey, properties,
+            exportedFile = scheduleTaskExporter.exportPartitionPlan(encryptKey, properties,
                     request.getIds());
+        } else {
+            exportedFile = scheduleTaskExporter.exportSchedule(request.getScheduleType(), encryptKey,
+                    properties, request.getIds());
         }
-        return scheduleTaskExporter.exportSchedule(request.getScheduleType(), encryptKey, properties, request.getIds());
+        return mapToFileExportResponse(exportedFile);
     }
 
     private FileExportResponse mapToFileExportResponse(ExportedFile exportedFile) {
         FileExportResponse fileExportResponse = new FileExportResponse();
         fileExportResponse.setSecret(exportedFile.getSecret());
-        ObjectMetadata objectMetadata = saveToObjectStorage(exportedFile);
-        fileExportResponse.setBucket(objectMetadata.getBucketName());
-        fileExportResponse.setFileId(objectMetadata.getObjectId());
-        return fileExportResponse;
-    }
-
-
-    private ObjectMetadata saveToObjectStorage(ExportedFile exportedFile) {
-        File file = exportedFile.getFile();
-        try (FileInputStream fileInputStream = new FileInputStream(file)) {
+        try {
             String bucketName = getPersonalBucketName(authenticationFacade.currentUserIdStr());
             objectStorageFacade.createBucketIfNotExists(bucketName);
-            return objectStorageFacade.putTempObject(bucketName, file.getName(),
-                    authenticationFacade.currentUserId(), file.length(), fileInputStream);
+            ObjectMetadata metadata = objectStorageFacade.putTempObject(bucketName, exportedFile.getFile().getName(),
+                    exportedFile.getFile().length(),
+                    Files.newInputStream(exportedFile.getFile().toPath()));
+            String downloadUrl = objectStorageFacade.getDownloadUrl(metadata.getBucketName(), metadata.getObjectId());
+            fileExportResponse.setDownloadUrl(downloadUrl);
         } catch (IOException e) {
-            log.info("Upload file to object storage failed.", e);
+            log.info("Get download url failed", e);
             throw new RuntimeException(e);
+        } finally {
+            OdcFileUtil.deleteFiles(exportedFile.getFile());
         }
+        return fileExportResponse;
     }
 
 }

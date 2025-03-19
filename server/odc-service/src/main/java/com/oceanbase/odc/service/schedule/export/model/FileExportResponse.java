@@ -22,9 +22,7 @@ import lombok.ToString.Exclude;
 @Data
 public class FileExportResponse {
 
-    private String bucket;
-
-    private String fileId;
+    private String downloadUrl;
 
     @Exclude
     private String secret;
