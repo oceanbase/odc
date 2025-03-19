@@ -15,12 +15,15 @@
  */
 package com.oceanbase.tools.sqlparser.statement.creatematerializedview;
 
+import org.antlr.v4.runtime.ParserRuleContext;
+
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 
 /**
  * @description:
@@ -38,4 +41,9 @@ public class CreateMaterializedViewOpts extends BaseStatement {
     // This property is set to false if there is no relevant content in the sql
     private boolean enableQueryComputation;
     private MaterializedViewRefreshOpts materializedViewRefreshOpts;
+
+    public CreateMaterializedViewOpts(@NonNull ParserRuleContext context) {
+        super(context);
+    }
+
 }

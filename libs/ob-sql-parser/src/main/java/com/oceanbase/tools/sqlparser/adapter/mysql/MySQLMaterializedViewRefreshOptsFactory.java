@@ -45,7 +45,7 @@ public class MySQLMaterializedViewRefreshOptsFactory extends OBParserBaseVisitor
 
     @Override
     public MaterializedViewRefreshOpts visitMview_refresh_opt(OBParser.Mview_refresh_optContext ctx) {
-        MaterializedViewRefreshOpts materializedViewRefreshOpts = new MaterializedViewRefreshOpts();
+        MaterializedViewRefreshOpts materializedViewRefreshOpts = new MaterializedViewRefreshOpts(ctx);
         if (Objects.nonNull(ctx.NEVER())) {
             materializedViewRefreshOpts.setRefreshMethod("NEVER");
         } else if (Objects.nonNull(ctx.REFRESH())) {

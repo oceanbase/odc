@@ -46,7 +46,7 @@ public class MySQLCreateMaterializedViewOptsFactory extends OBParserBaseVisitor<
 
     @Override
     public CreateMaterializedViewOpts visitCreate_mview_opts(OBParser.Create_mview_optsContext ctx) {
-        CreateMaterializedViewOpts createMaterializedViewOpts = new CreateMaterializedViewOpts();
+        CreateMaterializedViewOpts createMaterializedViewOpts = new CreateMaterializedViewOpts(ctx);
         // ctx.mview_refresh_opt()
         if (Objects.nonNull(ctx.REWRITE()) && Objects.nonNull(ctx.COMPUTATION())) {
             if (ctx.REWRITE().getSymbol().getStartIndex() < ctx.COMPUTATION().getSymbol().getStartIndex()) {

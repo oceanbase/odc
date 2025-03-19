@@ -48,7 +48,7 @@ public class MySQLCreateMaterializedViewFactory extends OBParserBaseVisitor<Crea
 
     @Override
     public CreateMaterializedView visitCreate_mview_stmt(Create_mview_stmtContext ctx) {
-        CreateMaterializedView createMaterializedView = new CreateMaterializedView();
+        CreateMaterializedView createMaterializedView = new CreateMaterializedView(ctx);
         if (ctx.table_option_list() != null) {
             createMaterializedView.setTableOptions(new MySQLTableOptionsFactory(ctx.table_option_list()).generate());
         }

@@ -17,6 +17,8 @@ package com.oceanbase.tools.sqlparser.statement.creatematerializedview;
 
 import java.util.List;
 
+import org.antlr.v4.runtime.ParserRuleContext;
+
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
 import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
 import com.oceanbase.tools.sqlparser.statement.createtable.Partition;
@@ -26,6 +28,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 
 /**
  * @description:
@@ -42,5 +45,9 @@ public class CreateMaterializedView extends BaseStatement {
     private Partition partition;
     private List<ColumnGroupElement> columnGroupElements;
     private CreateMaterializedViewOpts createMaterializedViewOpts;
+
+    public CreateMaterializedView(@NonNull ParserRuleContext context) {
+        super(context);
+    }
 
 }

@@ -44,7 +44,7 @@ public class MySQLMaterializedViewRefreshOnClauseFactory extends OBParserBaseVis
 
     @Override
     public MaterializedViewRefreshOnClause visitMv_refresh_on_clause(OBParser.Mv_refresh_on_clauseContext ctx) {
-        MaterializedViewRefreshOnClause materializedViewRefreshOnClause = new MaterializedViewRefreshOnClause();
+        MaterializedViewRefreshOnClause materializedViewRefreshOnClause = new MaterializedViewRefreshOnClause(ctx);
         materializedViewRefreshOnClause.setRefreshMode(ctx.mv_refresh_mode().getText());
         return materializedViewRefreshOnClause;
     }

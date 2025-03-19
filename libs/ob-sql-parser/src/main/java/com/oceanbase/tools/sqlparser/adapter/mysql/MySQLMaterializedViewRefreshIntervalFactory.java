@@ -46,7 +46,7 @@ public class MySQLMaterializedViewRefreshIntervalFactory extends OBParserBaseVis
 
     @Override
     public MaterializedViewRefreshInterval visitMv_refresh_interval(OBParser.Mv_refresh_intervalContext ctx) {
-        MaterializedViewRefreshInterval materializedViewRefreshInterval = new MaterializedViewRefreshInterval();
+        MaterializedViewRefreshInterval materializedViewRefreshInterval = new MaterializedViewRefreshInterval(ctx);
         if (Objects.nonNull(ctx.mv_start_clause())) {
             materializedViewRefreshInterval.setStartTime(ctx.mv_start_clause().bit_expr().getText());
         }

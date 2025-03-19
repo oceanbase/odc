@@ -15,12 +15,15 @@
  */
 package com.oceanbase.tools.sqlparser.statement.creatematerializedview;
 
+import org.antlr.v4.runtime.ParserRuleContext;
+
 import com.oceanbase.tools.sqlparser.statement.BaseStatement;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 
 /**
  * @description:
@@ -36,4 +39,8 @@ public class MaterializedViewRefreshOpts extends BaseStatement {
     private String refreshMethod;
     private MaterializedViewRefreshInterval refreshInterval;
     private MaterializedViewRefreshOnClause refreshOn;
+
+    public MaterializedViewRefreshOpts(@NonNull ParserRuleContext context) {
+        super(context);
+    }
 }
