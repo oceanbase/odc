@@ -25,8 +25,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -332,10 +334,15 @@ public class ScriptService {
             if (!downloadDir.exists()) {
                 FileUtils.forceMkdir(downloadDir);
             }
+            Map<String, Integer> duplicateNameFileCountMap = new HashMap<>();
             for (ScriptMetaEntity objectMetadata : scriptMetas) {
                 StorageObject storageObject =
                         objectStorageFacade.loadObject(objectMetadata.getBucketName(), objectMetadata.getObjectId());
-                File file = new File(downloadDir, objectMetadata.getObjectName());
+                int count = duplicateNameFileCountMap.getOrDefault(objectMetadata.getObjectName(), 0) + 1;
+                duplicateNameFileCountMap.put(objectMetadata.getObjectName(), count);
+                String fileName =
+                        count > 1 ? objectMetadata.getObjectName() + "(" + count + ")" : objectMetadata.getObjectName();
+                File file = new File(downloadDir, fileName);
                 FileUtils.copyInputStreamToFile(storageObject.getContent(), file);
             }
 
