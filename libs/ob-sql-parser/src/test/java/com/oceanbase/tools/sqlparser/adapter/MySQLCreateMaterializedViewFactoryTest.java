@@ -28,15 +28,19 @@ import org.junit.Test;
 import com.oceanbase.tools.sqlparser.adapter.mysql.MySQLCreateMaterializedViewFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBLexer;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_mview_stmtContext;
 import com.oceanbase.tools.sqlparser.statement.common.ColumnGroupElement;
-import com.oceanbase.tools.sqlparser.statement.creatematerializedview.CreateMaterializedView;
-import com.oceanbase.tools.sqlparser.statement.creatematerializedview.CreateMaterializedViewOpts;
-import com.oceanbase.tools.sqlparser.statement.creatematerializedview.MaterializedViewRefreshInterval;
-import com.oceanbase.tools.sqlparser.statement.creatematerializedview.MaterializedViewRefreshOnClause;
-import com.oceanbase.tools.sqlparser.statement.creatematerializedview.MaterializedViewRefreshOpts;
-import com.oceanbase.tools.sqlparser.statement.createtable.HashPartition;
-import com.oceanbase.tools.sqlparser.statement.createtable.TableOptions;
+import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
+import com.oceanbase.tools.sqlparser.statement.createmview.CreateMaterializedView;
+import com.oceanbase.tools.sqlparser.statement.createmview.MaterializedViewOptions;
+import com.oceanbase.tools.sqlparser.statement.createmview.MaterializedViewRefreshOption;
+import com.oceanbase.tools.sqlparser.statement.createtable.*;
 import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
+import com.oceanbase.tools.sqlparser.statement.expression.ConstExpression;
+import com.oceanbase.tools.sqlparser.statement.select.NameReference;
+import com.oceanbase.tools.sqlparser.statement.select.Projection;
+import com.oceanbase.tools.sqlparser.statement.select.Select;
+import com.oceanbase.tools.sqlparser.statement.select.SelectBody;
 
 /**
  * @description: Test cases for {@link MySQLCreateMaterializedViewFactory}
@@ -45,55 +49,81 @@ import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
  * @since: 4.3.4
  */
 public class MySQLCreateMaterializedViewFactoryTest {
+
+    @Test
+    public void generate_simpleMView_generateSucceed() {
+        Create_mview_stmtContext context = getCreateMaterializedViewContext(
+                "CREATE MATERIALIZED VIEW `zijia`.`test_mv_allsyntax` AS select col.* abc from dual");
+        MySQLCreateMaterializedViewFactory factory = new MySQLCreateMaterializedViewFactory(context);
+        CreateMaterializedView actual = factory.generate();
+
+        ColumnReference r = new ColumnReference(null, "col", "*");
+        Projection p = new Projection(r, "abc");
+        NameReference from = new NameReference(null, "dual", null);
+        Select asSelect = new Select(new SelectBody(Collections.singletonList(p), Collections.singletonList(from)));
+        RelationFactor viewName = new RelationFactor("`test_mv_allsyntax`");
+        viewName.setSchema("`zijia`");
+        CreateMaterializedView expect = new CreateMaterializedView(viewName, asSelect);
+        Assert.assertEquals(expect, actual);
+    }
+
     @Test
     public void generate_allSyntax_generateSucceed() {
-        OBParser.Create_mview_stmtContext context = getCreateMaterializedViewContext(
-                "CREATE MATERIALIZED VIEW `zijia`.`test_mv_allsyntax` (PRIMARY KEY (prim)) " +
-                        "DEFAULT CHARSET = gbk ROW_FORMAT = DYNAMIC COMPRESSION = 'zstd_1.3.8' REPLICA_NUM = 1 BLOCK_SIZE = 16384 USE_BLOOM_FILTER = FALSE ENABLE_MACRO_BLOCK_BLOOM_FILTER = FALSE TABLET_SIZE = 134217728 PCTFREE = 10 PARALLEL 5\n"
-                        +
-                        " partition by hash(prim)\n" +
-                        " WITH COLUMN GROUP(all columns, each column) REFRESH COMPLETE ON DEMAND START WITH sysdate() NEXT sysdate() + INTERVAL 1 DAY ENABLE QUERY REWRITE ENABLE ON QUERY COMPUTATION "
-                        +
-                        "AS select `zijia`.`test_mv_base`.`col1` AS `prim`,`zijia`.`test_mv_base`.`col2` AS `col2`,`zijia`.`test_mv_base`.`col3` AS `col3`,`zijia`.`test_mv_base`.`col4` AS `col4` from `zijia`.`test_mv_base`");
+        Create_mview_stmtContext context = getCreateMaterializedViewContext(
+                "CREATE MATERIALIZED VIEW `zijia`.`test_mv_allsyntax` "
+                        + "(col, PRIMARY KEY (prim)) "
+                        + "TABLET_SIZE = 134217728 PCTFREE = 10 PARALLEL 5 "
+                        + "partition by hash(prim) "
+                        + "with column group (all columns, each column) "
+                        + "REFRESH COMPLETE ON DEMAND START WITH 1 NEXT 'abc' ENABLE QUERY REWRITE DISABLE ON QUERY COMPUTATION "
+                        + "AS select col.* abc from dual "
+                        + "with cascaded check option");
         MySQLCreateMaterializedViewFactory factory = new MySQLCreateMaterializedViewFactory(context);
-        CreateMaterializedView generate = factory.generate();
+        CreateMaterializedView actual = factory.generate();
+
+        ColumnReference r = new ColumnReference(null, "col", "*");
+        Projection p = new Projection(r, "abc");
+        NameReference from = new NameReference(null, "dual", null);
+        Select asSelect = new Select(new SelectBody(Collections.singletonList(p), Collections.singletonList(from)));
+        RelationFactor viewName = new RelationFactor("`test_mv_allsyntax`");
+        viewName.setSchema("`zijia`");
+        CreateMaterializedView expect = new CreateMaterializedView(viewName, asSelect);
 
         TableOptions tableOptions = new TableOptions();
         tableOptions.setParallel(5);
-        tableOptions.setBlockSize(16384);
-        tableOptions.setReplicaNum(1);
-        tableOptions.setUseBloomFilter(false);
         tableOptions.setTabletSize(134217728);
         tableOptions.setPctFree(10);
-        tableOptions.setCompression("'zstd_1.3.8'");
-        tableOptions.setRowFormat("DYNAMIC");
-        tableOptions.setCharset("gbk");
-        tableOptions.setEnableMacroBlockBloomFilter(false);
+        expect.setTableOptions(tableOptions);
 
         HashPartition hashPartition = new HashPartition(Collections.singletonList(
                 new ColumnReference(null, null, "prim")), null, null, null);
+        expect.setPartition(hashPartition);
 
-        List<ColumnGroupElement> columnGroupElements = new ArrayList<>();
-        columnGroupElements.add(new ColumnGroupElement(true, false));
-        columnGroupElements.add(new ColumnGroupElement(false, true));
+        List<ColumnGroupElement> columnGroups = new ArrayList<>();
+        columnGroups.add(new ColumnGroupElement(true, false));
+        columnGroups.add(new ColumnGroupElement(false, true));
+        expect.setColumnGroupElements(columnGroups);
 
-        MaterializedViewRefreshInterval materializedViewRefreshInterval =
-                new MaterializedViewRefreshInterval("sysdate()", 1L, "DAY");
-        MaterializedViewRefreshOpts materializedViewRefreshOpts = new MaterializedViewRefreshOpts("COMPLETE",
-                materializedViewRefreshInterval, new MaterializedViewRefreshOnClause("DEMAND"));
-        CreateMaterializedViewOpts createMaterializedViewOpts =
-                new CreateMaterializedViewOpts(true, true, materializedViewRefreshOpts);
+        expect.setColumns(Collections.singletonList("col"));
+        SortColumn column = new SortColumn(new ColumnReference(null, null, "prim"));
+        OutOfLineConstraint pk = new OutOfLineConstraint(null, Collections.singletonList(column));
+        pk.setPrimaryKey(true);
+        expect.setPrimaryKey(pk);
 
-        CreateMaterializedView createMaterializedView = new CreateMaterializedView();
-        createMaterializedView.setTableOptions(tableOptions);
-        createMaterializedView.setPartition(hashPartition);
-        createMaterializedView.setColumnGroupElements(columnGroupElements);
-        createMaterializedView.setCreateMaterializedViewOpts(createMaterializedViewOpts);
+        MaterializedViewRefreshOption refreshOption = new MaterializedViewRefreshOption(false, "COMPLETE");
+        refreshOption.setRefreshMode("DEMAND");
+        refreshOption.setStartWith(new ConstExpression("1"));
+        refreshOption.setNext(new ConstExpression("'abc'"));
 
-        Assert.assertEquals(createMaterializedView, generate);
+        MaterializedViewOptions options = new MaterializedViewOptions(refreshOption);
+        options.setEnableQueryComputation(false);
+        options.setEnableQueryWrite(true);
+        expect.setViewOptions(options);
+        expect.setWithOption("WITH CASCADED CHECK OPTION");
+        Assert.assertEquals(expect, actual);
     }
 
-    private OBParser.Create_mview_stmtContext getCreateMaterializedViewContext(String expr) {
+    private Create_mview_stmtContext getCreateMaterializedViewContext(String expr) {
         OBLexer lexer = new OBLexer(CharStreams.fromString(expr));
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         OBParser parser = new OBParser(tokens);
