@@ -29,6 +29,8 @@ import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -36,6 +38,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.lang.Pair;
 import com.oceanbase.odc.common.util.FileZipper;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.TaskType;
@@ -112,25 +115,32 @@ public class ScheduleTaskExporter {
     @Autowired
     private TaskRepository taskRepository;
 
+    public static String removeSeparator(String fileName) {
+        return fileName.replace(File.separator, "_");
+    }
 
     public ExportedFile exportPartitionPlan(String encryptKey, ExportProperties exportProperties,
             Collection<Long> ids) {
-        List<ServiceTaskInstanceEntity> serviceTaskInstanceEntities = serviceTaskRepository.findByFlowInstanceIdIn(ids);
-        Verify.verify(
-                serviceTaskInstanceEntities.stream().allMatch(t -> t.getTaskType().equals(TaskType.PARTITION_PLAN)),
-                "Id's task type not match");
-        List<Long> taskIds = serviceTaskInstanceEntities.stream().map(ServiceTaskInstanceEntity::getTargetTaskId)
+        List<ServiceTaskInstanceEntity> serviceTaskInstanceEntities = serviceTaskRepository.findByFlowInstanceIdIn(ids)
+                .stream().filter(s -> s.getTaskType() != TaskType.PRE_CHECK)
                 .collect(Collectors.toList());
+        Set<Long> taskIds = serviceTaskInstanceEntities.stream().map(ServiceTaskInstanceEntity::getTargetTaskId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
         List<TaskEntity> taskEntities = taskRepository.findByIdIn(taskIds);
-
+        Verify.verify(taskEntities.stream().allMatch(t -> t.getTaskType().equals(TaskType.PARTITION_PLAN)),
+                "Id's task type not match");
         ExportProperties properties = generateTypeProperties(ScheduleType.PARTITION_PLAN, exportProperties);
         List<FlowInstanceEntity> flowInstanceEntities = flowInstanceRepository.findByIdIn(ids);
         Map<Long, FlowInstanceEntity> id2FlowInstanceMap = flowInstanceEntities.stream().collect(
                 Collectors.toMap(FlowInstanceEntity::getId, f -> f));
 
-        Map<Long, Long> taskId2FlowInstanceIdMap = serviceTaskInstanceEntities.stream().collect(
-                Collectors.toMap(ServiceTaskInstanceEntity::getTargetTaskId,
-                        ServiceTaskInstanceEntity::getFlowInstanceId));
+        Map<Long, Long> taskId2FlowInstanceIdMap =
+                serviceTaskInstanceEntities.stream()
+                        .map(s -> new Pair<>(s.getTargetTaskId(), s.getFlowInstanceId()))
+                        .collect(Collectors.toSet())
+                        .stream()
+                        .collect(Collectors.toMap(p -> p.left, p -> p.right));
 
         try (ExportRowDataAppender exportRowDataAppender = exporter.buildRowDataAppender(properties, encryptKey)) {
             taskEntities.forEach(s -> {
@@ -143,7 +153,6 @@ public class ScheduleTaskExporter {
             throw new RuntimeException(e);
         }
     }
-
 
     public ExportedFile exportSchedule(ScheduleType scheduleType, String encryptKey, ExportProperties exportProperties,
             Collection<Long> ids) {
@@ -191,13 +200,8 @@ public class ScheduleTaskExporter {
         return new ExportedFile(outputFile, encryptKey);
     }
 
-
     private String buildMergedZipName() {
         return removeSeparator(authenticationFacade.currentUserAccountName()) + "_" + LocalDate.now() + ".zip";
-    }
-
-    private String removeSeparator(String fileName) {
-        return fileName.replace(File.separator, "_");
     }
 
     private void export(ExportRowDataAppender appender, ScheduleEntity scheduleEntity) {

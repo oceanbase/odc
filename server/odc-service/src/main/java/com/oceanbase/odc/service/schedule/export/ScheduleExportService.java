@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.schedule.export;
 
 import java.io.File;
@@ -40,7 +39,7 @@ import com.oceanbase.odc.service.schedule.model.ScheduleType;
 
 @Service
 public class ScheduleExportService {
-    public static final String ASYNC_TASK_BASE_BUCKET = "scheduleExport";
+    public static final String ASYNC_TASK_BASE_BUCKET = "scheduleexport";
     private static final Logger log = LoggerFactory.getLogger(ScheduleExportService.class);
 
     @Autowired

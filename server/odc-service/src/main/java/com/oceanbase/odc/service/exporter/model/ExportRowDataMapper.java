@@ -81,11 +81,11 @@ public interface ExportRowDataMapper {
 
     @Mapping(target = "triggerConfig", expression = "java(fromJson(scheduleEntity))")
     @Mapping(target = "name", source = "scheduleEntity.name")
-    @Mapping(source = "targetDatabase", target = "targetDatabase")
+    @Mapping(source = "database", target = "database")
     @Mapping(source = "scheduleEntity.id", target = "originScheduleId")
     @Mapping(source = "projectName", target = "originProjectName")
     SqlPlanScheduleRowData toSqlPlanScheduleRowData(ScheduleEntity scheduleEntity, SqlPlanParameters parameters,
-            ExportedDatabase targetDatabase, String projectName);
+            ExportedDatabase database, String projectName);
 
     @Mapping(source = "databasesId", target = "databaseId")
     SqlPlanParameters toSqlPlanParameters(Long databasesId, SqlPlanScheduleRowData sqlPlanScheduleRowData);
@@ -94,7 +94,8 @@ public interface ExportRowDataMapper {
     @Mapping(source = "flowInstance.name", target = "name")
     @Mapping(source = "flowInstance.description", target = "description")
     @Mapping(source = "projectName", target = "originProjectName")
-    @Mapping(target = "type", defaultValue = "PARTITION_PLAN")
+    @Mapping(target = "type",
+            expression = "java(com.oceanbase.odc.service.schedule.model.ScheduleType.valueOf(\"PARTITION_PLAN\"))")
     PartitionPlanScheduleRowData toPartitionPlanScheduleRowData(FlowInstanceEntity flowInstance,
             PartitionPlanConfig partitionPlanConfig, ExportedDatabase database, String projectName);
 
