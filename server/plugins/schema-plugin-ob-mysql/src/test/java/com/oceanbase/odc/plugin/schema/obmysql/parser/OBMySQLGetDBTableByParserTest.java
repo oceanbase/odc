@@ -1009,7 +1009,7 @@ public class OBMySQLGetDBTableByParserTest {
     }
 
     @Test
-    public void getPartitionWithArg_Hash_use_column_1_Success() {
+    public void getMViewPartition_Hash_use_column_1_Success() {
         String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mv_allsyntax` (PRIMARY KEY (prim)) " +
                 "DEFAULT CHARSET = gbk ROW_FORMAT = DYNAMIC COMPRESSION = 'zstd_1.3.8' REPLICA_NUM = 1 BLOCK_SIZE = 16384 USE_BLOOM_FILTER = FALSE ENABLE_MACRO_BLOCK_BLOOM_FILTER = FALSE TABLET_SIZE = 134217728 PCTFREE = 10 PARALLEL 5\n"
                 +
@@ -1026,7 +1026,7 @@ public class OBMySQLGetDBTableByParserTest {
     }
 
     @Test
-    public void getPartitionWithArg_Hash_use_column_2_Success() {
+    public void getMViewPartition_Hash_use_column_2_Success() {
         String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mv_allsyntax` (PRIMARY KEY (prim)) " +
                 "DEFAULT CHARSET = gbk ROW_FORMAT = DYNAMIC COMPRESSION = 'zstd_1.3.8' REPLICA_NUM = 1 BLOCK_SIZE = 16384 USE_BLOOM_FILTER = FALSE ENABLE_MACRO_BLOCK_BLOOM_FILTER = FALSE TABLET_SIZE = 134217728 PCTFREE = 10 PARALLEL 5\n"
                 +
@@ -1040,6 +1040,19 @@ public class OBMySQLGetDBTableByParserTest {
         Assert.assertEquals(2L, dbTablePartition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.HASH, dbTablePartition.getPartitionOption().getType());
         Assert.assertEquals("prim", dbTablePartition.getPartitionOption().getColumnNames().get(0));
+    }
+
+    @Test
+    public void getMViewPartition_Hash_use_expression_1_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mView`" +
+                     " partition by hash(a+b) PARTITIONS 3\n" +
+                     "AS select * from table1";
+        Partition partition = getMViewPartition(ddl);
+        OBMySQLGetDBTableByParser parser = new OBMySQLGetDBTableByParser(ddl);
+        DBTablePartition dbTablePartition = parser.getPartition(partition);
+        Assert.assertEquals(3L, dbTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.HASH, dbTablePartition.getPartitionOption().getType());
+        Assert.assertEquals("a+b", dbTablePartition.getPartitionOption().getExpression());
     }
 
     private Partition getMViewPartition(String ddl) {
@@ -1056,4 +1069,5 @@ public class OBMySQLGetDBTableByParserTest {
         Partition partition = statement.getPartition();
         return partition;
     }
+
 }
