@@ -422,13 +422,10 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         if (CollectionUtils.isNotEmpty(sqls)) {
             List<SqlCheckTaskResult> sqlCheckTaskResultList = new ArrayList<>();
             for (Database database : this.databaseList) {
-                SqlCheckResponse<CheckViolation> sqlCheckResponse = this.sqlCheckService.check(
+                List<CheckViolation> violations = new ArrayList<>(this.sqlCheckService.check(
                         Long.valueOf(databaseId2RiskLevelDescriber.get(database.getId()).getEnvironmentId()),
-                        database.getName(), sqls, database.getDataSource());
-                SqlCheckTaskResult successSqlCheckResult =
-                        SqlCheckTaskResult.success(sqlCheckResponse.getCheckResults());
-                successSqlCheckResult.setAffectedRows(sqlCheckResponse.getAffectedRows());
-                sqlCheckTaskResultList.add(successSqlCheckResult);
+                        database.getName(), sqls, database.getDataSource()).getCheckResults());
+                sqlCheckTaskResultList.add(SqlCheckTaskResult.success(violations));
                 List<UnauthorizedDBResource> unauthorizedDBResources = getUnauthorizedDBResources(sqls,
                         database.getDataSource(), database.getName(), taskType);
                 if (this.permissionCheckResult == null) {
@@ -591,7 +588,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             this.sqlCheckResult.setResults(null);
             result.setSqlCheckResult(this.sqlCheckResult);
         } else if (Objects.nonNull(this.multipleSqlCheckTaskResult)) {
-            // this.multipleSqlCheckTaskResult.setSqlCheckTaskResultList(null);
+            this.multipleSqlCheckTaskResult.setSqlCheckTaskResultList(null);
             result.setMultipleSqlCheckTaskResult(this.multipleSqlCheckTaskResult);
         }
         result.setPermissionCheckResult(this.permissionCheckResult);
