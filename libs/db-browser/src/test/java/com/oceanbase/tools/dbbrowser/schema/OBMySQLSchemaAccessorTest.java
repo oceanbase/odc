@@ -183,10 +183,11 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
-    public void getMViewContainer_Success() {
+    public void listMViewConstraints_Success() {
         if (isSupportMaterializedView) {
-            String containerName = accessor.getMViewContainerName(getOBMySQLDataBaseName(), "test_mv_allSyntax");
-            Assert.assertTrue(containerName.toLowerCase().startsWith("__mv_container_"));
+            List<DBTableConstraint> constraints =
+                    accessor.listMViewConstraints(getOBMySQLDataBaseName(), "test_mv_allSyntax");
+            Assert.assertTrue(constraints.size() >= 1);
         }
     }
 

@@ -72,8 +72,7 @@ public class OBMySQLMVExtension implements MViewExtensionPoint {
         mView.setSchemaName(schemaName);
         mView.setName(mViewName);
         mView.setColumns(schemaAccessor.listTableColumns(schemaName, mViewName));
-        String containerName = schemaAccessor.getMViewContainerName(schemaName, mViewName);
-        mView.setConstraints(schemaAccessor.listTableConstraints(schemaName, containerName));
+        mView.setConstraints(schemaAccessor.listMViewConstraints(schemaName, mViewName));
         mView.setIndexes(schemaAccessor.listTableIndexes(schemaName, mViewName));
         OBMySQLGetDBTableByParser parser = new OBMySQLGetDBTableByParser(ddl);
         if (Objects.nonNull(createMaterializedView.getPartition())) {

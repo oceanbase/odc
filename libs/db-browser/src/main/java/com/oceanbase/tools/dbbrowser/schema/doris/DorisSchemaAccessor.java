@@ -353,10 +353,9 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public String getMViewContainerName(String schemaName, String mViewName) {
+    public List<DBTableConstraint> listMViewConstraints(String schemaName, String mViewName) {
         throw new UnsupportedOperationException("not support yet");
     }
-
 
     @Override
     public List<DBVariable> showVariables() {
