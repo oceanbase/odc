@@ -131,12 +131,6 @@ public class DataBaseController {
         return Responses.success(databaseService.modifyDatabasesOwners(projectId, req));
     }
 
-    @ApiOperation(value = "recordDatabaseAccessHistory", notes = "record the most recently accessed database history ")
-    @RequestMapping(value = "/databases/batchRecordHistory", method = RequestMethod.POST)
-    public SuccessResponse<Boolean> recordDatabaseAccessHistory(@RequestBody DBAccessHistoryReq dbHistoryReq) {
-        return Responses.success(databaseService.recordDatabaseAccessHistory(dbHistoryReq));
-    }
-
     @ApiOperation(value = "listDatabaseAccessHistories", notes = "list accessed database histories ")
     @RequestMapping(value = "/databaseAccessHistories", method = RequestMethod.GET)
     public ListResponse<Database> listDatabaseAccessHistories(
