@@ -55,4 +55,9 @@ public class OBMySQLBetween432And4351SchemaAccessor extends OBMySQLSchemaAccesso
         throw new UnsupportedOperationException("not support yet");
     }
 
+    @Override
+    public String getMViewContainerName(String schemaName, String mViewName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
 }

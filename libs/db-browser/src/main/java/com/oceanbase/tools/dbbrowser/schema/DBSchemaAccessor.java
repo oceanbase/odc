@@ -152,6 +152,11 @@ public interface DBSchemaAccessor {
     DBMaterializedView getMView(String schemaName, String mViewName);
 
     /**
+     * Get materialized view container name
+     */
+    String getMViewContainerName(String schemaName, String mViewName);
+
+    /**
      * List all variables
      */
     List<DBVariable> showVariables();

@@ -58,7 +58,7 @@ public class OBMySQLGetDBMViewByParser extends OBMySQLGetDBTableByParser {
     }
 
     @Override
-    protected CreateMaterializedView getCreateMaterializedViewStmt() {
+    public CreateMaterializedView getCreateMaterializedViewStmt() {
         return this.createMaterializedView;
     }
 

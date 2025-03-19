@@ -17,6 +17,7 @@ package com.oceanbase.odc.plugin.schema.obmysql;
 
 import java.sql.Connection;
 import java.util.List;
+import java.util.Objects;
 
 import org.pf4j.Extension;
 
@@ -34,6 +35,7 @@ import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
+import com.oceanbase.tools.sqlparser.statement.creatematerializedview.CreateMaterializedView;
 
 /**
  * @description:
@@ -54,17 +56,24 @@ public class OBMySQLMVExtension implements MViewExtensionPoint {
         DBMaterializedView mView = schemaAccessor.getMView(schemaName, mViewName);
         String ddl = schemaAccessor.getTableDDL(schemaName, mViewName);
         OBMySQLGetDBMViewByParser parser = new OBMySQLGetDBMViewByParser(ddl);
+        CreateMaterializedView createMaterializedViewStmt = parser.getCreateMaterializedViewStmt();
+        if (Objects.nonNull(createMaterializedViewStmt.getCreateMaterializedViewOpts())
+                && Objects.nonNull(
+                        createMaterializedViewStmt.getCreateMaterializedViewOpts().getMaterializedViewRefreshOpts())
+                && Objects.nonNull(createMaterializedViewStmt.getCreateMaterializedViewOpts()
+                        .getMaterializedViewRefreshOpts().getRefreshInterval())) {
+            mView.setRefreshInterval(createMaterializedViewStmt.getCreateMaterializedViewOpts()
+                    .getMaterializedViewRefreshOpts().getRefreshInterval());
+        }
         mView.setSchemaName(schemaName);
         mView.setName(mViewName);
         mView.setColumns(schemaAccessor.listTableColumns(schemaName, mViewName));
-        // TODO: syntax does not match
-        mView.setConstraints(schemaAccessor.listTableConstraints(schemaName, mViewName));
+        String containerName = schemaAccessor.getMViewContainerName(schemaName, mViewName);
+        mView.setConstraints(schemaAccessor.listTableConstraints(schemaName, containerName));
         mView.setIndexes(schemaAccessor.listTableIndexes(schemaName, mViewName));
-        // TODO: parser failed to parse.done
         mView.setPartition(parser.getPartition());
         mView.setDdl(ddl);
         try {
-            // TODO: parser failed to parse.done
             mView.setColumnGroups(schemaAccessor.listTableColumnGroups(schemaName, mViewName));
         } catch (Exception e) {
             // eat the exception
