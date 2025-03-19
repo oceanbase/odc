@@ -31,7 +31,7 @@ import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.YamlUtils;
 import com.oceanbase.odc.metadb.regulation.ruleset.MetadataEntity;
-import com.oceanbase.odc.service.config.OrganizationConfigFacade;
+import com.oceanbase.odc.service.config.OrganizationConfigProvider;
 import com.oceanbase.odc.service.regulation.ruleset.model.MetadataLabel;
 import com.oceanbase.odc.service.regulation.ruleset.model.QueryRuleMetadataParams;
 import com.oceanbase.odc.service.regulation.ruleset.model.RuleType;
@@ -47,7 +47,7 @@ public class RuleMetadataServiceTest extends ServiceTestEnv {
     @Autowired
     private RuleMetadataService ruleMetadataService;
     @MockBean
-    private OrganizationConfigFacade organizationConfigFacade;
+    private OrganizationConfigProvider organizationConfigProvider;
 
     @Before
     public void setUp() {
@@ -57,7 +57,7 @@ public class RuleMetadataServiceTest extends ServiceTestEnv {
     @Test
     public void test_ListSqlConsoleRule_Success() {
         QueryRuleMetadataParams params = new QueryRuleMetadataParams();
-        Mockito.when(organizationConfigFacade.compareWithMaxQueryLimit(Mockito.any()))
+        Mockito.when(organizationConfigProvider.checkMaxQueryLimitValidity(Mockito.any()))
                 .thenReturn(1000);
         params.setRuleTypes(Arrays.asList(RuleType.SQL_CONSOLE));
         params.setLabels(
@@ -74,7 +74,7 @@ public class RuleMetadataServiceTest extends ServiceTestEnv {
     @Test
     public void test_ListAll_Success() {
         QueryRuleMetadataParams params = new QueryRuleMetadataParams();
-        Mockito.when(organizationConfigFacade.compareWithMaxQueryLimit(Mockito.any()))
+        Mockito.when(organizationConfigProvider.checkMaxQueryLimitValidity(Mockito.any()))
                 .thenReturn(1000);
         int actual = ruleMetadataService.list(params).size();
         long expected = metadatas.size();

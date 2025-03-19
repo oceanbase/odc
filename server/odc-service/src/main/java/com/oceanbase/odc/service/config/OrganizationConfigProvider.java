@@ -30,14 +30,13 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @SkipAuthorize("odc internal usage")
-public class OrganizationConfigFacadeImpl implements OrganizationConfigFacade {
+public class OrganizationConfigProvider {
 
     @Autowired
     private OrganizationConfigService organizationConfigService;
     @Autowired
     private AuthenticationFacade authenticationFacade;
 
-    @Override
     public String getOrganizationConfig(String key) {
         long currentOrgId = authenticationFacade.currentOrganizationId();
         Map<String, Configuration> orgIdToConfigurations =
@@ -49,8 +48,7 @@ public class OrganizationConfigFacadeImpl implements OrganizationConfigFacade {
         return configuration.getValue();
     }
 
-    @Override
-    public Integer compareWithMaxQueryLimit(Integer currentConfig) {
+    public Integer checkMaxQueryLimitValidity(Integer currentConfig) {
         Integer orgConfig = Integer.parseInt(getOrganizationConfig(OrganizationConfigKeys.DEFAULT_MAX_QUERY_LIMIT));
         if (currentConfig > orgConfig) {
             log.warn("The current configuration value: {} is greater than"
@@ -64,34 +62,28 @@ public class OrganizationConfigFacadeImpl implements OrganizationConfigFacade {
         return currentConfig;
     }
 
-    @Override
-    public Integer compareWithQueryLimit(String currentConfig) {
+    public Integer getMinimumQueryLimit(String currentConfig) {
         return Math.min(getDefaultQueryLimit(), Integer.parseInt(currentConfig));
     }
 
-    @Override
     public Integer getDefaultMaxQueryLimit() {
         return Integer.parseInt(getOrganizationConfig(OrganizationConfigKeys.DEFAULT_MAX_QUERY_LIMIT));
     }
 
-    @Override
     public Integer getDefaultQueryLimit() {
         return Integer.parseInt(getOrganizationConfig(OrganizationConfigKeys.DEFAULT_QUERY_LIMIT));
     }
 
-    @Override
     public boolean getDefaultRollbackPlanEnabled() {
         return getOrganizationConfig(OrganizationConfigKeys.DEFAULT_ROLLBACK_PLAN_ENABLED)
                 .equalsIgnoreCase("false");
     }
 
-    @Override
     public boolean getDefaultImportTaskStructureReplacementEnabled() {
         return getOrganizationConfig(OrganizationConfigKeys.DEFAULT_IMPORT_TASK_STRUCTURE_REPLACEMENT_ENABLED)
                 .equalsIgnoreCase("true");
     }
 
-    @Override
     public String getDefaultTaskDescription() {
         return getOrganizationConfig(OrganizationConfigKeys.DEFAULT_TASK_DESCRIPTION_PROMPT);
     }

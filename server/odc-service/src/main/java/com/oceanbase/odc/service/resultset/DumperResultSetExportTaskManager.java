@@ -41,7 +41,7 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConstant
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
 import com.oceanbase.odc.service.common.FileManager;
 import com.oceanbase.odc.service.common.model.FileBucket;
-import com.oceanbase.odc.service.config.OrganizationConfigFacade;
+import com.oceanbase.odc.service.config.OrganizationConfigProvider;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
 import com.oceanbase.odc.service.datasecurity.model.MaskingAlgorithm;
@@ -90,7 +90,7 @@ public class DumperResultSetExportTaskManager implements ResultSetExportTaskMana
     private DataTransferAdapter dataTransferAdapter;
 
     @Autowired
-    private OrganizationConfigFacade organizationConfigFacade;
+    private OrganizationConfigProvider organizationConfigProvider;
 
     @PostConstruct
     public void init() {
@@ -136,7 +136,7 @@ public class DumperResultSetExportTaskManager implements ResultSetExportTaskMana
                 parameter.setRowDataMaskingAlgorithms(getRowDataMaskingAlgorithms(parameter.getSql(), session));
             }
             Long maxRows = Long.valueOf(
-                    organizationConfigFacade.compareWithQueryLimit(parameter.getMaxRows().toString()));
+                    organizationConfigProvider.getMinimumQueryLimit(parameter.getMaxRows().toString()));
             parameter.setSql(SqlRewriteUtil.addQueryLimit(parameter.getSql(), session, maxRows));
 
             ResultSetExportTask task = new ResultSetExportTask(workingDir, logDir, parameter, session,

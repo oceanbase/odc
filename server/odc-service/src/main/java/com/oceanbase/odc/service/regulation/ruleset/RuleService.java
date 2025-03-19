@@ -50,7 +50,7 @@ import com.oceanbase.odc.metadb.regulation.ruleset.DefaultRuleApplyingRepository
 import com.oceanbase.odc.metadb.regulation.ruleset.RuleApplyingEntity;
 import com.oceanbase.odc.metadb.regulation.ruleset.RuleApplyingRepository;
 import com.oceanbase.odc.service.common.model.Stats;
-import com.oceanbase.odc.service.config.OrganizationConfigFacade;
+import com.oceanbase.odc.service.config.OrganizationConfigProvider;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.regulation.ruleset.model.QueryRuleMetadataParams;
@@ -94,7 +94,7 @@ public class RuleService {
     private LoadingCache<Long, List<Rule>> rulesetId2RulesCache;
 
     @Autowired
-    private OrganizationConfigFacade organizationConfigFacade;
+    private OrganizationConfigProvider organizationConfigProvider;
 
     @SkipAuthorize("odc internal usage")
     public List<Rule> list(@NonNull Long rulesetId, @NonNull QueryRuleMetadataParams params) {
@@ -320,7 +320,7 @@ public class RuleService {
             return properties;
         }
         Integer currentValue = (Integer) properties.values().iterator().next();
-        Integer newValue = organizationConfigFacade.compareWithMaxQueryLimit(currentValue);
+        Integer newValue = organizationConfigProvider.checkMaxQueryLimitValidity(currentValue);
         Map<String, Object> result = new HashMap<>();
         result.put(metaKey, newValue);
         return result;

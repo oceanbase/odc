@@ -62,7 +62,7 @@ import com.oceanbase.odc.service.common.model.FileBucket;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.common.util.SqlUtils;
-import com.oceanbase.odc.service.config.OrganizationConfigFacade;
+import com.oceanbase.odc.service.config.OrganizationConfigProvider;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
 import com.oceanbase.odc.service.schedule.job.PublishSqlPlanJobReq;
@@ -356,8 +356,8 @@ public class SqlPlanTask extends TaskBase<SqlPlanTaskResult> {
 
     private OdcStatementCallBack getOdcStatementCallBack(String sql) {
         List<SqlTuple> sqlTuples = Collections.singletonList(SqlTuple.newTuple(sql));
-        Integer queryLimit = SpringContextUtil.getBean(OrganizationConfigFacade.class)
-                .compareWithQueryLimit(parameters.getQueryLimit().toString());
+        Integer queryLimit = SpringContextUtil.getBean(OrganizationConfigProvider.class)
+                .getMinimumQueryLimit(parameters.getQueryLimit().toString());
         OdcStatementCallBack statementCallback =
                 new OdcStatementCallBack(sqlTuples, connectionSession, true, queryLimit);
         statementCallback.setMaxCachedLines(0);

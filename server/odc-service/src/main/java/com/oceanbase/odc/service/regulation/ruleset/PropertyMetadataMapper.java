@@ -25,7 +25,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.metadb.regulation.ruleset.PropertyMetadataEntity;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
-import com.oceanbase.odc.service.config.OrganizationConfigFacade;
+import com.oceanbase.odc.service.config.OrganizationConfigProvider;
 import com.oceanbase.odc.service.regulation.ruleset.model.PropertyMetadata;
 import com.oceanbase.odc.service.regulation.ruleset.model.PropertyType;
 
@@ -104,7 +104,7 @@ public class PropertyMetadataMapper {
         if (!entity.getName().contains("sql-console.max-return-rows")) {
             return Integer.parseInt(defaultValue);
         }
-        OrganizationConfigFacade orgConfigFacade = SpringContextUtil.getBean(OrganizationConfigFacade.class);
-        return orgConfigFacade.compareWithMaxQueryLimit(Integer.parseInt(defaultValue));
+        OrganizationConfigProvider orgConfigFacade = SpringContextUtil.getBean(OrganizationConfigProvider.class);
+        return orgConfigFacade.checkMaxQueryLimitValidity(Integer.parseInt(defaultValue));
     }
 }

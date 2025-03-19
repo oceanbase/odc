@@ -58,7 +58,7 @@ import com.oceanbase.odc.service.common.model.FileBucket;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.common.util.SqlUtils;
-import com.oceanbase.odc.service.config.OrganizationConfigFacade;
+import com.oceanbase.odc.service.config.OrganizationConfigProvider;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
 import com.oceanbase.odc.service.datasecurity.util.DataMaskingUtil;
@@ -156,8 +156,8 @@ public class DatabaseChangeThread extends Thread {
                 }
                 try {
                     List<SqlTuple> sqlTuples = Collections.singletonList(SqlTuple.newTuple(sql));
-                    Integer queryLimit = SpringContextUtil.getBean(OrganizationConfigFacade.class)
-                            .compareWithQueryLimit(parameters.getQueryLimit().toString());
+                    Integer queryLimit = SpringContextUtil.getBean(OrganizationConfigProvider.class)
+                            .getMinimumQueryLimit(parameters.getQueryLimit().toString());
                     OdcStatementCallBack statementCallback =
                             new OdcStatementCallBack(sqlTuples, connectionSession, true, queryLimit);
                     statementCallback.setMaxCachedLines(0);

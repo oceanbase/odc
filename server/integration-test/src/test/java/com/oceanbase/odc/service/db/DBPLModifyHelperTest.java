@@ -40,7 +40,7 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
-import com.oceanbase.odc.service.config.OrganizationConfigFacade;
+import com.oceanbase.odc.service.config.OrganizationConfigProvider;
 import com.oceanbase.odc.service.db.model.EditPLReq;
 import com.oceanbase.odc.service.db.model.EditPLResp;
 import com.oceanbase.odc.service.session.ConnectSessionService;
@@ -61,7 +61,7 @@ public class DBPLModifyHelperTest extends ServiceTestEnv {
     @MockBean
     private ConnectSessionService sessionService;
     @MockBean
-    private OrganizationConfigFacade configFacade;
+    private OrganizationConfigProvider configFacade;
 
     @Autowired
     private DBPLModifyHelper dbplModifyHelper;
