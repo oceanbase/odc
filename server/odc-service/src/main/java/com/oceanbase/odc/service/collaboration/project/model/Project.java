@@ -93,8 +93,6 @@ public class Project implements SecurityResource, OrganizationIsolated, Serializ
     private Date dbObjectLastSyncTime;
     private String uniqueIdentifier;
 
-    private Boolean currentUserIsMember;
-
     @Override
     public String resourceId() {
         return this.id == null ? null : this.id.toString();

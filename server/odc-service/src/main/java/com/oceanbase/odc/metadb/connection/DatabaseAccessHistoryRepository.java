@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 
@@ -39,6 +40,7 @@ public interface DatabaseAccessHistoryRepository extends OdcJpaRepository<Databa
 
     Page<DatabaseAccessHistoryEntity> findByUserId(Long userId, Pageable pageable);
 
+    @Transactional
     default int upsert(@NonNull Collection<DatabaseAccessHistoryEntity> historyEntities) {
         List<DatabaseAccessHistoryEntity> histories = historyEntities.stream().filter(Objects::nonNull).collect(
                 Collectors.toList());

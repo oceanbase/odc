@@ -38,6 +38,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
@@ -937,12 +938,15 @@ public class DatabaseService {
         if (CollectionUtils.isEmpty(databaseIds)) {
             return Collections.emptyList();
         }
-        List<DatabaseEntity> databaseEntities = databaseRepository.findByIdsWithPreservedOrder(databaseIds);
-        Verify.equals(databaseIds.size(), databaseEntities.size(), "Database");
-        return entitiesToModels(new PageImpl<>(databaseEntities),
+        final Map<Long, DatabaseEntity> dbId2Database = databaseRepository.findByIdIn(databaseIds).stream().collect(
+                Collectors.toMap(DatabaseEntity::getId, Function.identity()));
+        Verify.equals(databaseIds.size(), dbId2Database.size(), "Database");
+
+        // Ensure that the databases tracked down remain in relative order according to databaseIds
+        List<DatabaseEntity> dbs = databaseIds.stream().map(dbId2Database::get).collect(Collectors.toList());
+        return entitiesToModels(new PageImpl<>(dbs),
                 includesPermittedAction).getContent();
     }
-
 
     @SkipAuthorize("odc internal usage")
     public boolean recordDatabaseAccessHistory(@NonNull DBAccessHistoryReq dbAccessHistoryReq) {
@@ -961,18 +965,9 @@ public class DatabaseService {
         }
         List<Database> dbs = entitiesToModels(
                 new PageImpl<>(databaseRepository.findByIdInAndProjectIdIn(databaseIds, joinedProjectIds)),
-                true).getContent();
+                false).getContent();
 
         Verify.equals(databaseIds.size(), dbs.size(), "Database");
-
-        for (Database db : dbs) {
-            horizontalDataPermissionValidator.checkCurrentOrganization(db);
-            if (CollectionUtils.isEmpty(db.getAuthorizedPermissionTypes())) {
-                log.warn("User not authorized to record database accessing history: dbId = {}, permissions = {}",
-                        db.getId(), JsonUtils.toJson(db.getAuthorizedPermissionTypes()));
-                throw new AccessDeniedException();
-            }
-        }
 
         final List<DatabaseAccessHistoryEntity> toUpsertHistories =
                 dbs.stream().map(e -> {
@@ -987,15 +982,7 @@ public class DatabaseService {
                     return databaseAccessHistoryEntity;
                 }).collect(Collectors.toList());
 
-        Integer affectRows = transactionTemplate.execute(status -> {
-            try {
-                return databaseAccessHistoryRepository.upsert(toUpsertHistories);
-            } catch (Exception e) {
-                log.warn("Failed to upsert database access history, databaseIds={}", JsonUtils.toJson(databaseIds), e);
-                status.setRollbackOnly();
-                return 0;
-            }
-        });
+        int affectRows = databaseAccessHistoryRepository.upsert(toUpsertHistories);
         log.info("Record database access histories, expected total is {}, actual is {}",
                 dbs.size(), affectRows);
         return Objects.equals(affectRows, dbs.size());
@@ -1015,13 +1002,17 @@ public class DatabaseService {
                 dbHistoryEntities.stream().map(DatabaseAccessHistoryEntity::getDatabaseId)
                         .collect(Collectors.toCollection(LinkedHashSet::new));
         List<Database> databases = listSkipPermissionCheck(dbIds, true);
-        Set<Long> joinedProjectIds = projectService.getMemberProjectIds(userId);
-        databases.forEach(d -> {
-            Project project = d.getProject();
-            if (project != null) {
-                project.setCurrentUserIsMember(joinedProjectIds.contains(project.getId()));
-            }
-        });
+        if (CollectionUtils.isNotEmpty(databases)) {
+            Map<Long, Set<ResourceRoleName>> projectId2ResourceRoleNames =
+                    projectService.getProjectId2ResourceRoleNames();
+            databases.forEach(d -> {
+                Project project = d.getProject();
+                if (project != null) {
+                    project.setCurrentUserResourceRoles(
+                            projectId2ResourceRoleNames.getOrDefault(project.getId(), Collections.emptySet()));
+                }
+            });
+        }
         return databases;
     }
 

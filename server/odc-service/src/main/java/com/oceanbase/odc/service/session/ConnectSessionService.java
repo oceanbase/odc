@@ -42,6 +42,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
+import com.google.common.collect.Sets;
 import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.exception.AccessDeniedException;
 import com.oceanbase.odc.core.authority.model.DefaultSecurityResource;
@@ -77,6 +78,7 @@ import com.oceanbase.odc.service.connection.CloudMetadataClient.CloudPermissionA
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.ConnectionTesting;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.connection.database.model.DBAccessHistoryReq;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.connection.logicaldatabase.LogicalDatabaseService;
@@ -223,6 +225,7 @@ public class ConnectSessionService {
     @SkipAuthorize("check permission internally")
     public CreateSessionResp createByDatabaseId(@NotNull Long databaseId) {
         ConnectionSession session = create(null, databaseId);
+        CreateSessionResp sessionResp;
         if (ConnectionSessionUtil.isLogicalSession(session)) {
             Long dataSourceId = logicalDatabaseService.listDataSourceIds(databaseId).stream().findFirst()
                     .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "ID", databaseId));
@@ -230,7 +233,7 @@ public class ConnectSessionService {
             ConnectionSessionFactory sessionFactory = new DefaultConnectSessionFactory(connection);
             ConnectionSession physicalSession = sessionFactory.generateSession();
             try {
-                return CreateSessionResp.builder()
+                sessionResp = CreateSessionResp.builder()
                         .sessionId(session.getId())
                         .supports(configService.getSupportFeatures(physicalSession))
                         .dataTypeUnits(configService.getDatatypeList(physicalSession))
@@ -240,14 +243,22 @@ public class ConnectSessionService {
             } finally {
                 physicalSession.expire();
             }
+        } else {
+            sessionResp = CreateSessionResp.builder()
+                    .sessionId(session.getId())
+                    .supports(configService.getSupportFeatures(session))
+                    .dataTypeUnits(configService.getDatatypeList(session))
+                    .charsets(charsetService.listCharset(session))
+                    .collations(charsetService.listCollation(session))
+                    .build();
         }
-        return CreateSessionResp.builder()
-                .sessionId(session.getId())
-                .supports(configService.getSupportFeatures(session))
-                .dataTypeUnits(configService.getDatatypeList(session))
-                .charsets(charsetService.listCharset(session))
-                .collations(charsetService.listCollation(session))
-                .build();
+        try {
+            databaseService.recordDatabaseAccessHistory(
+                    new DBAccessHistoryReq().setDatabaseIds(Sets.newHashSet(databaseId)));
+        } catch (Exception e) {
+            log.warn("Record database access history failed on createByDatabaseId, dbId={}", databaseId, e);
+        }
+        return sessionResp;
     }
 
     @SkipAuthorize("check permission internally")
