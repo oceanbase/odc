@@ -338,8 +338,8 @@ public class ScriptService {
             for (ScriptMetaEntity objectMetadata : scriptMetas) {
                 StorageObject storageObject =
                         objectStorageFacade.loadObject(objectMetadata.getBucketName(), objectMetadata.getObjectId());
-                int count = duplicateNameFileCountMap.getOrDefault(objectMetadata.getObjectName(), 0) + 1;
-                duplicateNameFileCountMap.put(objectMetadata.getObjectName(), count);
+                int count = duplicateNameFileCountMap.compute(objectMetadata.getObjectName(),
+                        (k, v) -> v == null ? 1 : v + 1);
                 String fileName =
                         count > 1 ? objectMetadata.getObjectName() + "(" + count + ")" : objectMetadata.getObjectName();
                 File file = new File(downloadDir, fileName);
