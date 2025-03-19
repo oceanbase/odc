@@ -53,7 +53,8 @@ public abstract class BaseOBGetDBTableByParser implements GetDBTableByParser {
 
     public final DBTablePartition getPartition(@NonNull Partition partitionStmt) {
         DBTablePartition partition = initDbTablePartition();
-        return getDbTablePartition(partition, partitionStmt);
+        fillDbTablePartition(partition, partitionStmt);
+        return partition;
     }
 
     public final DBTablePartition getPartition() {
@@ -66,10 +67,11 @@ public abstract class BaseOBGetDBTableByParser implements GetDBTableByParser {
         if (Objects.isNull(partitionStmt)) {
             return partition;
         }
-        return getDbTablePartition(partition, partitionStmt);
+        fillDbTablePartition(partition, partitionStmt);
+        return partition;
     }
 
-    private DBTablePartition getDbTablePartition(DBTablePartition partition, Partition partitionStmt) {
+    private void fillDbTablePartition(DBTablePartition partition, Partition partitionStmt) {
         parsePartitionStmt(partition, partitionStmt);
 
         /**
@@ -85,7 +87,6 @@ public abstract class BaseOBGetDBTableByParser implements GetDBTableByParser {
             }
         }
         fillSubPartitions(partition, partitionStmt);
-        return partition;
     }
 
     private DBTablePartition initDbTablePartition() {
