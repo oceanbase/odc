@@ -26,25 +26,25 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.common.security.PasswordUtils;
 import com.oceanbase.odc.common.util.FileZipper;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
 import com.oceanbase.odc.metadb.collaboration.ProjectRepository;
+import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
+import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
+import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceEntity;
+import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
@@ -90,6 +90,12 @@ public class ScheduleTaskExporter {
     private ScheduleExportImportFacade scheduleExportImportFacade;
 
     @Autowired
+    private ServiceTaskInstanceRepository serviceTaskRepository;
+
+    @Autowired
+    private FlowInstanceRepository flowInstanceRepository;
+
+    @Autowired
     private Exporter exporter;
 
     @Autowired
@@ -106,48 +112,65 @@ public class ScheduleTaskExporter {
     @Autowired
     private TaskRepository taskRepository;
 
-    public ExportedFile export(Collection<Long> scheduleIds) {
-        Verify.notEmpty(scheduleIds, "scheduleIds");
-        String encryptKey = new BCryptPasswordEncoder().encode(PasswordUtils.random());
-        ExportProperties exportProperties = generateArchiveProperties();
-        List<ExportedFile> exportedFiles = new ArrayList<>();
 
-        Map<ScheduleType, List<ScheduleEntity>> type2ScheduleMap =
-                scheduleRepository.findByIdIn(scheduleIds).stream().collect(
-                        Collectors.groupingBy(ScheduleEntity::getType));
+    public ExportedFile exportPartitionPlan(String encryptKey, ExportProperties exportProperties,
+            Collection<Long> ids) {
+        List<ServiceTaskInstanceEntity> serviceTaskInstanceEntities = serviceTaskRepository.findByFlowInstanceIdIn(ids);
+        Verify.verify(
+                serviceTaskInstanceEntities.stream().allMatch(t -> t.getTaskType().equals(TaskType.PARTITION_PLAN)),
+                "Id's task type not match");
+        List<Long> taskIds = serviceTaskInstanceEntities.stream().map(ServiceTaskInstanceEntity::getTargetTaskId)
+                .collect(Collectors.toList());
+        List<TaskEntity> taskEntities = taskRepository.findByIdIn(taskIds);
 
-        for (Map.Entry<ScheduleType, List<ScheduleEntity>> entry : type2ScheduleMap.entrySet()) {
-            ExportProperties properties = generateTypeProperties(entry, exportProperties);
-            try (ExportRowDataAppender exportRowDataAppender = exporter.buildRowDataAppender(properties, encryptKey)) {
-                entry.getValue().forEach(s -> export(exportRowDataAppender, s));
-                ExportedFile build = exportRowDataAppender.build();
-                exportedFiles.add(build);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+        ExportProperties properties = generateTypeProperties(ScheduleType.PARTITION_PLAN, exportProperties);
+        List<FlowInstanceEntity> flowInstanceEntities = flowInstanceRepository.findByIdIn(ids);
+        Map<Long, FlowInstanceEntity> id2FlowInstanceMap = flowInstanceEntities.stream().collect(
+                Collectors.toMap(FlowInstanceEntity::getId, f -> f));
+
+        Map<Long, Long> taskId2FlowInstanceIdMap = serviceTaskInstanceEntities.stream().collect(
+                Collectors.toMap(ServiceTaskInstanceEntity::getTargetTaskId,
+                        ServiceTaskInstanceEntity::getFlowInstanceId));
+
+        try (ExportRowDataAppender exportRowDataAppender = exporter.buildRowDataAppender(properties, encryptKey)) {
+            taskEntities.forEach(s -> {
+                Long flowInstanceId = taskId2FlowInstanceIdMap.get(s.getId());
+                FlowInstanceEntity flowInstanceEntity = id2FlowInstanceMap.get(flowInstanceId);
+                doExportPartitionPlan(exportRowDataAppender, flowInstanceEntity, s);
+            });
+            return exportRowDataAppender.build();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-
-        if (CollectionUtils.isEmpty(exportedFiles)) {
-            throw new RuntimeException("Export files is empty");
-        }
-
-        if (exportedFiles.size() == 1) {
-            return exportedFiles.get(0);
-        }
-
-        return mergeToZip(exportProperties, exportedFiles, encryptKey);
     }
 
-    private ExportProperties generateTypeProperties(Entry<ScheduleType, List<ScheduleEntity>> entry,
+
+    public ExportedFile exportSchedule(ScheduleType scheduleType, String encryptKey, ExportProperties exportProperties,
+            Collection<Long> ids) {
+        Verify.verify(scheduleType == ScheduleType.SQL_PLAN || scheduleType == ScheduleType.DATA_DELETE
+                || scheduleType == ScheduleType.DATA_ARCHIVE, "Invalid schedule type");
+        List<ScheduleEntity> scheduleEntities = scheduleRepository.findByIdIn(ids);
+        Verify.verify(scheduleEntities.stream().allMatch(s -> s.getType().equals(scheduleType)),
+                "Ids not match scheduleType");
+        ExportProperties properties = generateTypeProperties(scheduleType, exportProperties);
+        try (ExportRowDataAppender exportRowDataAppender = exporter.buildRowDataAppender(properties, encryptKey)) {
+            scheduleEntities.forEach(s -> export(exportRowDataAppender, s));
+            return exportRowDataAppender.build();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private ExportProperties generateTypeProperties(ScheduleType scheduleType,
             ExportProperties exportProperties) {
         // Ensure all archive file in same path
         ExportProperties deepClone = exportProperties.deepClone();
-        deepClone.putToMetaData(FILE_NAME, entry.getKey().name());
-        deepClone.putToMetaData(SCHEDULE_TYPE, entry.getKey().name());
+        deepClone.putToMetaData(FILE_NAME, scheduleType.name());
+        deepClone.putToMetaData(SCHEDULE_TYPE, scheduleType.name());
         return deepClone;
     }
 
-    private ExportProperties generateArchiveProperties() {
+    public ExportProperties generateExportProperties() {
         ExportProperties exportProperties = new ExportProperties();
         exportProperties.putToMetaData(EXPORT_TYPE, SCHEDULE_EXPORT_TYPE);
         exportProperties.addDefaultMetaData();
@@ -169,7 +192,7 @@ public class ScheduleTaskExporter {
     }
 
 
-    public String buildMergedZipName() {
+    private String buildMergedZipName() {
         return removeSeparator(authenticationFacade.currentUserAccountName()) + "_" + LocalDate.now() + ".zip";
     }
 
@@ -177,20 +200,17 @@ public class ScheduleTaskExporter {
         return fileName.replace(File.separator, "_");
     }
 
-    public void export(ExportRowDataAppender appender, ScheduleEntity scheduleEntity) {
+    private void export(ExportRowDataAppender appender, ScheduleEntity scheduleEntity) {
         ScheduleType type = scheduleEntity.getType();
         switch (type) {
             case DATA_DELETE:
-                exportDataDelete(appender, scheduleEntity);
+                doExportDataDelete(appender, scheduleEntity);
                 break;
             case DATA_ARCHIVE:
-                exportDataArchive(appender, scheduleEntity);
+                doExportDataArchive(appender, scheduleEntity);
                 break;
             case SQL_PLAN:
-                exportSqlPlan(appender, scheduleEntity);
-                break;
-            case PARTITION_PLAN:
-                exportPartitionPlan(appender, scheduleEntity);
+                doExportSqlPlan(appender, scheduleEntity);
                 break;
             default:
                 throw new IllegalArgumentException();
@@ -198,7 +218,20 @@ public class ScheduleTaskExporter {
     }
 
     @SneakyThrows
-    public void exportDataDelete(ExportRowDataAppender appender, ScheduleEntity scheduleEntity) {
+    private void doExportPartitionPlan(ExportRowDataAppender appender, FlowInstanceEntity flowInstance,
+            TaskEntity taskEntity) {
+        PartitionPlanConfig originParameter = JsonUtils.fromJson(taskEntity.getParametersJson(),
+                PartitionPlanConfig.class);
+        PartitionPlanScheduleRowData partitionPlanScheduleRowData =
+                ExportRowDataMapper.INSTANCE.toPartitionPlanScheduleRowData(flowInstance, originParameter,
+                        getExportedDatabase(
+                                originParameter.getDatabaseId()),
+                        getProjectName(flowInstance.getProjectId()));
+        appender.append(partitionPlanScheduleRowData);
+    }
+
+    @SneakyThrows
+    private void doExportDataDelete(ExportRowDataAppender appender, ScheduleEntity scheduleEntity) {
         DataDeleteParameters parameters = JsonUtils.fromJson(scheduleEntity.getJobParametersJson(),
                 DataDeleteParameters.class);
         DataDeleteScheduleRowData dataDeleteRowData =
@@ -210,7 +243,7 @@ public class ScheduleTaskExporter {
     }
 
     @SneakyThrows
-    public void exportSqlPlan(ExportRowDataAppender appender, ScheduleEntity scheduleEntity) {
+    private void doExportSqlPlan(ExportRowDataAppender appender, ScheduleEntity scheduleEntity) {
         SqlPlanParameters parameters = JsonUtils.fromJson(scheduleEntity.getJobParametersJson(),
                 SqlPlanParameters.class);
         String tempFilePath = appender.getMetaData().acquireFilePath();
@@ -221,24 +254,6 @@ public class ScheduleTaskExporter {
                 ExportRowDataMapper.INSTANCE.toSqlPlanScheduleRowData(scheduleEntity, parameters, getExportedDatabase(
                         parameters.getDatabaseId()), getProjectName(scheduleEntity.getProjectId()));
         appender.append(sqlPlanScheduleRowData);
-
-    }
-
-    @SneakyThrows
-    public void exportPartitionPlan(ExportRowDataAppender appender, ScheduleEntity scheduleEntity) {
-        PartitionPlanConfig parameters = JsonUtils.fromJson(scheduleEntity.getJobParametersJson(),
-                PartitionPlanConfig.class);
-        Optional<TaskEntity> taskOption = taskRepository.findById(parameters.getTaskId());
-        Verify.verify(taskOption.isPresent(), "Can't find task entity");
-        TaskEntity taskEntity = taskOption.get();
-        PartitionPlanConfig originParameter = JsonUtils.fromJson(taskEntity.getParametersJson(),
-                PartitionPlanConfig.class);
-        PartitionPlanScheduleRowData partitionPlanScheduleRowData =
-                ExportRowDataMapper.INSTANCE.toPartitionPlanScheduleRowData(scheduleEntity, originParameter,
-                        getExportedDatabase(
-                                originParameter.getDatabaseId()),
-                        getProjectName(scheduleEntity.getProjectId()));
-        appender.append(partitionPlanScheduleRowData);
 
     }
 
@@ -263,7 +278,7 @@ public class ScheduleTaskExporter {
     }
 
     @SneakyThrows
-    public void exportDataArchive(ExportRowDataAppender appender, ScheduleEntity scheduleEntity) {
+    private void doExportDataArchive(ExportRowDataAppender appender, ScheduleEntity scheduleEntity) {
         DataArchiveParameters parameters = JsonUtils.fromJson(scheduleEntity.getJobParametersJson(),
                 DataArchiveParameters.class);
         DataArchiveScheduleRowData dataDeleteRowData =

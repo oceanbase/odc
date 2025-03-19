@@ -62,7 +62,7 @@ public interface ServiceTaskInstanceRepository extends OdcJpaRepository<ServiceT
     @Modifying
     int deleteByFlowInstanceId(@Param("instanceId") Long instanceId);
 
-    List<ServiceTaskInstanceEntity> findByFlowInstanceIdIn(Set<Long> flowInstanceIds);
+    List<ServiceTaskInstanceEntity> findByFlowInstanceIdIn(Collection<Long> flowInstanceIds);
 
     @Transactional
     @Lock(value = LockModeType.PESSIMISTIC_WRITE)
