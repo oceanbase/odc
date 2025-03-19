@@ -24,7 +24,7 @@ import org.pf4j.Extension;
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.schema.api.MViewExtensionPoint;
-import com.oceanbase.odc.plugin.schema.obmysql.parser.OBMySQLGetDBMViewByParser;
+import com.oceanbase.odc.plugin.schema.obmysql.parser.OBMySQLGetDBTableByParser;
 import com.oceanbase.odc.plugin.schema.obmysql.utils.DBAccessorUtil;
 import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.editor.DBObjectOperator;
@@ -33,9 +33,13 @@ import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
+import com.oceanbase.tools.dbbrowser.parser.SqlParser;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
+import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.creatematerializedview.CreateMaterializedView;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @description:
@@ -44,6 +48,7 @@ import com.oceanbase.tools.sqlparser.statement.creatematerializedview.CreateMate
  * @since: 4.3.4
  */
 @Extension
+@Slf4j
 public class OBMySQLMVExtension implements MViewExtensionPoint {
     @Override
     public List<DBObjectIdentity> list(Connection connection, String schemaName) {
@@ -55,14 +60,13 @@ public class OBMySQLMVExtension implements MViewExtensionPoint {
         DBSchemaAccessor schemaAccessor = getSchemaAccessor(connection);
         DBMaterializedView mView = schemaAccessor.getMView(schemaName, mViewName);
         String ddl = schemaAccessor.getTableDDL(schemaName, mViewName);
-        OBMySQLGetDBMViewByParser parser = new OBMySQLGetDBMViewByParser(ddl);
-        CreateMaterializedView createMaterializedViewStmt = parser.getCreateMaterializedViewStmt();
-        if (Objects.nonNull(createMaterializedViewStmt.getCreateMaterializedViewOpts())
+        CreateMaterializedView createMaterializedView = parseTableDDL(ddl);
+        if (Objects.nonNull(createMaterializedView.getCreateMaterializedViewOpts())
                 && Objects.nonNull(
-                        createMaterializedViewStmt.getCreateMaterializedViewOpts().getMaterializedViewRefreshOpts())
-                && Objects.nonNull(createMaterializedViewStmt.getCreateMaterializedViewOpts()
+                        createMaterializedView.getCreateMaterializedViewOpts().getMaterializedViewRefreshOpts())
+                && Objects.nonNull(createMaterializedView.getCreateMaterializedViewOpts()
                         .getMaterializedViewRefreshOpts().getRefreshInterval())) {
-            mView.setRefreshInterval(createMaterializedViewStmt.getCreateMaterializedViewOpts()
+            mView.setRefreshInterval(createMaterializedView.getCreateMaterializedViewOpts()
                     .getMaterializedViewRefreshOpts().getRefreshInterval());
         }
         mView.setSchemaName(schemaName);
@@ -71,7 +75,10 @@ public class OBMySQLMVExtension implements MViewExtensionPoint {
         String containerName = schemaAccessor.getMViewContainerName(schemaName, mViewName);
         mView.setConstraints(schemaAccessor.listTableConstraints(schemaName, containerName));
         mView.setIndexes(schemaAccessor.listTableIndexes(schemaName, mViewName));
-        mView.setPartition(parser.getPartition());
+        OBMySQLGetDBTableByParser parser = new OBMySQLGetDBTableByParser(ddl);
+        if (Objects.nonNull(createMaterializedView.getPartition())) {
+            mView.setPartition(parser.getPartition(createMaterializedView.getPartition()));
+        }
         mView.setDdl(ddl);
         try {
             mView.setColumnGroups(schemaAccessor.listTableColumnGroups(schemaName, mViewName));
@@ -95,6 +102,20 @@ public class OBMySQLMVExtension implements MViewExtensionPoint {
     public Boolean refresh(Connection connection, DBMViewRefreshParameter parameter) {
         return getSchemaAccessor(connection).refreshMVData(parameter);
     }
+
+    private CreateMaterializedView parseTableDDL(String ddl) {
+        CreateMaterializedView statement = null;
+        try {
+            Statement value = SqlParser.parseMysqlStatement(ddl);
+            if (value instanceof CreateMaterializedView) {
+                statement = (CreateMaterializedView) value;
+            }
+        } catch (Exception e) {
+            log.warn("Failed to parse materialized view ddl, error message={}", e.getMessage());
+        }
+        return statement;
+    }
+
 
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
         return DBAccessorUtil.getSchemaAccessor(connection);

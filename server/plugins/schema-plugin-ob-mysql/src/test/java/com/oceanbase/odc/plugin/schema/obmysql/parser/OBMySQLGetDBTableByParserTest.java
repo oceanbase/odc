@@ -25,11 +25,18 @@ import com.oceanbase.tools.dbbrowser.model.DBForeignKeyModifyRule;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
+import com.oceanbase.tools.dbbrowser.parser.SqlParser;
+import com.oceanbase.tools.sqlparser.statement.Statement;
+import com.oceanbase.tools.sqlparser.statement.creatematerializedview.CreateMaterializedView;
+import com.oceanbase.tools.sqlparser.statement.createtable.Partition;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author jingtian
  * @date 2023/7/6
  */
+@Slf4j
 public class OBMySQLGetDBTableByParserTest {
 
     @Test
@@ -1001,4 +1008,52 @@ public class OBMySQLGetDBTableByParserTest {
                 subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
     }
 
+    @Test
+    public void getPartitionWithArg_Hash_use_column_1_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mv_allsyntax` (PRIMARY KEY (prim)) " +
+                "DEFAULT CHARSET = gbk ROW_FORMAT = DYNAMIC COMPRESSION = 'zstd_1.3.8' REPLICA_NUM = 1 BLOCK_SIZE = 16384 USE_BLOOM_FILTER = FALSE ENABLE_MACRO_BLOCK_BLOOM_FILTER = FALSE TABLET_SIZE = 134217728 PCTFREE = 10 PARALLEL 5\n"
+                +
+                " partition by hash(prim) PARTITIONS 6\n" +
+                " WITH COLUMN GROUP(all columns, each column) REFRESH COMPLETE ON DEMAND START WITH sysdate() NEXT sysdate() + INTERVAL 1 DAY ENABLE QUERY REWRITE ENABLE ON QUERY COMPUTATION "
+                +
+                "AS select `zijia`.`test_mv_base`.`col1` AS `prim`,`zijia`.`test_mv_base`.`col2` AS `col2`,`zijia`.`test_mv_base`.`col3` AS `col3`,`zijia`.`test_mv_base`.`col4` AS `col4` from `zijia`.`test_mv_base`";
+        Partition partition = getMViewPartition(ddl);
+        OBMySQLGetDBTableByParser parser = new OBMySQLGetDBTableByParser(ddl);
+        DBTablePartition dbTablePartition = parser.getPartition(partition);
+        Assert.assertEquals(6L, dbTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.HASH, dbTablePartition.getPartitionOption().getType());
+        Assert.assertEquals("prim", dbTablePartition.getPartitionOption().getColumnNames().get(0));
+    }
+
+    @Test
+    public void getPartitionWithArg_Hash_use_column_2_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mv_allsyntax` (PRIMARY KEY (prim)) " +
+                "DEFAULT CHARSET = gbk ROW_FORMAT = DYNAMIC COMPRESSION = 'zstd_1.3.8' REPLICA_NUM = 1 BLOCK_SIZE = 16384 USE_BLOOM_FILTER = FALSE ENABLE_MACRO_BLOCK_BLOOM_FILTER = FALSE TABLET_SIZE = 134217728 PCTFREE = 10 PARALLEL 5\n"
+                +
+                " partition by hash(prim) (PARTITION t1, PARTITION t2)\n" +
+                " WITH COLUMN GROUP(all columns, each column) REFRESH COMPLETE ON DEMAND START WITH sysdate() NEXT sysdate() + INTERVAL 1 DAY ENABLE QUERY REWRITE ENABLE ON QUERY COMPUTATION "
+                +
+                "AS select `zijia`.`test_mv_base`.`col1` AS `prim`,`zijia`.`test_mv_base`.`col2` AS `col2`,`zijia`.`test_mv_base`.`col3` AS `col3`,`zijia`.`test_mv_base`.`col4` AS `col4` from `zijia`.`test_mv_base`";
+        Partition partition = getMViewPartition(ddl);
+        OBMySQLGetDBTableByParser parser = new OBMySQLGetDBTableByParser(ddl);
+        DBTablePartition dbTablePartition = parser.getPartition(partition);
+        Assert.assertEquals(2L, dbTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.HASH, dbTablePartition.getPartitionOption().getType());
+        Assert.assertEquals("prim", dbTablePartition.getPartitionOption().getColumnNames().get(0));
+    }
+
+    private Partition getMViewPartition(String ddl) {
+        CreateMaterializedView statement = null;
+        try {
+            Statement value = SqlParser.parseMysqlStatement(ddl);
+            if (value instanceof CreateMaterializedView) {
+                statement = (CreateMaterializedView) value;
+            }
+        } catch (Exception e) {
+            log.warn("Failed to parse table ddl, error message={}", e.getMessage());
+        }
+
+        Partition partition = statement.getPartition();
+        return partition;
+    }
 }

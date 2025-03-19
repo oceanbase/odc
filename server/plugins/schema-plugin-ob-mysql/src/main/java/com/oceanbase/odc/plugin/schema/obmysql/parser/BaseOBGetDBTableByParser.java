@@ -29,7 +29,6 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartitionDefinition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
 import com.oceanbase.tools.sqlparser.statement.Expression;
-import com.oceanbase.tools.sqlparser.statement.creatematerializedview.CreateMaterializedView;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 import com.oceanbase.tools.sqlparser.statement.createtable.Partition;
 import com.oceanbase.tools.sqlparser.statement.createtable.PartitionElement;
@@ -52,27 +51,25 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class BaseOBGetDBTableByParser implements GetDBTableByParser {
 
-    public final DBTablePartition getPartition() {
-        DBTablePartition partition = new DBTablePartition();
-        DBTablePartitionOption partitionOption = new DBTablePartitionOption();
-        partitionOption.setType(DBTablePartitionType.NOT_PARTITIONED);
-        partition.setPartitionOption(partitionOption);
-        List<DBTablePartitionDefinition> partitionDefinitions = new ArrayList<>();
-        partition.setPartitionDefinitions(partitionDefinitions);
+    public final DBTablePartition getPartition(@NonNull Partition partitionStmt) {
+        DBTablePartition partition = initDbTablePartition();
+        return getDbTablePartition(partition, partitionStmt);
+    }
 
-        if (Objects.isNull(getCreateTableStmt()) && Objects.isNull(getCreateMaterializedViewStmt())) {
+    public final DBTablePartition getPartition() {
+        DBTablePartition partition = initDbTablePartition();
+        if (Objects.isNull(getCreateTableStmt())) {
             partition.setWarning("Failed to parse table ddl");
             return partition;
         }
-        Partition partitionStmt = null;
-        if (Objects.nonNull(getCreateTableStmt())) {
-            partitionStmt = getCreateTableStmt().getPartition();
-        } else if (Objects.nonNull(getCreateMaterializedViewStmt())) {
-            partitionStmt = getCreateMaterializedViewStmt().getPartition();
-        }
+        Partition partitionStmt = getCreateTableStmt().getPartition();
         if (Objects.isNull(partitionStmt)) {
             return partition;
         }
+        return getDbTablePartition(partition, partitionStmt);
+    }
+
+    private DBTablePartition getDbTablePartition(DBTablePartition partition, Partition partitionStmt) {
         parsePartitionStmt(partition, partitionStmt);
 
         /**
@@ -88,6 +85,16 @@ public abstract class BaseOBGetDBTableByParser implements GetDBTableByParser {
             }
         }
         fillSubPartitions(partition, partitionStmt);
+        return partition;
+    }
+
+    private DBTablePartition initDbTablePartition() {
+        DBTablePartition partition = new DBTablePartition();
+        DBTablePartitionOption partitionOption = new DBTablePartitionOption();
+        partitionOption.setType(DBTablePartitionType.NOT_PARTITIONED);
+        partition.setPartitionOption(partitionOption);
+        List<DBTablePartitionDefinition> partitionDefinitions = new ArrayList<>();
+        partition.setPartitionDefinitions(partitionDefinitions);
         return partition;
     }
 
@@ -259,8 +266,6 @@ public abstract class BaseOBGetDBTableByParser implements GetDBTableByParser {
     protected abstract String removeIdentifiers(String str);
 
     protected abstract CreateTable getCreateTableStmt();
-
-    protected abstract CreateMaterializedView getCreateMaterializedViewStmt();
 
     @Override
     public List<DBTableIndex> listIndexes() {
