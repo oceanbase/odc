@@ -83,13 +83,12 @@ public class ConfigValueValidator {
 
     private static void checkValueMaxBasedOnSystemConfig(ConfigurationMeta meta,
             SessionProperties properties, String value) {
-        if (!meta.getKey().equals(OrganizationConfigKeys.DEFAULT_MAX_QUERY_LIMIT)) {
-            checkValueMax(meta, value);
-        }
-        if (Long.parseLong(value) > properties.getResultSetMaxRows()) {
-            throw new IllegalArgumentException(
+        if (Objects.nonNull(meta.getMaxValue())) {
+            if (Long.parseLong(value) > properties.getResultSetMaxRows()) {
+                throw new IllegalArgumentException(
                     String.format("Value is greater than max value for key, maxValue is '%s'",
-                            properties.getResultSetMaxRows()));
+                        properties.getResultSetMaxRows()));
+            }
         }
     }
 }
