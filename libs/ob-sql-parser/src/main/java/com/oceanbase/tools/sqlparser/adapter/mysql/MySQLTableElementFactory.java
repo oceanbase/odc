@@ -182,7 +182,10 @@ public class MySQLTableElementFactory extends OBParserBaseVisitor<TableElement>
         if (indexOptions == null) {
             indexOptions = getIndexOptions(null, ctx.opt_index_options());
         } else {
-            indexOptions.merge(getIndexOptions(null, ctx.opt_index_options()));
+            IndexOptions other = getIndexOptions(null, ctx.opt_index_options());
+            if (other != null) {
+                indexOptions.merge(other);
+            }
         }
         ConstraintState state = null;
         if (indexOptions != null) {
