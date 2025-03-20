@@ -92,7 +92,6 @@ import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
-import com.oceanbase.odc.service.connection.database.model.DBAccessHistoryReq;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.QueryConnectionParams;
@@ -290,16 +289,6 @@ public class ScheduleService {
             }
         }
         changeSchedule(scheduleChangeParams);
-        if (Objects.nonNull(createReq.getDatabaseId())) {
-            try {
-                DBAccessHistoryReq dbAccessHistoryReq = new DBAccessHistoryReq().setDatabaseIds(
-                        Collections.singleton(createReq.getDatabaseId()));
-                databaseService.recordDatabaseAccessHistory(dbAccessHistoryReq);
-            } catch (Exception e) {
-                log.warn("Failed to record database access history while creating schedule task, dbId={}",
-                        createReq.getDatabaseId(), e);
-            }
-        }
         return Collections.singletonList(FlowInstanceDetailResp.withIdAndType(-1L, TaskType.ALTER_SCHEDULE));
     }
 

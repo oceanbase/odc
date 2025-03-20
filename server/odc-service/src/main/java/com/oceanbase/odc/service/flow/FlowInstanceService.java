@@ -108,7 +108,6 @@ import com.oceanbase.odc.service.connection.CloudMetadataClient;
 import com.oceanbase.odc.service.connection.CloudMetadataClient.CloudPermissionAction;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
-import com.oceanbase.odc.service.connection.database.model.DBAccessHistoryReq;
 import com.oceanbase.odc.service.connection.database.model.DBResource;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.UnauthorizedDBResource;
@@ -408,18 +407,7 @@ public class FlowInstanceService {
             conns.forEach(con -> cloudMetadataClient.checkPermission(OBTenant.of(con.getClusterName(),
                     con.getTenantName()), con.getInstanceType(), false, CloudPermissionAction.READONLY));
         }
-        List<FlowInstanceDetailResp> flowInstanceDetailResps = Collections.singletonList(
-                buildFlowInstance(riskLevels, createReq, conns));
-        if (Objects.nonNull(createReq.getDatabaseId())) {
-            try {
-                DBAccessHistoryReq dbAccessHistoryReq = new DBAccessHistoryReq().setDatabaseIds(
-                        Collections.singleton(createReq.getDatabaseId()));
-                databaseService.recordDatabaseAccessHistory(dbAccessHistoryReq);
-            } catch (Exception e) {
-                log.warn("Failed to record database access history, dbId={}", createReq.getDatabaseId(), e);
-            }
-        }
-        return flowInstanceDetailResps;
+        return Collections.singletonList(buildFlowInstance(riskLevels, createReq, conns));
     }
 
     public Page<FlowInstanceDetailResp> list(@NotNull Pageable pageable, @NotNull QueryFlowInstanceParams params) {

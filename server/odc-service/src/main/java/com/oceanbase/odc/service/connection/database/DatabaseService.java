@@ -949,8 +949,7 @@ public class DatabaseService {
     }
 
     @SkipAuthorize("odc internal usage")
-    public boolean recordDatabaseAccessHistory(@NonNull DBAccessHistoryReq dbAccessHistoryReq) {
-        Set<Long> databaseIds = dbAccessHistoryReq.getDatabaseIds();
+    public boolean recordDatabaseAccessHistory(Collection<Long> databaseIds) {
         if (CollectionUtils.isEmpty(databaseIds)) {
             return true;
         }
@@ -959,8 +958,8 @@ public class DatabaseService {
 
         Set<Long> joinedProjectIds = projectService.getMemberProjectIds(userId);
         if (CollectionUtils.isEmpty(joinedProjectIds)) {
-            log.warn("No member project found for user, can't record database history, param={}",
-                    JsonUtils.toJson(dbAccessHistoryReq));
+            log.warn("No member project found for user, can't record database history, dbIds={}",
+                    JsonUtils.toJson(databaseIds));
             return false;
         }
         List<Database> dbs = entitiesToModels(
