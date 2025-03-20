@@ -40,7 +40,7 @@ public class ConfigValueValidator {
         checkValueAllowed(meta, value);
         checkValueMin(meta, value);
         // check that the max query limit is less than the value of the metadata
-        checkValueMaxBasedOnSystemConfig(properties, value);
+        checkValueMaxBasedOnSystemConfig(meta, properties, value);
 
     }
 
@@ -81,9 +81,12 @@ public class ConfigValueValidator {
         }
     }
 
-    private static void checkValueMaxBasedOnSystemConfig(SessionProperties properties, String value) {
-        long valueFromOrganization = Long.parseLong(value);
-        if (valueFromOrganization > properties.getResultSetMaxRows()) {
+    private static void checkValueMaxBasedOnSystemConfig(ConfigurationMeta meta,
+            SessionProperties properties, String value) {
+        if (!meta.getKey().equals(OrganizationConfigKeys.DEFAULT_MAX_QUERY_LIMIT)) {
+            checkValueMax(meta, value);
+        }
+        if (Long.parseLong(value) > properties.getResultSetMaxRows()) {
             throw new IllegalArgumentException(
                     String.format("Value is greater than max value for key, maxValue is '%s'",
                             properties.getResultSetMaxRows()));
