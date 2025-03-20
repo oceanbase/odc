@@ -52,11 +52,11 @@ import com.oceanbase.odc.service.schedule.model.ScheduleChangeLog;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleDetailResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleOverview;
+import com.oceanbase.odc.service.schedule.model.ScheduleStat;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskListOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverview;
-import com.oceanbase.odc.service.schedule.model.ScheduleTaskStat;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.UpdateScheduleReq;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
@@ -286,8 +286,8 @@ public class ScheduleController {
         return Responses.single(scheduleService.updateDlmRateLimit(id, limiterConfig));
     }
 
-    @RequestMapping(value = "/scheduleTaskStats", method = RequestMethod.GET)
-    public ListResponse<ScheduleTaskStat> getScheduleStats(
+    @RequestMapping(value = "/schedules/stats", method = RequestMethod.GET)
+    public ListResponse<ScheduleStat> getScheduleStats(
             @RequestParam(required = false, name = "types") Set<ScheduleType> types,
             @RequestParam(required = false, name = "startTime") Date startTime,
             @RequestParam(required = false, name = "endTime") Date endTime) {
@@ -296,6 +296,6 @@ public class ScheduleController {
                 .startTime(startTime)
                 .endTime(endTime)
                 .build();
-        return Responses.list(scheduleService.listScheduleTaskStat(req));
+        return Responses.list(scheduleService.listScheduleStat(req));
     }
 }
