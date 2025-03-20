@@ -62,6 +62,7 @@ public class OrganizationConfigService {
     private OrganizationConfigRepository organizationConfigRepository;
     @Autowired
     private OrganizationConfigMetaService organizationConfigMetaService;
+    @Autowired
     private SessionProperties sessionProperties;
 
     private List<Configuration> defaultConfigurations;
