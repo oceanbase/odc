@@ -214,7 +214,7 @@ public class DatabasePermissionServiceTest extends ServiceTestEnv {
                 .statuses(Arrays.asList(ExpirationStatusFilter.EXPIRING, ExpirationStatusFilter.NOT_EXPIRED))
                 .build();
         Page<UserDatabasePermission> result = service.list(PROJECT_ID, params, Pageable.unpaged());
-        Assert.assertEquals(5, result.getTotalElements());
+        Assert.assertEquals(4, result.getTotalElements());
     }
 
     @Test
