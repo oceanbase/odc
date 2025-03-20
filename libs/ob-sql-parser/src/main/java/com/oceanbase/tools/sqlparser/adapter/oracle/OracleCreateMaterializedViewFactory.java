@@ -66,7 +66,7 @@ public class OracleCreateMaterializedViewFactory extends OBParserBaseVisitor<Cre
         if (ctx.mv_column_list() != null) {
             if (ctx.mv_column_list().column_name_list() != null) {
                 createMView.setColumns(ctx.mv_column_list().column_name_list().column_name()
-                    .stream().map(RuleContext::getText).collect(Collectors.toList()));
+                        .stream().map(RuleContext::getText).collect(Collectors.toList()));
             }
             if (ctx.mv_column_list().out_of_line_primary_index() != null) {
                 createMView.setPrimaryKey((OutOfLineConstraint) new OracleTableElementFactory(
