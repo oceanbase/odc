@@ -82,8 +82,10 @@ public class ConfigValueValidator {
     }
 
     private static void checkValueMaxBasedOnSystemConfig(SessionProperties properties, String value) {
-        String maxQueryLimitFromSystemConfig = String.valueOf(properties.getResultSetMaxRows());
-        if (new BigDecimal(maxQueryLimitFromSystemConfig).compareTo(new BigDecimal(value)) < 0) {
+        String maxQueryLimit = String.valueOf(properties.getResultSetMaxRows());
+        BigDecimal valueFromSystemConfig = new BigDecimal(maxQueryLimit);
+        BigDecimal valueFromOrganization = new BigDecimal(value);
+        if (valueFromSystemConfig.compareTo(valueFromOrganization) < 0) {
             throw new IllegalArgumentException(
                     String.format("Value is greater than max value for key, maxValue is '%s'",
                             properties.getResultSetMaxRows()));
