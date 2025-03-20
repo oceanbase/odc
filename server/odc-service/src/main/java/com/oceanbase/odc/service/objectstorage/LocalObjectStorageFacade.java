@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.Arrays;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -128,6 +129,17 @@ public class LocalObjectStorageFacade extends AbstractObjectStorageFacade {
                     () -> doPutObject(bucket, objectName, userId, totalLength, inputStream, isPersistent));
         } catch (Exception ex) {
             log.warn("put object failed, cause={}", ex.getMessage());
+            throw new InternalServerError("put object failed", ex);
+        }
+    }
+
+    @Override
+    public ObjectMetadata putObject(String bucket, String objectName, long userId, File file, boolean isPersistent) {
+
+        try (InputStream inputStream = Files.newInputStream(file.toPath())) {
+            return putObject(bucket, objectName, userId, file.length(), inputStream, isPersistent);
+        } catch (IOException ex) {
+            log.warn("put object  from file failed, cause={}", ex.getMessage());
             throw new InternalServerError("put object failed", ex);
         }
     }
