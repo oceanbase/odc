@@ -86,8 +86,8 @@ public class ConfigValueValidator {
         if (Objects.nonNull(meta.getMaxValue())) {
             if (Long.parseLong(value) > properties.getResultSetMaxRows()) {
                 throw new IllegalArgumentException(
-                    String.format("Value is greater than max value for key, maxValue is '%s'",
-                        properties.getResultSetMaxRows()));
+                        String.format("Value is greater than max value for key, maxValue is '%s'",
+                                properties.getResultSetMaxRows()));
             }
         }
     }
