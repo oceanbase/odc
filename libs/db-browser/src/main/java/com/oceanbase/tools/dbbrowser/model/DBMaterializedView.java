@@ -20,8 +20,6 @@ import java.util.List;
 
 import javax.validation.constraints.NotEmpty;
 
-import com.oceanbase.tools.sqlparser.statement.creatematerializedview.MaterializedViewRefreshInterval;
-
 import lombok.Getter;
 import lombok.Setter;
 
@@ -41,13 +39,13 @@ public class DBMaterializedView implements DBObject {
     private String ddl;
     private DBMaterializedViewRefreshMethod refreshMethod;
     private Long parallelismDegree;
-    // This property is used when creating materialized view
+    // This property about automatic refresh is used when creating materialized view
     private DBMaterializedViewRefreshSchedule refreshSchedule;
     private Boolean enableQueryRewrite;
     private Boolean enableQueryComputation;
-    // This property is used when obtain details
-    private MaterializedViewRefreshInterval refreshInterval;
-
+    // These properties are used to demonstrate the automatic refresh configuration
+    private String startWith;
+    private String interval;
     /**
      * reuse properties in {@link DBView} to construct query statements
      */

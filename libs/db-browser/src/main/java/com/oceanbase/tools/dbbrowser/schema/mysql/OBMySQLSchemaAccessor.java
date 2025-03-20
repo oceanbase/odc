@@ -15,20 +15,6 @@
  */
 package com.oceanbase.tools.dbbrowser.schema.mysql;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import org.apache.commons.collections4.CollectionUtils;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
-import org.springframework.jdbc.core.JdbcOperations;
-
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
@@ -53,11 +39,23 @@ import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
 import com.oceanbase.tools.sqlparser.statement.Statement;
-import com.oceanbase.tools.sqlparser.statement.creatematerializedview.CreateMaterializedView;
+import com.oceanbase.tools.sqlparser.statement.createmview.CreateMaterializedView;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
-
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.JdbcOperations;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * applicable to OB [4.3.5.1, ~)

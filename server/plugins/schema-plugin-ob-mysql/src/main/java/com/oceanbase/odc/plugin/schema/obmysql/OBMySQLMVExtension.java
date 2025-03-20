@@ -37,7 +37,7 @@ import com.oceanbase.tools.dbbrowser.parser.SqlParser;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
 import com.oceanbase.tools.sqlparser.statement.Statement;
-import com.oceanbase.tools.sqlparser.statement.creatematerializedview.CreateMaterializedView;
+import com.oceanbase.tools.sqlparser.statement.createmview.CreateMaterializedView;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -61,13 +61,8 @@ public class OBMySQLMVExtension implements MViewExtensionPoint {
         DBMaterializedView mView = schemaAccessor.getMView(schemaName, mViewName);
         String ddl = schemaAccessor.getTableDDL(schemaName, mViewName);
         CreateMaterializedView createMaterializedView = parseTableDDL(ddl);
-        if (Objects.nonNull(createMaterializedView.getCreateMaterializedViewOpts())
-                && Objects.nonNull(
-                        createMaterializedView.getCreateMaterializedViewOpts().getMaterializedViewRefreshOpts())
-                && Objects.nonNull(createMaterializedView.getCreateMaterializedViewOpts()
-                        .getMaterializedViewRefreshOpts().getRefreshInterval())) {
-            mView.setRefreshInterval(createMaterializedView.getCreateMaterializedViewOpts()
-                    .getMaterializedViewRefreshOpts().getRefreshInterval());
+        if (Objects.nonNull(createMaterializedView.getViewOptions())) {
+
         }
         mView.setSchemaName(schemaName);
         mView.setName(mViewName);
