@@ -34,7 +34,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "config_organization_configuration",
-    uniqueConstraints = @UniqueConstraint(columnNames = {"organization_id", "key"}))
+        uniqueConstraints = @UniqueConstraint(columnNames = {"organization_id", "key"}))
 public class OrganizationConfigEntity extends ConfigEntity {
     /**
      * organization id of this organization configuration
