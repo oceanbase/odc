@@ -160,11 +160,11 @@ public class HttpServer<T> {
 
     private ThreadPoolExecutor createThreadPool() {
         return new ThreadPoolExecutor(
-                0,
-                128,
+                4,
+                4,
                 60L,
                 TimeUnit.SECONDS,
-                new LinkedBlockingQueue<Runnable>(64),
+                new LinkedBlockingQueue<Runnable>(32),
                 new TraceDecoratorThreadFactory(new ThreadFactory() {
                     @Override
                     public Thread newThread(Runnable r) {
