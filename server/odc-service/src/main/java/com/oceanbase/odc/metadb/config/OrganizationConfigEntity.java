@@ -18,7 +18,6 @@ package com.oceanbase.odc.metadb.config;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotNull;
 
 import lombok.Data;
@@ -33,8 +32,7 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Entity
-@Table(name = "config_organization_configuration",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"organization_id", "key"}))
+@Table(name = "config_organization_configuration")
 public class OrganizationConfigEntity extends ConfigEntity {
     /**
      * organization id of this organization configuration

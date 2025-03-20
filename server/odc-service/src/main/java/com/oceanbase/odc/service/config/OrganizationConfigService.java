@@ -40,8 +40,8 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
+import com.oceanbase.odc.metadb.config.OrganizationConfigDAO;
 import com.oceanbase.odc.metadb.config.OrganizationConfigEntity;
-import com.oceanbase.odc.metadb.config.OrganizationConfigRepository;
 import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.config.model.ConfigurationMeta;
 import com.oceanbase.odc.service.session.SessionProperties;
@@ -59,7 +59,7 @@ import lombok.extern.slf4j.Slf4j;
 @Validated
 public class OrganizationConfigService {
     @Autowired
-    private OrganizationConfigRepository organizationConfigRepository;
+    private OrganizationConfigDAO organizationConfigDAO;
     @Autowired
     private OrganizationConfigMetaService organizationConfigMetaService;
     @Autowired
@@ -90,7 +90,7 @@ public class OrganizationConfigService {
     @PreAuthenticate(actions = "read", resourceType = "ODC_ORGANIZATION_CONFIG", isForAll = true)
     public List<Configuration> queryList(@NotNull Long organizationId) {
         Map<String, Configuration> keyToConfiguration = Optional
-                .ofNullable(organizationConfigRepository.findByOrganizationId(organizationId))
+                .ofNullable(organizationConfigDAO.queryByOrganizationId(organizationId))
                 .orElse(Collections.emptyList())
                 .stream().map(Configuration::convert2DTO)
                 .collect(Collectors.toMap(Configuration::getKey, e -> e));
@@ -130,9 +130,9 @@ public class OrganizationConfigService {
         List<OrganizationConfigEntity> organizationConfigEntities = configurations.stream()
                 .map(record -> record.convert2DO(organizationId, userId))
                 .collect(Collectors.toList());
-        organizationConfigRepository.saveAll(organizationConfigEntities);
-        log.info("Update organization configurations, organizationId={}, configurations={}",
-                organizationId, configurations);
+        int affectRows = organizationConfigDAO.batchUpsert(organizationConfigEntities);
+        log.info("Update organization configurations, organizationId={}, affectRows={}, configurations={}",
+                organizationId, affectRows, configurations);
         evictOrgConfigurationsCache(organizationId);
         return queryList(organizationId);
     }
@@ -177,7 +177,7 @@ public class OrganizationConfigService {
 
     private List<Configuration> queryListForInternalUse(@NotNull Long organizationId) {
         Map<String, Configuration> keyToConfiguration = Optional
-                .ofNullable(organizationConfigRepository.findByOrganizationId(organizationId))
+                .ofNullable(organizationConfigDAO.queryByOrganizationId(organizationId))
                 .orElse(Collections.emptyList())
                 .stream().map(Configuration::convert2DTO)
                 .collect(Collectors.toMap(Configuration::getKey, e -> e));
