@@ -41,6 +41,7 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConstant
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
 import com.oceanbase.odc.service.common.FileManager;
 import com.oceanbase.odc.service.common.model.FileBucket;
+import com.oceanbase.odc.service.config.OrganizationConfigProvider;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
 import com.oceanbase.odc.service.datasecurity.model.MaskingAlgorithm;
@@ -88,6 +89,9 @@ public class DumperResultSetExportTaskManager implements ResultSetExportTaskMana
     @Autowired
     private DataTransferAdapter dataTransferAdapter;
 
+    @Autowired
+    private OrganizationConfigProvider organizationConfigProvider;
+
     @PostConstruct
     public void init() {
         log.info("DumperResultSetExportTaskManager start initializing...");
@@ -131,7 +135,9 @@ public class DumperResultSetExportTaskManager implements ResultSetExportTaskMana
             if (maskingService.isMaskingEnabled()) {
                 parameter.setRowDataMaskingAlgorithms(getRowDataMaskingAlgorithms(parameter.getSql(), session));
             }
-            parameter.setSql(SqlRewriteUtil.addQueryLimit(parameter.getSql(), session, parameter.getMaxRows()));
+            Long maxRows = Long.valueOf(
+                    organizationConfigProvider.getMinimumQueryLimit(parameter.getMaxRows().toString()));
+            parameter.setSql(SqlRewriteUtil.addQueryLimit(parameter.getSql(), session, maxRows));
 
             ResultSetExportTask task = new ResultSetExportTask(workingDir, logDir, parameter, session,
                     cloudObjectStorageService, dataTransferProperties, dataTransferAdapter.getMaxDumpSizeBytes());

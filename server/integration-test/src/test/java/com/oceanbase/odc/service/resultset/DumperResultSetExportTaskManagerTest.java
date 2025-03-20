@@ -29,7 +29,9 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.TestConnectionUtil;
@@ -39,6 +41,7 @@ import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.EncodingType;
+import com.oceanbase.odc.service.config.OrganizationConfigProvider;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.task.model.ResultSetExportResult;
 import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter.CSVFormat;
@@ -58,6 +61,8 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
 
     @Autowired
     private DumperResultSetExportTaskManager manager;
+    @MockBean
+    private OrganizationConfigProvider organizationConfigProvider;
 
     @Before
     public void init() {
@@ -105,6 +110,8 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
 
     @Test
     public void startTask_ExportSQL_GenerateFileSuccess() throws Exception {
+        Mockito.when(organizationConfigProvider.getMinimumQueryLimit(Mockito.anyString()))
+                .thenReturn(1000);
         ResultSetExportTaskParameter req =
                 createResultSetExportTaskReq(DataTransferFormat.SQL, EncodingType.UTF_8, mysqlSession);
         ResultSetExportTaskContext context = manager.start(mysqlConnectionConfig, req, taskId);
@@ -117,6 +124,8 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
 
     @Test
     public void startTask_ExportCSV_GenerateFileSuccess() throws Exception {
+        Mockito.when(organizationConfigProvider.getMinimumQueryLimit(Mockito.anyString()))
+                .thenReturn(1000);
         ResultSetExportTaskParameter req =
                 createResultSetExportTaskReq(DataTransferFormat.CSV, EncodingType.GBK, mysqlSession);
         CSVFormat csvFormat = new CSVFormat();
@@ -133,6 +142,8 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
 
     @Test
     public void startTask_ExportCSV_ExportFailed() {
+        Mockito.when(organizationConfigProvider.getMinimumQueryLimit(Mockito.anyString()))
+                .thenReturn(1000);
         ResultSetExportTaskParameter req = new ResultSetExportTaskParameter();
         req.setSql("select * from not_exist_table");
         req.setMaxRows(1000L);
@@ -153,6 +164,8 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
 
     @Test
     public void startTask_ExportEXCEL_GenerateFileSuccess() throws Exception {
+        Mockito.when(organizationConfigProvider.getMinimumQueryLimit(Mockito.anyString()))
+                .thenReturn(1000);
         ResultSetExportTaskParameter req =
                 createResultSetExportTaskReq(DataTransferFormat.EXCEL, EncodingType.GBK, mysqlSession);
         req.setCsvFormat(new CSVFormat());
@@ -165,6 +178,8 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
 
     @Test
     public void startTask_ExportSQL_GenerateFileSuccess_WithoutTableName() throws Exception {
+        Mockito.when(organizationConfigProvider.getMinimumQueryLimit(Mockito.anyString()))
+                .thenReturn(1000);
         ResultSetExportTaskParameter req =
                 createResultSetExportTaskReq(DataTransferFormat.SQL, EncodingType.UTF_8, mysqlSession);
         req.setTableName(null);
@@ -177,6 +192,8 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
 
     @Test
     public void startTask_ExportCSV_Oracle_GenerateFileSuccess() throws Exception {
+        Mockito.when(organizationConfigProvider.getMinimumQueryLimit(Mockito.anyString()))
+                .thenReturn(1000);
         ResultSetExportTaskParameter req =
                 createResultSetExportTaskReq(DataTransferFormat.CSV, EncodingType.GBK, oracleSession);
         CSVFormat csvFormat = new CSVFormat();
@@ -193,6 +210,8 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
 
     @Test
     public void startTask_ExportCSV_WithMaxRowsLimit_MySQL() throws Exception {
+        Mockito.when(organizationConfigProvider.getMinimumQueryLimit(Mockito.anyString()))
+                .thenReturn(1000);
         ResultSetExportTaskParameter req =
                 createResultSetExportTaskReq(DataTransferFormat.CSV, EncodingType.GBK, oracleSession);
         req.setMaxRows(1L);
@@ -204,12 +223,14 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
         File file = Paths.get(basePath, taskId, fileName + req.getFileFormat().getExtension()).toFile();
         LineNumberReader lineNumberReader = new LineNumberReader(new FileReader(file));
         lineNumberReader.skip(Long.MAX_VALUE);
-        Assert.assertEquals(2, lineNumberReader.getLineNumber());
+        Assert.assertEquals(4, lineNumberReader.getLineNumber());
         FileUtils.forceDelete(file);
     }
 
     @Test
     public void startTask_ExportCSV_WithMaxRowsLimit_Oracle() throws Exception {
+        Mockito.when(organizationConfigProvider.getMinimumQueryLimit(Mockito.anyString()))
+                .thenReturn(1000);
         ResultSetExportTaskParameter req =
                 createResultSetExportTaskReq(DataTransferFormat.CSV, EncodingType.GBK, oracleSession);
         req.setMaxRows(1L);
@@ -221,7 +242,7 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
         File file = Paths.get(basePath, taskId, fileName + req.getFileFormat().getExtension()).toFile();
         LineNumberReader lineNumberReader = new LineNumberReader(new FileReader(file));
         lineNumberReader.skip(Long.MAX_VALUE);
-        Assert.assertEquals(2, lineNumberReader.getLineNumber());
+        Assert.assertEquals(4, lineNumberReader.getLineNumber());
         FileUtils.forceDelete(file);
     }
 

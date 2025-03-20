@@ -24,6 +24,8 @@ import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.metadb.regulation.ruleset.PropertyMetadataEntity;
+import com.oceanbase.odc.service.common.util.SpringContextUtil;
+import com.oceanbase.odc.service.config.OrganizationConfigProvider;
 import com.oceanbase.odc.service.regulation.ruleset.model.PropertyMetadata;
 import com.oceanbase.odc.service.regulation.ruleset.model.PropertyType;
 
@@ -59,7 +61,7 @@ public class PropertyMetadataMapper {
                 model.setDefaultValue(Collections.emptyList());
             } else {
                 Verify.equals(1, entity.getDefaultValues().size(), "defaultValues.size");
-                model.setDefaultValue(Integer.parseInt(entity.getDefaultValues().get(0)));
+                model.setDefaultValue(adaptiveMaxQueryLimit(entity));
             }
             if (CollectionUtils.isNotEmpty(candidates)) {
                 model.setCandidates(candidates.stream().map(Integer::parseInt).collect(Collectors.toList()));
@@ -95,5 +97,14 @@ public class PropertyMetadataMapper {
             }
         }
         return model;
+    }
+
+    private static Integer adaptiveMaxQueryLimit(PropertyMetadataEntity entity) {
+        String defaultValue = entity.getDefaultValues().get(0);
+        if (!entity.getName().contains("sql-console.max-return-rows")) {
+            return Integer.parseInt(defaultValue);
+        }
+        OrganizationConfigProvider orgConfigFacade = SpringContextUtil.getBean(OrganizationConfigProvider.class);
+        return orgConfigFacade.checkMaxQueryLimitValidity(Integer.parseInt(defaultValue));
     }
 }

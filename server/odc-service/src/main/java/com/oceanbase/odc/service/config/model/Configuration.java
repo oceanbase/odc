@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.config.model;
 
 import javax.validation.constraints.NotBlank;
 
+import com.oceanbase.odc.metadb.config.OrganizationConfigEntity;
 import com.oceanbase.odc.metadb.config.UserConfigEntity;
 
 import lombok.AllArgsConstructor;
@@ -53,4 +54,17 @@ public class Configuration {
         return entity;
     }
 
+    public static Configuration convert2DTO(OrganizationConfigEntity entity) {
+        return new Configuration(entity.getKey(), entity.getValue());
+    }
+
+    public OrganizationConfigEntity convert2DO(Long organizationId, Long userId) {
+        OrganizationConfigEntity entity = new OrganizationConfigEntity();
+        entity.setOrganizationId(organizationId);
+        entity.setLastModifierId(userId);
+        entity.setCreatorId(userId);
+        entity.setKey(this.key);
+        entity.setValue(this.value);
+        return entity;
+    }
 }
