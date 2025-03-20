@@ -86,6 +86,17 @@ public class CloudEnvironmentObjectStorageFacade extends AbstractObjectStorageFa
     }
 
     @Override
+    public ObjectMetadata putObject(String bucket, String objectName, File file, boolean isPersistent) {
+        try {
+            return objectStorageExecutor.concurrentSafeExecute(
+                    () -> doPutObject(bucket, objectName, currentUserId(), file, isPersistent));
+        } catch (Exception ex) {
+            log.warn("put object failed, cause={}", ex.getMessage());
+            throw new InternalServerError("put object failed", ex);
+        }
+    }
+
+    @Override
     public ObjectMetadata putObject(String bucket, String objectName, long userId, long totalLength,
             InputStream inputStream, boolean isPersistent) {
         try {
@@ -101,7 +112,7 @@ public class CloudEnvironmentObjectStorageFacade extends AbstractObjectStorageFa
     public ObjectMetadata putObject(String bucket, String objectName, long userId, File file, boolean isPersistent) {
         try {
             return objectStorageExecutor.concurrentSafeExecute(
-                () -> doPutObject(bucket, objectName, userId, file, isPersistent));
+                    () -> doPutObject(bucket, objectName, userId, file, isPersistent));
         } catch (Exception ex) {
             log.warn("put object failed, cause={}", ex.getMessage());
             throw new InternalServerError("put object failed", ex);

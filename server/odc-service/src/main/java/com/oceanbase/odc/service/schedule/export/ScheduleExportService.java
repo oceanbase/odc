@@ -16,8 +16,6 @@
 package com.oceanbase.odc.service.schedule.export;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -136,14 +134,9 @@ public class ScheduleExportService {
         try {
             String bucketName = getPersonalBucketName(authenticationFacade.currentUserIdStr());
             objectStorageFacade.createBucketIfNotExists(bucketName);
-            ObjectMetadata metadata = objectStorageFacade.putTempObject(bucketName, exportedFile.getFile().getName(),
-                    exportedFile.getFile().length(),
-                    Files.newInputStream(exportedFile.getFile().toPath()));
+            ObjectMetadata metadata = objectStorageFacade.putTempObject(bucketName, exportedFile.getFile());
             String downloadUrl = objectStorageFacade.getDownloadUrl(metadata.getBucketName(), metadata.getObjectId());
             fileExportResponse.setDownloadUrl(downloadUrl);
-        } catch (IOException e) {
-            log.info("Get download url failed", e);
-            throw new RuntimeException(e);
         } finally {
             OdcFileUtil.deleteFiles(exportedFile.getFile());
         }

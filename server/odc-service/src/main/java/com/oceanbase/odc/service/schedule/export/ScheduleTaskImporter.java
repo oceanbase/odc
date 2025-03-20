@@ -20,7 +20,6 @@ import static com.oceanbase.odc.service.schedule.export.ScheduleTaskExporter.rem
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -306,14 +305,8 @@ public class ScheduleTaskImporter implements InitializingBean {
         String bucket = "async".concat(File.separator).concat(String.valueOf(creatorId));
         for (String sqlObjectId : sqlObjectIds) {
             File file = rowDataReader.getFile(removeSeparator(sqlObjectId));
-            try {
-                ObjectMetadata objectMetadata = objectStorageFacade.putObject(bucket, file.getName(), file.length(),
-                        Files.newInputStream(file.toPath()));
-                rewriteObjectIds.add(objectMetadata.getObjectId());
-            } catch (IOException e) {
-                log.info("Put file to bucket {} failed, error={}", bucket, e);
-                throw new RuntimeException(e);
-            }
+            ObjectMetadata objectMetadata = objectStorageFacade.putObject(bucket, file);
+            rewriteObjectIds.add(objectMetadata.getObjectId());
         }
         return rewriteObjectIds;
     }

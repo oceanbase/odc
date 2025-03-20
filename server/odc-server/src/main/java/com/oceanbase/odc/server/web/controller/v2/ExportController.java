@@ -34,8 +34,8 @@ public class ExportController {
     @Autowired
     private ScheduleExportService scheduleExportService;
 
-    @RequestMapping(value = "/startScheduleTask", method = RequestMethod.POST)
-    public SuccessResponse<FileExportResponse> startPreviewImportTask(@RequestBody ScheduleTaskExportRequest request) {
+    @RequestMapping(value = "/exportScheduleTask", method = RequestMethod.POST)
+    public SuccessResponse<FileExportResponse> exportScheduleTask(@RequestBody ScheduleTaskExportRequest request) {
         return Responses.success(scheduleExportService.export(request));
     }
 }

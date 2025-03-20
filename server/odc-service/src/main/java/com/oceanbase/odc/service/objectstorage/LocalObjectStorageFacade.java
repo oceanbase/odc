@@ -87,6 +87,16 @@ public class LocalObjectStorageFacade extends AbstractObjectStorageFacade {
     }
 
     @Override
+    public ObjectMetadata putObject(String bucket, String objectName, File file, boolean isPersistent) {
+        try (InputStream inputStream = Files.newInputStream(file.toPath())) {
+            return putObject(bucket, objectName, file.length(), inputStream, isPersistent);
+        } catch (IOException ex) {
+            log.warn("put object  from file failed, cause={}", ex.getMessage());
+            throw new InternalServerError("put object failed", ex);
+        }
+    }
+
+    @Override
     public ObjectMetadata updateObject(String bucket, String objectName, String objectId, long totalLength,
             InputStream inputStream) {
         try {
