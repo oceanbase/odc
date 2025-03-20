@@ -15,24 +15,19 @@
  */
 package com.oceanbase.odc.service.schedule;
 
-import java.util.List;
-import java.util.Set;
-
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.oceanbase.odc.service.exporter.model.ExportProperties;
+import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
+import com.oceanbase.odc.metadb.connection.DatabaseRepository;
+import com.oceanbase.odc.service.exporter.ImportService;
+import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.schedule.alarm.DefaultScheduleAlarmClient;
 import com.oceanbase.odc.service.schedule.alarm.ScheduleAlarmClient;
-import com.oceanbase.odc.service.schedule.export.exception.DatabaseNonExistException;
-import com.oceanbase.odc.service.schedule.export.model.ExportedDataSource;
-import com.oceanbase.odc.service.schedule.export.model.ExportedDatabase;
-import com.oceanbase.odc.service.schedule.export.model.ImportScheduleTaskView;
-import com.oceanbase.odc.service.schedule.export.model.ScheduleRowPreviewDto;
+import com.oceanbase.odc.service.schedule.export.DefaultScheduleFacade;
 import com.oceanbase.odc.service.schedule.flowtask.ApprovalFlowClient;
 import com.oceanbase.odc.service.schedule.flowtask.NoApprovalFlowClient;
-import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.submitter.DefaultJobSubmitter;
 import com.oceanbase.odc.service.schedule.submitter.JobSubmitter;
 import com.oceanbase.odc.service.schedule.util.DefaultScheduleDescriptionGenerator;
@@ -73,36 +68,11 @@ public class ScheduleTaskConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(ScheduleExportImportFacade.class)
-    public ScheduleExportImportFacade defaultScheduleArchiveFacade() {
-        return new ScheduleExportImportFacade() {
-
-            @Override
-            public Set<ScheduleType> supportedScheduleTypes() {
-                throw new UnsupportedOperationException("Community Edition is not supported yet");
-            }
-
-            @Override
-            public void adaptProperties(ExportProperties exportProperties) {
-                throw new UnsupportedOperationException("Community Edition is not supported yet");
-            }
-
-            @Override
-            public void adaptExportDatasource(ExportedDataSource exportedDataSource) {
-                throw new UnsupportedOperationException("Community Edition is not supported yet");
-            }
-
-            @Override
-            public List<ImportScheduleTaskView> preview(ScheduleType scheduleType, Long projectId,
-                    ExportProperties exportProperties, List<ScheduleRowPreviewDto> dtos) {
-                throw new UnsupportedOperationException("Community Edition is not supported yet");
-            }
-
-            @Override
-            public Long getOrCreateDatabaseId(Long projectId, ExportedDatabase exportedDatabase)
-                    throws DatabaseNonExistException {
-                throw new UnsupportedOperationException("Community Edition is not supported yet");
-            }
-
-        };
+    public ScheduleExportImportFacade defaultScheduleArchiveFacade(
+            ConnectionConfigRepository connectionConfigRepository,
+            DatabaseRepository databaseRepository, AuthenticationFacade authenticationFacade,
+            ImportService importService) {
+        return new DefaultScheduleFacade(connectionConfigRepository, databaseRepository, authenticationFacade,
+                importService);
     }
 }
