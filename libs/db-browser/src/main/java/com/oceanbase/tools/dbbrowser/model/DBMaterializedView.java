@@ -39,13 +39,9 @@ public class DBMaterializedView implements DBObject {
     private String ddl;
     private DBMaterializedViewRefreshMethod refreshMethod;
     private Long parallelismDegree;
-    // This property about automatic refresh is used when creating materialized view
     private DBMaterializedViewRefreshSchedule refreshSchedule;
     private Boolean enableQueryRewrite;
     private Boolean enableQueryComputation;
-    // These properties are used to demonstrate the automatic refresh configuration
-    private String startWith;
-    private String interval;
     /**
      * reuse properties in {@link DBView} to construct query statements
      */

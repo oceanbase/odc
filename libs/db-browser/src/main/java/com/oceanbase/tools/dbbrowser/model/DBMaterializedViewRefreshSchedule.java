@@ -15,13 +15,11 @@
  */
 package com.oceanbase.tools.dbbrowser.model;
 
-import java.util.Date;
-
-import com.ibm.icu.impl.duration.TimeUnit;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.Date;
 
 /**
  * @description:
@@ -41,6 +39,11 @@ public class DBMaterializedViewRefreshSchedule {
     private Long interval;
 
     private TimeUnit unit;
+
+    // These properties are used to demonstrate the automatic refresh configuration
+    private String startExpression;
+
+    private String nextExpression;
 
     public enum TimeUnit {
         SECOND,

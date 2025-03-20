@@ -31,6 +31,7 @@ import com.oceanbase.tools.dbbrowser.editor.DBObjectOperator;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLObjectOperator;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewRefreshSchedule;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.parser.SqlParser;
@@ -65,8 +66,12 @@ public class OBMySQLMVExtension implements MViewExtensionPoint {
                 && Objects.nonNull(createMaterializedView.getViewOptions().getRefreshOption())
                 && Objects.nonNull(createMaterializedView.getViewOptions().getRefreshOption().getStartWith())
                 && Objects.nonNull(createMaterializedView.getViewOptions().getRefreshOption().getNext())) {
-            mView.setStartWith(createMaterializedView.getViewOptions().getRefreshOption().getStartWith().getText());
-            mView.setInterval(createMaterializedView.getViewOptions().getRefreshOption().getNext().getText());
+            DBMaterializedViewRefreshSchedule refreshSchedule = new DBMaterializedViewRefreshSchedule();
+            refreshSchedule.setStartExpression(
+                    createMaterializedView.getViewOptions().getRefreshOption().getStartWith().getText());
+            refreshSchedule
+                    .setNextExpression(createMaterializedView.getViewOptions().getRefreshOption().getNext().getText());
+            mView.setRefreshSchedule(refreshSchedule);
         }
         mView.setSchemaName(schemaName);
         mView.setName(mViewName);
