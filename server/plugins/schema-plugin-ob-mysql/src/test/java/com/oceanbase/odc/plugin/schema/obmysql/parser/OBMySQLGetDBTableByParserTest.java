@@ -27,7 +27,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
 import com.oceanbase.tools.dbbrowser.parser.SqlParser;
 import com.oceanbase.tools.sqlparser.statement.Statement;
-import com.oceanbase.tools.sqlparser.statement.creatematerializedview.CreateMaterializedView;
+import com.oceanbase.tools.sqlparser.statement.createmview.CreateMaterializedView;
 import com.oceanbase.tools.sqlparser.statement.createtable.Partition;
 
 import lombok.extern.slf4j.Slf4j;

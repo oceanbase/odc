@@ -61,8 +61,12 @@ public class OBMySQLMVExtension implements MViewExtensionPoint {
         DBMaterializedView mView = schemaAccessor.getMView(schemaName, mViewName);
         String ddl = schemaAccessor.getTableDDL(schemaName, mViewName);
         CreateMaterializedView createMaterializedView = parseTableDDL(ddl);
-        if (Objects.nonNull(createMaterializedView.getViewOptions())) {
-
+        if (Objects.nonNull(createMaterializedView.getViewOptions())
+                && Objects.nonNull(createMaterializedView.getViewOptions().getRefreshOption())
+                && Objects.nonNull(createMaterializedView.getViewOptions().getRefreshOption().getStartWith())
+                && Objects.nonNull(createMaterializedView.getViewOptions().getRefreshOption().getNext())) {
+            mView.setStartWith(createMaterializedView.getViewOptions().getRefreshOption().getStartWith().getText());
+            mView.setInterval(createMaterializedView.getViewOptions().getRefreshOption().getNext().getText());
         }
         mView.setSchemaName(schemaName);
         mView.setName(mViewName);
