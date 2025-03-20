@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-CREATE TABLE IF NOT EXISTS `import_file_row_history` (
-     `id` bigint(20) NOT NULL AUTO_INCREMENT,
-     `file_signature` varchar(255) NOT NULL,
-     `row_id` varchar(255) NOT NULL,
-     `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-     `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-     PRIMARY KEY (`id`)
+CREATE TABLE IF NOT EXISTS import_file_row_history (
+     id bigint(20) NOT NULL AUTO_INCREMENT,
+     file_signature varchar(255) NOT NULL,
+     row_id varchar(255) NOT NULL,
+     create_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+     update_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+     PRIMARY KEY (id)
 )
