@@ -63,8 +63,10 @@ public class MySQLCreateMaterializedViewFactory extends OBParserBaseVisitor<Crea
         Select asSelect = new MySQLSelectFactory(ctx.view_select_stmt().select_stmt()).generate();
         CreateMaterializedView createMView = new CreateMaterializedView(ctx, viewName, asSelect);
         if (ctx.mv_column_list() != null) {
-            createMView.setColumns(ctx.mv_column_list().column_name_list().column_name()
+            if (ctx.mv_column_list().column_name_list() != null) {
+                createMView.setColumns(ctx.mv_column_list().column_name_list().column_name()
                     .stream().map(RuleContext::getText).collect(Collectors.toList()));
+            }
             if (ctx.mv_column_list().out_of_line_primary_index() != null) {
                 createMView.setPrimaryKey((OutOfLineConstraint) new MySQLTableElementFactory(
                         ctx.mv_column_list().out_of_line_primary_index()).generate());
