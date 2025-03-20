@@ -50,7 +50,6 @@ public class BaseScheduleRowData implements Encryptable {
     @NotNull
     private ScheduleType type;
 
-    @NotNull
     private TriggerConfig triggerConfig;
 
     private String description;

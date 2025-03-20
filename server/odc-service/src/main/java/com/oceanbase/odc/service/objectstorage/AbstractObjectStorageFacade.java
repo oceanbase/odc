@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.objectstorage;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -89,15 +90,23 @@ public abstract class AbstractObjectStorageFacade implements ObjectStorageFacade
     /**
      * Save object in a specific bucket
      */
+    @Deprecated
     abstract public ObjectMetadata putObject(String bucket, String objectName, long totalLength,
             InputStream inputStream,
             boolean isPersistent);
 
+    abstract public ObjectMetadata putObject(String bucket, String objectName, File file,
+            boolean isPersistent);
+
     /**
-     * Save object in a specific bucket, for migration
+     * Save object in a specific bucket, for migration inputStream not save
      */
+    @Deprecated
     abstract public ObjectMetadata putObject(String bucket, String objectName, long userId, long totalLength,
             InputStream inputStream,
+            boolean isPersistent);
+
+    abstract public ObjectMetadata putObject(String bucket, String objectName, long userId, File file,
             boolean isPersistent);
 
     public ObjectMetadata putObject(String bucket, String objectName, long totalLength,
@@ -105,18 +114,37 @@ public abstract class AbstractObjectStorageFacade implements ObjectStorageFacade
         return putObject(bucket, objectName, totalLength, inputStream, true);
     }
 
+    public ObjectMetadata putObject(String bucket, File file) {
+        return putObject(bucket, file.getName(), file, true);
+    }
+
+    @Deprecated
     public ObjectMetadata putTempObject(String bucket, String objectName, long totalLength, InputStream inputStream) {
         return putObject(bucket, objectName, totalLength, inputStream, false);
     }
 
+    public ObjectMetadata putTempObject(String bucket, File file) {
+        return putObject(bucket, file.getName(), file, false);
+    }
+
+    @Deprecated
     public ObjectMetadata putTempObject(String bucket, String objectName, long userId, long totalLength,
             InputStream inputStream) {
         return putObject(bucket, objectName, userId, totalLength, inputStream, false);
     }
 
+    @Deprecated
     public ObjectMetadata putObject(String bucket, String objectName, long userId, long totalLength,
             InputStream inputStream) {
         return putObject(bucket, objectName, userId, totalLength, inputStream, true);
+    }
+
+    public ObjectMetadata putTempObject(String bucket, String objectName, long userId, File file) {
+        return putObject(bucket, objectName, userId, file, false);
+    }
+
+    public ObjectMetadata putObject(String bucket, String objectName, long userId, File file) {
+        return putObject(bucket, objectName, userId, file, true);
     }
 
     @Override
