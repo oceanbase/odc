@@ -104,6 +104,36 @@ public class ScriptServiceWithLocalTest extends ServiceTestEnv {
         assertEquals(new HashSet<>(Arrays.asList(file1Name, file2Name)), fileNamesInZip);
     }
 
+    @Test
+    public void testBatchDownload_DuplicateObjectName() throws IOException {
+        List<ScriptMeta> scriptMetas = scriptService.batchPutScript(
+                Arrays.asList(createMultipartFile(file1Name, file1Content),
+                        createMultipartFile(file1Name, file1Content),
+                        createMultipartFile(file2Name, file2Content)));
+        assertEquals(3, scriptMetas.size());
+        List<Long> scriptIds = scriptMetas.stream().map(ScriptMeta::getId).collect(Collectors.toList());
+        ResponseEntity<InputStreamResource> entity = scriptService.batchDownload(scriptIds);
+        assertNotNull(entity);
+
+        InputStreamResource body = entity.getBody();
+        assertNotNull(body);
+        Set<String> fileNamesInZip = new HashSet<>();
+        try (ZipInputStream zipInputStream = new ZipInputStream(body.getInputStream())) {
+            ZipEntry entry;
+            while ((entry = zipInputStream.getNextEntry()) != null) {
+                String name = entry.getName();
+                if (name.equals(file1Name) || name.equals(file1Name + "(2)")) {
+                    fileNamesInZip.add(name);
+                    assertEquals(file1Content, IOUtils.toString(zipInputStream, StandardCharsets.UTF_8));
+                } else if (name.equals(file2Name)) {
+                    fileNamesInZip.add(name);
+                    assertEquals(file2Content, IOUtils.toString(zipInputStream, StandardCharsets.UTF_8));
+                }
+            }
+        }
+        assertEquals(new HashSet<>(Arrays.asList(file1Name, file1Name + "(2)", file2Name)), fileNamesInZip);
+    }
+
     private MultipartFile createMultipartFile(String fileName, String content) throws IOException {
         InputStream inputStream = new ByteArrayInputStream(content.getBytes());
         return new MockMultipartFile(fileName, fileName, "text/plain", inputStream);
