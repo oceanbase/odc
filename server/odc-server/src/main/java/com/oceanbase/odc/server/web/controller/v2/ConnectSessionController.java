@@ -100,8 +100,9 @@ public class ConnectSessionController {
 
     @ApiOperation(value = "createSessionByDatabase", notes = "create connect session by a Database")
     @RequestMapping(value = "/databases/{databaseId:[\\d]+}/sessions", method = RequestMethod.POST)
-    public SuccessResponse<CreateSessionResp> createSessionByDatabase(@PathVariable Long databaseId) {
-        return Responses.success(sessionService.createByDatabaseId(databaseId));
+    public SuccessResponse<CreateSessionResp> createSessionByDatabase(@PathVariable Long databaseId,
+            @RequestParam("isRecordDbAccessHistory") Boolean isRecordDbAccessHistory) {
+        return Responses.success(sessionService.createByDatabaseId(databaseId, isRecordDbAccessHistory));
     }
 
     @RequestMapping(value = {"/sessions/{sessionId}/sqls/streamExecute"}, method = RequestMethod.POST)
