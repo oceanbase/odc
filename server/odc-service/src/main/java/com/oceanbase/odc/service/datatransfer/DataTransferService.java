@@ -325,7 +325,7 @@ public class DataTransferService {
                     .withDelimiter(csvConfig.getColumnSeparator())
                     .withEscape(format.toChar("\\"))
                     .withQuote(csvConfig.getColumnDelimiter())
-                    .withRecordSeparator(format.toChar(csvConfig.getLineSeparator()))
+                    .withRecordSeparator(csvConfig.getLineSeparator())
                     .withNullString("\\N")
                     .withEmptyString("\\E")
                     .withIgnoreEmptyLines(true)
