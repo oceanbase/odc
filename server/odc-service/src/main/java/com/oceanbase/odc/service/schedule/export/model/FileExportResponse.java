@@ -13,28 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.model;
+package com.oceanbase.odc.service.schedule.export.model;
 
-/**
- * @Author：tinker
- * @Date: 2022/11/18 17:18
- * @Descripition:
- */
-public enum ScheduleType {
+import lombok.Data;
+import lombok.ToString.Exclude;
 
-    SQL_PLAN,
+@Data
+public class FileExportResponse {
 
-    PARTITION_PLAN,
+    private String downloadUrl;
 
-    DATA_ARCHIVE,
-
-    DATA_DELETE,
-
-    ONLINE_SCHEMA_CHANGE_COMPLETE,
-
-    LOGICAL_DATABASE_CHANGE,
-
-    LOAD_DATA;
-
+    @Exclude
+    private String secret;
 }
-
