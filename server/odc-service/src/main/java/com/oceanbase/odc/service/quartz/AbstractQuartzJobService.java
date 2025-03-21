@@ -24,6 +24,7 @@ import org.quartz.Job;
 import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
+import org.quartz.JobExecutionContext;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
@@ -202,6 +203,10 @@ public abstract class AbstractQuartzJobService {
 
     public void triggerJob(JobKey key, JobDataMap triggerDataMap) throws SchedulerException {
         getScheduler().triggerJob(key, triggerDataMap);
+    }
+
+    public List<JobExecutionContext> getCurrentlyExecutingJobs() throws SchedulerException {
+        return getScheduler().getCurrentlyExecutingJobs();
     }
 
     public List<? extends Trigger> getJobTriggers(JobKey jobKey) throws SchedulerException {

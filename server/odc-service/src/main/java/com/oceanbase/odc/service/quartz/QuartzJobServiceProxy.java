@@ -19,6 +19,7 @@ import java.util.List;
 
 import org.quartz.Job;
 import org.quartz.JobDataMap;
+import org.quartz.JobExecutionContext;
 import org.quartz.JobKey;
 import org.quartz.SchedulerException;
 import org.quartz.Trigger;
@@ -82,6 +83,10 @@ public class QuartzJobServiceProxy {
 
     public void rescheduleJob(TriggerKey triggerKey, Trigger newTrigger) throws SchedulerException {
         getQuartzJobServiceImpl(triggerKey.getGroup()).rescheduleJob(triggerKey, newTrigger);
+    }
+
+    public List<JobExecutionContext> getCurrentlyExecutingJobs(JobKey jobKey) throws SchedulerException {
+        return getQuartzJobServiceImpl(jobKey.getGroup()).getCurrentlyExecutingJobs();
     }
 
     public void triggerJob(JobKey key) throws SchedulerException {
