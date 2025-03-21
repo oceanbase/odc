@@ -43,6 +43,8 @@ import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameter
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter.ApplyDatabase;
+import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter;
+import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter.ApplyTable;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 
 import lombok.extern.slf4j.Slf4j;
@@ -76,6 +78,8 @@ public class RecordDBAccessHistoryAspect {
                         recordDbAccessHistoryOfMultipleDatabaseChange(createFlowInstanceReq);
                     } else if (createFlowInstanceReq.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION) {
                         recordDbAccessHistoryOfApplyDatabase(createFlowInstanceReq);
+                    } else if (createFlowInstanceReq.getTaskType() == TaskType.APPLY_TABLE_PERMISSION) {
+                        recordDbAccessHistoryOfApplyTable(createFlowInstanceReq);
                     } else if (createFlowInstanceReq.getTaskType() == TaskType.STRUCTURE_COMPARISON) {
                         recordDbAccessHistoryOfDbStructCmp(createFlowInstanceReq);
                     } else if (createFlowInstanceReq.getTaskType() == TaskType.ALTER_SCHEDULE) {
@@ -158,7 +162,16 @@ public class RecordDBAccessHistoryAspect {
         if (CollectionUtils.isNotEmpty(parameters.getDatabases())) {
             Set<Long> dbIds = parameters.getDatabases().stream().filter(Objects::nonNull).map(ApplyDatabase::getId)
                     .collect(Collectors.toSet());
-            databaseService.recordDatabaseAccessHistory(dbIds);;
+            databaseService.recordDatabaseAccessHistory(dbIds);
+        }
+    }
+
+    private void recordDbAccessHistoryOfApplyTable(CreateFlowInstanceReq createFlowInstanceReq) {
+        ApplyTableParameter parameters = (ApplyTableParameter) (createFlowInstanceReq.getParameters());
+        if (CollectionUtils.isNotEmpty(parameters.getTables())) {
+            Set<Long> dbIds = parameters.getTables().stream().filter(Objects::nonNull).map(ApplyTable::getDatabaseId)
+                    .collect(Collectors.toSet());
+            databaseService.recordDatabaseAccessHistory(dbIds);
         }
     }
 
