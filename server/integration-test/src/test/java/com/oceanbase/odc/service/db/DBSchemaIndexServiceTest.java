@@ -302,14 +302,14 @@ public class DBSchemaIndexServiceTest extends ServiceTestEnv {
         return user;
     }
 
-    private Map<Long, List<Project>> getProjectMap() {
-        Map<Long, List<Project>> map = new HashMap<>();
+    private Map<Long, Project> getProjectMap() {
+        Map<Long, Project> map = new HashMap<>();
         Project validProject = new Project();
         validProject.setId(VALID_PROJECT_ID);
-        map.put(VALID_PROJECT_ID, Collections.singletonList(validProject));
+        map.put(VALID_PROJECT_ID, validProject);
         Project invalidProject = new Project();
         invalidProject.setId(INVALID_PROJECT_ID);
-        map.put(INVALID_PROJECT_ID, Collections.singletonList(invalidProject));
+        map.put(INVALID_PROJECT_ID, invalidProject);
         return map;
     }
 

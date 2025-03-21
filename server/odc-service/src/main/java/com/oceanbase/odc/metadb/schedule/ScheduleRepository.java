@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.metadb.schedule;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -31,6 +32,7 @@ import org.springframework.data.repository.query.Param;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 
 /**
  * @Author：tinker
@@ -76,4 +78,10 @@ public interface ScheduleRepository extends OdcJpaRepository<ScheduleEntity, Lon
                 .and(OdcJpaRepository.eq(ScheduleEntity_.organizationId, params.getOrganizationId()));
         return findAll(specification, pageable);
     }
+
+    List<ScheduleEntity> findByOrganizationIdAndIdInAndProjectIdIn(Long organizationId, Collection<Long> ids,
+            Collection<Long> projectIds);
+
+    List<ScheduleEntity> findByOrganizationIdAndProjectIdInAndTypeIn(Long organizationId, Collection<Long> projectIds,
+            Collection<ScheduleType> types);
 }

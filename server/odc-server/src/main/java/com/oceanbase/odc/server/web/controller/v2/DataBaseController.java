@@ -31,12 +31,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.core.shared.constant.ConnectType;
+import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.PaginatedResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.DatabaseSyncManager;
 import com.oceanbase.odc.service.connection.database.model.CreateDatabaseReq;
+import com.oceanbase.odc.service.connection.database.model.DBAccessHistoryReq;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.connection.database.model.DeleteDatabasesReq;
@@ -127,6 +129,14 @@ public class DataBaseController {
     public SuccessResponse<Boolean> modifyDatabasesOwners(@PathVariable Long projectId,
             @RequestBody ModifyDatabaseOwnerReq req) {
         return Responses.success(databaseService.modifyDatabasesOwners(projectId, req));
+    }
+
+    @ApiOperation(value = "listDatabaseAccessHistories", notes = "list accessed database histories ")
+    @RequestMapping(value = "/databaseAccessHistories", method = RequestMethod.GET)
+    public ListResponse<Database> listDatabaseAccessHistories(
+            @RequestParam(name = "limit", defaultValue = "10") Integer historiesLimit) {
+        DBAccessHistoryReq req = new DBAccessHistoryReq().setHistoryCount(historiesLimit);
+        return Responses.list(databaseService.listDatabaseAccessHistory(req));
     }
 
     @ApiOperation(value = "updateDatabaseRemark", notes = "update databases remark")
