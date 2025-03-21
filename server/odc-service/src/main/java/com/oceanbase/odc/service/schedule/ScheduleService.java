@@ -736,7 +736,7 @@ public class ScheduleService {
         ScheduleEntity scheduleEntity = nullSafeGetById(scheduleId);
         JobKey key = QuartzKeyGenerator.generateJobKey(scheduleEntity);
         ScheduleStatus status = scheduleEntity.getStatus();
-        if (status == ScheduleStatus.PAUSE) {
+        if (status == ScheduleStatus.PAUSE || status == ScheduleStatus.TERMINATED) {
             return;
         }
         Optional<ScheduleTask> latestTask = getLatestTask(scheduleId);
