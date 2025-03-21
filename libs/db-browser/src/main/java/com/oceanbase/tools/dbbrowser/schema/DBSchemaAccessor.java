@@ -152,6 +152,11 @@ public interface DBSchemaAccessor {
     DBMaterializedView getMView(String schemaName, String mViewName);
 
     /**
+     * Get constraints in the specified materialized view
+     */
+    List<DBTableConstraint> listMViewConstraints(String schemaName, String mViewName);
+
+    /**
      * List all variables
      */
     List<DBVariable> showVariables();

@@ -996,7 +996,7 @@ out_of_line_index
     ;
 
 out_of_line_primary_index
-    : PRIMARY KEY index_name? index_using_algorithm? LeftParen column_name_list RightParen opt_index_options?
+    : PRIMARY KEY index_name? index_using_algorithm? LeftParen column_name_list RightParen index_using_algorithm? opt_index_options?
     ;
 
 out_of_line_unique_index
@@ -1732,31 +1732,33 @@ default_tablegroup
     ;
 
 create_view_stmt
-    : CREATE (OR REPLACE)? view_attribute MATERIALIZED? VIEW view_name (LeftParen column_name_list RightParen)? (TABLE_ID COMP_EQ INTNUM)? AS view_select_stmt view_check_option?
+    : CREATE (OR REPLACE)? view_attribute VIEW view_name (LeftParen column_name_list RightParen)? (TABLE_ID COMP_EQ INTNUM)? AS view_select_stmt view_check_option?
     | ALTER view_attribute VIEW view_name (LeftParen column_name_list RightParen)? (TABLE_ID COMP_EQ INTNUM)? AS view_select_stmt view_check_option?
     ;
 
 create_mview_stmt
-    : CREATE MATERIALIZED VIEW view_name (LeftParen mv_column_list RightParen)? table_option_list? (partition_option | auto_partition_option)? (with_column_group)? create_mview_opts AS view_select_stmt ((WITH CHECK OPTION) | (WITH CASCADED CHECK OPTION) | (WITH LOCAL CHECK OPTION))?
+    : CREATE MATERIALIZED VIEW view_name (LeftParen mv_column_list RightParen)? table_option_list? (partition_option | auto_partition_option)? with_column_group? create_mview_opts? AS view_select_stmt view_check_option?
     ;
 
 create_mview_opts
     : mview_refresh_opt
-    | mview_refresh_opt mview_enable_disable ON QUERY COMPUTATION
-    | mview_refresh_opt mview_enable_disable QUERY REWRITE
-    | mview_refresh_opt mview_enable_disable ON QUERY COMPUTATION mview_enable_disable QUERY REWRITE
-    | mview_refresh_opt mview_enable_disable QUERY REWRITE mview_enable_disable ON QUERY COMPUTATION
+    | mview_refresh_opt on_query_computation_clause
+    | mview_refresh_opt query_rewrite_clause
+    | mview_refresh_opt on_query_computation_clause query_rewrite_clause
+    | mview_refresh_opt query_rewrite_clause on_query_computation_clause
     ;
 
-mview_enable_disable
-    : DISABLE
-    | ENABLE
+query_rewrite_clause
+    : (DISABLE | ENABLE) QUERY REWRITE
+    ;
+
+on_query_computation_clause
+    : (DISABLE | ENABLE) ON QUERY COMPUTATION
     ;
 
 mview_refresh_opt
     : REFRESH mv_refresh_method mv_refresh_on_clause mv_refresh_interval
     | NEVER REFRESH
-    | empty
     ;
 
 mv_refresh_on_clause
@@ -1817,7 +1819,7 @@ view_name
 
 mv_column_list
     : column_name_list
-    | (column_name_list Comma)? PRIMARY KEY index_using_algorithm? LeftParen column_name_list RightParen index_using_algorithm? (COMMENT STRING_VALUE)?
+    | (column_name_list Comma)? out_of_line_primary_index
     ;
 
 opt_tablet_id

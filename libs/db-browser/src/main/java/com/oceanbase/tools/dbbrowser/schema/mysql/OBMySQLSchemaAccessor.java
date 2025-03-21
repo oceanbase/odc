@@ -53,6 +53,7 @@ import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
 import com.oceanbase.tools.sqlparser.statement.Statement;
+import com.oceanbase.tools.sqlparser.statement.createmview.CreateMaterializedView;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 
 import lombok.NonNull;
@@ -133,6 +134,19 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
         DBView dbView = fillColumnInfoByDesc(mView.generateDBView());
         mView.setColumns(dbView.getColumns());
         return mView;
+    }
+
+    @Override
+    public List<DBTableConstraint> listMViewConstraints(String schemaName, String mViewName) {
+        MySQLSqlBuilder sb = new MySQLSqlBuilder();
+        sb.append(
+                "select table_name from oceanbase.__all_table where table_id = (select data_table_id from oceanbase.__all_table a, oceanbase.__all_database b where a.database_id = b.database_id and b. database_name = ")
+                .value(schemaName)
+                .append(" and a.table_name = ")
+                .value(mViewName)
+                .append(")");
+        String containerName = jdbcOperations.queryForObject(sb.toString(), String.class);
+        return listTableConstraints(schemaName, containerName);
     }
 
     @Override
@@ -313,6 +327,12 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
         Statement statement = SqlParser.parseMysqlStatement(ddl);
         if (statement instanceof CreateTable) {
             CreateTable stmt = (CreateTable) statement;
+            return stmt.getColumnGroupElements() == null ? Collections.emptyList()
+                    : stmt.getColumnGroupElements().stream()
+                            .map(DBColumnGroupElement::ofColumnGroupElement).collect(Collectors.toList());
+        }
+        if (statement instanceof CreateMaterializedView) {
+            CreateMaterializedView stmt = (CreateMaterializedView) statement;
             return stmt.getColumnGroupElements() == null ? Collections.emptyList()
                     : stmt.getColumnGroupElements().stream()
                             .map(DBColumnGroupElement::ofColumnGroupElement).collect(Collectors.toList());

@@ -25,11 +25,18 @@ import com.oceanbase.tools.dbbrowser.model.DBForeignKeyModifyRule;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
+import com.oceanbase.tools.dbbrowser.parser.SqlParser;
+import com.oceanbase.tools.sqlparser.statement.Statement;
+import com.oceanbase.tools.sqlparser.statement.createmview.CreateMaterializedView;
+import com.oceanbase.tools.sqlparser.statement.createtable.Partition;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author jingtian
  * @date 2023/7/6
  */
+@Slf4j
 public class OBMySQLGetDBTableByParserTest {
 
     @Test
@@ -999,6 +1006,914 @@ public class OBMySQLGetDBTableByParserTest {
         Assert.assertEquals("sp0", subpartition.getPartitionDefinitions().get(0).getName());
         Assert.assertEquals("p0",
                 subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getMViewPartition_Hash_use_column_1_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mv_allsyntax` (PRIMARY KEY (prim)) " +
+                "DEFAULT CHARSET = gbk ROW_FORMAT = DYNAMIC COMPRESSION = 'zstd_1.3.8' REPLICA_NUM = 1 BLOCK_SIZE = 16384 USE_BLOOM_FILTER = FALSE ENABLE_MACRO_BLOCK_BLOOM_FILTER = FALSE TABLET_SIZE = 134217728 PCTFREE = 10 PARALLEL 5\n"
+                +
+                " partition by hash(prim) PARTITIONS 6\n" +
+                " WITH COLUMN GROUP(all columns, each column) REFRESH COMPLETE ON DEMAND START WITH sysdate() NEXT sysdate() + INTERVAL 1 DAY ENABLE QUERY REWRITE ENABLE ON QUERY COMPUTATION "
+                +
+                "AS select `zijia`.`test_mv_base`.`col1` AS `prim`,`zijia`.`test_mv_base`.`col2` AS `col2`,`zijia`.`test_mv_base`.`col3` AS `col3`,`zijia`.`test_mv_base`.`col4` AS `col4` from `zijia`.`test_mv_base`";
+
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(6L, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.HASH, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals("prim", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+    }
+
+    @Test
+    public void getMViewPartition_Hash_use_column_2_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mv_allsyntax` (PRIMARY KEY (prim)) " +
+                "DEFAULT CHARSET = gbk ROW_FORMAT = DYNAMIC COMPRESSION = 'zstd_1.3.8' REPLICA_NUM = 1 BLOCK_SIZE = 16384 USE_BLOOM_FILTER = FALSE ENABLE_MACRO_BLOCK_BLOOM_FILTER = FALSE TABLET_SIZE = 134217728 PCTFREE = 10 PARALLEL 5\n"
+                +
+                " partition by hash(prim) (PARTITION t1, PARTITION t2)\n" +
+                " WITH COLUMN GROUP(all columns, each column) REFRESH COMPLETE ON DEMAND START WITH sysdate() NEXT sysdate() + INTERVAL 1 DAY ENABLE QUERY REWRITE ENABLE ON QUERY COMPUTATION "
+                +
+                "AS select `zijia`.`test_mv_base`.`col1` AS `prim`,`zijia`.`test_mv_base`.`col2` AS `col2`,`zijia`.`test_mv_base`.`col3` AS `col3`,`zijia`.`test_mv_base`.`col4` AS `col4` from `zijia`.`test_mv_base`";
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(2L, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.HASH, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals("prim", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+    }
+
+    @Test
+    public void getMViewPartition_Hash_use_expression_1_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mView`" +
+                " partition by hash(a+b) PARTITIONS 3\n" +
+                "AS select * from table1";
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(3L, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.HASH, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals("a+b", mViewDBTablePartition.getPartitionOption().getExpression());
+    }
+
+    @Test
+    public void getMViewPartition_key_Success() {
+        String ddl =
+                "CREATE MATERIALIZED VIEW `zijia`.`test_mView` PARTITION BY KEY(id,gmt_create) PARTITIONS 3 AS select * from table1;";
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(3L, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.KEY, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals(2, mViewDBTablePartition.getPartitionOption().getColumnNames().size());
+    }
+
+    @Test
+    public void getMViewPartition_range_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mView`"
+                + "PARTITION BY RANGE(id) (\n"
+                + "    PARTITION p0 VALUES LESS THAN (6),\n"
+                + "    PARTITION p1 VALUES LESS THAN (11),\n"
+                + "    PARTITION p2 VALUES LESS THAN (16),\n"
+                + "    PARTITION p3 VALUES LESS THAN (21)\n"
+                + ")"
+                + "AS select * from table1";
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(4L, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.RANGE, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals("id", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+    }
+
+    @Test
+    public void getMViewPartition_range_use_expression_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mView`\n"
+                + "PARTITION BY RANGE(UNIX_TIMESTAMP(log_date))\n"
+                + "(PARTITION M202001 VALUES LESS THAN(UNIX_TIMESTAMP('2020/02/01')),\n"
+                + " PARTITION M202002 VALUES LESS THAN(UNIX_TIMESTAMP('2020/03/01')),\n"
+                + " PARTITION M202003 VALUES LESS THAN(UNIX_TIMESTAMP('2020/04/01')),\n"
+                + " PARTITION M202004 VALUES LESS THAN(MAXVALUE)\n"
+                + ")"
+                + "AS select * from table1;";
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(4L, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.RANGE, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals("UNIX_TIMESTAMP(log_date)", mViewDBTablePartition.getPartitionOption().getExpression());
+    }
+
+    @Test
+    public void getMViewPartition_range_columns_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mView`\n"
+                + "PARTITION BY RANGE COLUMNS(a,b,c) (\n"
+                + "PARTITION p0 VALUES LESS THAN (5,10,'ggg'),\n"
+                + "PARTITION p1 VALUES LESS THAN (10,20,'mmm'),\n"
+                + "PARTITION p2 VALUES LESS THAN (15,30,'sss'),\n"
+                + "PARTITION p3 VALUES LESS THAN (MAXVALUE,MAXVALUE,MAXVALUE)\n"
+                + " )"
+                + "AS select * from table1;";
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(4L, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals(3, mViewDBTablePartition.getPartitionOption().getColumnNames().size());
+    }
+
+    @Test
+    public void getMViewPartition_list_use_expression_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mView`\n"
+                + "PARTITION BY LIST(col1+col2)\n"
+                + "(PARTITION p0 VALUES IN (1, 2, 3),\n"
+                + "PARTITION p1 VALUES IN (5, 6, 7),\n"
+                + "PARTITION p2 VALUES IN (DEFAULT)\n"
+                + ")"
+                + "AS select * from table1;";
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(3L, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.LIST, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals("col1+col2", mViewDBTablePartition.getPartitionOption().getExpression());
+    }
+
+    @Test
+    public void getMViewPartition_list_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mView`\n"
+                + "PARTITION BY LIST(col)\n"
+                + "(PARTITION p0 VALUES IN (1, 2, 3),\n"
+                + "PARTITION p1 VALUES IN (5, 6, 7),\n"
+                + "PARTITION p2 VALUES IN (8, 9, 10)\n"
+                + ")"
+                + "as select * from table1;";
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(3L, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.LIST, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals("col", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+    }
+
+    @Test
+    public void getMViewPartition_list_columns_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mView`\n"
+                + "PARTITION BY LIST COLUMNS(city,renewal) (\n"
+                + "    PARTITION pRegion_1 VALUES IN(('Oskarshamn','2010-02-01'), ('Högsby','2010-02-01'), "
+                + "('Mönsterås','2010-02-01')),\n"
+                + "    PARTITION pRegion_2 VALUES IN(('Vimmerby','2010-03-01'), ('Hultsfred','2010-03-01'), "
+                + "('Västervik','2010-03-01')),\n"
+                + "    PARTITION pRegion_3 VALUES IN(('Nässjö','2010-04-01'), ('Eksjö','2010-04-01'), "
+                + "('Vetlanda','2010-04-01')),\n"
+                + "    PARTITION pRegion_4 VALUES IN(('Uppvidinge','2010-05-01'), ('Alvesta','2010-05-01'), "
+                + "('Växjo','2010-05-01'))\n"
+                + ")"
+                + "as select * from table1;";
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(4L, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.LIST_COLUMNS, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals(2, mViewDBTablePartition.getPartitionOption().getColumnNames().size());
+    }
+
+    @Test
+    public void getMViewPartition_secondary_key_use_template_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mView`\n"
+                + "partition by range columns(`col1`) subpartition by key(col2) subpartition template (\n"
+                + "subpartition p0,\n"
+                + "subpartition p1,\n"
+                + "subpartition p2)\n"
+                + "(partition p0 values less than (100),\n"
+                + "partition p1 values less than (200),\n"
+                + "partition p2 values less than (300))"
+                + "as select * from table1;";
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(3L, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals(true, mViewDBTablePartition.getSubpartitionTemplated());
+        Assert.assertEquals("col1", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(DBTablePartitionType.KEY,
+                mViewDBTablePartition.getSubpartition().getPartitionOption().getType());
+        Assert.assertEquals(1, mViewDBTablePartition.getSubpartition().getPartitionOption().getColumnNames().size());
+        Assert.assertTrue(mViewDBTablePartition.getSubpartition().getPartitionOption().getPartitionsNum() == 3);
+    }
+
+    @Test
+    public void getMViewPartition_secondary_key_no_template_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mView`\n"
+                + "PARTITION BY LIST(col1)\n"
+                + "SUBPARTITION BY KEY(`col2`, `col3`)\n"
+                + "(PARTITION p0 VALUES IN(100)\n"
+                + "  (SUBPARTITION sp0,\n"
+                + "   SUBPARTITION sp1,\n"
+                + "   SUBPARTITION sp2),\n"
+                + " PARTITION p1 VALUES IN(200)\n"
+                + "  (SUBPARTITION sp3,\n"
+                + "   SUBPARTITION sp4,\n"
+                + "   SUBPARTITION sp5)\n"
+                + ")"
+                + "as select * from table1;";
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(2L, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.LIST, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals(false, mViewDBTablePartition.getSubpartitionTemplated());
+        Assert.assertEquals("col1", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("col3",
+                mViewDBTablePartition.getSubpartition().getPartitionOption().getColumnNames().get(1));
+        Assert.assertEquals(DBTablePartitionType.KEY,
+                mViewDBTablePartition.getSubpartition().getPartitionOption().getType());
+        Assert.assertEquals(2, mViewDBTablePartition.getSubpartition().getPartitionOption().getColumnNames().size());
+        Assert.assertNull(mViewDBTablePartition.getSubpartition().getPartitionOption().getPartitionsNum());
+    }
+
+    @Test
+    public void getMViewPartition_secondary_hash_use_template_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mView`"
+                + "partition by range columns(col1, col2) subpartition by hash(col2+col1) subpartition "
+                + "template (\n"
+                + "subpartition p0,\n"
+                + "subpartition p1,\n"
+                + "subpartition p2,\n"
+                + "subpartition p3)\n"
+                + "(partition p0 values less than (100,100),\n"
+                + "partition p1 values less than (200, 200),\n"
+                + "partition p2 values less than (300, 300))"
+                + "as select * from table1;";
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(3L, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals(true, mViewDBTablePartition.getSubpartitionTemplated());
+        Assert.assertEquals(DBTablePartitionType.HASH,
+                mViewDBTablePartition.getSubpartition().getPartitionOption().getType());
+        Assert.assertEquals("col2+col1", mViewDBTablePartition.getSubpartition().getPartitionOption().getExpression());
+        Assert.assertTrue(mViewDBTablePartition.getSubpartition().getPartitionOption().getPartitionsNum() == 4);
+    }
+
+    @Test
+    public void getMViewPartition_secondary_hash_no_template_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mView`\n"
+                + "PARTITION BY RANGE(`col1`)\n"
+                + "SUBPARTITION BY HASH(`col2`)\n"
+                + "(PARTITION p0 VALUES LESS THAN(100)\n"
+                + " (SUBPARTITION sp0,\n"
+                + "  SUBPARTITION sp1,\n"
+                + "  SUBPARTITION sp2),\n"
+                + "PARTITION p1 VALUES LESS THAN(200)\n"
+                + " (SUBPARTITION sp3,\n"
+                + "  SUBPARTITION sp4,\n"
+                + "  SUBPARTITION sp5)\n"
+                + ")"
+                + "as select * from table1;";
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(2L, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals(DBTablePartitionType.RANGE, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals(false, mViewDBTablePartition.getSubpartitionTemplated());
+        Assert.assertEquals(DBTablePartitionType.HASH,
+                mViewDBTablePartition.getSubpartition().getPartitionOption().getType());
+        Assert.assertEquals("col2",
+                mViewDBTablePartition.getSubpartition().getPartitionOption().getColumnNames().get(0));
+        Assert.assertNull(mViewDBTablePartition.getSubpartition().getPartitionOption().getPartitionsNum());
+    }
+
+    @Test
+    public void getMViewSubpartition_RangeColumnsAndRange_ColumnKey_Template_Success() {
+        String ddl = " CREATE MATERIALIZED VIEW `zijia`.`test_mView`\n"
+                + "PARTITION BY RANGE COLUMNS(col1)\n"
+                + "SUBPARTITION BY RANGE(col3)\n"
+                + "SUBPARTITION TEMPLATE \n"
+                + "(SUBPARTITION mp0 VALUES LESS THAN(1000),\n"
+                + " SUBPARTITION mp1 VALUES LESS THAN(2000),\n"
+                + " SUBPARTITION mp2 VALUES LESS THAN(3000)\n"
+                + ")\n"
+                + "(PARTITION p0 VALUES LESS THAN(100),\n"
+                + " PARTITION p1 VALUES LESS THAN(200),\n"
+                + " PARTITION p2 VALUES LESS THAN(300)\n"
+                + ")"
+                + "as select * from table1;\n";
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals(1, mViewDBTablePartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(3L, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", mViewDBTablePartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", mViewDBTablePartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        DBTablePartition subpartition = mViewDBTablePartition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.RANGE, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col3", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertTrue(mViewDBTablePartition.getSubpartitionTemplated());
+        Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0smp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(1, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
+        Assert.assertEquals("1000", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getMViewSubpartition_RangeColumnsAndRange_ExpressionKey_Template_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mView` \n"
+                + "PARTITION BY RANGE COLUMNS(col1)\n"
+                + "SUBPARTITION BY RANGE(ABS(col3))\n"
+                + "SUBPARTITION TEMPLATE \n"
+                + "(SUBPARTITION mp0 VALUES LESS THAN(1000),\n"
+                + " SUBPARTITION mp1 VALUES LESS THAN(2000),\n"
+                + " SUBPARTITION mp2 VALUES LESS THAN(3000)\n"
+                + ")\n"
+                + "(PARTITION p0 VALUES LESS THAN(100),\n"
+                + " PARTITION p1 VALUES LESS THAN(200),\n"
+                + " PARTITION p2 VALUES LESS THAN(300)\n"
+                + ")"
+                + "as select * from table1; \n";
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals(1, mViewDBTablePartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(3L, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", mViewDBTablePartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", mViewDBTablePartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        DBTablePartition subpartition = mViewDBTablePartition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.RANGE, subpartition.getPartitionOption().getType());
+        Assert.assertEquals("ABS(col3)", subpartition.getPartitionOption().getExpression());
+        Assert.assertTrue(mViewDBTablePartition.getSubpartitionTemplated());
+        Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0smp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(1, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
+        Assert.assertEquals("1000", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getMViewSubpartition_RangeAndRange_ColumnKey_NoTemplate_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mView`  \n"
+                + "       PARTITION BY RANGE(col1)\n"
+                + "       SUBPARTITION BY RANGE(col2)\n"
+                + "        (PARTITION p0 VALUES LESS THAN(100)\n"
+                + "           (SUBPARTITION sp0 VALUES LESS THAN(100),\n"
+                + "            SUBPARTITION sp1 VALUES LESS THAN(200),\n"
+                + "            SUBPARTITION sp2 VALUES LESS THAN(300),\n"
+                + "            SUBPARTITION sp3 VALUES LESS THAN(400)\n"
+                + "           ),\n"
+                + "         PARTITION p1 VALUES LESS THAN(200)\n"
+                + "           (SUBPARTITION sp4 VALUES LESS THAN(100),\n"
+                + "            SUBPARTITION sp5 VALUES LESS THAN(200),\n"
+                + "            SUBPARTITION sp6 VALUES LESS THAN(300),\n"
+                + "            SUBPARTITION sp7 VALUES LESS THAN(400)\n"
+                + "            )\n"
+                + "         )"
+                + "as select * from table1;\n";
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(DBTablePartitionType.RANGE, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals(1, mViewDBTablePartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(2L, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", mViewDBTablePartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", mViewDBTablePartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        DBTablePartition subpartition = mViewDBTablePartition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.RANGE, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertFalse(mViewDBTablePartition.getSubpartitionTemplated());
+        Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
+        Assert.assertEquals("sp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(1, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
+        Assert.assertEquals("100", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getMViewSubpartition_RangeAndRange_ExpressionKey_NoTemplate_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mView` \n"
+                + "       PARTITION BY RANGE(col1)\n"
+                + "       SUBPARTITION BY RANGE(UNIX_TIMESTAMP(col2))\n"
+                + "        (PARTITION p0 VALUES LESS THAN(100)\n"
+                + "           (SUBPARTITION sp0 VALUES LESS THAN(UNIX_TIMESTAMP('2021/04/01')),\n"
+                + "            SUBPARTITION sp1 VALUES LESS THAN(UNIX_TIMESTAMP('2021/07/01')),\n"
+                + "            SUBPARTITION sp2 VALUES LESS THAN(UNIX_TIMESTAMP('2021/10/01')),\n"
+                + "            SUBPARTITION sp3 VALUES LESS THAN(UNIX_TIMESTAMP('2022/01/01'))\n"
+                + "           ),\n"
+                + "         PARTITION p1 VALUES LESS THAN(200)\n"
+                + "           (SUBPARTITION sp4 VALUES LESS THAN(UNIX_TIMESTAMP('2021/04/01')),\n"
+                + "            SUBPARTITION sp5 VALUES LESS THAN(UNIX_TIMESTAMP('2021/07/01')),\n"
+                + "            SUBPARTITION sp6 VALUES LESS THAN(UNIX_TIMESTAMP('2021/10/01')),\n"
+                + "            SUBPARTITION sp7 VALUES LESS THAN(UNIX_TIMESTAMP('2022/01/01'))\n"
+                + "            )\n"
+                + "         )"
+                + "as select * from table1;\n";
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(DBTablePartitionType.RANGE, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals(1, mViewDBTablePartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(2L, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", mViewDBTablePartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", mViewDBTablePartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        DBTablePartition subpartition = mViewDBTablePartition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.RANGE, subpartition.getPartitionOption().getType());
+        Assert.assertEquals("UNIX_TIMESTAMP(col2)", subpartition.getPartitionOption().getExpression());
+        Assert.assertFalse(mViewDBTablePartition.getSubpartitionTemplated());
+        Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
+        Assert.assertEquals("sp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(1, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
+        Assert.assertEquals("UNIX_TIMESTAMP('2021/04/01')",
+                subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getMViewSubpartition_RangeColumnsAndRangeColumns_ColumnKey_Template_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mView`\n"
+                + "       PARTITION BY RANGE COLUMNS(col1)\n"
+                + "       SUBPARTITION BY RANGE COLUMNS(col2,col3)\n"
+                + "       SUBPARTITION TEMPLATE \n"
+                + "        (SUBPARTITION mp0 VALUES LESS THAN(1000,1000),\n"
+                + "         SUBPARTITION mp1 VALUES LESS THAN(2000,2000),\n"
+                + "         SUBPARTITION mp2 VALUES LESS THAN(3000,3000)\n"
+                + "        )\n"
+                + "        (PARTITION p0 VALUES LESS THAN(100),\n"
+                + "         PARTITION p1 VALUES LESS THAN(200),\n"
+                + "         PARTITION p2 VALUES LESS THAN(300)\n"
+                + "        ) "
+                + "as select * from table1";
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals(1, mViewDBTablePartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(3, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", mViewDBTablePartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", mViewDBTablePartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        DBTablePartition subpartition = mViewDBTablePartition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(2, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("col3", subpartition.getPartitionOption().getColumnNames().get(1));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertTrue(mViewDBTablePartition.getSubpartitionTemplated());
+        Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0smp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
+        Assert.assertEquals("1000", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("1000", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(1));
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getMViewSubpartition_RangeColumnsAndRangeColumns_ColumnKey_NoTemplate_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mView`\n"
+                + "PARTITION BY RANGE COLUMNS(col1)\n"
+                + "SUBPARTITION BY RANGE COLUMNS(col2,col3)\n"
+                + "(PARTITION p0 VALUES LESS THAN(100)\n"
+                + "  (SUBPARTITION sp0 VALUES LESS THAN(1000,1000),\n"
+                + "   SUBPARTITION sp1 VALUES LESS THAN(2000,2000),\n"
+                + "   SUBPARTITION sp2 VALUES LESS THAN(3000,3000)),\n"
+                + " PARTITION p1 VALUES LESS THAN(200)\n"
+                + "  (SUBPARTITION sp3 VALUES LESS THAN(1000,1000),\n"
+                + "   SUBPARTITION sp4 VALUES LESS THAN(2000,2000),\n"
+                + "   SUBPARTITION sp5 VALUES LESS THAN(3000,3000))\n"
+                + ")"
+                + "as select * from table1;\n";
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals(1, mViewDBTablePartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(2, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", mViewDBTablePartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", mViewDBTablePartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        DBTablePartition subpartition = mViewDBTablePartition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(2, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("col3", subpartition.getPartitionOption().getColumnNames().get(1));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertFalse(mViewDBTablePartition.getSubpartitionTemplated());
+        Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
+        Assert.assertEquals("sp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
+        Assert.assertEquals("1000", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("1000", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(1));
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getMViewSubpartition_RangeColumnsAndList_ColumnKey_Template_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mView` \n"
+                + "       PARTITION BY RANGE COLUMNS(col1)\n"
+                + "       SUBPARTITION BY LIST(col2)\n"
+                + "       SUBPARTITION TEMPLATE \n"
+                + "        (SUBPARTITION mp0 VALUES IN(1,3),\n"
+                + "         SUBPARTITION mp1 VALUES IN(4,6),\n"
+                + "         SUBPARTITION mp2 VALUES IN(7)\n"
+                + "        )\n"
+                + "        (PARTITION p0 VALUES LESS THAN(100),\n"
+                + "         PARTITION p1 VALUES LESS THAN(200),\n"
+                + "         PARTITION p2 VALUES LESS THAN(300)\n"
+                + "        ) "
+                + "as select * from table1\n";
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals(1, mViewDBTablePartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(3, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", mViewDBTablePartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", mViewDBTablePartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        DBTablePartition subpartition = mViewDBTablePartition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.LIST, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertTrue(mViewDBTablePartition.getSubpartitionTemplated());
+        Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0smp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getValuesList().size());
+        Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+        Assert.assertEquals("3", subpartition.getPartitionDefinitions().get(0).getValuesList().get(1).get(0));
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getMViewSubpartition_RangeColumnsAndList_ExpressionKey_Template_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mView` \n"
+                + "       PARTITION BY RANGE COLUMNS(col1)\n"
+                + "       SUBPARTITION BY LIST(abs(col2))\n"
+                + "       SUBPARTITION TEMPLATE \n"
+                + "        (SUBPARTITION mp0 VALUES IN(1,3),\n"
+                + "         SUBPARTITION mp1 VALUES IN(4,6),\n"
+                + "         SUBPARTITION mp2 VALUES IN(7)\n"
+                + "        )\n"
+                + "        (PARTITION p0 VALUES LESS THAN(100),\n"
+                + "         PARTITION p1 VALUES LESS THAN(200),\n"
+                + "         PARTITION p2 VALUES LESS THAN(300)\n"
+                + "        ) "
+                + "as select * from table1\n";
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals(1, mViewDBTablePartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(3, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", mViewDBTablePartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", mViewDBTablePartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        DBTablePartition subpartition = mViewDBTablePartition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.LIST, subpartition.getPartitionOption().getType());
+        Assert.assertEquals("abs(col2)", subpartition.getPartitionOption().getExpression());
+        Assert.assertTrue(mViewDBTablePartition.getSubpartitionTemplated());
+        Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0smp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getValuesList().size());
+        Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+        Assert.assertEquals("3", subpartition.getPartitionDefinitions().get(0).getValuesList().get(1).get(0));
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getMViewSubpartition_RangeColumnsAndList_ColumnKey_NoTemplate_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mView`\n"
+                + "       PARTITION BY RANGE COLUMNS(col1)\n"
+                + "       SUBPARTITION BY LIST(col2)\n"
+                + "       (PARTITION p0 VALUES LESS THAN(100)\n"
+                + "         (SUBPARTITION sp0 VALUES IN(1,3),\n"
+                + "          SUBPARTITION sp1 VALUES IN(4,6),\n"
+                + "          SUBPARTITION sp2 VALUES IN(7,9)),\n"
+                + "        PARTITION p1 VALUES LESS THAN(200)\n"
+                + "         (SUBPARTITION sp3 VALUES IN(1,3))\n"
+                + "       )"
+                + "as select * from table1\n";
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals(1, mViewDBTablePartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(2, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", mViewDBTablePartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", mViewDBTablePartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("col1", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+        DBTablePartition subpartition = mViewDBTablePartition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.LIST, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertFalse(mViewDBTablePartition.getSubpartitionTemplated());
+        Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
+        Assert.assertEquals("sp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getValuesList().size());
+        Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+        Assert.assertEquals("3", subpartition.getPartitionDefinitions().get(0).getValuesList().get(1).get(0));
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getMViewSubpartition_RangeColumnsAndList_ExpressionKey_NoTemplate_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mView`\n"
+                + "       PARTITION BY RANGE COLUMNS(col1)\n"
+                + "       SUBPARTITION BY LIST(abs(col2))\n"
+                + "       (PARTITION p0 VALUES LESS THAN(100)\n"
+                + "         (SUBPARTITION sp0 VALUES IN(1,3),\n"
+                + "          SUBPARTITION sp1 VALUES IN(4,6),\n"
+                + "          SUBPARTITION sp2 VALUES IN(7,9)),\n"
+                + "        PARTITION p1 VALUES LESS THAN(200)\n"
+                + "         (SUBPARTITION sp3 VALUES IN(1,3))\n"
+                + "       )"
+                + "as select * from table1; \n";
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals(1, mViewDBTablePartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(2, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", mViewDBTablePartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", mViewDBTablePartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("col1", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+        DBTablePartition subpartition = mViewDBTablePartition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.LIST, subpartition.getPartitionOption().getType());
+        Assert.assertEquals("abs(col2)", subpartition.getPartitionOption().getExpression());
+        Assert.assertFalse(mViewDBTablePartition.getSubpartitionTemplated());
+        Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
+        Assert.assertEquals("sp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getValuesList().size());
+        Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+        Assert.assertEquals("3", subpartition.getPartitionDefinitions().get(0).getValuesList().get(1).get(0));
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getMViewSubpartition_RangeColumnsAndListColumns_ColumnKey_Template_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mView`\n"
+                + "       PARTITION BY RANGE COLUMNS(col1)\n"
+                + "       SUBPARTITION BY LIST COLUMNS(col2,col3)\n"
+                + "       SUBPARTITION TEMPLATE \n"
+                + "        (SUBPARTITION mp0 VALUES IN((1,1),(3,3)),\n"
+                + "         SUBPARTITION mp1 VALUES IN((4,4),(6,6)),\n"
+                + "         SUBPARTITION mp2 VALUES IN((7,7),(8,8))\n"
+                + "        )\n"
+                + "        (PARTITION p0 VALUES LESS THAN(100),\n"
+                + "         PARTITION p1 VALUES LESS THAN(200),\n"
+                + "         PARTITION p2 VALUES LESS THAN(300)\n"
+                + "        )"
+                + "as select * from table1\n";
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals(1, mViewDBTablePartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(3, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", mViewDBTablePartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", mViewDBTablePartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("col1", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+        DBTablePartition subpartition = mViewDBTablePartition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.LIST_COLUMNS, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(2, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("col3", subpartition.getPartitionOption().getColumnNames().get(1));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertTrue(mViewDBTablePartition.getSubpartitionTemplated());
+        Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0smp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getValuesList().size());
+        Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+        Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(1));
+        Assert.assertEquals("3", subpartition.getPartitionDefinitions().get(0).getValuesList().get(1).get(0));
+        Assert.assertEquals("3", subpartition.getPartitionDefinitions().get(0).getValuesList().get(1).get(1));
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getMViewSubpartition_RangeColumnsAndListColumns_ColumnKey_NoTemplate_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mView`\n"
+                + "       PARTITION BY RANGE COLUMNS(col1)\n"
+                + "       SUBPARTITION BY LIST COLUMNS(col2,col3)\n"
+                + "       (PARTITION p0 VALUES LESS THAN(100)\n"
+                + "         (SUBPARTITION sp0 VALUES IN(1,1),\n"
+                + "          SUBPARTITION sp1 VALUES IN(4,4),\n"
+                + "          SUBPARTITION sp2 VALUES IN(7,7)),\n"
+                + "        PARTITION p1 VALUES LESS THAN(200)\n"
+                + "         (SUBPARTITION sp3 VALUES IN(9,9),\n"
+                + "          SUBPARTITION sp4 VALUES IN(10,10),\n"
+                + "          SUBPARTITION sp5 VALUES IN(11,11))\n"
+                + "       )"
+                + "as select * from table1\n";
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals(1, mViewDBTablePartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(2, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", mViewDBTablePartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", mViewDBTablePartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("col1", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+        DBTablePartition subpartition = mViewDBTablePartition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.LIST_COLUMNS, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(2, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals("col3", subpartition.getPartitionOption().getColumnNames().get(1));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertFalse(mViewDBTablePartition.getSubpartitionTemplated());
+        Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
+        Assert.assertEquals("sp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getValuesList().size());
+        Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+        Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(1).get(0));
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getMViewSubpartition_RangeColumnsAndHash_ColumnKey_Template_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mView`\n"
+                + " partition by range columns(col1) subpartition by hash(col2) subpartition template (\n"
+                + "subpartition `p0`,\n"
+                + "subpartition `p1`,\n"
+                + "subpartition `p2`,\n"
+                + "subpartition `p3`,\n"
+                + "subpartition `p4`)\n"
+                + "(partition `p0` values less than (100),\n"
+                + "partition `p1` values less than (200),\n"
+                + "partition `p2` values less than (300))"
+                + "as select * from table1";
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals(1, mViewDBTablePartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(3, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", mViewDBTablePartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", mViewDBTablePartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("col1", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+        DBTablePartition subpartition = mViewDBTablePartition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.HASH, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertTrue(mViewDBTablePartition.getSubpartitionTemplated());
+        Assert.assertEquals(5L, subpartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0sp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getMViewSubpartition_RangeColumnsAndHash_ExpressionKey_Template_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mView` \n"
+                + " partition by range columns(col1) subpartition by hash(abs(col2)) subpartition template (\n"
+                + "subpartition `p0`,\n"
+                + "subpartition `p1`,\n"
+                + "subpartition `p2`,\n"
+                + "subpartition `p3`,\n"
+                + "subpartition `p4`)\n"
+                + "(partition `p0` values less than (100),\n"
+                + "partition `p1` values less than (200),\n"
+                + "partition `p2` values less than (300))"
+                + "as select * from table1";
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals(1, mViewDBTablePartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(3, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", mViewDBTablePartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", mViewDBTablePartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("col1", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+        DBTablePartition subpartition = mViewDBTablePartition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.HASH, subpartition.getPartitionOption().getType());
+        Assert.assertEquals("abs(col2)", subpartition.getPartitionOption().getExpression());
+        Assert.assertTrue(mViewDBTablePartition.getSubpartitionTemplated());
+        Assert.assertEquals(5L, subpartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0sp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getMViewSubpartition_RangeColumnsAndHash_ColumnKey_NoTemplate_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mView`  \n"
+                + "       PARTITION BY RANGE COLUMNS(col1)\n"
+                + "       SUBPARTITION BY HASH(col2)\n"
+                + "       (PARTITION p0 VALUES LESS THAN(100)\n"
+                + "         (SUBPARTITION sp0,\n"
+                + "          SUBPARTITION sp1,\n"
+                + "          SUBPARTITION sp2),\n"
+                + "        PARTITION p1 VALUES LESS THAN(200)\n"
+                + "         (SUBPARTITION sp3,\n"
+                + "          SUBPARTITION sp4,\n"
+                + "          SUBPARTITION sp5)\n"
+                + "       )"
+                + "as select * from table1; \n";
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals(1, mViewDBTablePartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(2, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", mViewDBTablePartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", mViewDBTablePartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("col1", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+        DBTablePartition subpartition = mViewDBTablePartition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.HASH, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertFalse(mViewDBTablePartition.getSubpartitionTemplated());
+        Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
+        Assert.assertEquals("sp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getMViewSubpartition_RangeColumnsAndHash_ExpressionKey_NoTemplate_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mView` \n"
+                + "       PARTITION BY RANGE COLUMNS(col1)\n"
+                + "       SUBPARTITION BY HASH(abs(col2))\n"
+                + "       (PARTITION p0 VALUES LESS THAN(100)\n"
+                + "         (SUBPARTITION sp0,\n"
+                + "          SUBPARTITION sp1,\n"
+                + "          SUBPARTITION sp2),\n"
+                + "        PARTITION p1 VALUES LESS THAN(200)\n"
+                + "         (SUBPARTITION sp3,\n"
+                + "          SUBPARTITION sp4,\n"
+                + "          SUBPARTITION sp5)\n"
+                + "       )"
+                + "as select * from table1; \n";
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals(1, mViewDBTablePartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(2, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", mViewDBTablePartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", mViewDBTablePartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("col1", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+        DBTablePartition subpartition = mViewDBTablePartition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.HASH, subpartition.getPartitionOption().getType());
+        Assert.assertEquals("abs(col2)", subpartition.getPartitionOption().getExpression());
+        Assert.assertFalse(mViewDBTablePartition.getSubpartitionTemplated());
+        Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
+        Assert.assertEquals("sp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getMViewSubpartition_RangeColumnsAndKey_ColumnKey_Template_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mView` "
+                + " partition by range columns(col1) subpartition by key(col2) subpartition template (\n"
+                + "subpartition `p0`,\n"
+                + "subpartition `p1`,\n"
+                + "subpartition `p2`)\n"
+                + "(partition `p0` values less than (100),\n"
+                + "partition `p1` values less than (200),\n"
+                + "partition `p2` values less than (300))"
+                + " as select * from table1";
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals(1, mViewDBTablePartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(3, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", mViewDBTablePartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", mViewDBTablePartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("col1", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+        DBTablePartition subpartition = mViewDBTablePartition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.KEY, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col2", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertTrue(mViewDBTablePartition.getSubpartitionTemplated());
+        Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0sp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    @Test
+    public void getMViewSubpartition_RangeColumnsAndKey_ColumnKey_NoTemplate_Success() {
+        String ddl = "CREATE MATERIALIZED VIEW `zijia`.`test_mView`"
+                + " partition by range columns(col1) subpartition by key(col3)\n"
+                + "(partition `p0` values less than (100) (\n"
+                + "subpartition `sp0`,\n"
+                + "subpartition `sp1`,\n"
+                + "subpartition `sp2`),\n"
+                + "partition `p1` values less than (200) (\n"
+                + "subpartition `sp3`,\n"
+                + "subpartition `sp4`))"
+                + "as select * from table1";
+        DBTablePartition mViewDBTablePartition = getMViewDBTablePartition(ddl);
+        Assert.assertEquals(DBTablePartitionType.RANGE_COLUMNS, mViewDBTablePartition.getPartitionOption().getType());
+        Assert.assertEquals(1, mViewDBTablePartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col1", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertEquals(2, mViewDBTablePartition.getPartitionOption().getPartitionsNum().longValue());
+        Assert.assertEquals("p0", mViewDBTablePartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("100", mViewDBTablePartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+        Assert.assertEquals("col1", mViewDBTablePartition.getPartitionOption().getColumnNames().get(0));
+        DBTablePartition subpartition = mViewDBTablePartition.getSubpartition();
+        Assert.assertEquals(DBTablePartitionType.KEY, subpartition.getPartitionOption().getType());
+        Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
+        Assert.assertEquals("col3", subpartition.getPartitionOption().getColumnNames().get(0));
+        Assert.assertNull(subpartition.getPartitionOption().getExpression());
+        Assert.assertFalse(mViewDBTablePartition.getSubpartitionTemplated());
+        Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
+        Assert.assertEquals("sp0", subpartition.getPartitionDefinitions().get(0).getName());
+        Assert.assertEquals("p0",
+                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+    }
+
+    private DBTablePartition getMViewDBTablePartition(String ddl) {
+        CreateMaterializedView statement = null;
+        try {
+            Statement value = SqlParser.parseMysqlStatement(ddl);
+            if (value instanceof CreateMaterializedView) {
+                statement = (CreateMaterializedView) value;
+            }
+        } catch (Exception e) {
+            log.warn("Failed to parse table ddl, error message={}", e.getMessage());
+        }
+
+        Partition partition = statement.getPartition();
+        OBMySQLGetDBTableByParser parser = new OBMySQLGetDBTableByParser(ddl);
+        DBTablePartition dbTablePartition = parser.getPartition(partition);
+        return dbTablePartition;
     }
 
 }

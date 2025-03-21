@@ -205,6 +205,11 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
+    public List<DBTableConstraint> listMViewConstraints(String schemaName, String mViewName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
     public List<DBVariable> showVariables() {
         throw new UnsupportedOperationException("Not supported yet");
     }

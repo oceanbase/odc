@@ -52,6 +52,7 @@ import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessors;
 import com.oceanbase.tools.dbbrowser.util.VersionUtils;
+import com.oceanbase.tools.sqlparser.statement.createtable.ColumnAttributes;
 
 import lombok.Data;
 
@@ -178,6 +179,15 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
             DBMaterializedView test_mv_never = accessor.getMView(getOBMySQLDataBaseName(), "test_mv_never");
             Assert.assertEquals(DBMaterializedViewRefreshMethod.NEVER_REFRESH, test_mv_never.getRefreshMethod());
 
+        }
+    }
+
+    @Test
+    public void listMViewConstraints_Success() {
+        if (isSupportMaterializedView) {
+            List<DBTableConstraint> constraints =
+                    accessor.listMViewConstraints(getOBMySQLDataBaseName(), "test_mv_allSyntax");
+            Assert.assertTrue(constraints.size() >= 1);
         }
     }
 
