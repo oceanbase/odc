@@ -61,16 +61,17 @@ public class OBOracleMViewExtension implements MViewExtensionPoint {
         DBMaterializedView mView = schemaAccessor.getMView(schemaName, mViewName);
         String ddl = schemaAccessor.getTableDDL(schemaName, mViewName);
         CreateMaterializedView createMaterializedView = parseTableDDL(ddl);
-        if(Objects.nonNull(createMaterializedView)){
+        if (Objects.nonNull(createMaterializedView)) {
             if (Objects.nonNull(createMaterializedView.getViewOptions())
-                && Objects.nonNull(createMaterializedView.getViewOptions().getRefreshOption())
-                && Objects.nonNull(createMaterializedView.getViewOptions().getRefreshOption().getStartWith())
-                && Objects.nonNull(createMaterializedView.getViewOptions().getRefreshOption().getNext())) {
+                    && Objects.nonNull(createMaterializedView.getViewOptions().getRefreshOption())
+                    && Objects.nonNull(createMaterializedView.getViewOptions().getRefreshOption().getStartWith())
+                    && Objects.nonNull(createMaterializedView.getViewOptions().getRefreshOption().getNext())) {
                 DBMaterializedViewRefreshSchedule refreshSchedule = new DBMaterializedViewRefreshSchedule();
                 refreshSchedule.setStartExpression(
-                    createMaterializedView.getViewOptions().getRefreshOption().getStartWith().getText());
+                        createMaterializedView.getViewOptions().getRefreshOption().getStartWith().getText());
                 refreshSchedule
-                    .setNextExpression(createMaterializedView.getViewOptions().getRefreshOption().getNext().getText());
+                        .setNextExpression(
+                                createMaterializedView.getViewOptions().getRefreshOption().getNext().getText());
                 mView.setRefreshSchedule(refreshSchedule);
             }
             if (Objects.nonNull(createMaterializedView.getPartition())) {
