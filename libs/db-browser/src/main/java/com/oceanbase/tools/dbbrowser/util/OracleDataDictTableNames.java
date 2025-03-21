@@ -34,6 +34,9 @@ public interface OracleDataDictTableNames {
      */
     String VIEWS();
 
+    /**
+     * materialized view
+     */
     String MVIEWS();
 
     /**

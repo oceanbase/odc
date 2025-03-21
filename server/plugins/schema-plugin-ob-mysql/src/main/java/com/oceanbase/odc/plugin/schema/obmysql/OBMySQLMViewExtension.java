@@ -62,26 +62,29 @@ public class OBMySQLMViewExtension implements MViewExtensionPoint {
         DBMaterializedView mView = schemaAccessor.getMView(schemaName, mViewName);
         String ddl = schemaAccessor.getTableDDL(schemaName, mViewName);
         CreateMaterializedView createMaterializedView = parseTableDDL(ddl);
-        if (Objects.nonNull(createMaterializedView.getViewOptions())
+        if(Objects.nonNull(createMaterializedView)){
+            if (Objects.nonNull(createMaterializedView.getViewOptions())
                 && Objects.nonNull(createMaterializedView.getViewOptions().getRefreshOption())
                 && Objects.nonNull(createMaterializedView.getViewOptions().getRefreshOption().getStartWith())
                 && Objects.nonNull(createMaterializedView.getViewOptions().getRefreshOption().getNext())) {
-            DBMaterializedViewRefreshSchedule refreshSchedule = new DBMaterializedViewRefreshSchedule();
-            refreshSchedule.setStartExpression(
+                DBMaterializedViewRefreshSchedule refreshSchedule = new DBMaterializedViewRefreshSchedule();
+                refreshSchedule.setStartExpression(
                     createMaterializedView.getViewOptions().getRefreshOption().getStartWith().getText());
-            refreshSchedule
+                refreshSchedule
                     .setNextExpression(createMaterializedView.getViewOptions().getRefreshOption().getNext().getText());
-            mView.setRefreshSchedule(refreshSchedule);
+                mView.setRefreshSchedule(refreshSchedule);
+            }
+            if (Objects.nonNull(createMaterializedView.getPartition())) {
+                OBMySQLGetDBTableByParser parser = new OBMySQLGetDBTableByParser(ddl);
+                mView.setPartition(parser.getPartition(createMaterializedView.getPartition()));
+            }
         }
+
         mView.setSchemaName(schemaName);
         mView.setName(mViewName);
         mView.setColumns(schemaAccessor.listTableColumns(schemaName, mViewName));
         mView.setConstraints(schemaAccessor.listMViewConstraints(schemaName, mViewName));
         mView.setIndexes(schemaAccessor.listTableIndexes(schemaName, mViewName));
-        OBMySQLGetDBTableByParser parser = new OBMySQLGetDBTableByParser(ddl);
-        if (Objects.nonNull(createMaterializedView.getPartition())) {
-            mView.setPartition(parser.getPartition(createMaterializedView.getPartition()));
-        }
         mView.setDdl(ddl);
         try {
             mView.setColumnGroups(schemaAccessor.listTableColumnGroups(schemaName, mViewName));
