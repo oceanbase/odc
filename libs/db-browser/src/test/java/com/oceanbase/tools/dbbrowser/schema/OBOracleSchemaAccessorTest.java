@@ -15,6 +15,23 @@
  */
 package com.oceanbase.tools.dbbrowser.schema;
 
+import static com.oceanbase.tools.dbbrowser.editor.DBObjectUtilsTest.loadAsString;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.stream.Collectors;
+
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.springframework.jdbc.core.JdbcTemplate;
+
 import com.oceanbase.tools.dbbrowser.env.BaseTestEnv;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
@@ -48,23 +65,8 @@ import com.oceanbase.tools.dbbrowser.schema.OBMySQLSchemaAccessorTest.DataType;
 import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessors;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
 import com.oceanbase.tools.dbbrowser.util.VersionUtils;
+
 import lombok.Data;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.springframework.jdbc.core.JdbcTemplate;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.stream.Collectors;
-
-import static com.oceanbase.tools.dbbrowser.editor.DBObjectUtilsTest.loadAsString;
 
 /**
  * @author jingtian

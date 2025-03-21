@@ -15,6 +15,26 @@
  */
 package com.oceanbase.tools.dbbrowser.schema.oracle;
 
+import java.sql.ResultSetMetaData;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.Validate;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.JdbcOperations;
+import org.springframework.jdbc.core.RowMapper;
+
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBColumnTypeDisplay;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
@@ -64,27 +84,9 @@ import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
+
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.Validate;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
-import org.springframework.jdbc.core.JdbcOperations;
-import org.springframework.jdbc.core.RowMapper;
-
-import java.sql.ResultSetMetaData;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 /**
  * applicable to OB [4.3.5.1, ~)
