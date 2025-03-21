@@ -47,6 +47,7 @@ public class SqlCheckTaskResult implements Serializable, FlowTaskResult {
     private Integer maxLevel;
     private String error;
     private String fileName;
+    private Long affectedRows;
     private List<CheckResult> results = new ArrayList<>();
 
     public static SqlCheckTaskResult success(@NonNull List<CheckViolation> violations) {

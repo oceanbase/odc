@@ -63,4 +63,8 @@ class SqlCheckRuleWrapper implements SqlCheckRule {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public SqlCheckRule getRule() {
+        return this.target;
+    }
 }

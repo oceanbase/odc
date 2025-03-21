@@ -13,34 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.sqlcheck;
+package com.oceanbase.odc.service.task.base.precheck;
 
+import java.util.Collections;
 import java.util.List;
 
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
-import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
-import com.oceanbase.tools.sqlparser.statement.Statement;
 
-import lombok.NonNull;
+import lombok.Data;
+import lombok.experimental.Accessors;
 
 /**
- * {@link SqlCheckRule}
- *
- * @author yh263208
- * @date 2022-12-26 11:32
- * @since ODC_release_4.1.0
+ * @Author: ysj
+ * @Date: 2025/3/15 18:16
+ * @Since: 4.3.4
+ * @Description:
  */
-public interface SqlCheckRule {
+@Data
+@Accessors(chain = true)
+public class PreCheckResult {
+    private long affectedRows;
+    private List<CheckViolation> checkViolations;
 
-    SqlCheckRuleType getType();
-
-    List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context);
-
-    List<DialectType> getSupportsDialectTypes();
-
-    default SqlCheckRule getRule() {
-        return this;
+    public static PreCheckResult empty() {
+        return new PreCheckResult()
+                .setAffectedRows(0L)
+                .setCheckViolations(Collections.emptyList());
     }
 
 }

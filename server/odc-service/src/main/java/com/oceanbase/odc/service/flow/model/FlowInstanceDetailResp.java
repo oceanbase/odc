@@ -101,6 +101,7 @@ public class FlowInstanceDetailResp {
     private Date completeTime;
     private List<FlowNodeInstanceDetailResp> nodeList;
     private Project project;
+    private Long affectedRows;
 
     @Getter
     @Builder

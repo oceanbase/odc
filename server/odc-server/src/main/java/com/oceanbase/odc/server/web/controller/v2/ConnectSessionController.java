@@ -66,6 +66,7 @@ import com.oceanbase.odc.service.sqlcheck.model.CheckResult;
 import com.oceanbase.odc.service.sqlcheck.model.MultipleSqlCheckReq;
 import com.oceanbase.odc.service.sqlcheck.model.MultipleSqlCheckResult;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckReq;
+import com.oceanbase.odc.service.sqlcheck.model.SqlCheckResponse;
 import com.oceanbase.odc.service.state.model.StateName;
 import com.oceanbase.odc.service.state.model.StatefulRoute;
 
@@ -127,9 +128,10 @@ public class ConnectSessionController {
     @ApiOperation(value = "sqlCheck", notes = "连接内对 sql 脚本的内容进行静态检查")
     @RequestMapping(value = "/sessions/{sessionId}/sqlCheck", method = RequestMethod.POST)
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
-    public ListResponse<CheckResult> check(@PathVariable String sessionId, @RequestBody SqlCheckReq req) {
+    public SuccessResponse<SqlCheckResponse<CheckResult>> check(@PathVariable String sessionId,
+            @RequestBody SqlCheckReq req) {
         ConnectionSession connectionSession = sessionService.nullSafeGet(SidUtils.getSessionId(sessionId), true);
-        return Responses.list(this.sqlCheckService.check(connectionSession, req));
+        return Responses.success(this.sqlCheckService.check(connectionSession, req));
     }
 
     /**
