@@ -76,7 +76,7 @@ public class OBMySQLMViewExtension implements MViewExtensionPoint {
                 mView.setRefreshSchedule(refreshSchedule);
             }
             if (Objects.nonNull(createMaterializedView.getPartition())) {
-                OBMySQLGetDBTableByParser parser = new OBMySQLGetDBTableByParser(ddl);
+                OBMySQLGetDBTableByParser parser = new OBMySQLGetDBTableByParser();
                 mView.setPartition(parser.getPartition(createMaterializedView.getPartition()));
             }
         }

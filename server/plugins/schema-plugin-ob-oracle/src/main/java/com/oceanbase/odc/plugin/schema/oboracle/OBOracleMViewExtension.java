@@ -24,6 +24,7 @@ import org.pf4j.Extension;
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.schema.api.MViewExtensionPoint;
+import com.oceanbase.odc.plugin.schema.oboracle.parser.OBOracleGetDBTableByParser;
 import com.oceanbase.odc.plugin.schema.oboracle.utils.DBAccessorUtil;
 import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.editor.DBObjectOperator;
@@ -75,8 +76,8 @@ public class OBOracleMViewExtension implements MViewExtensionPoint {
                 mView.setRefreshSchedule(refreshSchedule);
             }
             if (Objects.nonNull(createMaterializedView.getPartition())) {
-                // OBOracleGetDBTableByParser parser = new OBOracleGetDBTableByParser(ddl);
-                // mView.setPartition(parser.getPartition(createMaterializedView.getPartition()));
+                OBOracleGetDBTableByParser parser = new OBOracleGetDBTableByParser();
+                mView.setPartition(parser.getPartition(createMaterializedView.getPartition()));
             }
         }
 

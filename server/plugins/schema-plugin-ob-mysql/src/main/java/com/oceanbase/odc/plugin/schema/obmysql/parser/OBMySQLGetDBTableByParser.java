@@ -69,6 +69,10 @@ public class OBMySQLGetDBTableByParser extends BaseOBGetDBTableByParser {
     private final CreateTable createTableStmt;
     private static final char MYSQL_IDENTIFIER_WRAP_CHAR = '`';
 
+    public OBMySQLGetDBTableByParser() {
+        this.createTableStmt = null;
+    }
+
     public OBMySQLGetDBTableByParser(@NonNull String tableDDL) {
         this.createTableStmt = parseTableDDL(tableDDL);
     }
