@@ -50,7 +50,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Extension
 @Slf4j
-public class OBMySQLMVExtension implements MViewExtensionPoint {
+public class OBMySQLMViewExtension implements MViewExtensionPoint {
     @Override
     public List<DBObjectIdentity> list(Connection connection, String schemaName) {
         return getSchemaAccessor(connection).listMViews(schemaName);

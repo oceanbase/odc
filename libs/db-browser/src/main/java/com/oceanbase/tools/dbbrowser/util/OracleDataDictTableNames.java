@@ -34,6 +34,8 @@ public interface OracleDataDictTableNames {
      */
     String VIEWS();
 
+    String MVIEWS();
+
     /**
      * 表的列，和 TAB_COLS 的差别在于 TAB_COLUMNS 不包含系统自动生成的列
      */

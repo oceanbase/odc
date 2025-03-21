@@ -15,32 +15,15 @@
  */
 package com.oceanbase.tools.dbbrowser.schema.oracle;
 
-import java.sql.ResultSetMetaData;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
-
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.Validate;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
-import org.springframework.jdbc.core.JdbcOperations;
-import org.springframework.jdbc.core.RowMapper;
-
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBColumnTypeDisplay;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
 import com.oceanbase.tools.dbbrowser.model.DBIndexType;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewRefreshMethod;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
@@ -81,12 +64,30 @@ import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
-
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.Validate;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.JdbcOperations;
+import org.springframework.jdbc.core.RowMapper;
+
+import java.sql.ResultSetMetaData;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 /**
- * 适用于的 DB 版本：[4.3.2, ~)
+ * applicable to OB [4.3.5.1, ~)
  * 
  * @author jingtian
  */
@@ -1145,4 +1146,82 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         sb.append(" ORDER BY TABLE_NAME ASC");
         return jdbcOperations.queryForList(sb.toString(), String.class);
     }
+
+    @Override
+    public List<DBObjectIdentity> listMViews(String schemaName) {
+        OracleSqlBuilder sb = new OracleSqlBuilder();
+        sb.append("select MVIEW_NAME FROM ")
+                .append(dataDictTableNames.MVIEWS())
+                .append(" WHERE OWNER = ").value(schemaName);
+        return jdbcOperations.query(sb.toString(),
+                (rs, rowNum) -> DBObjectIdentity.of(schemaName, DBObjectType.MATERIALIZED_VIEW, rs.getString(1)));
+    }
+
+    @Override
+    public List<DBObjectIdentity> listAllMViewsLike(String viewNameLike) {
+        OracleSqlBuilder sb = new OracleSqlBuilder();
+        sb.append("select OWNER AS schema_name, MVIEW_NAME AS name,'MATERIALIZED_VIEW' AS type FROM ")
+                .append(dataDictTableNames.MVIEWS())
+                .append(" WHERE MVIEW_NAME LIKE ")
+                .value('%' + viewNameLike + '%')
+                .append(" ORDER BY name ASC;");
+        return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
+    }
+
+    @Override
+    public Boolean refreshMVData(DBMViewRefreshParameter parameter) {
+        OracleSqlBuilder sb = new OracleSqlBuilder();
+        sb.append("call DBMS_MVIEW.REFRESH('").append(parameter.getDatabaseName()).append(".")
+                .append(parameter.getMvName()).append("'");
+        if (Objects.nonNull(parameter.getRefreshMethod())) {
+            sb.append(",").value(parameter.getRefreshMethod().getValue());
+        }
+        if (Objects.nonNull(parameter.getParallelismDegree())) {
+            sb.append(",").append("refresh_parallel => ").append(parameter.getParallelismDegree() + "");
+        }
+        sb.append(");");
+        jdbcOperations.execute(sb.toString());
+        return Boolean.TRUE;
+    }
+
+    @Override
+    public DBMaterializedView getMView(String schemaName, String mViewName) {
+        OracleSqlBuilder getOptions = new OracleSqlBuilder();
+        getOptions.append("SELECT REFRESH_METHOD,REWRITE_ENABLED,ON_QUERY_COMPUTATION,REFRESH_DOP FROM ")
+                .append(dataDictTableNames.MVIEWS())
+                .append(" WHERE OWNER = ")
+                .value(schemaName).append(" AND MVIEW_NAME = ").value(mViewName);
+
+        DBMaterializedView mView = new DBMaterializedView();
+        mView.setName(mViewName);
+        mView.setSchemaName(schemaName);
+        jdbcOperations.query(getOptions.toString(), (rs) -> {
+            mView.setRefreshMethod(DBMaterializedViewRefreshMethod.getEnumByShowName(rs.getString("REFRESH_METHOD")));
+            mView.setEnableQueryRewrite(rs.getBoolean("REWRITE_ENABLED"));
+            mView.setEnableQueryComputation(rs.getBoolean("ON_QUERY_COMPUTATION"));
+            mView.setParallelismDegree(rs.getLong("REFRESH_DOP"));
+        });
+        OracleSqlBuilder getDDL = new OracleSqlBuilder();
+        getDDL.append("show create table ").identifier(schemaName).append(".").identifier(mViewName);
+        jdbcOperations.query(getDDL.toString(), (rs) -> {
+            mView.setDdl(rs.getString(2));
+        });
+        DBView dbView = fillColumnInfoByDesc(mView.generateDBView());
+        mView.setColumns(dbView.getColumns());
+        return mView;
+    }
+
+    @Override
+    public List<DBTableConstraint> listMViewConstraints(String schemaName, String mViewName) {
+        OracleSqlBuilder sb = new OracleSqlBuilder();
+        sb.append("select table_name from ")
+                .append("SYS.ALL_VIRTUAL_TABLE_REAL_AGENT where table_id = (select data_table_id from SYS.ALL_VIRTUAL_TABLE_REAL_AGENT a, SYS.ALL_VIRTUAL_DATABASE_REAL_AGENT b where a.database_id = b.database_id and b. database_name = ")
+                .value(schemaName)
+                .append(" and a.table_name = ")
+                .value(mViewName)
+                .append(")");
+        String containerName = jdbcOperations.queryForObject(sb.toString(), String.class);
+        return listTableConstraints(schemaName, containerName);
+    }
+
 }
