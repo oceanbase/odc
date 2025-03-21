@@ -44,4 +44,12 @@ public class OrganizationConfigMetaService {
         return new ArrayList<>(keyToConfigMetaMap.values());
     }
 
+    ConfigurationMeta getConfigMeta(String key) {
+        ConfigurationMeta configurationMeta = keyToConfigMetaMap.get(key);
+        if (configurationMeta == null) {
+            throw new IllegalArgumentException("Invalid configuration key: " + key);
+        }
+        return configurationMeta;
+    }
+
 }
