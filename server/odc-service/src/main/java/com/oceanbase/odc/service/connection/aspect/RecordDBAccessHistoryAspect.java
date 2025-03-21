@@ -15,9 +15,12 @@
  */
 package com.oceanbase.odc.service.connection.aspect;
 
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -31,9 +34,16 @@ import org.springframework.stereotype.Component;
 
 import com.google.common.collect.Sets;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
+import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
+import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
+import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
+import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter;
+import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter.ApplyDatabase;
+import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -62,10 +72,19 @@ public class RecordDBAccessHistoryAspect {
             for (Object arg : args) {
                 if (arg instanceof CreateFlowInstanceReq) {
                     CreateFlowInstanceReq createFlowInstanceReq = (CreateFlowInstanceReq) arg;
-                    if (createFlowInstanceReq.getDatabaseId() != null) {
+                    if (createFlowInstanceReq.getTaskType() == TaskType.MULTIPLE_ASYNC) {
+                        recordDbAccessHistoryOfMultipleDatabaseChange(createFlowInstanceReq);
+                    } else if (createFlowInstanceReq.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION) {
+                        recordDbAccessHistoryOfApplyDatabase(createFlowInstanceReq);
+                    } else if (createFlowInstanceReq.getTaskType() == TaskType.STRUCTURE_COMPARISON) {
+                        recordDbAccessHistoryOfDbStructCmp(createFlowInstanceReq);
+                    } else if (createFlowInstanceReq.getTaskType() == TaskType.ALTER_SCHEDULE) {
+                        recordDbAccessHistoryOfScheduleTask(createFlowInstanceReq);
+                    } else if (createFlowInstanceReq.getDatabaseId() != null) {
                         databaseService
                                 .recordDatabaseAccessHistory(Sets.newHashSet(createFlowInstanceReq.getDatabaseId()));
                     }
+                    break;
                 }
             }
             return null;
@@ -108,5 +127,60 @@ public class RecordDBAccessHistoryAspect {
             log.warn("Record database access history failed", e);
         }
         return result;
+    }
+
+    private void recordDbAccessHistoryOfMultipleDatabaseChange(CreateFlowInstanceReq createFlowInstanceReq) {
+        MultipleDatabaseChangeParameters parameters =
+                (MultipleDatabaseChangeParameters) (createFlowInstanceReq.getParameters());
+        if (CollectionUtils.isNotEmpty(parameters.getOrderedDatabaseIds())) {
+            Set<Long> dbIds =
+                    parameters.getOrderedDatabaseIds().stream().filter(Objects::nonNull).flatMap(Collection::stream)
+                            .collect(Collectors.toSet());
+            databaseService.recordDatabaseAccessHistory(dbIds);
+        }
+    }
+
+    private void recordDbAccessHistoryOfDbStructCmp(CreateFlowInstanceReq createFlowInstanceReq) {
+        Set<Long> toRecordDbIds = new HashSet<>();
+        DBStructureComparisonParameter parameters =
+                (DBStructureComparisonParameter) (createFlowInstanceReq.getParameters());
+        if (parameters.getSourceDatabaseId() != null) {
+            toRecordDbIds.add(parameters.getSourceDatabaseId());
+        }
+        if (parameters.getTargetDatabaseId() != null) {
+            toRecordDbIds.add(parameters.getTargetDatabaseId());
+        }
+        databaseService.recordDatabaseAccessHistory(toRecordDbIds);
+    }
+
+    private void recordDbAccessHistoryOfApplyDatabase(CreateFlowInstanceReq createFlowInstanceReq) {
+        ApplyDatabaseParameter parameters = (ApplyDatabaseParameter) (createFlowInstanceReq.getParameters());
+        if (CollectionUtils.isNotEmpty(parameters.getDatabases())) {
+            Set<Long> dbIds = parameters.getDatabases().stream().filter(Objects::nonNull).map(ApplyDatabase::getId)
+                    .collect(Collectors.toSet());
+            databaseService.recordDatabaseAccessHistory(dbIds);;
+        }
+    }
+
+    private void recordDbAccessHistoryOfScheduleTask(CreateFlowInstanceReq createFlowInstanceReq) {
+        Set<Long> toRecordDbIds = new HashSet<>();
+        AlterScheduleParameters parameters = (AlterScheduleParameters) (createFlowInstanceReq.getParameters());
+        if (createFlowInstanceReq.getDatabaseId() != null) {
+            toRecordDbIds.add(createFlowInstanceReq.getDatabaseId());
+        }
+        if (parameters.getScheduleTaskParameters() != null) {
+            // Only special processing DataArchive
+            if (parameters.getScheduleTaskParameters() instanceof DataArchiveParameters) {
+                DataArchiveParameters scheduleTaskParameters =
+                        (DataArchiveParameters) (parameters.getScheduleTaskParameters());
+                if (scheduleTaskParameters.getSourceDatabaseId() != null) {
+                    toRecordDbIds.add(scheduleTaskParameters.getSourceDatabaseId());
+                }
+                if (scheduleTaskParameters.getTargetDataBaseId() != null) {
+                    toRecordDbIds.add(scheduleTaskParameters.getTargetDataBaseId());
+                }
+            }
+        }
+        databaseService.recordDatabaseAccessHistory(toRecordDbIds);
     }
 }
