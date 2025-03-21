@@ -1911,7 +1911,7 @@ public class OBMySQLGetDBTableByParserTest {
         }
 
         Partition partition = statement.getPartition();
-        OBMySQLGetDBTableByParser parser = new OBMySQLGetDBTableByParser(ddl);
+        OBMySQLGetDBTableByParser parser = new OBMySQLGetDBTableByParser();
         DBTablePartition dbTablePartition = parser.getPartition(partition);
         return dbTablePartition;
     }

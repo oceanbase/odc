@@ -35,7 +35,7 @@ import com.oceanbase.tools.dbbrowser.util.StringUtils;
  * @date: 2024/8/27 15:13
  * @since: 4.3.3
  */
-public class OBOracleBetween410And432SchemaAccessor extends OBOracleSchemaAccessor {
+public class OBOracleBetween410And432SchemaAccessor extends OBOracleBetween432And4351SchemaAccessor {
 
     public OBOracleBetween410And432SchemaAccessor(JdbcOperations jdbcOperations,
             OracleDataDictTableNames dataDictTableNames) {

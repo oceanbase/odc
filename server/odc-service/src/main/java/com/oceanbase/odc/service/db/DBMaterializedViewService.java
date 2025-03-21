@@ -37,7 +37,6 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
-import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
 import com.oceanbase.odc.plugin.schema.api.MViewExtensionPoint;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
@@ -50,9 +49,7 @@ import com.oceanbase.odc.service.db.model.AllMVBaseTables;
 import com.oceanbase.odc.service.db.model.DatabaseAndMVs;
 import com.oceanbase.odc.service.db.model.DatabaseAndTables;
 import com.oceanbase.odc.service.db.model.MViewRefreshReq;
-import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
-import com.oceanbase.odc.service.session.ConnectConsoleService;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
@@ -74,19 +71,10 @@ import lombok.extern.slf4j.Slf4j;
 public class DBMaterializedViewService {
 
     @Autowired
-    private ConnectConsoleService consoleService;
-
-    @Autowired
     private TableService tableService;
 
     @Autowired
     private DatabaseService databaseService;
-
-    @Autowired
-    private AuthenticationFacade authenticationFacade;
-
-    @Autowired
-    private DBObjectRepository dbObjectRepository;
 
     public List<Table> list(ConnectionSession connectionSession, QueryTableParams params)
             throws SQLException, InterruptedException {
