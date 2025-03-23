@@ -1038,13 +1038,6 @@ public class DatabaseService {
         return Objects.equals(affectRows, databases.size());
     }
 
-    public List<Database> covertToDatabase(List<DatabaseEntity> databaseEntities, boolean includesPermittedAction) {
-        if (CollectionUtils.isEmpty(databaseEntities)) {
-            return Collections.emptyList();
-        }
-        return entitiesToModels(new PageImpl<>(databaseEntities), includesPermittedAction).getContent();
-    }
-
     private void checkPermission(Long projectId, Long dataSourceId) {
         if (Objects.isNull(projectId) && Objects.isNull(dataSourceId)) {
             throw new AccessDeniedException("invalid projectId or dataSourceId");
