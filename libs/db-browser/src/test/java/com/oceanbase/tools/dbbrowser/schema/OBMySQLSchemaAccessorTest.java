@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -188,6 +189,14 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
             List<DBTableConstraint> constraints =
                     accessor.listMViewConstraints(getOBMySQLDataBaseName(), "test_mv_allSyntax");
             Assert.assertTrue(constraints.size() >= 1);
+        }
+    }
+
+    @Test
+    public void listTableColumnGroups_stmtIsCreateMaterializedView_Success() {
+        if (isSupportMaterializedView) {
+            List<DBColumnGroupElement> columnGroups = accessor.listTableColumnGroups(getOBMySQLDataBaseName(), "test_mv_eachColumn");
+            Assert.assertTrue(columnGroups.get(0).isEachColumn());
         }
     }
 

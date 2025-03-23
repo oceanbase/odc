@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -202,6 +203,14 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
             List<DBTableConstraint> constraints =
                     accessor.listMViewConstraints(getOBOracleSchema(), "TEST_MV_ALLSYNTAX");
             Assert.assertTrue(constraints.size() >= 1);
+        }
+    }
+
+    @Test
+    public void listTableColumnGroups_stmtIsCreateMaterializedView_Success() {
+        if (isSupportMaterializedView) {
+            List<DBColumnGroupElement> columnGroups = accessor.listTableColumnGroups(getOBOracleSchema(), "TEST_MV_EACHCOLUMN");
+            Assert.assertTrue(columnGroups.get(0).isEachColumn());
         }
     }
 
