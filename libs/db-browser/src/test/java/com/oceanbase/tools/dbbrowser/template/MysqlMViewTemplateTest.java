@@ -38,7 +38,7 @@ import com.oceanbase.tools.dbbrowser.model.DBViewColumn;
 import com.oceanbase.tools.dbbrowser.template.mysql.MysqlMViewTemplate;
 
 /**
- * @description:
+ * @description: all tests for {@link MysqlMViewTemplate}
  * @author: zijia.cj
  * @date: 2025/3/10 23:21
  * @since: 4.3.4
