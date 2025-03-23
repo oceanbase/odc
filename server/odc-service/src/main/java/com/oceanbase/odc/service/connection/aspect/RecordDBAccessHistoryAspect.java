@@ -17,6 +17,8 @@ package com.oceanbase.odc.service.connection.aspect;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -35,6 +37,8 @@ import org.springframework.stereotype.Component;
 import com.google.common.collect.Sets;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
+import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
@@ -66,6 +70,8 @@ public class RecordDBAccessHistoryAspect {
     private DatabaseService databaseService;
     @Autowired
     private HttpServletRequest request;
+    @Autowired
+    private DBObjectRepository objectRepository;
 
     @Around("execution(* com.oceanbase.odc.server.web.controller.v2.FlowInstanceController.createFlowInstance(..))")
     public Object aroundCreateFlowInstance(ProceedingJoinPoint joinPoint) throws Throwable {
@@ -169,9 +175,24 @@ public class RecordDBAccessHistoryAspect {
     private void recordDbAccessHistoryOfApplyTable(CreateFlowInstanceReq createFlowInstanceReq) {
         ApplyTableParameter parameters = (ApplyTableParameter) (createFlowInstanceReq.getParameters());
         if (CollectionUtils.isNotEmpty(parameters.getTables())) {
-            Set<Long> dbIds = parameters.getTables().stream().filter(Objects::nonNull).map(ApplyTable::getDatabaseId)
-                    .collect(Collectors.toSet());
-            databaseService.recordDatabaseAccessHistory(dbIds);
+            final Set<Long> toRecordDbIds = new LinkedHashSet<>();
+            List<Long> tableIds = parameters.getTables().stream().filter(Objects::nonNull)
+                    .peek(t -> {
+                        if (t.getDatabaseId() != null) {
+                            toRecordDbIds.add(t.getDatabaseId());
+                        }
+                    })
+                    .map(ApplyTable::getTableId)
+                    .collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(tableIds)) {
+                List<Long> dbIdsFromTables = objectRepository
+                        .findByIdIn(tableIds)
+                        .stream()
+                        .map(DBObjectEntity::getDatabaseId)
+                        .collect(Collectors.toList());
+                toRecordDbIds.addAll(dbIdsFromTables);
+            }
+            databaseService.recordDatabaseAccessHistory(toRecordDbIds);
         }
     }
 

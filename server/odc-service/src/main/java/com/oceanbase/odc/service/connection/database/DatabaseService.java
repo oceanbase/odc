@@ -949,7 +949,8 @@ public class DatabaseService {
     }
 
     @SkipAuthorize("odc internal usage")
-    public boolean recordDatabaseAccessHistory(Collection<Long> databaseIds) {
+    public boolean recordDatabaseAccessHistory(@NonNull Collection<Long> databaseIds) {
+        databaseIds.removeIf(Objects::isNull);
         if (CollectionUtils.isEmpty(databaseIds)) {
             return true;
         }
@@ -1035,6 +1036,13 @@ public class DatabaseService {
 
         int affectRows = databaseRepository.setDatabaseRemarkByIdIn(databaseIds, remark);
         return Objects.equals(affectRows, databases.size());
+    }
+
+    public List<Database> covertToDatabase(List<DatabaseEntity> databaseEntities, boolean includesPermittedAction) {
+        if (CollectionUtils.isEmpty(databaseEntities)) {
+            return Collections.emptyList();
+        }
+        return entitiesToModels(new PageImpl<>(databaseEntities), includesPermittedAction).getContent();
     }
 
     private void checkPermission(Long projectId, Long dataSourceId) {
