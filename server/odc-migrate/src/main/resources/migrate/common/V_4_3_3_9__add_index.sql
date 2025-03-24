@@ -20,4 +20,4 @@ CREATE INDEX idx_connect_connection_org_id_creator_id ON connect_connection (org
 
 create index if not exists idx_task_task_organization_id on task_task(organization_id);
 create index if not exists idx_schedule_schedule_organization_id on schedule_schedule(organization_id);
-create index if not exists idx_data_masking_rule_applying_organization_id on data_masking_rule_applying(organization_id);
+create index if not exists idx_data_security_sensitive_rule_organization_id on data_security_sensitive_rule(organization_id);
