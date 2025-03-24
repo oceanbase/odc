@@ -88,20 +88,7 @@ public abstract class BaseMViewTemplate implements DBObjectTemplate<DBMaterializ
             sqlBuilder.line().append(preHandle(dbMView.getRefreshMethod().getCreateName()));
         }
         // build sql about refresh schedule
-        if (Objects.nonNull(dbMView.getRefreshSchedule())) {
-            DBMaterializedViewRefreshSchedule refreshSchedule = dbMView.getRefreshSchedule();
-            if (refreshSchedule.getStartStrategy() == DBMaterializedViewRefreshSchedule.StartStrategy.START_NOW) {
-                sqlBuilder.line().append(preHandle("START WITH sysdate()"));
-                sqlBuilder.line().append(preHandle("NEXT sysdate() + INTERVAL ")).append(refreshSchedule.getInterval()).append(" ")
-                    .append(refreshSchedule.getUnit());
-            } else if (refreshSchedule.getStartStrategy() == DBMaterializedViewRefreshSchedule.StartStrategy.START_AT) {
-                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                String formattedDate = formatter.format(refreshSchedule.getStartWith());
-                sqlBuilder.line().append(preHandle("START WITH TIMESTAMP '")).append(formattedDate).append("'");
-                sqlBuilder.line().append(preHandle("NEXT TIMESTAMP '")).append(formattedDate).append(preHandle("' + INTERVAL "))
-                    .append(refreshSchedule.getInterval()).append(" ").append(refreshSchedule.getUnit());
-            }
-        }
+        fillRefreshSchedule(dbMView, sqlBuilder);
         // build sql about query rewrite
         if (Objects.nonNull(dbMView.getEnableQueryRewrite())) {
             if (dbMView.getEnableQueryRewrite()) {
@@ -126,6 +113,23 @@ public abstract class BaseMViewTemplate implements DBObjectTemplate<DBMaterializ
 
     private String getPrimary(@NotNull String input) {
         return input.replaceFirst("(?i)CONSTRAINT\\s*", "");
+    }
+
+    protected void fillRefreshSchedule(DBMaterializedView dbMView, SqlBuilder sqlBuilder) {
+        if (Objects.nonNull(dbMView.getRefreshSchedule())) {
+            DBMaterializedViewRefreshSchedule refreshSchedule = dbMView.getRefreshSchedule();
+            if (refreshSchedule.getStartStrategy() == DBMaterializedViewRefreshSchedule.StartStrategy.START_NOW) {
+                sqlBuilder.line().append(preHandle("START WITH sysdate()"));
+                sqlBuilder.line().append(preHandle("NEXT sysdate() + INTERVAL ")).append(refreshSchedule.getInterval()).append(" ")
+                    .append(refreshSchedule.getUnit());
+            } else if (refreshSchedule.getStartStrategy() == DBMaterializedViewRefreshSchedule.StartStrategy.START_AT) {
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                String formattedDate = formatter.format(refreshSchedule.getStartWith());
+                sqlBuilder.line().append(preHandle("START WITH TIMESTAMP '")).append(formattedDate).append("'");
+                sqlBuilder.line().append(preHandle("NEXT TIMESTAMP '")).append(formattedDate).append(preHandle("' + INTERVAL "))
+                    .append(refreshSchedule.getInterval()).append(" ").append(refreshSchedule.getUnit());
+            }
+        }
     }
 
     protected abstract String preHandle(String str);
