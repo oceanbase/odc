@@ -55,7 +55,7 @@ public class DLMJobReq {
 
     private boolean deleteAfterMigration;
 
-    private DirtyRowAction dirtyRowAction;
+    private DirtyRowAction dirtyRowAction = DirtyRowAction.RAISE_ERROR;
 
     private boolean deleteTemporaryTable = false;
 
