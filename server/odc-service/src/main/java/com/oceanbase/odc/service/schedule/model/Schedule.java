@@ -17,7 +17,7 @@ package com.oceanbase.odc.service.schedule.model;
 
 import java.util.Date;
 
-import com.oceanbase.odc.core.shared.OrganizationIsolated;
+import com.oceanbase.odc.core.shared.SingleOrganizationResource;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 
@@ -30,7 +30,7 @@ import lombok.Data;
  */
 
 @Data
-public class Schedule implements OrganizationIsolated {
+public class Schedule implements SingleOrganizationResource {
 
     private Long id;
 

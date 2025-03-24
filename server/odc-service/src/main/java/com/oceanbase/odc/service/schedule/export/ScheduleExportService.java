@@ -27,8 +27,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.common.security.PasswordUtils;
-import com.oceanbase.odc.core.shared.OrganizationIsolated;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.SingleOrganizationResource;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -145,7 +145,7 @@ public class ScheduleExportService {
 
     @Data
     @AllArgsConstructor
-    private final static class FlowOrganizationIsolated implements OrganizationIsolated {
+    private final static class FlowOrganizationIsolated implements SingleOrganizationResource {
 
         private Long organizationId;
         private Long id;

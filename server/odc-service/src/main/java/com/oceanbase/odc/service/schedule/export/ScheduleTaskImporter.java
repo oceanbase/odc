@@ -266,7 +266,8 @@ public class ScheduleTaskImporter implements InitializingBean {
 
     }
 
-    private ScheduleChangeParams getCreateScheduleReq(ExportRowDataReader<JsonNode> rowDataReader,ScheduleType scheduleType, Long projectId, JsonNode row,
+    private ScheduleChangeParams getCreateScheduleReq(ExportRowDataReader<JsonNode> rowDataReader,
+            ScheduleType scheduleType, Long projectId, JsonNode row,
             Long databaseId,
             Long targetDatabaseId) {
         switch (scheduleType) {
@@ -281,7 +282,8 @@ public class ScheduleTaskImporter implements InitializingBean {
         }
     }
 
-    private ScheduleChangeParams getSqlPlanReq(ExportRowDataReader<JsonNode> rowDataReader, JsonNode row, Long projectId, Long databaseId) {
+    private ScheduleChangeParams getSqlPlanReq(ExportRowDataReader<JsonNode> rowDataReader, JsonNode row,
+            Long projectId, Long databaseId) {
         SqlPlanScheduleRowData currentRowData = JsonUtils.fromJsonNode(row, SqlPlanScheduleRowData.class);
         if (currentRowData == null) {
             throw new ExtractFileException(ErrorCodes.ExtractFileFailed, "Can't extract sqlPlanScheduleRowData");
