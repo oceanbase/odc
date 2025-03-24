@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -518,12 +519,12 @@ public class ProjectService {
     }
 
     @SkipAuthorize("internal usage")
-    public Map<Long, List<Project>> mapByIdIn(Set<Long> ids) {
+    public Map<Long, Project> mapByIdIn(Set<Long> ids) {
         if (CollectionUtils.isEmpty(ids)) {
             return Collections.emptyMap();
         }
         return repository.findAllById(ids).stream().map(projectMapper::entityToModel)
-                .collect(Collectors.groupingBy(Project::getId));
+                .collect(Collectors.toMap(Project::getId, Function.identity()));
     }
 
     @SkipAuthorize("permission check inside")

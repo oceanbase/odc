@@ -16,36 +16,22 @@
 package com.oceanbase.odc.service.schedule.model;
 
 import java.util.Date;
-import java.util.List;
 import java.util.Set;
-
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
 
 import lombok.Builder;
 import lombok.Data;
 
+/**
+ * @Author: ysj
+ * @Date: 2025/2/25 10:06
+ * @Since: 4.3.4
+ * @Description:
+ */
 @Data
 @Builder
-public class QueryScheduleTaskParams {
-    private String id;
-    // it will be merged into scheduleIds when it is not null
-    private String scheduleId;
-    private String scheduleName;
-    private Set<Long> dataSourceIds;
-    private List<TaskStatus> statuses;
-    private ScheduleType scheduleType;
+public class QueryScheduleStatParams {
+    private Set<Long> scheduleIds;
+    private Set<ScheduleType> scheduleTypes;
     private Date startTime;
     private Date endTime;
-    private String creator;
-    private Set<Long> creatorIds;
-    private Long projectId;
-    private Set<Long> projectIds;
-    private Long organizationId;
-    private String databaseName;
-    private String tenantId;
-    private String clusterId;
-
-    // inner use
-    private Set<Long> scheduleIds;
-    private Set<String> jobGroups;
 }
