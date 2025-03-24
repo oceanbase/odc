@@ -104,7 +104,7 @@ public class PropertyMetadataMapper {
         if (!entity.getName().contains("sql-console.max-return-rows")) {
             return Integer.parseInt(defaultValue);
         }
-        OrganizationConfigProvider orgConfigFacade = SpringContextUtil.getBean(OrganizationConfigProvider.class);
-        return orgConfigFacade.checkMaxQueryLimitValidity(Integer.parseInt(defaultValue));
+        OrganizationConfigProvider orgConfigProvider = SpringContextUtil.getBean(OrganizationConfigProvider.class);
+        return orgConfigProvider.checkMaxQueryLimitValidity(Integer.parseInt(defaultValue));
     }
 }

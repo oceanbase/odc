@@ -585,11 +585,13 @@ public class ConnectConsoleService {
 
     private Integer checkQueryLimit(Integer queryLimit) {
         if (Objects.isNull(queryLimit)) {
-            queryLimit = (int) sessionProperties.getResultSetDefaultRows();
+            queryLimit = organizationConfigProvider.getDefaultQueryLimit();
         }
-        if (Objects.nonNull(organizationConfigProvider.getDefaultQueryLimit())) {
-            queryLimit = organizationConfigProvider.getMinimumQueryLimit(queryLimit.toString());
+        // Compatible: if user did not edit query limit, use default value
+        if (!Objects.equals(queryLimit, (int) sessionProperties.getResultSetDefaultRows())) {
+            return queryLimit;
         }
+        queryLimit = organizationConfigProvider.getMinimumQueryLimit(queryLimit.toString());
         Integer maxQueryLimit = organizationConfigProvider.getDefaultMaxQueryLimit();
         // if default rows limit is exceeded than max rows limit, still use max rows limit
         if (maxQueryLimit > 0) {
