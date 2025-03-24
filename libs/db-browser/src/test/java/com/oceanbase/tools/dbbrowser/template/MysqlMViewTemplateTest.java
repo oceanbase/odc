@@ -117,7 +117,7 @@ public class MysqlMViewTemplateTest {
         Assert.assertEquals(expect, actual);
     }
 
-    private void prepareMViewStartNowSchedule(DBMaterializedView DBMaterializedView) {
+    public void prepareMViewStartNowSchedule(DBMaterializedView DBMaterializedView) {
         DBMaterializedViewRefreshSchedule syncSchedule = new DBMaterializedViewRefreshSchedule();
         syncSchedule.setStartStrategy(DBMaterializedViewRefreshSchedule.StartStrategy.START_NOW);
         syncSchedule.setInterval(1L);
@@ -125,7 +125,7 @@ public class MysqlMViewTemplateTest {
         DBMaterializedView.setRefreshSchedule(syncSchedule);
     }
 
-    private void prepareMViewStartAtSchedule(DBMaterializedView DBMaterializedView) {
+    public void prepareMViewStartAtSchedule(DBMaterializedView DBMaterializedView) {
         DBMaterializedViewRefreshSchedule syncSchedule = new DBMaterializedViewRefreshSchedule();
         syncSchedule.setStartStrategy(DBMaterializedViewRefreshSchedule.StartStrategy.START_AT);
         syncSchedule.setStartWith(new Date(1752228000000L));
@@ -134,7 +134,7 @@ public class MysqlMViewTemplateTest {
         DBMaterializedView.setRefreshSchedule(syncSchedule);
     }
 
-    private void prepareMViewColumnGroups(DBMaterializedView DBMaterializedView) {
+    public void prepareMViewColumnGroups(DBMaterializedView DBMaterializedView) {
         List<DBColumnGroupElement> dbColumnGroupElements = new ArrayList<>();
         DBColumnGroupElement dbColumnGroupElement1 = new DBColumnGroupElement();
         dbColumnGroupElement1.setAllColumns(true);
@@ -145,7 +145,7 @@ public class MysqlMViewTemplateTest {
         DBMaterializedView.setColumnGroups(dbColumnGroupElements);
     }
 
-    private static void prepareMViewPartition(DBMaterializedView DBMaterializedView) {
+    public static void prepareMViewPartition(DBMaterializedView DBMaterializedView) {
         DBTablePartition dbTablePartition = new DBTablePartition();
         DBTablePartitionOption dbTablePartitionOption = new DBTablePartitionOption();
         dbTablePartitionOption.setType(DBTablePartitionType.HASH);
@@ -155,14 +155,14 @@ public class MysqlMViewTemplateTest {
         DBMaterializedView.setPartition(dbTablePartition);
     }
 
-    private void prepareMViewPrimary(DBMaterializedView DBMaterializedView) {
+    public void prepareMViewPrimary(DBMaterializedView DBMaterializedView) {
         DBTableConstraint dbTableConstraint = new DBTableConstraint();
         dbTableConstraint.setType(DBConstraintType.PRIMARY_KEY);
         dbTableConstraint.setColumnNames(Collections.singletonList("alias_c0"));
         DBMaterializedView.setConstraints(Collections.singletonList(dbTableConstraint));
     }
 
-    private List<DBView.DBViewUnit> prepareViewUnit(int size) {
+    public List<DBView.DBViewUnit> prepareViewUnit(int size) {
         List<DBView.DBViewUnit> viewUnits = new ArrayList<>();
         for (int i = 0; i < size; i++) {
             DBView.DBViewUnit viewUnit = new DBView.DBViewUnit();
@@ -175,7 +175,7 @@ public class MysqlMViewTemplateTest {
         return viewUnits;
     }
 
-    private List<DBViewColumn> prepareQueryColumns(int size) {
+    public List<DBViewColumn> prepareQueryColumns(int size) {
         List<DBViewColumn> viewColumns = new ArrayList<>();
         for (int i = 0; i < size; i++) {
             DBViewColumn viewColumn1 = new DBViewColumn();

@@ -50,6 +50,7 @@ public class DBMaterializedViewRefreshSchedule {
         MINUTE,
         HOUR,
         DAY,
+        // just for ob mysql
         WEEK,
         MONTH,
         YEAR;
