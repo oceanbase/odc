@@ -21,4 +21,4 @@ CREATE TABLE IF NOT EXISTS import_file_row_history (
      create_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
      update_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
      PRIMARY KEY (id)
-)
+);
