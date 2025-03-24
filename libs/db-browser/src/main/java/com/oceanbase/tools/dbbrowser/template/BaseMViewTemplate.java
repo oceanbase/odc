@@ -50,75 +50,75 @@ public abstract class BaseMViewTemplate implements DBObjectTemplate<DBMaterializ
     private DBTablePartitionEditor dbTablePartitionEditor;
 
     @Override
-    public String generateCreateObjectTemplate(DBMaterializedView dbObject) {
-        Validate.notBlank(dbObject.getName(), "Materialized view name can not be blank");
-        DBView dbView = dbObject.generateDBView();
+    public String generateCreateObjectTemplate(DBMaterializedView dbMView) {
+        Validate.notBlank(dbMView.getName(), "Materialized view name can not be blank");
+        DBView dbView = dbMView.generateDBView();
         viewTemplate.validOperations(dbView);
         SqlBuilder sqlBuilder = new MySQLSqlBuilder();
-        sqlBuilder.append("create materialized view ")
-            .append(getFullyQualifiedTableName(dbObject));
+        sqlBuilder.append(preHandle("create materialized view "))
+            .append(getFullyQualifiedTableName(dbMView));
         // build sql about primary key
-        if (CollectionUtils.isNotEmpty(dbObject.getConstraints())) {
+        if (CollectionUtils.isNotEmpty(dbMView.getConstraints())) {
             Validate.isTrue(
-                dbObject.getConstraints().size() == 1 && dbObject.getConstraints().get(0).getType() == PRIMARY_KEY,
+                dbMView.getConstraints().size() == 1 && dbMView.getConstraints().get(0).getType() == PRIMARY_KEY,
                 "Only primary key is supported");
-            DBTableConstraint dbTableConstraint = dbObject.getConstraints().get(0);
+            DBTableConstraint dbTableConstraint = dbMView.getConstraints().get(0);
             sqlBuilder.append("(")
                 .append(getPrimary(dbTableConstraintEditor.generateCreateDefinitionDDL(dbTableConstraint)))
                 .append(")");
         }
         // build sql about parallelism degree
-        if (Objects.nonNull(dbObject.getParallelismDegree()) && dbObject.getParallelismDegree() > 1) {
-            sqlBuilder.line().append("PARALLEL ").append(dbObject.getParallelismDegree());
+        if (Objects.nonNull(dbMView.getParallelismDegree()) && dbMView.getParallelismDegree() > 1) {
+            sqlBuilder.line().append(preHandle("PARALLEL ")).append(dbMView.getParallelismDegree());
         }
         // build sql about partition
-        if (Objects.nonNull(dbObject.getPartition())) {
+        if (Objects.nonNull(dbMView.getPartition())) {
             sqlBuilder.line()
-                .append(dbTablePartitionEditor.generateCreateDefinitionDDL(dbObject.getPartition()));
+                .append(dbTablePartitionEditor.generateCreateDefinitionDDL(dbMView.getPartition()));
         }
         // build sql about column group
-        if (CollectionUtils.isNotEmpty(dbObject.getColumnGroups())) {
-            sqlBuilder.line().append(" WITH COLUMN GROUP(")
-                .append(dbObject.getColumnGroups().stream().map(DBColumnGroupElement::toString)
+        if (CollectionUtils.isNotEmpty(dbMView.getColumnGroups())) {
+            sqlBuilder.line().append(preHandle(" WITH COLUMN GROUP("))
+                .append(dbMView.getColumnGroups().stream().map(DBColumnGroupElement::toString)
                     .collect(Collectors.joining(",")))
                 .append(")");
         }
         // build sql about refresh method
-        if (Objects.nonNull(dbObject.getRefreshMethod())) {
-            sqlBuilder.line().append(dbObject.getRefreshMethod().getCreateName());
+        if (Objects.nonNull(dbMView.getRefreshMethod())) {
+            sqlBuilder.line().append(preHandle(dbMView.getRefreshMethod().getCreateName()));
         }
         // build sql about refresh schedule
-        if (Objects.nonNull(dbObject.getRefreshSchedule())) {
-            DBMaterializedViewRefreshSchedule refreshSchedule = dbObject.getRefreshSchedule();
+        if (Objects.nonNull(dbMView.getRefreshSchedule())) {
+            DBMaterializedViewRefreshSchedule refreshSchedule = dbMView.getRefreshSchedule();
             if (refreshSchedule.getStartStrategy() == DBMaterializedViewRefreshSchedule.StartStrategy.START_NOW) {
-                sqlBuilder.line().append("START WITH sysdate()");
-                sqlBuilder.line().append("NEXT sysdate() + INTERVAL ").append(refreshSchedule.getInterval()).append(" ")
+                sqlBuilder.line().append(preHandle("START WITH sysdate()"));
+                sqlBuilder.line().append(preHandle("NEXT sysdate() + INTERVAL ")).append(refreshSchedule.getInterval()).append(" ")
                     .append(refreshSchedule.getUnit());
             } else if (refreshSchedule.getStartStrategy() == DBMaterializedViewRefreshSchedule.StartStrategy.START_AT) {
                 SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 String formattedDate = formatter.format(refreshSchedule.getStartWith());
-                sqlBuilder.line().append("START WITH TIMESTAMP '").append(formattedDate).append("'");
-                sqlBuilder.line().append("NEXT TIMESTAMP '").append(formattedDate).append("' + INTERVAL ")
+                sqlBuilder.line().append(preHandle("START WITH TIMESTAMP '")).append(formattedDate).append("'");
+                sqlBuilder.line().append(preHandle("NEXT TIMESTAMP '")).append(formattedDate).append(preHandle("' + INTERVAL "))
                     .append(refreshSchedule.getInterval()).append(" ").append(refreshSchedule.getUnit());
             }
         }
         // build sql about query rewrite
-        if (Objects.nonNull(dbObject.getEnableQueryRewrite())) {
-            if (dbObject.getEnableQueryRewrite()) {
-                sqlBuilder.line().append("ENABLE QUERY REWRITE");
+        if (Objects.nonNull(dbMView.getEnableQueryRewrite())) {
+            if (dbMView.getEnableQueryRewrite()) {
+                sqlBuilder.line().append(preHandle("ENABLE QUERY REWRITE"));
             } else {
-                sqlBuilder.line().append("DISABLE QUERY REWRITE");
+                sqlBuilder.line().append(preHandle("DISABLE QUERY REWRITE"));
             }
         }
         // build sql about query computation
-        if (Objects.nonNull(dbObject.getEnableQueryComputation())) {
-            if (dbObject.getEnableQueryComputation()) {
-                sqlBuilder.line().append("ENABLE ON QUERY COMPUTATION");
+        if (Objects.nonNull(dbMView.getEnableQueryComputation())) {
+            if (dbMView.getEnableQueryComputation()) {
+                sqlBuilder.line().append(preHandle("ENABLE ON QUERY COMPUTATION"));
             } else {
-                sqlBuilder.line().append("DISABLE ON QUERY COMPUTATION");
+                sqlBuilder.line().append(preHandle("DISABLE ON QUERY COMPUTATION"));
             }
         }
-        sqlBuilder.line().append("AS");
+        sqlBuilder.line().append(preHandle("AS"));
         // build sql about query statement
         viewTemplate.generateQueryStatement(dbView, sqlBuilder);
         return sqlBuilder.toString();
@@ -128,8 +128,10 @@ public abstract class BaseMViewTemplate implements DBObjectTemplate<DBMaterializ
         return input.replaceFirst("(?i)CONSTRAINT\\s*", "");
     }
 
+    protected abstract String preHandle(String str);
+
+    protected abstract SqlBuilder sqlBuilder();
 
     protected abstract String getFullyQualifiedTableName(DBMaterializedView dbMView);
-
 
 }
