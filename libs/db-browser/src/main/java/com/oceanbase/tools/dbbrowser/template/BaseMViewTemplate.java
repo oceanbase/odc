@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,30 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.tools.dbbrowser.template;
 
+import static com.oceanbase.tools.dbbrowser.model.DBConstraintType.PRIMARY_KEY;
+
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import javax.validation.constraints.NotNull;
+
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 
 import com.oceanbase.tools.dbbrowser.editor.DBTableConstraintEditor;
 import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewRefreshMethod;
-import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewRefreshSchedule;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBView;
-import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Validate;
-
-import javax.validation.constraints.NotNull;
-import java.text.SimpleDateFormat;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
-import static com.oceanbase.tools.dbbrowser.model.DBConstraintType.PRIMARY_KEY;
 
 /**
  * @description:
@@ -51,9 +48,10 @@ public abstract class BaseMViewTemplate implements DBObjectTemplate<DBMaterializ
 
     private DBTablePartitionEditor dbTablePartitionEditor;
 
-    public BaseMViewTemplate(BaseViewTemplate viewTemplate,DBTableConstraintEditor constraintEditor,DBTablePartitionEditor partitionEditor){
+    public BaseMViewTemplate(BaseViewTemplate viewTemplate, DBTableConstraintEditor constraintEditor,
+            DBTablePartitionEditor partitionEditor) {
         this.viewTemplate = viewTemplate;
-        this.dbTableConstraintEditor= constraintEditor;
+        this.dbTableConstraintEditor = constraintEditor;
         this.dbTablePartitionEditor = partitionEditor;
     }
 
@@ -64,16 +62,16 @@ public abstract class BaseMViewTemplate implements DBObjectTemplate<DBMaterializ
         viewTemplate.validOperations(dbView);
         SqlBuilder sqlBuilder = sqlBuilder();
         sqlBuilder.append("CREATE MATERIALIZED VIEW ")
-            .append(getFullyQualifiedTableName(dbMView));
+                .append(getFullyQualifiedTableName(dbMView));
         // build sql about primary key
         if (CollectionUtils.isNotEmpty(dbMView.getConstraints())) {
             Validate.isTrue(
-                dbMView.getConstraints().size() == 1 && dbMView.getConstraints().get(0).getType() == PRIMARY_KEY,
-                "Only primary key is supported");
+                    dbMView.getConstraints().size() == 1 && dbMView.getConstraints().get(0).getType() == PRIMARY_KEY,
+                    "Only primary key is supported");
             DBTableConstraint dbTableConstraint = dbMView.getConstraints().get(0);
             sqlBuilder.append("(")
-                .append(getPrimary(dbTableConstraintEditor.generateCreateDefinitionDDL(dbTableConstraint)))
-                .append(")");
+                    .append(getPrimary(dbTableConstraintEditor.generateCreateDefinitionDDL(dbTableConstraint)))
+                    .append(")");
         }
         // build sql about parallelism degree
         if (Objects.nonNull(dbMView.getParallelismDegree()) && dbMView.getParallelismDegree() > 1) {
@@ -82,21 +80,22 @@ public abstract class BaseMViewTemplate implements DBObjectTemplate<DBMaterializ
         // build sql about partition
         if (Objects.nonNull(dbMView.getPartition())) {
             sqlBuilder.line()
-                .append(dbTablePartitionEditor.generateCreateDefinitionDDL(dbMView.getPartition()));
+                    .append(dbTablePartitionEditor.generateCreateDefinitionDDL(dbMView.getPartition()));
         }
         // build sql about column group
         if (CollectionUtils.isNotEmpty(dbMView.getColumnGroups())) {
             sqlBuilder.line().append(" WITH COLUMN GROUP(")
-                .append(dbMView.getColumnGroups().stream().map(DBColumnGroupElement::toString)
-                    .collect(Collectors.joining(",")))
-                .append(")");
+                    .append(dbMView.getColumnGroups().stream().map(DBColumnGroupElement::toString)
+                            .collect(Collectors.joining(",")))
+                    .append(")");
         }
         // build sql about refresh method
         if (Objects.nonNull(dbMView.getRefreshMethod())) {
             sqlBuilder.line().append(dbMView.getRefreshMethod().getCreateName());
-        }else{
-            // an error will be reported when refresh method is not specified in OceanBase which version number is 4.3.5.1 and later
-        sqlBuilder.line().append(DBMaterializedViewRefreshMethod.REFRESH_FORCE.getCreateName());
+        } else {
+            // an error will be reported when refresh method is not specified in OceanBase which version number
+            // is 4.3.5.1 and later
+            sqlBuilder.line().append(DBMaterializedViewRefreshMethod.REFRESH_FORCE.getCreateName());
         }
         // build sql about refresh schedule
         fillRefreshSchedule(dbMView, sqlBuilder);

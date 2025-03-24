@@ -66,7 +66,7 @@ public class MysqlMViewTemplateTest {
 
         String expect = "CREATE MATERIALIZED VIEW `schema_0`.`mv_0`(PRIMARY KEY (`alias_c0`))\n" +
             "PARALLEL 8\n" +
-            " PARTITION BY HASH(`alias_c0`) \n" +
+            " PARTITION BY HASH(alias_c0) \n" +
             "PARTITIONS 3\n" +
             " WITH COLUMN GROUP(all columns,each column)\n" +
             "REFRESH COMPLETE\n" +
@@ -103,7 +103,7 @@ public class MysqlMViewTemplateTest {
         String expect = "CREATE MATERIALIZED VIEW `schema_0`.`mv_0`\n" +
             "REFRESH FORCE\n" +
             "START WITH TIMESTAMP '2025-07-11 18:00:00'\n" +
-            "NEXT TIMESTAMP '2025-07-11 18:00:00' + INTERVAL 1 WEEK\n" +
+            "NEXT TIMESTAMP '2025-07-11 18:00:00' + INTERVAL 1 MINUTE\n" +
             "AS\n" +
             "select\n" +
             "\ttableAlias_0.`c_0` as alias_c0,\n" +
@@ -117,7 +117,7 @@ public class MysqlMViewTemplateTest {
         Assert.assertEquals(expect, actual);
     }
 
-    public void prepareMViewStartNowSchedule(DBMaterializedView DBMaterializedView) {
+    public static void prepareMViewStartNowSchedule(DBMaterializedView DBMaterializedView) {
         DBMaterializedViewRefreshSchedule syncSchedule = new DBMaterializedViewRefreshSchedule();
         syncSchedule.setStartStrategy(DBMaterializedViewRefreshSchedule.StartStrategy.START_NOW);
         syncSchedule.setInterval(1L);
@@ -125,16 +125,16 @@ public class MysqlMViewTemplateTest {
         DBMaterializedView.setRefreshSchedule(syncSchedule);
     }
 
-    public void prepareMViewStartAtSchedule(DBMaterializedView DBMaterializedView) {
+    public static void prepareMViewStartAtSchedule(DBMaterializedView DBMaterializedView) {
         DBMaterializedViewRefreshSchedule syncSchedule = new DBMaterializedViewRefreshSchedule();
         syncSchedule.setStartStrategy(DBMaterializedViewRefreshSchedule.StartStrategy.START_AT);
         syncSchedule.setStartWith(new Date(1752228000000L));
         syncSchedule.setInterval(1L);
-        syncSchedule.setUnit(DBMaterializedViewRefreshSchedule.TimeUnit.WEEK);
+        syncSchedule.setUnit(DBMaterializedViewRefreshSchedule.TimeUnit.MINUTE);
         DBMaterializedView.setRefreshSchedule(syncSchedule);
     }
 
-    public void prepareMViewColumnGroups(DBMaterializedView DBMaterializedView) {
+    public static void prepareMViewColumnGroups(DBMaterializedView DBMaterializedView) {
         List<DBColumnGroupElement> dbColumnGroupElements = new ArrayList<>();
         DBColumnGroupElement dbColumnGroupElement1 = new DBColumnGroupElement();
         dbColumnGroupElement1.setAllColumns(true);
@@ -149,20 +149,20 @@ public class MysqlMViewTemplateTest {
         DBTablePartition dbTablePartition = new DBTablePartition();
         DBTablePartitionOption dbTablePartitionOption = new DBTablePartitionOption();
         dbTablePartitionOption.setType(DBTablePartitionType.HASH);
-        dbTablePartitionOption.setExpression("`alias_c0`");
+        dbTablePartitionOption.setExpression("alias_c0");
         dbTablePartitionOption.setPartitionsNum(3);
         dbTablePartition.setPartitionOption(dbTablePartitionOption);
         DBMaterializedView.setPartition(dbTablePartition);
     }
 
-    public void prepareMViewPrimary(DBMaterializedView DBMaterializedView) {
+    public static void prepareMViewPrimary(DBMaterializedView DBMaterializedView) {
         DBTableConstraint dbTableConstraint = new DBTableConstraint();
         dbTableConstraint.setType(DBConstraintType.PRIMARY_KEY);
         dbTableConstraint.setColumnNames(Collections.singletonList("alias_c0"));
         DBMaterializedView.setConstraints(Collections.singletonList(dbTableConstraint));
     }
 
-    public List<DBView.DBViewUnit> prepareViewUnit(int size) {
+    public static List<DBView.DBViewUnit> prepareViewUnit(int size) {
         List<DBView.DBViewUnit> viewUnits = new ArrayList<>();
         for (int i = 0; i < size; i++) {
             DBView.DBViewUnit viewUnit = new DBView.DBViewUnit();
@@ -175,7 +175,7 @@ public class MysqlMViewTemplateTest {
         return viewUnits;
     }
 
-    public List<DBViewColumn> prepareQueryColumns(int size) {
+    public static List<DBViewColumn> prepareQueryColumns(int size) {
         List<DBViewColumn> viewColumns = new ArrayList<>();
         for (int i = 0; i < size; i++) {
             DBViewColumn viewColumn1 = new DBViewColumn();

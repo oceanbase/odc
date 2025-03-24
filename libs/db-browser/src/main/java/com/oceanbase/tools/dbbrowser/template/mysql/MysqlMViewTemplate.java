@@ -15,29 +15,14 @@
  */
 package com.oceanbase.tools.dbbrowser.template.mysql;
 
-import static com.oceanbase.tools.dbbrowser.model.DBConstraintType.PRIMARY_KEY;
-
 import java.text.SimpleDateFormat;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
-import javax.validation.constraints.NotNull;
-
-import com.oceanbase.tools.dbbrowser.template.BaseMViewTemplate;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Validate;
-
-import com.oceanbase.tools.dbbrowser.editor.DBTableConstraintEditor;
-import com.oceanbase.tools.dbbrowser.editor.DBTablePartitionEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLConstraintEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLDBTablePartitionEditor;
-import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewRefreshSchedule;
-import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
-import com.oceanbase.tools.dbbrowser.model.DBView;
-import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
+import com.oceanbase.tools.dbbrowser.template.BaseMViewTemplate;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 
@@ -50,7 +35,7 @@ import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 public class MysqlMViewTemplate extends BaseMViewTemplate {
 
     public MysqlMViewTemplate() {
-        super(new MySQLViewTemplate(),new MySQLConstraintEditor(),new OBMySQLDBTablePartitionEditor());
+        super(new MySQLViewTemplate(), new MySQLConstraintEditor(), new OBMySQLDBTablePartitionEditor());
     }
 
     @Override
@@ -65,13 +50,13 @@ public class MysqlMViewTemplate extends BaseMViewTemplate {
             if (refreshSchedule.getStartStrategy() == DBMaterializedViewRefreshSchedule.StartStrategy.START_NOW) {
                 sqlBuilder.line().append("START WITH sysdate()");
                 sqlBuilder.line().append("NEXT sysdate() + INTERVAL ").append(refreshSchedule.getInterval()).append(" ")
-                    .append(refreshSchedule.getUnit());
+                        .append(refreshSchedule.getUnit());
             } else if (refreshSchedule.getStartStrategy() == DBMaterializedViewRefreshSchedule.StartStrategy.START_AT) {
                 SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 String formattedDate = formatter.format(refreshSchedule.getStartWith());
                 sqlBuilder.line().append("START WITH TIMESTAMP '").append(formattedDate).append("'");
                 sqlBuilder.line().append("NEXT TIMESTAMP '").append(formattedDate).append("' + INTERVAL ")
-                    .append(refreshSchedule.getInterval()).append(" ").append(refreshSchedule.getUnit());
+                        .append(refreshSchedule.getInterval()).append(" ").append(refreshSchedule.getUnit());
             }
         }
     }

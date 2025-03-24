@@ -22,7 +22,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -30,6 +29,7 @@ import org.junit.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.tools.dbbrowser.env.BaseTestEnv;
+import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
@@ -195,7 +195,8 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     @Test
     public void listTableColumnGroups_stmtIsCreateMaterializedView_Success() {
         if (isSupportMaterializedView) {
-            List<DBColumnGroupElement> columnGroups = accessor.listTableColumnGroups(getOBMySQLDataBaseName(), "test_mv_eachColumn");
+            List<DBColumnGroupElement> columnGroups =
+                    accessor.listTableColumnGroups(getOBMySQLDataBaseName(), "test_mv_eachColumn");
             Assert.assertTrue(columnGroups.get(0).isEachColumn());
         }
     }
