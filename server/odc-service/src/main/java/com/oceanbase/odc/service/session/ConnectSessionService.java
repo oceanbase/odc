@@ -98,6 +98,7 @@ import com.oceanbase.odc.service.lab.model.LabProperties;
 import com.oceanbase.odc.service.monitor.session.ConnectionSessionMonitorListener;
 import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
+import com.oceanbase.odc.service.regulation.ruleset.RuleService;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionIdGenerator;
 import com.oceanbase.odc.service.session.factory.LogicalConnectionSessionFactory;
@@ -164,6 +165,8 @@ public class ConnectSessionService {
     private StateHostGenerator stateHostGenerator;
     @Autowired
     private DBSessionManageFacade dbSessionManageFacade;
+    @Autowired
+    private RuleService ruleService;
     @Autowired
     private OrganizationConfigProvider organizationConfigProvider;
     private final Map<String, Lock> sessionId2Lock = new ConcurrentHashMap<>();
@@ -498,9 +501,8 @@ public class ConnectSessionService {
         SqlCommentProcessor processor = new SqlCommentProcessor(dialectType, true, true);
         processor.setDelimiter(userConfigFacade.getDefaultDelimiter());
         ConnectionSessionUtil.setSqlCommentProcessor(connectionSession, processor);
-
-        ConnectionSessionUtil.setQueryLimit(connectionSession, organizationConfigProvider.getDefaultQueryLimit());
         ConnectionSessionUtil.setUserId(connectionSession, authenticationFacade.currentUserId());
+
         if (connectionSession.getDialectType().isOracle()) {
             ConnectionSessionUtil.initConsoleSessionTimeZone(connectionSession, connectProperties.getDefaultTimeZone());
         }
@@ -508,8 +510,11 @@ public class ConnectSessionService {
             Optional<EnvironmentEntity> optional = this.environmentRepository.findById(envId);
             if (optional.isPresent() && optional.get().getRulesetId() != null) {
                 ConnectionSessionUtil.setRuleSetId(connectionSession, optional.get().getRulesetId());
+                ConnectionSessionUtil.setQueryLimit(connectionSession,
+                        (Integer) ruleService.getValueByRulesetIdAndRuleId(optional.get().getRulesetId()));
             }
         }
+        ConnectionSessionUtil.setQueryLimit(connectionSession, organizationConfigProvider.getDefaultQueryLimit());
     }
 
     private ConnectionSession getWithCreatorCheck(@NonNull String sessionId) {

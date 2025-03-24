@@ -96,6 +96,8 @@ public class RuleService {
     @Autowired
     private OrganizationConfigProvider organizationConfigProvider;
 
+    private static final Long QUERY_LIMIT_ID = 3L;
+
     @SkipAuthorize("odc internal usage")
     public List<Rule> list(@NonNull Long rulesetId, @NonNull QueryRuleMetadataParams params) {
         return internalList(rulesetId, params);
@@ -244,6 +246,11 @@ public class RuleService {
         return rules;
     }
 
+    @SkipAuthorize("internal authenticated")
+    public Object getValueByRulesetIdAndRuleId(@NonNull Long rulesetId) {
+        Rule targetRule = this.detail(rulesetId, QUERY_LIMIT_ID);
+        return targetRule.getProperties().values().iterator().next();
+    }
 
     private List<Rule> internalList(@NonNull Long rulesetId, @NonNull QueryRuleMetadataParams params) {
         List<RuleMetadata> ruleMetadatas = metadataService.list(params);
@@ -281,11 +288,17 @@ public class RuleService {
             List<DefaultRuleApplyingEntity> defaultApplyings = metadataId2DefaultRuleApplying.get(metadata.getId());
             Verify.equals(1, defaultApplyings.size(), "defaultRuleApplyingEntity");
             RuleApplyingEntity merged;
+            // merged from default and user-defined rule values
             if (!metadataId2RuleApplying.containsKey(metadata.getId())) {
                 merged = RuleApplyingEntity.merge(defaultApplyings.get(0), Optional.empty());
             } else {
                 merged = RuleApplyingEntity.merge(defaultApplyings.get(0),
                         Optional.of(metadataId2RuleApplying.get(metadata.getId()).get(0)));
+            }
+            // compatible with stock data
+            if (metadata.getName().contains("sql-console.max-return-rows")) {
+                String property = compatibleWithStockData(defaultApplyings.get(0), merged);
+                merged.setPropertiesJson(property);
             }
             Rule rule = entityToModel(merged);
             rule.setRulesetId(rulesetId);
@@ -324,6 +337,20 @@ public class RuleService {
         Map<String, Object> result = new HashMap<>();
         result.put(metaKey, newValue);
         return result;
+    }
+
+    private String compatibleWithStockData(DefaultRuleApplyingEntity defaultEntity, RuleApplyingEntity applyingEntity) {
+        Map<String, Object> defaultProperty = JsonUtils.fromJson(defaultEntity.getPropertiesJson(),
+                new TypeReference<Map<String, Object>>() {});
+        Map<String, Object> applyingProperty = JsonUtils.fromJson(applyingEntity.getPropertiesJson(),
+                new TypeReference<Map<String, Object>>() {});
+        // if default value is edited, use the edited value
+        if (!(defaultProperty.values().iterator().next()).equals(applyingProperty.values().iterator().next())) {
+            return applyingEntity.getPropertiesJson();
+        }
+        String key = defaultProperty.keySet().iterator().next();
+        String value = organizationConfigProvider.getDefaultMaxQueryLimit().toString();
+        return "\"" + key + "\":" + value;
     }
 
 }

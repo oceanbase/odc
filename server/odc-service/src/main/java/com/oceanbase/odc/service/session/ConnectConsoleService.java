@@ -91,6 +91,7 @@ import com.oceanbase.odc.service.feature.AllFeatures;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.queryprofile.OBQueryProfileManager;
+import com.oceanbase.odc.service.regulation.ruleset.RuleService;
 import com.oceanbase.odc.service.session.interceptor.SqlCheckInterceptor;
 import com.oceanbase.odc.service.session.interceptor.SqlConsoleInterceptor;
 import com.oceanbase.odc.service.session.interceptor.SqlExecuteInterceptorService;
@@ -149,6 +150,8 @@ public class ConnectConsoleService {
     private OBQueryProfileManager profileManager;
     @Autowired
     private OrganizationConfigProvider organizationConfigProvider;
+    @Autowired
+    private RuleService ruleService;
 
     public SqlExecuteResult queryTableOrViewData(@NotNull String sessionId,
             @NotNull @Valid QueryTableOrViewDataReq req) throws Exception {
@@ -171,7 +174,7 @@ public class ConnectConsoleService {
         sqlBuilder.append(" t.* ").append(" FROM ")
                 .schemaPrefixIfNotBlank(req.getSchemaName()).identifier(req.getTableOrViewName()).append(" t");
 
-        Integer queryLimit = checkQueryLimit(req.getQueryLimit());
+        Integer queryLimit = checkQueryLimit(connectionSession, req.getQueryLimit());
         if (DialectType.OB_ORACLE == connectionSession.getDialectType()) {
             String version = ConnectionSessionUtil.getVersion(connectionSession);
             if (VersionUtils.isGreaterThanOrEqualsTo(version, "2.2.50")) {
@@ -299,7 +302,7 @@ public class ConnectConsoleService {
                 }
             }
         }
-        Integer queryLimit = checkQueryLimit(request.getQueryLimit());
+        Integer queryLimit = checkQueryLimit(connectionSession, request.getQueryLimit());
         boolean continueExecutionOnError =
                 Objects.nonNull(request.getContinueExecutionOnError()) ? request.getContinueExecutionOnError()
                         : userConfigFacade.isContinueExecutionOnError();
@@ -583,9 +586,11 @@ public class ConnectConsoleService {
         return result;
     }
 
-    private Integer checkQueryLimit(Integer queryLimit) {
+    private Integer checkQueryLimit(ConnectionSession connectionSession, Integer queryLimit) {
         if (Objects.isNull(queryLimit)) {
-            queryLimit = organizationConfigProvider.getDefaultQueryLimit();
+            queryLimit = Integer.valueOf(
+                    ruleService.getValueByRulesetIdAndRuleId(
+                            ConnectionSessionUtil.getRuleSetId(connectionSession)).toString());
         }
         // Compatible: if user did not edit query limit, use default value
         if (!Objects.equals(queryLimit, (int) sessionProperties.getResultSetDefaultRows())) {

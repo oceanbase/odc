@@ -71,6 +71,12 @@ public class RulesetController {
         return Responses.success(ruleService.detail(rulesetId, ruleId));
     }
 
+    @ApiOperation(value = "getRuleProperty", notes = "Get a rule property under a ruleset")
+    @RequestMapping(value = "/{rulesetId:[\\d]+}/rules/property}", method = RequestMethod.GET)
+    public SuccessResponse<Object> getRuleValue(@PathVariable Long rulesetId) {
+        return Responses.success(ruleService.getValueByRulesetIdAndRuleId(rulesetId));
+    }
+
     @ApiOperation(value = "updateRule", notes = "update a rule")
     @RequestMapping(value = "/{rulesetId:[\\d]+}/rules/{ruleId:[\\d]+}", method = RequestMethod.PUT)
     public SuccessResponse<Rule> updateRule(@PathVariable Long rulesetId, @PathVariable Long ruleId,
