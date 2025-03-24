@@ -55,24 +55,24 @@ public class OracleMViewTemplateTest {
         DBMaterializedView.setCreateColumns(MysqlMViewTemplateTest.prepareQueryColumns(2));
 
         String expect = "CREATE MATERIALIZED VIEW \"schema_0\".\"mv_0\"(PRIMARY KEY (\"alias_c0\"))\n" +
-            "PARALLEL 8\n" +
-            " PARTITION BY HASH(alias_c0) \n" +
-            "PARTITIONS 3\n" +
-            " WITH COLUMN GROUP(all columns,each column)\n" +
-            "REFRESH COMPLETE\n" +
-            "START WITH CURRENT_DATE\n" +
-            "NEXT CURRENT_DATE + INTERVAL '1' DAY\n" +
-            "DISABLE QUERY REWRITE\n" +
-            "DISABLE ON QUERY COMPUTATION\n" +
-            "AS\n" +
-            "SELECT\n" +
-            "\ttableAlias_0.\"c_0\" AS alias_c0,\n" +
-            "\ttableAlias_0.\"d_0\" AS alias_d0,\n" +
-            "\ttableAlias_1.\"c_1\" AS alias_c1,\n" +
-            "\ttableAlias_1.\"d_1\" AS alias_d1\n" +
-            "FROM\n" +
-            "\t\"database_0\".\"table_0\" tableAlias_0\n" +
-            "\tLEFT JOIN \"database_1\".\"table_1\" tableAlias_1 ON /* TODO enter attribute to join on here */";
+                "PARALLEL 8\n" +
+                " PARTITION BY HASH(alias_c0) \n" +
+                "PARTITIONS 3\n" +
+                " WITH COLUMN GROUP(all columns,each column)\n" +
+                "REFRESH COMPLETE\n" +
+                "START WITH CURRENT_DATE\n" +
+                "NEXT CURRENT_DATE + INTERVAL '1' DAY\n" +
+                "DISABLE QUERY REWRITE\n" +
+                "DISABLE ON QUERY COMPUTATION\n" +
+                "AS\n" +
+                "SELECT\n" +
+                "\ttableAlias_0.\"c_0\" AS alias_c0,\n" +
+                "\ttableAlias_0.\"d_0\" AS alias_d0,\n" +
+                "\ttableAlias_1.\"c_1\" AS alias_c1,\n" +
+                "\ttableAlias_1.\"d_1\" AS alias_d1\n" +
+                "FROM\n" +
+                "\t\"database_0\".\"table_0\" tableAlias_0\n" +
+                "\tLEFT JOIN \"database_1\".\"table_1\" tableAlias_1 ON /* TODO enter attribute to join on here */";
         String actual = oracleMViewTemplate.generateCreateObjectTemplate(DBMaterializedView);
         Assert.assertEquals(expect, actual);
     }
@@ -91,18 +91,18 @@ public class OracleMViewTemplateTest {
         DBMaterializedView.setCreateColumns(MysqlMViewTemplateTest.prepareQueryColumns(2));
 
         String expect = "CREATE MATERIALIZED VIEW \"schema_0\".\"mv_0\"\n" +
-            "REFRESH FORCE\n" +
-            "START WITH TO_DATE('2025-07-11 18:00:00', 'YYYY-MM-DD HH24:MI:SS')\n" +
-            "NEXT TO_DATE('2025-07-11 18:00:00', 'YYYY-MM-DD HH24:MI:SS') + INTERVAL '1' MINUTE\n" +
-            "AS\n" +
-            "SELECT\n" +
-            "\ttableAlias_0.\"c_0\" AS alias_c0,\n" +
-            "\ttableAlias_0.\"d_0\" AS alias_d0,\n" +
-            "\ttableAlias_1.\"c_1\" AS alias_c1,\n" +
-            "\ttableAlias_1.\"d_1\" AS alias_d1\n" +
-            "FROM\n" +
-            "\t\"database_0\".\"table_0\" tableAlias_0\n" +
-            "\tLEFT JOIN \"database_1\".\"table_1\" tableAlias_1 ON /* TODO enter attribute to join on here */";
+                "REFRESH FORCE\n" +
+                "START WITH TO_DATE('2025-07-11 18:00:00', 'YYYY-MM-DD HH24:MI:SS')\n" +
+                "NEXT TO_DATE('2025-07-11 18:00:00', 'YYYY-MM-DD HH24:MI:SS') + INTERVAL '1' MINUTE\n" +
+                "AS\n" +
+                "SELECT\n" +
+                "\ttableAlias_0.\"c_0\" AS alias_c0,\n" +
+                "\ttableAlias_0.\"d_0\" AS alias_d0,\n" +
+                "\ttableAlias_1.\"c_1\" AS alias_c1,\n" +
+                "\ttableAlias_1.\"d_1\" AS alias_d1\n" +
+                "FROM\n" +
+                "\t\"database_0\".\"table_0\" tableAlias_0\n" +
+                "\tLEFT JOIN \"database_1\".\"table_1\" tableAlias_1 ON /* TODO enter attribute to join on here */";
         String actual = oracleMViewTemplate.generateCreateObjectTemplate(DBMaterializedView);
         Assert.assertEquals(expect, actual);
     }
