@@ -571,377 +571,413 @@ public class OBOracleGetDBTableByParserTest {
 
     @Test
     public void getMViewPartition_Hash_SingleKey_Success() {
-        DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
-                "MV_HASH_PART_SINGLE_KEY_BY_PARSER");
-        Assert.assertEquals(6L, partition.getPartitionOption().getPartitionsNum().longValue());
-        Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
-        Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
-        Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
-        Assert.assertNull(partition.getSubpartition());
-        Assert.assertNull(partition.getSubpartitionTemplated());
+        if (isSupportMaterializedView) {
+            DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
+                    "MV_HASH_PART_SINGLE_KEY_BY_PARSER");
+            Assert.assertEquals(6L, partition.getPartitionOption().getPartitionsNum().longValue());
+            Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
+            Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
+            Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
+            Assert.assertNull(partition.getSubpartition());
+            Assert.assertNull(partition.getSubpartitionTemplated());
+        }
     }
 
     @Test
     public void getMViewPartition_Hash_MultipleKey_Success() {
-        DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
-                "MV_HASH_PART_MULTIPLE_KEY_BY_PARSER");
-        Assert.assertEquals(10L, partition.getPartitionOption().getPartitionsNum().longValue());
-        Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
-        Assert.assertEquals(2, partition.getPartitionOption().getColumnNames().size());
-        Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
-        Assert.assertEquals("COL2", partition.getPartitionOption().getColumnNames().get(1));
-        Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
-        Assert.assertNull(partition.getSubpartition());
-        Assert.assertNull(partition.getSubpartitionTemplated());
+        if (isSupportMaterializedView) {
+            DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
+                    "MV_HASH_PART_MULTIPLE_KEY_BY_PARSER");
+            Assert.assertEquals(10L, partition.getPartitionOption().getPartitionsNum().longValue());
+            Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
+            Assert.assertEquals(2, partition.getPartitionOption().getColumnNames().size());
+            Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
+            Assert.assertEquals("COL2", partition.getPartitionOption().getColumnNames().get(1));
+            Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
+            Assert.assertNull(partition.getSubpartition());
+            Assert.assertNull(partition.getSubpartitionTemplated());
+        }
     }
 
     @Test
     public void getMViewPartition_List_SingleKey_Success() {
-        DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
-                "MV_LIST_PART_SINGLE_KEY_BY_PARSER");
-        Assert.assertEquals(4L, partition.getPartitionOption().getPartitionsNum().longValue());
-        Assert.assertEquals(DBTablePartitionType.LIST, partition.getPartitionOption().getType());
-        Assert.assertEquals("LOG_VALUE", partition.getPartitionOption().getColumnNames().get(0));
-        Assert.assertEquals("P01", partition.getPartitionDefinitions().get(0).getName());
-        Assert.assertEquals(3, partition.getPartitionDefinitions().get(0).getValuesList().size());
-        Assert.assertEquals("'A'", partition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
-        Assert.assertNull(partition.getSubpartition());
-        Assert.assertNull(partition.getSubpartitionTemplated());
+        if (isSupportMaterializedView) {
+            DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
+                    "MV_LIST_PART_SINGLE_KEY_BY_PARSER");
+            Assert.assertEquals(4L, partition.getPartitionOption().getPartitionsNum().longValue());
+            Assert.assertEquals(DBTablePartitionType.LIST, partition.getPartitionOption().getType());
+            Assert.assertEquals("LOG_VALUE", partition.getPartitionOption().getColumnNames().get(0));
+            Assert.assertEquals("P01", partition.getPartitionDefinitions().get(0).getName());
+            Assert.assertEquals(3, partition.getPartitionDefinitions().get(0).getValuesList().size());
+            Assert.assertEquals("'A'", partition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+            Assert.assertNull(partition.getSubpartition());
+            Assert.assertNull(partition.getSubpartitionTemplated());
+        }
     }
 
     @Test
     public void getMViewPartition_List_MultipleKey_Success() {
-        DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
-                "MV_LIST_PART_MULTIPLE_KEY_BY_PARSER");
-        Assert.assertEquals(3L, partition.getPartitionOption().getPartitionsNum().longValue());
-        Assert.assertEquals(DBTablePartitionType.LIST, partition.getPartitionOption().getType());
-        Assert.assertEquals(2, partition.getPartitionOption().getColumnNames().size());
-        Assert.assertEquals("COL2", partition.getPartitionOption().getColumnNames().get(0));
-        Assert.assertEquals("COL2", partition.getPartitionOption().getColumnNames().get(0));
-        Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
-        Assert.assertEquals(2, partition.getPartitionDefinitions().get(0).getValuesList().size());
-        Assert.assertEquals(2, partition.getPartitionDefinitions().get(0).getValuesList().get(0).size());
-        Assert.assertEquals("1", partition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
-        Assert.assertEquals("1", partition.getPartitionDefinitions().get(0).getValuesList().get(0).get(1));
-        Assert.assertNull(partition.getSubpartition());
-        Assert.assertNull(partition.getSubpartitionTemplated());
+        if (isSupportMaterializedView) {
+            DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
+                    "MV_LIST_PART_MULTIPLE_KEY_BY_PARSER");
+            Assert.assertEquals(3L, partition.getPartitionOption().getPartitionsNum().longValue());
+            Assert.assertEquals(DBTablePartitionType.LIST, partition.getPartitionOption().getType());
+            Assert.assertEquals(2, partition.getPartitionOption().getColumnNames().size());
+            Assert.assertEquals("COL2", partition.getPartitionOption().getColumnNames().get(0));
+            Assert.assertEquals("COL2", partition.getPartitionOption().getColumnNames().get(0));
+            Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
+            Assert.assertEquals(2, partition.getPartitionDefinitions().get(0).getValuesList().size());
+            Assert.assertEquals(2, partition.getPartitionDefinitions().get(0).getValuesList().get(0).size());
+            Assert.assertEquals("1", partition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+            Assert.assertEquals("1", partition.getPartitionDefinitions().get(0).getValuesList().get(0).get(1));
+            Assert.assertNull(partition.getSubpartition());
+            Assert.assertNull(partition.getSubpartitionTemplated());
+        }
     }
 
     @Test
     public void getMViewPartition_Range_SingleKey_Success() {
-        DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
-                "MV_RANGE_PART_SINGLE_KEY_BY_PARSER");
-        Assert.assertEquals(4L, partition.getPartitionOption().getPartitionsNum().longValue());
-        Assert.assertEquals(DBTablePartitionType.RANGE, partition.getPartitionOption().getType());
-        Assert.assertEquals("LOG_DATE", partition.getPartitionOption().getColumnNames().get(0));
-        Assert.assertEquals("M202001", partition.getPartitionDefinitions().get(0).getName());
-        Assert.assertEquals(1, partition.getPartitionDefinitions().get(0).getMaxValues().size());
-        Assert.assertEquals("TO_DATE(' 2020-02-01 00:00:00', 'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN')",
-                partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
-        Assert.assertNull(partition.getSubpartition());
-        Assert.assertNull(partition.getSubpartitionTemplated());
+        if (isSupportMaterializedView) {
+            DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
+                    "MV_RANGE_PART_SINGLE_KEY_BY_PARSER");
+            Assert.assertEquals(4L, partition.getPartitionOption().getPartitionsNum().longValue());
+            Assert.assertEquals(DBTablePartitionType.RANGE, partition.getPartitionOption().getType());
+            Assert.assertEquals("LOG_DATE", partition.getPartitionOption().getColumnNames().get(0));
+            Assert.assertEquals("M202001", partition.getPartitionDefinitions().get(0).getName());
+            Assert.assertEquals(1, partition.getPartitionDefinitions().get(0).getMaxValues().size());
+            Assert.assertEquals("TO_DATE(' 2020-02-01 00:00:00', 'SYYYY-MM-DD HH24:MI:SS', 'NLS_CALENDAR=GREGORIAN')",
+                    partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+            Assert.assertNull(partition.getSubpartition());
+            Assert.assertNull(partition.getSubpartitionTemplated());
+        }
     }
 
     @Test
     public void getMViewPartition_Range_MultipleKey_Success() {
-        DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
-                "MV_RANGE_PART_MULTIPLE_KEY_BY_PARSER");
-        Assert.assertEquals(4L, partition.getPartitionOption().getPartitionsNum().longValue());
-        Assert.assertEquals(DBTablePartitionType.RANGE, partition.getPartitionOption().getType());
-        Assert.assertEquals(2, partition.getPartitionOption().getColumnNames().size());
-        Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
-        Assert.assertEquals("COL2", partition.getPartitionOption().getColumnNames().get(1));
-        Assert.assertEquals("M202001", partition.getPartitionDefinitions().get(0).getName());
-        Assert.assertEquals(2, partition.getPartitionDefinitions().get(0).getMaxValues().size());
-        Assert.assertEquals("1", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
-        Assert.assertEquals("1", partition.getPartitionDefinitions().get(0).getMaxValues().get(1));
-        Assert.assertNull(partition.getSubpartition());
-        Assert.assertNull(partition.getSubpartitionTemplated());
+        if (isSupportMaterializedView) {
+            DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
+                    "MV_RANGE_PART_MULTIPLE_KEY_BY_PARSER");
+            Assert.assertEquals(4L, partition.getPartitionOption().getPartitionsNum().longValue());
+            Assert.assertEquals(DBTablePartitionType.RANGE, partition.getPartitionOption().getType());
+            Assert.assertEquals(2, partition.getPartitionOption().getColumnNames().size());
+            Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
+            Assert.assertEquals("COL2", partition.getPartitionOption().getColumnNames().get(1));
+            Assert.assertEquals("M202001", partition.getPartitionDefinitions().get(0).getName());
+            Assert.assertEquals(2, partition.getPartitionDefinitions().get(0).getMaxValues().size());
+            Assert.assertEquals("1", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+            Assert.assertEquals("1", partition.getPartitionDefinitions().get(0).getMaxValues().get(1));
+            Assert.assertNull(partition.getSubpartition());
+            Assert.assertNull(partition.getSubpartitionTemplated());
+        }
     }
 
     @Test
     public void getMViewSubPartition_TemplateSingleRangeMultipleRange_Success() {
-        DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
-                "MV_T_SINGLE_RANGE_MULTIPLE_RANGE");
-        Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
-        Assert.assertEquals(DBTablePartitionType.RANGE, partition.getPartitionOption().getType());
-        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
-        Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
-        Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
-        Assert.assertEquals(1, partition.getPartitionDefinitions().get(0).getMaxValues().size());
-        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
-        DBTablePartition subpartition = partition.getSubpartition();
-        Assert.assertTrue(partition.getSubpartitionTemplated());
-        Assert.assertEquals(DBTablePartitionType.RANGE, subpartition.getPartitionOption().getType());
-        Assert.assertEquals(2, subpartition.getPartitionOption().getColumnNames().size());
-        Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
-        Assert.assertEquals("COL3", subpartition.getPartitionOption().getColumnNames().get(1));
-        Assert.assertNull(subpartition.getPartitionOption().getExpression());
-        Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
-        Assert.assertEquals("P0SMP0", subpartition.getPartitionDefinitions().get(0).getName());
-        Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
-        Assert.assertEquals("2020", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
-        Assert.assertEquals("2020", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(1));
-        Assert.assertEquals("P0",
-                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+        if (isSupportMaterializedView) {
+            DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
+                    "MV_T_SINGLE_RANGE_MULTIPLE_RANGE");
+            Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
+            Assert.assertEquals(DBTablePartitionType.RANGE, partition.getPartitionOption().getType());
+            Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+            Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
+            Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
+            Assert.assertEquals(1, partition.getPartitionDefinitions().get(0).getMaxValues().size());
+            Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+            DBTablePartition subpartition = partition.getSubpartition();
+            Assert.assertTrue(partition.getSubpartitionTemplated());
+            Assert.assertEquals(DBTablePartitionType.RANGE, subpartition.getPartitionOption().getType());
+            Assert.assertEquals(2, subpartition.getPartitionOption().getColumnNames().size());
+            Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
+            Assert.assertEquals("COL3", subpartition.getPartitionOption().getColumnNames().get(1));
+            Assert.assertNull(subpartition.getPartitionOption().getExpression());
+            Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
+            Assert.assertEquals("P0SMP0", subpartition.getPartitionDefinitions().get(0).getName());
+            Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
+            Assert.assertEquals("2020", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+            Assert.assertEquals("2020", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(1));
+            Assert.assertEquals("P0",
+                    subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+        }
     }
 
     @Test
     public void getMViewSubPartition_TemplateSingleRangeSingleRange_Success() {
-        DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
-                "MV_T_SINGLE_RANGE_SINGLE_RANGE");
-        Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
-        Assert.assertEquals(DBTablePartitionType.RANGE, partition.getPartitionOption().getType());
-        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
-        Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
-        Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
-        Assert.assertEquals(1, partition.getPartitionDefinitions().get(0).getMaxValues().size());
-        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
-        DBTablePartition subpartition = partition.getSubpartition();
-        Assert.assertTrue(partition.getSubpartitionTemplated());
-        Assert.assertEquals(DBTablePartitionType.RANGE, subpartition.getPartitionOption().getType());
-        Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
-        Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
-        Assert.assertNull(subpartition.getPartitionOption().getExpression());
-        Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
-        Assert.assertEquals("P0SMP0", subpartition.getPartitionDefinitions().get(0).getName());
-        Assert.assertEquals(1, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
-        Assert.assertEquals("2020", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
-        Assert.assertEquals("P0",
-                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+        if (isSupportMaterializedView) {
+            DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
+                    "MV_T_SINGLE_RANGE_SINGLE_RANGE");
+            Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
+            Assert.assertEquals(DBTablePartitionType.RANGE, partition.getPartitionOption().getType());
+            Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+            Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
+            Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
+            Assert.assertEquals(1, partition.getPartitionDefinitions().get(0).getMaxValues().size());
+            Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+            DBTablePartition subpartition = partition.getSubpartition();
+            Assert.assertTrue(partition.getSubpartitionTemplated());
+            Assert.assertEquals(DBTablePartitionType.RANGE, subpartition.getPartitionOption().getType());
+            Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
+            Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
+            Assert.assertNull(subpartition.getPartitionOption().getExpression());
+            Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
+            Assert.assertEquals("P0SMP0", subpartition.getPartitionDefinitions().get(0).getName());
+            Assert.assertEquals(1, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
+            Assert.assertEquals("2020", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+            Assert.assertEquals("P0",
+                    subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+        }
     }
 
     @Test
     public void getMViewSubPartition_TemplateSingleHashMultipleList_Success() {
-        DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
-                "MV_T_SINGLE_HASH_MULTIPLE_LIST");
-        Assert.assertEquals(5, partition.getPartitionOption().getPartitionsNum().longValue());
-        Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
-        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
-        Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
-        Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
-        DBTablePartition subpartition = partition.getSubpartition();
-        Assert.assertTrue(partition.getSubpartitionTemplated());
-        Assert.assertEquals(DBTablePartitionType.LIST, subpartition.getPartitionOption().getType());
-        Assert.assertEquals(2, subpartition.getPartitionOption().getColumnNames().size());
-        Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
-        Assert.assertEquals("COL3", subpartition.getPartitionOption().getColumnNames().get(1));
-        Assert.assertNull(subpartition.getPartitionOption().getExpression());
-        Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
-        Assert.assertEquals("P0SSP0", subpartition.getPartitionDefinitions().get(0).getName());
-        Assert.assertEquals(1, subpartition.getPartitionDefinitions().get(0).getValuesList().size());
-        Assert.assertEquals("100", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
-        Assert.assertEquals("100", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(1));
-        Assert.assertEquals("P0",
-                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+        if (isSupportMaterializedView) {
+            DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
+                    "MV_T_SINGLE_HASH_MULTIPLE_LIST");
+            Assert.assertEquals(5, partition.getPartitionOption().getPartitionsNum().longValue());
+            Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
+            Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+            Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
+            Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
+            DBTablePartition subpartition = partition.getSubpartition();
+            Assert.assertTrue(partition.getSubpartitionTemplated());
+            Assert.assertEquals(DBTablePartitionType.LIST, subpartition.getPartitionOption().getType());
+            Assert.assertEquals(2, subpartition.getPartitionOption().getColumnNames().size());
+            Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
+            Assert.assertEquals("COL3", subpartition.getPartitionOption().getColumnNames().get(1));
+            Assert.assertNull(subpartition.getPartitionOption().getExpression());
+            Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
+            Assert.assertEquals("P0SSP0", subpartition.getPartitionDefinitions().get(0).getName());
+            Assert.assertEquals(1, subpartition.getPartitionDefinitions().get(0).getValuesList().size());
+            Assert.assertEquals("100", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+            Assert.assertEquals("100", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(1));
+            Assert.assertEquals("P0",
+                    subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+        }
     }
 
     @Test
     public void getMViewSubPartition_TemplateSingleHashSingleList_Success() {
-        DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
-                "MV_T_SINGLE_HASH_SINGLE_LIST");
-        Assert.assertEquals(5, partition.getPartitionOption().getPartitionsNum().longValue());
-        Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
-        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
-        Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
-        Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
-        DBTablePartition subpartition = partition.getSubpartition();
-        Assert.assertTrue(partition.getSubpartitionTemplated());
-        Assert.assertEquals(DBTablePartitionType.LIST, subpartition.getPartitionOption().getType());
-        Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
-        Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
-        Assert.assertNull(subpartition.getPartitionOption().getExpression());
-        Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
-        Assert.assertEquals("P0SSP0", subpartition.getPartitionDefinitions().get(0).getName());
-        Assert.assertEquals(1, subpartition.getPartitionDefinitions().get(0).getValuesList().size());
-        Assert.assertEquals("100", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
-        Assert.assertEquals("P0",
-                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+        if (isSupportMaterializedView) {
+            DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
+                    "MV_T_SINGLE_HASH_SINGLE_LIST");
+            Assert.assertEquals(5, partition.getPartitionOption().getPartitionsNum().longValue());
+            Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
+            Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+            Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
+            Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
+            DBTablePartition subpartition = partition.getSubpartition();
+            Assert.assertTrue(partition.getSubpartitionTemplated());
+            Assert.assertEquals(DBTablePartitionType.LIST, subpartition.getPartitionOption().getType());
+            Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
+            Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
+            Assert.assertNull(subpartition.getPartitionOption().getExpression());
+            Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
+            Assert.assertEquals("P0SSP0", subpartition.getPartitionDefinitions().get(0).getName());
+            Assert.assertEquals(1, subpartition.getPartitionDefinitions().get(0).getValuesList().size());
+            Assert.assertEquals("100", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+            Assert.assertEquals("P0",
+                    subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+        }
     }
 
     @Test
     public void getMViewSubPartition_TemplateSingleHashMultipleHash_Success() {
-        DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
-                "MV_T_SINGLE_HASH_MULTIPLE_HASH");
-        Assert.assertEquals(5, partition.getPartitionOption().getPartitionsNum().longValue());
-        Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
-        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
-        Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
-        Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
-        DBTablePartition subpartition = partition.getSubpartition();
-        Assert.assertTrue(partition.getSubpartitionTemplated());
-        Assert.assertEquals(DBTablePartitionType.HASH, subpartition.getPartitionOption().getType());
-        Assert.assertEquals(2, subpartition.getPartitionOption().getColumnNames().size());
-        Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
-        Assert.assertEquals("COL3", subpartition.getPartitionOption().getColumnNames().get(1));
-        Assert.assertNull(subpartition.getPartitionOption().getExpression());
-        Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
-        Assert.assertEquals("P0SP0", subpartition.getPartitionDefinitions().get(0).getName());
-        Assert.assertEquals("P0",
-                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+        if (isSupportMaterializedView) {
+            DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
+                    "MV_T_SINGLE_HASH_MULTIPLE_HASH");
+            Assert.assertEquals(5, partition.getPartitionOption().getPartitionsNum().longValue());
+            Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
+            Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+            Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
+            Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
+            DBTablePartition subpartition = partition.getSubpartition();
+            Assert.assertTrue(partition.getSubpartitionTemplated());
+            Assert.assertEquals(DBTablePartitionType.HASH, subpartition.getPartitionOption().getType());
+            Assert.assertEquals(2, subpartition.getPartitionOption().getColumnNames().size());
+            Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
+            Assert.assertEquals("COL3", subpartition.getPartitionOption().getColumnNames().get(1));
+            Assert.assertNull(subpartition.getPartitionOption().getExpression());
+            Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
+            Assert.assertEquals("P0SP0", subpartition.getPartitionDefinitions().get(0).getName());
+            Assert.assertEquals("P0",
+                    subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+        }
     }
 
     @Test
     public void getMViewSubPartition_TemplateSingleHashSingleHash_Success() {
-        DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
-                "MV_T_SINGLE_HASH_SINGLE_HASH");
-        Assert.assertEquals(5, partition.getPartitionOption().getPartitionsNum().longValue());
-        Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
-        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
-        Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
-        Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
-        DBTablePartition subpartition = partition.getSubpartition();
-        Assert.assertTrue(partition.getSubpartitionTemplated());
-        Assert.assertEquals(DBTablePartitionType.HASH, subpartition.getPartitionOption().getType());
-        Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
-        Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
-        Assert.assertNull(subpartition.getPartitionOption().getExpression());
-        Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
-        Assert.assertEquals("P0SP0", subpartition.getPartitionDefinitions().get(0).getName());
-        Assert.assertEquals("P0",
-                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+        if (isSupportMaterializedView) {
+            DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
+                    "MV_T_SINGLE_HASH_SINGLE_HASH");
+            Assert.assertEquals(5, partition.getPartitionOption().getPartitionsNum().longValue());
+            Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
+            Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+            Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
+            Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
+            DBTablePartition subpartition = partition.getSubpartition();
+            Assert.assertTrue(partition.getSubpartitionTemplated());
+            Assert.assertEquals(DBTablePartitionType.HASH, subpartition.getPartitionOption().getType());
+            Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
+            Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
+            Assert.assertNull(subpartition.getPartitionOption().getExpression());
+            Assert.assertEquals(3L, subpartition.getPartitionOption().getPartitionsNum().longValue());
+            Assert.assertEquals("P0SP0", subpartition.getPartitionDefinitions().get(0).getName());
+            Assert.assertEquals("P0",
+                    subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+        }
     }
 
     @Test
     public void getMViewSubPartition_SingleRangeMultipleRange_Success() {
-        DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
-                "MV_SINGLE_RANGE_MULTIPLE_RANGE");
-        Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
-        Assert.assertEquals(DBTablePartitionType.RANGE, partition.getPartitionOption().getType());
-        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
-        Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
-        Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
-        Assert.assertEquals(1, partition.getPartitionDefinitions().get(0).getMaxValues().size());
-        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
-        DBTablePartition subpartition = partition.getSubpartition();
-        Assert.assertFalse(partition.getSubpartitionTemplated());
-        Assert.assertEquals(DBTablePartitionType.RANGE, subpartition.getPartitionOption().getType());
-        Assert.assertEquals(2, subpartition.getPartitionOption().getColumnNames().size());
-        Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
-        Assert.assertEquals("COL3", subpartition.getPartitionOption().getColumnNames().get(1));
-        Assert.assertNull(subpartition.getPartitionOption().getExpression());
-        Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
-        Assert.assertEquals("SP0", subpartition.getPartitionDefinitions().get(0).getName());
-        Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
-        Assert.assertEquals("2020", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
-        Assert.assertEquals("2020", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(1));
-        Assert.assertEquals("P0",
-                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+        if (isSupportMaterializedView) {
+            DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
+                    "MV_SINGLE_RANGE_MULTIPLE_RANGE");
+            Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
+            Assert.assertEquals(DBTablePartitionType.RANGE, partition.getPartitionOption().getType());
+            Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+            Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
+            Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
+            Assert.assertEquals(1, partition.getPartitionDefinitions().get(0).getMaxValues().size());
+            Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+            DBTablePartition subpartition = partition.getSubpartition();
+            Assert.assertFalse(partition.getSubpartitionTemplated());
+            Assert.assertEquals(DBTablePartitionType.RANGE, subpartition.getPartitionOption().getType());
+            Assert.assertEquals(2, subpartition.getPartitionOption().getColumnNames().size());
+            Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
+            Assert.assertEquals("COL3", subpartition.getPartitionOption().getColumnNames().get(1));
+            Assert.assertNull(subpartition.getPartitionOption().getExpression());
+            Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
+            Assert.assertEquals("SP0", subpartition.getPartitionDefinitions().get(0).getName());
+            Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
+            Assert.assertEquals("2020", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+            Assert.assertEquals("2020", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(1));
+            Assert.assertEquals("P0",
+                    subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+        }
     }
 
     @Test
     public void getMViewSubPartition_SingleRangeSingleRange_Success() {
-        DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
-                "MV_SINGLE_RANGE_SINGLE_RANGE");
-        Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
-        Assert.assertEquals(DBTablePartitionType.RANGE, partition.getPartitionOption().getType());
-        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
-        Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
-        Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
-        Assert.assertEquals(1, partition.getPartitionDefinitions().get(0).getMaxValues().size());
-        Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
-        DBTablePartition subpartition = partition.getSubpartition();
-        Assert.assertFalse(partition.getSubpartitionTemplated());
-        Assert.assertEquals(DBTablePartitionType.RANGE, subpartition.getPartitionOption().getType());
-        Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
-        Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
-        Assert.assertNull(subpartition.getPartitionOption().getExpression());
-        Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
-        Assert.assertEquals("SP0", subpartition.getPartitionDefinitions().get(0).getName());
-        Assert.assertEquals(1, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
-        Assert.assertEquals("2020", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
-        Assert.assertEquals("P0",
-                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+        if (isSupportMaterializedView) {
+            DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
+                    "MV_SINGLE_RANGE_SINGLE_RANGE");
+            Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
+            Assert.assertEquals(DBTablePartitionType.RANGE, partition.getPartitionOption().getType());
+            Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+            Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
+            Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
+            Assert.assertEquals(1, partition.getPartitionDefinitions().get(0).getMaxValues().size());
+            Assert.assertEquals("100", partition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+            DBTablePartition subpartition = partition.getSubpartition();
+            Assert.assertFalse(partition.getSubpartitionTemplated());
+            Assert.assertEquals(DBTablePartitionType.RANGE, subpartition.getPartitionOption().getType());
+            Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
+            Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
+            Assert.assertNull(subpartition.getPartitionOption().getExpression());
+            Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
+            Assert.assertEquals("SP0", subpartition.getPartitionDefinitions().get(0).getName());
+            Assert.assertEquals(1, subpartition.getPartitionDefinitions().get(0).getMaxValues().size());
+            Assert.assertEquals("2020", subpartition.getPartitionDefinitions().get(0).getMaxValues().get(0));
+            Assert.assertEquals("P0",
+                    subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+        }
     }
 
     @Test
     public void getMViewSubPartition_SingleHashMultipleList_Success() {
-        DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
-                "MV_SINGLE_HASH_MULTIPLE_LIST");
-        Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
-        Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
-        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
-        Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
-        Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
-        DBTablePartition subpartition = partition.getSubpartition();
-        Assert.assertFalse(partition.getSubpartitionTemplated());
-        Assert.assertEquals(DBTablePartitionType.LIST, subpartition.getPartitionOption().getType());
-        Assert.assertEquals(2, subpartition.getPartitionOption().getColumnNames().size());
-        Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
-        Assert.assertEquals("COL3", subpartition.getPartitionOption().getColumnNames().get(1));
-        Assert.assertNull(subpartition.getPartitionOption().getExpression());
-        Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
-        Assert.assertEquals("SP0", subpartition.getPartitionDefinitions().get(0).getName());
-        Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getValuesList().size());
-        Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
-        Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(1));
-        Assert.assertEquals("P0",
-                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+        if (isSupportMaterializedView) {
+            DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
+                    "MV_SINGLE_HASH_MULTIPLE_LIST");
+            Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
+            Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
+            Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+            Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
+            Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
+            DBTablePartition subpartition = partition.getSubpartition();
+            Assert.assertFalse(partition.getSubpartitionTemplated());
+            Assert.assertEquals(DBTablePartitionType.LIST, subpartition.getPartitionOption().getType());
+            Assert.assertEquals(2, subpartition.getPartitionOption().getColumnNames().size());
+            Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
+            Assert.assertEquals("COL3", subpartition.getPartitionOption().getColumnNames().get(1));
+            Assert.assertNull(subpartition.getPartitionOption().getExpression());
+            Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
+            Assert.assertEquals("SP0", subpartition.getPartitionDefinitions().get(0).getName());
+            Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getValuesList().size());
+            Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+            Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(1));
+            Assert.assertEquals("P0",
+                    subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+        }
     }
 
     @Test
     public void getMViewSubPartition_SingleHashSingleList_Success() {
-        DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
-                "MV_SINGLE_HASH_SINGLE_LIST");
-        Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
-        Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
-        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
-        Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
-        Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
-        DBTablePartition subpartition = partition.getSubpartition();
-        Assert.assertFalse(partition.getSubpartitionTemplated());
-        Assert.assertEquals(DBTablePartitionType.LIST, subpartition.getPartitionOption().getType());
-        Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
-        Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
-        Assert.assertNull(subpartition.getPartitionOption().getExpression());
-        Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
-        Assert.assertEquals("SP0", subpartition.getPartitionDefinitions().get(0).getName());
-        Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getValuesList().size());
-        Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
-        Assert.assertEquals("P0",
-                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+        if (isSupportMaterializedView) {
+            DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
+                    "MV_SINGLE_HASH_SINGLE_LIST");
+            Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
+            Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
+            Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+            Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
+            Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
+            DBTablePartition subpartition = partition.getSubpartition();
+            Assert.assertFalse(partition.getSubpartitionTemplated());
+            Assert.assertEquals(DBTablePartitionType.LIST, subpartition.getPartitionOption().getType());
+            Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
+            Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
+            Assert.assertNull(subpartition.getPartitionOption().getExpression());
+            Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
+            Assert.assertEquals("SP0", subpartition.getPartitionDefinitions().get(0).getName());
+            Assert.assertEquals(2, subpartition.getPartitionDefinitions().get(0).getValuesList().size());
+            Assert.assertEquals("1", subpartition.getPartitionDefinitions().get(0).getValuesList().get(0).get(0));
+            Assert.assertEquals("P0",
+                    subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+        }
     }
 
     @Test
     public void getMViewSubPartition_SingleListMultipleHash_Success() {
-        DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
-                "MV_SINGLE_LIST_SINGLE_HASH");
-        Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
-        Assert.assertEquals(DBTablePartitionType.LIST, partition.getPartitionOption().getType());
-        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
-        Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
-        Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
-        DBTablePartition subpartition = partition.getSubpartition();
-        Assert.assertFalse(partition.getSubpartitionTemplated());
-        Assert.assertEquals(DBTablePartitionType.HASH, subpartition.getPartitionOption().getType());
-        Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
-        Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
-        Assert.assertNull(subpartition.getPartitionOption().getExpression());
-        Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
-        Assert.assertEquals("SP0", subpartition.getPartitionDefinitions().get(0).getName());
-        Assert.assertEquals("P0",
-                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+        if (isSupportMaterializedView) {
+            DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
+                    "MV_SINGLE_LIST_SINGLE_HASH");
+            Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
+            Assert.assertEquals(DBTablePartitionType.LIST, partition.getPartitionOption().getType());
+            Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+            Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
+            Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
+            DBTablePartition subpartition = partition.getSubpartition();
+            Assert.assertFalse(partition.getSubpartitionTemplated());
+            Assert.assertEquals(DBTablePartitionType.HASH, subpartition.getPartitionOption().getType());
+            Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
+            Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
+            Assert.assertNull(subpartition.getPartitionOption().getExpression());
+            Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
+            Assert.assertEquals("SP0", subpartition.getPartitionDefinitions().get(0).getName());
+            Assert.assertEquals("P0",
+                    subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+        }
     }
 
     @Test
     public void getMViewSubPartition_SingleListSingleHash_Success() {
-        DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
-                "MV_SINGLE_LIST_SINGLE_HASH");
-        Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
-        Assert.assertEquals(DBTablePartitionType.LIST, partition.getPartitionOption().getType());
-        Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
-        Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
-        Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
-        DBTablePartition subpartition = partition.getSubpartition();
-        Assert.assertFalse(partition.getSubpartitionTemplated());
-        Assert.assertEquals(DBTablePartitionType.HASH, subpartition.getPartitionOption().getType());
-        Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
-        Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
-        Assert.assertNull(subpartition.getPartitionOption().getExpression());
-        Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
-        Assert.assertEquals("SP0", subpartition.getPartitionDefinitions().get(0).getName());
-        Assert.assertEquals("P0",
-                subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+        if (isSupportMaterializedView) {
+            DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
+                    "MV_SINGLE_LIST_SINGLE_HASH");
+            Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
+            Assert.assertEquals(DBTablePartitionType.LIST, partition.getPartitionOption().getType());
+            Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
+            Assert.assertEquals("COL1", partition.getPartitionOption().getColumnNames().get(0));
+            Assert.assertEquals("P0", partition.getPartitionDefinitions().get(0).getName());
+            DBTablePartition subpartition = partition.getSubpartition();
+            Assert.assertFalse(partition.getSubpartitionTemplated());
+            Assert.assertEquals(DBTablePartitionType.HASH, subpartition.getPartitionOption().getType());
+            Assert.assertEquals(1, subpartition.getPartitionOption().getColumnNames().size());
+            Assert.assertEquals("COL2", subpartition.getPartitionOption().getColumnNames().get(0));
+            Assert.assertNull(subpartition.getPartitionOption().getExpression());
+            Assert.assertNull(subpartition.getPartitionOption().getPartitionsNum());
+            Assert.assertEquals("SP0", subpartition.getPartitionDefinitions().get(0).getName());
+            Assert.assertEquals("P0",
+                    subpartition.getPartitionDefinitions().get(0).getParentPartitionDefinition().getName());
+        }
     }
 
     private DBTablePartition getMViewDBTablePartition(String schema, String mViewName) {
