@@ -163,6 +163,7 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             jobParameter.setCreateTempTableInSource(
                     req.isDeleteAfterMigration() && req.getTargetDs().getType().isFileSystem());
             jobParameter.setDirtyRowAction(req.getDirtyRowAction());
+            jobParameter.setMaxAllowedDirtyRowCount(req.getMaxAllowedDirtyRowCount());
             jobParameter.setJoinConditions(table.getJoinTableConfigs().stream().map(joinTableConfig -> {
                 JoinCondition joinCondition = new JoinCondition();
                 joinCondition.setTableName(joinTableConfig.getTableName());

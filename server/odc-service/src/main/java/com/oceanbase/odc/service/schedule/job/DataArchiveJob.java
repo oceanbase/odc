@@ -65,6 +65,7 @@ public class DataArchiveJob extends AbstractDlmJob {
             parameters.setSourceDs(getDataSourceInfo(dataArchiveParameters.getSourceDatabaseId()));
             parameters.setTargetDs(getDataSourceInfo(dataArchiveParameters.getTargetDataBaseId()));
             parameters.setDirtyRowAction(dataArchiveParameters.getDirtyRowAction());
+            parameters.setMaxAllowedDirtyRowCount(dataArchiveParameters.getMaxAllowedDirtyRowCount());
             for (DataArchiveTableConfig tableConfig : parameters.getTables()) {
                 tableConfig.setConditionExpression(StringUtils.isNotEmpty(tableConfig.getConditionExpression())
                         ? DataArchiveConditionUtil.parseCondition(tableConfig.getConditionExpression(),

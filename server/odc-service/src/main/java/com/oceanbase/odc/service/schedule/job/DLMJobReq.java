@@ -57,6 +57,8 @@ public class DLMJobReq {
 
     private DirtyRowAction dirtyRowAction = DirtyRowAction.RAISE_ERROR;
 
+    private long maxAllowedDirtyRowCount = Long.MAX_VALUE;
+
     private boolean deleteTemporaryTable = false;
 
     private MigrationInsertAction migrationInsertAction;

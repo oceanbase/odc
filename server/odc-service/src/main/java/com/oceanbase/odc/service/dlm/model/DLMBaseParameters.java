@@ -56,7 +56,7 @@ public class DLMBaseParameters implements ScheduleTaskParameters {
 
     private DirtyRowAction dirtyRowAction = DirtyRowAction.RAISE_ERROR;
 
-    private Long maxAllowedDirtyRowCount;
+    private Long maxAllowedDirtyRowCount = Long.MAX_VALUE;
 
     private boolean deleteTemporaryTable = false;
 
