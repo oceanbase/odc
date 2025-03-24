@@ -18,11 +18,14 @@ package com.oceanbase.odc.plugin.schema.oboracle.parser;
 import java.sql.Connection;
 import java.util.List;
 
+import javax.sql.DataSource;
+
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.alibaba.druid.pool.DruidDataSource;
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.sql.util.OBUtils;
@@ -63,7 +66,10 @@ public class OBOracleGetDBTableByParserTest {
 
     @BeforeClass
     public static void setUp() throws Exception {
-        connection = configuration.getDataSource().getConnection();
+        DataSource dataSource = configuration.getDataSource();
+        DruidDataSource longQueryTimeoutdataSource = (DruidDataSource) dataSource;
+        longQueryTimeoutdataSource.setQueryTimeout(30);
+        connection = longQueryTimeoutdataSource.getConnection();
         dropTables = FileUtil.loadAsString(BASE_PATH + "drop.sql");
         batchExcuteSql(dropTables);
         ddl = FileUtil.loadAsString(BASE_PATH + "testGetTableByParser.sql");
@@ -73,13 +79,16 @@ public class OBOracleGetDBTableByParserTest {
             dropMVs = FileUtil.loadAsString(BASE_PATH + "dropMV.sql");
             batchExcuteSql(dropMVs);
             String createMViewDdl = FileUtil.loadAsString(BASE_PATH + "testGetPartitionInMViewByParser.sql");
-            JdbcOperationsUtil.getJdbcOperations(connection).execute(createMViewDdl);
+            batchExcuteSql(createMViewDdl);
         }
     }
 
     @AfterClass
     public static void tearDown() throws Exception {
         batchExcuteSql(dropTables);
+        if(isSupportMaterializedView){
+            batchExcuteSql(dropMVs);
+        }
     }
 
     private static void batchExcuteSql(String str) {
@@ -652,9 +661,8 @@ public class OBOracleGetDBTableByParserTest {
 
     @Test
     public void getMViewSubPartition_TemplateSingleRangeMultipleRange_Success() {
-        OBOracleGetDBTableByParser table =
-            new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "T_SINGLE_RANGE_MULTIPLE_RANGE");
-        DBTablePartition partition = table.getPartition();
+        DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
+            "MV_T_SINGLE_RANGE_MULTIPLE_RANGE");
         Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.RANGE, partition.getPartitionOption().getType());
         Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
@@ -680,9 +688,8 @@ public class OBOracleGetDBTableByParserTest {
 
     @Test
     public void getMViewSubPartition_TemplateSingleRangeSingleRange_Success() {
-        OBOracleGetDBTableByParser table =
-            new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "T_SINGLE_RANGE_SINGLE_RANGE");
-        DBTablePartition partition = table.getPartition();
+        DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
+            "MV_T_SINGLE_RANGE_SINGLE_RANGE");
         Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.RANGE, partition.getPartitionOption().getType());
         Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
@@ -706,9 +713,8 @@ public class OBOracleGetDBTableByParserTest {
 
     @Test
     public void getMViewSubPartition_TemplateSingleHashMultipleList_Success() {
-        OBOracleGetDBTableByParser table =
-            new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "T_SINGLE_HASH_MULTIPLE_LIST");
-        DBTablePartition partition = table.getPartition();
+        DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
+            "MV_T_SINGLE_HASH_MULTIPLE_LIST");
         Assert.assertEquals(5, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
         Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
@@ -732,9 +738,8 @@ public class OBOracleGetDBTableByParserTest {
 
     @Test
     public void getMViewSubPartition_TemplateSingleHashSingleList_Success() {
-        OBOracleGetDBTableByParser table =
-            new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "T_SINGLE_HASH_SINGLE_LIST");
-        DBTablePartition partition = table.getPartition();
+        DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
+            "MV_T_SINGLE_HASH_SINGLE_LIST");
         Assert.assertEquals(5, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
         Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
@@ -756,9 +761,8 @@ public class OBOracleGetDBTableByParserTest {
 
     @Test
     public void getMViewSubPartition_TemplateSingleHashMultipleHash_Success() {
-        OBOracleGetDBTableByParser table =
-            new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "T_SINGLE_HASH_MULTIPLE_HASH");
-        DBTablePartition partition = table.getPartition();
+        DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
+            "MV_T_SINGLE_HASH_MULTIPLE_HASH");
         Assert.assertEquals(5, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
         Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
@@ -779,9 +783,8 @@ public class OBOracleGetDBTableByParserTest {
 
     @Test
     public void getMViewSubPartition_TemplateSingleHashSingleHash_Success() {
-        OBOracleGetDBTableByParser table =
-            new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "T_SINGLE_HASH_SINGLE_HASH");
-        DBTablePartition partition = table.getPartition();
+        DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
+            "MV_T_SINGLE_HASH_SINGLE_HASH");
         Assert.assertEquals(5, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
         Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
@@ -801,9 +804,8 @@ public class OBOracleGetDBTableByParserTest {
 
     @Test
     public void getMViewSubPartition_SingleRangeMultipleRange_Success() {
-        OBOracleGetDBTableByParser table =
-            new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "SINGLE_RANGE_MULTIPLE_RANGE");
-        DBTablePartition partition = table.getPartition();
+        DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
+            "MV_SINGLE_RANGE_MULTIPLE_RANGE");
         Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.RANGE, partition.getPartitionOption().getType());
         Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
@@ -829,9 +831,8 @@ public class OBOracleGetDBTableByParserTest {
 
     @Test
     public void getMViewSubPartition_SingleRangeSingleRange_Success() {
-        OBOracleGetDBTableByParser table =
-            new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "SINGLE_RANGE_SINGLE_RANGE");
-        DBTablePartition partition = table.getPartition();
+        DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
+            "MV_SINGLE_RANGE_SINGLE_RANGE");
         Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.RANGE, partition.getPartitionOption().getType());
         Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
@@ -855,9 +856,8 @@ public class OBOracleGetDBTableByParserTest {
 
     @Test
     public void getMViewSubPartition_SingleHashMultipleList_Success() {
-        OBOracleGetDBTableByParser table =
-            new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "SINGLE_HASH_MULTIPLE_LIST");
-        DBTablePartition partition = table.getPartition();
+        DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
+            "MV_SINGLE_HASH_MULTIPLE_LIST");
         Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
         Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
@@ -881,9 +881,8 @@ public class OBOracleGetDBTableByParserTest {
 
     @Test
     public void getMViewSubPartition_SingleHashSingleList_Success() {
-        OBOracleGetDBTableByParser table =
-            new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "SINGLE_HASH_SINGLE_LIST");
-        DBTablePartition partition = table.getPartition();
+        DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
+            "MV_SINGLE_HASH_SINGLE_LIST");
         Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.HASH, partition.getPartitionOption().getType());
         Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
@@ -905,9 +904,8 @@ public class OBOracleGetDBTableByParserTest {
 
     @Test
     public void getMViewSubPartition_SingleListMultipleHash_Success() {
-        OBOracleGetDBTableByParser table =
-            new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "SINGLE_LIST_SINGLE_HASH");
-        DBTablePartition partition = table.getPartition();
+        DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
+            "MV_SINGLE_LIST_SINGLE_HASH");
         Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.LIST, partition.getPartitionOption().getType());
         Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
@@ -927,9 +925,8 @@ public class OBOracleGetDBTableByParserTest {
 
     @Test
     public void getMViewSubPartition_SingleListSingleHash_Success() {
-        OBOracleGetDBTableByParser table =
-            new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "SINGLE_LIST_SINGLE_HASH");
-        DBTablePartition partition = table.getPartition();
+        DBTablePartition partition = getMViewDBTablePartition(TEST_DATABASE_NAME,
+            "MV_SINGLE_LIST_SINGLE_HASH");
         Assert.assertEquals(2, partition.getPartitionOption().getPartitionsNum().longValue());
         Assert.assertEquals(DBTablePartitionType.LIST, partition.getPartitionOption().getType());
         Assert.assertEquals(1, partition.getPartitionOption().getColumnNames().size());
