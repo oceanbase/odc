@@ -40,6 +40,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.metadb.config.OrganizationConfigDAO;
 import com.oceanbase.odc.metadb.config.OrganizationConfigEntity;
 import com.oceanbase.odc.service.config.model.Configuration;
@@ -87,7 +88,7 @@ public class OrganizationConfigService {
      * Query the organization configurations of the current organization and merge with the default
      * organization configurations.
      */
-    @PreAuthenticate(actions = "read", resourceType = "ODC_ORGANIZATION_CONFIG", isForAll = true)
+    @SkipAuthorize("internal authenticated")
     public List<Configuration> queryList(@NotNull Long organizationId) {
         Map<String, Configuration> keyToConfiguration = Optional
                 .ofNullable(organizationConfigDAO.queryByOrganizationId(organizationId))
