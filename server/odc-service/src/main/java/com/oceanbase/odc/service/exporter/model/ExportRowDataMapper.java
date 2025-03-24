@@ -22,6 +22,7 @@ import org.mapstruct.factory.Mappers;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
@@ -80,18 +81,22 @@ public interface ExportRowDataMapper {
 
     @Mapping(target = "triggerConfig", expression = "java(fromJson(scheduleEntity))")
     @Mapping(target = "name", source = "scheduleEntity.name")
-    @Mapping(source = "targetDatabase", target = "targetDatabase")
+    @Mapping(source = "database", target = "database")
     @Mapping(source = "scheduleEntity.id", target = "originScheduleId")
     @Mapping(source = "projectName", target = "originProjectName")
     SqlPlanScheduleRowData toSqlPlanScheduleRowData(ScheduleEntity scheduleEntity, SqlPlanParameters parameters,
-            ExportedDatabase targetDatabase, String projectName);
+            ExportedDatabase database, String projectName);
 
     @Mapping(source = "databasesId", target = "databaseId")
     SqlPlanParameters toSqlPlanParameters(Long databasesId, SqlPlanScheduleRowData sqlPlanScheduleRowData);
 
-    @Mapping(source = "scheduleEntity.id", target = "originScheduleId")
+    @Mapping(source = "flowInstance.id", target = "originScheduleId")
+    @Mapping(source = "flowInstance.name", target = "name")
+    @Mapping(source = "flowInstance.description", target = "description")
     @Mapping(source = "projectName", target = "originProjectName")
-    PartitionPlanScheduleRowData toPartitionPlanScheduleRowData(ScheduleEntity scheduleEntity,
+    @Mapping(target = "type",
+            expression = "java(com.oceanbase.odc.service.schedule.model.ScheduleType.valueOf(\"PARTITION_PLAN\"))")
+    PartitionPlanScheduleRowData toPartitionPlanScheduleRowData(FlowInstanceEntity flowInstance,
             PartitionPlanConfig partitionPlanConfig, ExportedDatabase database, String projectName);
 
 

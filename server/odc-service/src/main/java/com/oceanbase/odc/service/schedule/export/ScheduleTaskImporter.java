@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.schedule.export;
 
 import static com.oceanbase.odc.service.exporter.model.ExportConstants.SCHEDULE_TYPE;
+import static com.oceanbase.odc.service.schedule.export.ScheduleTaskExporter.removeSeparator;
 
 import java.io.File;
 import java.io.IOException;
@@ -47,8 +48,10 @@ import com.oceanbase.odc.service.exporter.model.ExportRowDataReader;
 import com.oceanbase.odc.service.exporter.utils.JsonExtractorFactory;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
+import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.objectstorage.cloud.InvalidFileFormatException;
+import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.schedule.ScheduleExportImportFacade;
 import com.oceanbase.odc.service.schedule.ScheduleService;
@@ -97,6 +100,9 @@ public class ScheduleTaskImporter implements InitializingBean {
 
     @Value("${odc.server.export.import.temp-path:./data/import}")
     private String importTempPath;
+
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
 
     public List<ImportScheduleTaskView> preview(ScheduleTaskImportRequest request) {
         try (JsonExtractor extractor =
@@ -190,7 +196,8 @@ public class ScheduleTaskImporter implements InitializingBean {
                 BaseScheduleRowData finalBaseScheduleRowData = baseScheduleRowData;
                 JsonNode finalCurrentRow = currentRow;
                 importService.importAndSaveHistory(properties, baseScheduleRowData.getRowId(),
-                        () -> doImport(scheduleType, projectId, finalBaseScheduleRowData, finalCurrentRow, results));
+                        () -> doImport(rowDataReader, scheduleType, projectId, finalBaseScheduleRowData,
+                                finalCurrentRow, results));
             } catch (Exception e) {
                 String rowId = Optional.ofNullable(baseScheduleRowData).map(BaseScheduleRowData::getRowId).orElse(null);
                 log.info("Import row failed, row id {}", rowId, e);
@@ -203,7 +210,8 @@ public class ScheduleTaskImporter implements InitializingBean {
         return results;
     }
 
-    private boolean doImport(ScheduleType scheduleType, Long projectId, BaseScheduleRowData baseScheduleRowData,
+    private boolean doImport(ExportRowDataReader<JsonNode> rowDataReader, ScheduleType scheduleType, Long projectId,
+            BaseScheduleRowData baseScheduleRowData,
             JsonNode currentRow, List<ImportTaskResult> results) {
         Long databaseId = null;
         Long targetDatabaseId = null;
@@ -230,7 +238,7 @@ public class ScheduleTaskImporter implements InitializingBean {
             return true;
         }
         ScheduleChangeParams createScheduleReq =
-                getCreateScheduleReq(scheduleType, currentRow, databaseId,
+                getCreateScheduleReq(rowDataReader, scheduleType, projectId, currentRow, databaseId,
                         targetDatabaseId);
         log.info("Start to create schedule, createFlowInstanceReq={}, rowId={}", JsonUtils.toJson(createScheduleReq),
                 baseScheduleRowData.getRowId());
@@ -258,12 +266,13 @@ public class ScheduleTaskImporter implements InitializingBean {
 
     }
 
-    private ScheduleChangeParams getCreateScheduleReq(ScheduleType scheduleType, JsonNode row,
+    private ScheduleChangeParams getCreateScheduleReq(ExportRowDataReader<JsonNode> rowDataReader,
+            ScheduleType scheduleType, Long projectId, JsonNode row,
             Long databaseId,
             Long targetDatabaseId) {
         switch (scheduleType) {
             case SQL_PLAN:
-                return getSqlPlanReq(row, databaseId);
+                return getSqlPlanReq(rowDataReader, row, projectId, databaseId);
             case DATA_DELETE:
                 return getDataDeleteReq(row, databaseId, targetDatabaseId);
             case DATA_ARCHIVE:
@@ -273,13 +282,18 @@ public class ScheduleTaskImporter implements InitializingBean {
         }
     }
 
-    private ScheduleChangeParams getSqlPlanReq(JsonNode row, Long databaseId) {
+    private ScheduleChangeParams getSqlPlanReq(ExportRowDataReader<JsonNode> rowDataReader, JsonNode row,
+            Long projectId, Long databaseId) {
         SqlPlanScheduleRowData currentRowData = JsonUtils.fromJsonNode(row, SqlPlanScheduleRowData.class);
         if (currentRowData == null) {
             throw new ExtractFileException(ErrorCodes.ExtractFileFailed, "Can't extract sqlPlanScheduleRowData");
         }
         SqlPlanParameters sqlPlanParameters = ExportRowDataMapper.INSTANCE.toSqlPlanParameters(databaseId,
                 currentRowData);
+        sqlPlanParameters.setSqlObjectIds(rewriteObjectIds(rowDataReader, authenticationFacade.currentUserIdStr(),
+                sqlPlanParameters.getSqlObjectIds()));
+        sqlPlanParameters.setRollbackSqlObjectIds(rewriteObjectIds(rowDataReader,
+                authenticationFacade.currentUserIdStr(), sqlPlanParameters.getRollbackSqlObjectIds()));
 
         AlterScheduleParameters alterScheduleParameters = ExportRowDataMapper.INSTANCE.toAlterScheduleParameters(
                 OperationType.CREATE, currentRowData, sqlPlanParameters);
@@ -300,6 +314,21 @@ public class ScheduleTaskImporter implements InitializingBean {
                 + exportedDatabase.getExportedDataSource().getTenantId() + "-"
                 + exportedDatabase.getExportedDataSource().getUsername());
         return ScheduleChangeParams.with(createScheduleReq);
+    }
+
+    public List<String> rewriteObjectIds(ExportRowDataReader<JsonNode> rowDataReader, String creatorId,
+            List<String> sqlObjectIds) {
+        if (CollectionUtils.isEmpty(sqlObjectIds)) {
+            return sqlObjectIds;
+        }
+        List<String> rewriteObjectIds = new ArrayList<>();
+        String bucket = "async".concat(File.separator).concat(String.valueOf(creatorId));
+        for (String sqlObjectId : sqlObjectIds) {
+            File file = rowDataReader.getFile(removeSeparator(sqlObjectId));
+            ObjectMetadata objectMetadata = objectStorageFacade.putObject(bucket, file);
+            rewriteObjectIds.add(objectMetadata.getObjectId());
+        }
+        return rewriteObjectIds;
     }
 
     private ScheduleChangeParams getDataDeleteReq(JsonNode row, Long databaseId,
