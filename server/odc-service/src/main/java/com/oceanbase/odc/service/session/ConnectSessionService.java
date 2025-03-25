@@ -511,10 +511,9 @@ public class ConnectSessionService {
             Optional<EnvironmentEntity> optional = this.environmentRepository.findById(envId);
             if (optional.isPresent() && optional.get().getRulesetId() != null) {
                 ConnectionSessionUtil.setRuleSetId(connectionSession, optional.get().getRulesetId());
-                ConnectionSessionUtil.setQueryLimit(connectionSession,
-                        (Integer) ruleService.getValueByRulesetIdAndRuleId(optional.get().getRulesetId(),
-                                ruleService.getRuleIdByRulesetIdAndMetadata(optional.get().getRulesetId(),
-                                        SqlConsoleRules.MAX_RETURN_ROWS.getRuleName())));
+                ConnectionSessionUtil.setQueryLimit(connectionSession, (Integer) ruleService
+                    .getValueByRulesetIdAndRuleId(optional.get().getRulesetId(),
+                        SqlConsoleRules.MAX_RETURN_ROWS.getRuleName()));
             }
         }
         ConnectionSessionUtil.setQueryLimit(connectionSession, organizationConfigProvider.getDefaultQueryLimit());
