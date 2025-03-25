@@ -224,11 +224,11 @@ public abstract class BaseOceanBaseTransferJob<T extends BaseParameter> implemen
     @SuppressWarnings("all")
     private void syncWaitFinished(@NonNull TaskContext context, boolean isTransferSchema) throws InterruptedException {
         while (!Thread.currentThread().isInterrupted() && !status.isTerminated()) {
-            if (context.isAllTasksSuccessed()) {
+            if (context.isAllTasksFinished()) {
                 shutdownContext(context);
-                return;
-            } else if (context.isAllTasksFinished()) {
-                shutdownContext(context);
+                if (context.isAllTasksSuccessed()) {
+                    return;
+                }
                 Collection<TaskDetail> failedTasks = context.getFailureTaskDetails();
                 if (CollectionUtils.isEmpty(failedTasks)) {
                     throw new IllegalStateException("No failed task details");
