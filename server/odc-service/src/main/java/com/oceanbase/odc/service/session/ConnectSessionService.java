@@ -514,7 +514,7 @@ public class ConnectSessionService {
                 ConnectionSessionUtil.setRuleSetId(connectionSession, optional.get().getRulesetId());
                 ConnectionSessionUtil.setQueryLimit(connectionSession, (Integer) ruleService
                         .getByRulesetIdAndRuleId(optional.get().getRulesetId(), targetKey)
-                    .getProperties().get(targetKey));
+                        .getProperties().get(targetKey));
             }
         }
         ConnectionSessionUtil.setQueryLimit(connectionSession, organizationConfigProvider.getDefaultQueryLimit());
