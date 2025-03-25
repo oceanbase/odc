@@ -588,16 +588,16 @@ public class ConnectConsoleService {
 
     private Integer checkQueryLimit(ConnectionSession connectionSession, Integer queryLimit) {
         if (Objects.isNull(queryLimit)) {
-            queryLimit = Integer.valueOf(
-                    ruleService.getValueByRulesetIdAndRuleId(
-                            ConnectionSessionUtil.getRuleSetId(connectionSession)).toString());
+            queryLimit = organizationConfigProvider.getDefaultQueryLimit();
         }
         // Compatible: if user did not edit query limit, use default value
-        if (!Objects.equals(queryLimit, (int) sessionProperties.getResultSetDefaultRows())) {
+        if (!Objects.equals(queryLimit, sessionProperties.getResultSetDefaultRows())) {
             return queryLimit;
         }
+
         queryLimit = organizationConfigProvider.getMinimumQueryLimit(queryLimit.toString());
-        Integer maxQueryLimit = organizationConfigProvider.getDefaultMaxQueryLimit();
+        int maxQueryLimit = Integer.parseInt(ruleService.getValueByRulesetIdAndRuleId(
+                ConnectionSessionUtil.getRuleSetId(connectionSession)).toString());
         // if default rows limit is exceeded than max rows limit, still use max rows limit
         if (maxQueryLimit > 0) {
             return Math.min(queryLimit, maxQueryLimit);

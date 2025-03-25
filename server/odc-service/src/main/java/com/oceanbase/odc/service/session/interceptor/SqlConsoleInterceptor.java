@@ -102,7 +102,6 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
             if (Objects.isNull(request.getQueryLimit()) || request.getQueryLimit() > limit) {
                 throw new IllegalArgumentException("Query limit is not allowed to be greater than " + limit);
             }
-            request.setQueryLimit(limit);
         });
         AtomicBoolean allowExecute = new AtomicBoolean(true);
 
