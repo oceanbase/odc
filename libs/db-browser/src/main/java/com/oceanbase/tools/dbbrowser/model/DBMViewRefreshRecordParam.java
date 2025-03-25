@@ -15,7 +15,9 @@
  */
 package com.oceanbase.tools.dbbrowser.model;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @description:
@@ -24,8 +26,10 @@ import lombok.Data;
  * @since: 4.3.4
  */
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class DBMViewRefreshRecordParam {
     private String schemaName;
     private String mvName;
-    private Integer queryLimit = 1000;
+    private Integer queryLimit;
 }

@@ -222,13 +222,12 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
         if (isSupportMaterializedView) {
             refreshMVData_Success();
             refreshMVData_Success();
-            DBMViewRefreshRecordParam param = new DBMViewRefreshRecordParam();
-            param.setSchemaName(getOBOracleSchema());
-            param.setMvName("TEST_MV_ALLSYNTAX");
+            DBMViewRefreshRecordParam param =
+                    new DBMViewRefreshRecordParam(getOBOracleSchema(), "TEST_MV_ALLSYNTAX", 1);
             List<DBMViewRefreshRecord> dbmViewRefreshRecords = accessor.listMViewRefreshRecords(param);
             Assert.assertEquals(getOBOracleSchema(), dbmViewRefreshRecords.get(0).getMvOwner());
             Assert.assertEquals("TEST_MV_ALLSYNTAX", dbmViewRefreshRecords.get(0).getMvName());
-            Assert.assertEquals(DBMaterializedViewRefreshMethod.REFRESH_COMPLETE,
+            Assert.assertEquals("COMPLETE",
                     dbmViewRefreshRecords.get(0).getRefreshMethod());
         }
     }

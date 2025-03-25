@@ -15,7 +15,9 @@
  */
 package com.oceanbase.tools.dbbrowser.model;
 
-import java.time.LocalDateTime;
+import java.util.Date;
+
+import com.fasterxml.jackson.annotation.JsonGetter;
 
 import lombok.Data;
 
@@ -50,21 +52,28 @@ import lombok.Data;
  */
 @Data
 public class DBMViewRefreshRecord {
-    private String mvOwner; // MV_OWNER
-    private String mvName; // MV_NAME
-    private Long refreshId; // REFRESH_ID
-    private DBMaterializedViewRefreshMethod refreshMethod; // REFRESH_METHOD
-    private String refreshOptimizations;// REFRESH_OPTIMIZATIONS
-    private String additionalExecutions;// ADDITIONAL_EXECUTIONS
-    private LocalDateTime startTime; // START_TIME
-    private LocalDateTime endTime; // END_TIME
-    private Long elapsedTime; // ELAPSED_TIME
-    private Long logSetupTime; // LOG_SETUP_TIME
-    private Long logPurgeTime; // LOG_PURGE_TIME
-    private Long initialNumRows; // INITIAL_NUM_ROWS
-    private Long finalNumRows; // FINAL_NUM_ROWS
+    private String mvOwner;
+    private String mvName;
+    private Long refreshId;
+    private String refreshMethod;
+    private String refreshOptimizations;
+    private String additionalExecutions;
+    private Date startTime;
+    private Date endTime;
+    private Long elapsedTime;
+    private Long logSetupTime;
+    private Long logPurgeTime;
+    private Long initialNumRows;
+    private Long finalNumRows;
 
-    public void setRefreshMethod(String refreshMethod) {
-        this.refreshMethod = DBMaterializedViewRefreshMethod.getEnumByShowName(refreshMethod);
+    @JsonGetter("startTime")
+    public Long getStartTimeAsTimestamp() {
+        return startTime != null ? startTime.getTime() : null;
     }
+
+    @JsonGetter("endTime")
+    public Long getEndTimeAsTimestamp() {
+        return endTime != null ? endTime.getTime() : null;
+    }
+
 }

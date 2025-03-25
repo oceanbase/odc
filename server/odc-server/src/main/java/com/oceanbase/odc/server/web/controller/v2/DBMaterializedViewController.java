@@ -42,6 +42,8 @@ import com.oceanbase.odc.service.db.model.MViewRefreshReq;
 import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.odc.service.state.model.StateName;
 import com.oceanbase.odc.service.state.model.StatefulRoute;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecord;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
@@ -132,12 +134,14 @@ public class DBMaterializedViewController {
     @ApiOperation(value = "getRefreshRecords", notes = "refresh data of the materialized view.")
     @PostMapping(value = "/{sessionId}/databases/{databaseName}/materializedViews/{mvName}/getRefreshRecords")
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
-    public SuccessResponse<Boolean> getRefreshRecords(@PathVariable String sessionId,
+    public ListResponse<DBMViewRefreshRecord> getRefreshRecords(@PathVariable String sessionId,
             @PathVariable String databaseName,
-            @PathVariable String mvName) {
+            @PathVariable String mvName,
+            @RequestParam(required = false, defaultValue = "1000") Integer queryLimit) {
+        DBMViewRefreshRecordParam param = new DBMViewRefreshRecordParam(databaseName, mvName,
+                queryLimit);
         ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
-        // return Responses.success(dbMaterializedViewService.refresh(session, refreshReq));
-        return Responses.success(true);
+        return Responses.list(dbMaterializedViewService.listRefreshRecords(session, param));
     }
 
 }

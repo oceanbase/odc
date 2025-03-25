@@ -24,11 +24,13 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLMViewExtension;
 import com.oceanbase.odc.plugin.schema.obmysql.parser.BaseOBGetDBTableByParser;
 import com.oceanbase.odc.plugin.schema.oboracle.parser.OBOracleGetDBTableByParser;
+import com.oceanbase.odc.plugin.schema.oboracle.utils.DBAccessorUtil;
 import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.editor.DBObjectOperator;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleObjectOperator;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.parser.SqlParser;
+import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 
@@ -43,6 +45,12 @@ import lombok.extern.slf4j.Slf4j;
 @Extension
 @Slf4j
 public class OBOracleMViewExtension extends OBMySQLMViewExtension {
+
+    @Override
+    protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
+        return DBAccessorUtil.getSchemaAccessor(connection);
+    }
+
     @Override
     protected Statement parseStatement(String ddl) {
         return SqlParser.parseOracleStatement(ddl);

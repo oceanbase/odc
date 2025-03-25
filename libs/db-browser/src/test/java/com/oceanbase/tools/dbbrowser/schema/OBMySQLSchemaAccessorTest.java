@@ -207,13 +207,12 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     public void listMViewRefreshRecords_Success() {
         if (isSupportMaterializedView) {
             refreshMVData_Success();
-            DBMViewRefreshRecordParam param = new DBMViewRefreshRecordParam();
-            param.setSchemaName(getOBMySQLDataBaseName());
-            param.setMvName("test_mv_allSyntax");
+            DBMViewRefreshRecordParam param =
+                    new DBMViewRefreshRecordParam(getOBMySQLDataBaseName(), "test_mv_allSyntax", 1);
             List<DBMViewRefreshRecord> dbmViewRefreshRecords = accessor.listMViewRefreshRecords(param);
             Assert.assertEquals(getOBMySQLDataBaseName(), dbmViewRefreshRecords.get(0).getMvOwner());
             Assert.assertEquals("test_mv_allSyntax", dbmViewRefreshRecords.get(0).getMvName());
-            Assert.assertEquals(DBMaterializedViewRefreshMethod.REFRESH_COMPLETE,
+            Assert.assertEquals("COMPLETE",
                     dbmViewRefreshRecords.get(0).getRefreshMethod());
         }
     }

@@ -31,6 +31,8 @@ import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.editor.DBObjectOperator;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLObjectOperator;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecord;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewRefreshSchedule;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
@@ -111,6 +113,11 @@ public class OBMySQLMViewExtension implements MViewExtensionPoint {
         return getSchemaAccessor(connection).refreshMVData(parameter);
     }
 
+    @Override
+    public List<DBMViewRefreshRecord> listRefreshRecords(Connection connection, DBMViewRefreshRecordParam param) {
+        return getSchemaAccessor(connection).listMViewRefreshRecords(param);
+    }
+
     private CreateMaterializedView parseTableDDL(String ddl) {
         CreateMaterializedView statement = null;
         try {
@@ -124,7 +131,7 @@ public class OBMySQLMViewExtension implements MViewExtensionPoint {
         return statement;
     }
 
-    private DBSchemaAccessor getSchemaAccessor(Connection connection) {
+    protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
         return DBAccessorUtil.getSchemaAccessor(connection);
     }
 
