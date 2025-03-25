@@ -15,11 +15,11 @@
  */
 package com.oceanbase.tools.dbbrowser.model;
 
+import java.util.Date;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.Date;
 
 /**
  * @description:
@@ -50,6 +50,7 @@ public class DBMaterializedViewRefreshSchedule {
         MINUTE,
         HOUR,
         DAY,
+        // just for ob mysql
         WEEK,
         MONTH,
         YEAR;

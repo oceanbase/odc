@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.plugin.schema.obmysql;
+package com.oceanbase.odc.plugin.schema.oboracle;
 
 import java.sql.Connection;
 import java.util.List;
@@ -24,11 +24,11 @@ import org.pf4j.Extension;
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.schema.api.MViewExtensionPoint;
-import com.oceanbase.odc.plugin.schema.obmysql.parser.OBMySQLGetDBTableByParser;
-import com.oceanbase.odc.plugin.schema.obmysql.utils.DBAccessorUtil;
+import com.oceanbase.odc.plugin.schema.oboracle.parser.OBOracleGetDBTableByParser;
+import com.oceanbase.odc.plugin.schema.oboracle.utils.DBAccessorUtil;
 import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.editor.DBObjectOperator;
-import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLObjectOperator;
+import com.oceanbase.tools.dbbrowser.editor.oracle.OracleObjectOperator;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewRefreshSchedule;
@@ -45,12 +45,12 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * @description:
  * @author: zijia.cj
- * @date: 2025/3/4 16:15
+ * @date: 2025/3/21 14:27
  * @since: 4.3.4
  */
 @Extension
 @Slf4j
-public class OBMySQLMVExtension implements MViewExtensionPoint {
+public class OBOracleMViewExtension implements MViewExtensionPoint {
     @Override
     public List<DBObjectIdentity> list(Connection connection, String schemaName) {
         return getSchemaAccessor(connection).listMViews(schemaName);
@@ -62,26 +62,31 @@ public class OBMySQLMVExtension implements MViewExtensionPoint {
         DBMaterializedView mView = schemaAccessor.getMView(schemaName, mViewName);
         String ddl = schemaAccessor.getTableDDL(schemaName, mViewName);
         CreateMaterializedView createMaterializedView = parseTableDDL(ddl);
-        if (Objects.nonNull(createMaterializedView.getViewOptions())
-                && Objects.nonNull(createMaterializedView.getViewOptions().getRefreshOption())
-                && Objects.nonNull(createMaterializedView.getViewOptions().getRefreshOption().getStartWith())
-                && Objects.nonNull(createMaterializedView.getViewOptions().getRefreshOption().getNext())) {
-            DBMaterializedViewRefreshSchedule refreshSchedule = new DBMaterializedViewRefreshSchedule();
-            refreshSchedule.setStartExpression(
-                    createMaterializedView.getViewOptions().getRefreshOption().getStartWith().getText());
-            refreshSchedule
-                    .setNextExpression(createMaterializedView.getViewOptions().getRefreshOption().getNext().getText());
-            mView.setRefreshSchedule(refreshSchedule);
+        if (Objects.nonNull(createMaterializedView)) {
+            if (Objects.nonNull(createMaterializedView.getViewOptions())
+                    && Objects.nonNull(createMaterializedView.getViewOptions().getRefreshOption())
+                    && Objects.nonNull(createMaterializedView.getViewOptions().getRefreshOption().getStartWith())
+                    && Objects.nonNull(createMaterializedView.getViewOptions().getRefreshOption().getNext())) {
+                DBMaterializedViewRefreshSchedule refreshSchedule = new DBMaterializedViewRefreshSchedule();
+                refreshSchedule.setStartExpression(
+                        createMaterializedView.getViewOptions().getRefreshOption().getStartWith().getText());
+                refreshSchedule
+                        .setNextExpression(
+                                createMaterializedView.getViewOptions().getRefreshOption().getNext().getText());
+                mView.setRefreshSchedule(refreshSchedule);
+            }
+            if (Objects.nonNull(createMaterializedView.getPartition())) {
+                OBOracleGetDBTableByParser parser = new OBOracleGetDBTableByParser();
+                mView.setPartition(parser.getPartition(createMaterializedView.getPartition()));
+            }
         }
+
         mView.setSchemaName(schemaName);
         mView.setName(mViewName);
         mView.setColumns(schemaAccessor.listTableColumns(schemaName, mViewName));
         mView.setConstraints(schemaAccessor.listMViewConstraints(schemaName, mViewName));
         mView.setIndexes(schemaAccessor.listTableIndexes(schemaName, mViewName));
-        OBMySQLGetDBTableByParser parser = new OBMySQLGetDBTableByParser(ddl);
-        if (Objects.nonNull(createMaterializedView.getPartition())) {
-            mView.setPartition(parser.getPartition(createMaterializedView.getPartition()));
-        }
+
         mView.setDdl(ddl);
         try {
             mView.setColumnGroups(schemaAccessor.listTableColumnGroups(schemaName, mViewName));
@@ -109,7 +114,7 @@ public class OBMySQLMVExtension implements MViewExtensionPoint {
     private CreateMaterializedView parseTableDDL(String ddl) {
         CreateMaterializedView statement = null;
         try {
-            Statement value = SqlParser.parseMysqlStatement(ddl);
+            Statement value = SqlParser.parseOracleStatement(ddl);
             if (value instanceof CreateMaterializedView) {
                 statement = (CreateMaterializedView) value;
             }
@@ -125,11 +130,11 @@ public class OBMySQLMVExtension implements MViewExtensionPoint {
     }
 
     protected DBObjectOperator getOperator(Connection connection) {
-        return new MySQLObjectOperator(JdbcOperationsUtil.getJdbcOperations(connection));
+        return new OracleObjectOperator(JdbcOperationsUtil.getJdbcOperations(connection));
     }
 
     protected DBObjectTemplate<DBMaterializedView> getTemplate() {
         return DBBrowser.objectTemplate().mViewTemplate()
-                .setType(DialectType.OB_MYSQL.getDBBrowserDialectTypeName()).create();
+                .setType(DialectType.OB_ORACLE.getDBBrowserDialectTypeName()).create();
     }
 }
