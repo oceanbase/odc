@@ -21,6 +21,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecord;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
 import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.core.JdbcOperations;
 
@@ -206,6 +208,11 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public List<DBTableConstraint> listMViewConstraints(String schemaName, String mViewName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public List<DBMViewRefreshRecord> listMViewRefreshRecords(DBMViewRefreshRecordParam param) {
         throw new UnsupportedOperationException("not support yet");
     }
 

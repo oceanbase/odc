@@ -42,6 +42,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecord;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.dao.DataAccessException;
@@ -369,6 +371,11 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public List<DBTableConstraint> listMViewConstraints(String schemaName, String mViewName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public List<DBMViewRefreshRecord> listMViewRefreshRecords(DBMViewRefreshRecordParam param) {
         throw new UnsupportedOperationException("not support yet");
     }
 

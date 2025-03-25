@@ -22,6 +22,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecord;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -143,7 +145,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
         if (isSupportMaterializedView) {
             DBMViewRefreshParameter DBMViewRefreshParameter =
                     new DBMViewRefreshParameter(getOBMySQLDataBaseName(), "test_mv_allSyntax",
-                            DBMaterializedViewRefreshMethod.REFRESH_FORCE, 2L);
+                            DBMaterializedViewRefreshMethod.REFRESH_COMPLETE, 2L);
             Boolean aBoolean = accessor.refreshMVData(DBMViewRefreshParameter);
             Assert.assertTrue(aBoolean);
         }
@@ -198,6 +200,20 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
             List<DBColumnGroupElement> columnGroups =
                     accessor.listTableColumnGroups(getOBMySQLDataBaseName(), "test_mv_eachColumn");
             Assert.assertTrue(columnGroups.get(0).isEachColumn());
+        }
+    }
+
+    @Test
+    public void listMViewRefreshRecords_Success() {
+        if (isSupportMaterializedView) {
+            refreshMVData_Success();
+            DBMViewRefreshRecordParam param = new DBMViewRefreshRecordParam();
+            param.setSchemaName(getOBMySQLDataBaseName());
+            param.setMvName("test_mv_allSyntax");
+            List<DBMViewRefreshRecord> dbmViewRefreshRecords = accessor.listMViewRefreshRecords(param);
+            Assert.assertEquals(getOBMySQLDataBaseName(),dbmViewRefreshRecords.get(0).getMvOwner());
+            Assert.assertEquals("test_mv_allSyntax",dbmViewRefreshRecords.get(0).getMvName());
+            Assert.assertEquals(DBMaterializedViewRefreshMethod.REFRESH_COMPLETE,dbmViewRefreshRecords.get(0).getRefreshMethod());
         }
     }
 
