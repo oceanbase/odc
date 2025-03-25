@@ -18,6 +18,6 @@ CREATE INDEX idx_iam_user_org_id_creator_id ON iam_user (organization_id, creato
 CREATE INDEX idx_iam_role_org_id_creator_id ON iam_role (organization_id, creator_id);
 CREATE INDEX idx_connect_connection_org_id_creator_id ON connect_connection (organization_id, creator_id);
 
-create index if not exists idx_task_task_connection_id on task_task(connection_id);
-create index if not exists idx_schedule_schedule_connection_id on schedule_schedule(connection_id);
+create index if not exists idx_task_task_connection_id_organization_id on task_task(connection_id, organization_id);
+create index if not exists idx_schedule_schedule_connection_id_organization_id on schedule_schedule(connection_id, organization_id);
 create index if not exists idx_data_security_sensitive_rule_organization_id on data_security_sensitive_rule(organization_id);
