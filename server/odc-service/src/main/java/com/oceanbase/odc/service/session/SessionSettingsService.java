@@ -34,7 +34,7 @@ import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.LimitMetric;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
-import com.oceanbase.odc.service.config.OrganizationConfigProvider;
+import com.oceanbase.odc.service.regulation.ruleset.RuleService;
 import com.oceanbase.odc.service.session.model.SessionSettings;
 
 /**
@@ -53,7 +53,7 @@ public class SessionSettingsService {
     private SessionProperties sessionProperties;
 
     @Autowired
-    private OrganizationConfigProvider organizationConfigProvider;
+    private RuleService ruleService;
 
     public SessionSettings getSessionSettings(@NotNull ConnectionSession session) {
         SessionSettings settings = new SessionSettings();
@@ -92,7 +92,9 @@ public class SessionSettingsService {
         }
         Integer queryLimit = ConnectionSessionUtil.getQueryLimit(session);
         if (!Objects.equals(wait2UpdateQueryLimit, queryLimit)) {
-            wait2UpdateQueryLimit = organizationConfigProvider.getMinimumQueryLimit(wait2UpdateQueryLimit.toString());
+            int environmentQueryLimit = (int) ruleService.getValueByRulesetIdAndRuleId(
+                    ConnectionSessionUtil.getRuleSetId(session));
+            wait2UpdateQueryLimit = Math.min(wait2UpdateQueryLimit, environmentQueryLimit);
             ConnectionSessionUtil.setQueryLimit(session, wait2UpdateQueryLimit);
         }
         return settings;
