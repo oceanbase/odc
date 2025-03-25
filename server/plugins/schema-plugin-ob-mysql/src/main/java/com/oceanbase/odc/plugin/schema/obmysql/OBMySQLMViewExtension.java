@@ -24,6 +24,7 @@ import org.pf4j.Extension;
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.schema.api.MViewExtensionPoint;
+import com.oceanbase.odc.plugin.schema.obmysql.parser.BaseOBGetDBTableByParser;
 import com.oceanbase.odc.plugin.schema.obmysql.parser.OBMySQLGetDBTableByParser;
 import com.oceanbase.odc.plugin.schema.obmysql.utils.DBAccessorUtil;
 import com.oceanbase.tools.dbbrowser.DBBrowser;
@@ -76,7 +77,7 @@ public class OBMySQLMViewExtension implements MViewExtensionPoint {
                 mView.setRefreshSchedule(refreshSchedule);
             }
             if (Objects.nonNull(createMaterializedView.getPartition())) {
-                OBMySQLGetDBTableByParser parser = new OBMySQLGetDBTableByParser();
+                BaseOBGetDBTableByParser parser = getParser();
                 mView.setPartition(parser.getPartition(createMaterializedView.getPartition()));
             }
         }
@@ -113,7 +114,7 @@ public class OBMySQLMViewExtension implements MViewExtensionPoint {
     private CreateMaterializedView parseTableDDL(String ddl) {
         CreateMaterializedView statement = null;
         try {
-            Statement value = SqlParser.parseMysqlStatement(ddl);
+            Statement value = parseStatement(ddl);
             if (value instanceof CreateMaterializedView) {
                 statement = (CreateMaterializedView) value;
             }
@@ -123,9 +124,12 @@ public class OBMySQLMViewExtension implements MViewExtensionPoint {
         return statement;
     }
 
-
-    protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
+    private DBSchemaAccessor getSchemaAccessor(Connection connection) {
         return DBAccessorUtil.getSchemaAccessor(connection);
+    }
+
+    protected Statement parseStatement(String ddl) {
+        return SqlParser.parseMysqlStatement(ddl);
     }
 
     protected DBObjectOperator getOperator(Connection connection) {
@@ -136,4 +140,9 @@ public class OBMySQLMViewExtension implements MViewExtensionPoint {
         return DBBrowser.objectTemplate().mViewTemplate()
                 .setType(DialectType.OB_MYSQL.getDBBrowserDialectTypeName()).create();
     }
+
+    protected BaseOBGetDBTableByParser getParser() {
+        return new OBMySQLGetDBTableByParser();
+    }
+
 }

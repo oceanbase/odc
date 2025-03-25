@@ -25,8 +25,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
-import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecord;
-import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -42,6 +40,8 @@ import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
 import com.oceanbase.tools.dbbrowser.model.DBIndexType;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecord;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewRefreshMethod;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
@@ -229,7 +229,7 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
             Assert.assertEquals(getOBOracleSchema(), dbmViewRefreshRecords.get(0).getMvOwner());
             Assert.assertEquals("TEST_MV_ALLSYNTAX", dbmViewRefreshRecords.get(0).getMvName());
             Assert.assertEquals(DBMaterializedViewRefreshMethod.REFRESH_COMPLETE,
-                dbmViewRefreshRecords.get(0).getRefreshMethod());
+                    dbmViewRefreshRecords.get(0).getRefreshMethod());
         }
     }
 

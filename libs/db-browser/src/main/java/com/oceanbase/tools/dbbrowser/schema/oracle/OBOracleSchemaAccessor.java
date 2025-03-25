@@ -29,8 +29,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecord;
-import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
@@ -44,6 +42,8 @@ import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
 import com.oceanbase.tools.dbbrowser.model.DBIndexType;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecord;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewRefreshMethod;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
@@ -1239,17 +1239,17 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     public List<DBMViewRefreshRecord> listMViewRefreshRecords(DBMViewRefreshRecordParam param) {
         OracleSqlBuilder sb = new OracleSqlBuilder();
         sb.append("SELECT ")
-            .value(param.getSchemaName())
-            .append(" AS mv_owner, ")
-            .value(param.getMvName())
-            .append(" AS mv_name,REFRESH_ID AS refresh_id,REFRESH_METHOD AS refresh_method,REFRESH_OPTIMIZATIONS AS refresh_optimizations,ADDITIONAL_EXECUTIONS AS additional_executions,START_TIME AS start_time, END_TIME AS end_time,ELAPSED_TIME AS elapsed_time,LOG_SETUP_TIME AS log_setup_time,LOG_PURGE_TIME AS log_purge_time,INITIAL_NUM_ROWS AS initial_num_rows,FINAL_NUM_ROWS AS final_num_rows FROM SYS.DBA_MVREF_STATS where MV_OWNER =")
-            .value(param.getSchemaName())
-            .append(" AND MV_NAME = ")
-            .value(param.getMvName())
-            .append(" ORDER BY REFRESH_ID DESC")
-            .append(" FETCH FIRST ")
-            .append(param.getQueryLimit())
-            .append(" ROWS ONLY");
+                .value(param.getSchemaName())
+                .append(" AS mv_owner, ")
+                .value(param.getMvName())
+                .append(" AS mv_name,REFRESH_ID AS refresh_id,REFRESH_METHOD AS refresh_method,REFRESH_OPTIMIZATIONS AS refresh_optimizations,ADDITIONAL_EXECUTIONS AS additional_executions,START_TIME AS start_time, END_TIME AS end_time,ELAPSED_TIME AS elapsed_time,LOG_SETUP_TIME AS log_setup_time,LOG_PURGE_TIME AS log_purge_time,INITIAL_NUM_ROWS AS initial_num_rows,FINAL_NUM_ROWS AS final_num_rows FROM SYS.DBA_MVREF_STATS where MV_OWNER =")
+                .value(param.getSchemaName())
+                .append(" AND MV_NAME = ")
+                .value(param.getMvName())
+                .append(" ORDER BY REFRESH_ID DESC")
+                .append(" FETCH FIRST ")
+                .append(param.getQueryLimit())
+                .append(" ROWS ONLY");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBMViewRefreshRecord.class));
     }
 
