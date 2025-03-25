@@ -96,8 +96,6 @@ public class RuleService {
     @Autowired
     private OrganizationConfigProvider organizationConfigProvider;
 
-    private static final Long QUERY_LIMIT_ID = 3L;
-
     @SkipAuthorize("odc internal usage")
     public List<Rule> list(@NonNull Long rulesetId, @NonNull QueryRuleMetadataParams params) {
         return internalList(rulesetId, params);
