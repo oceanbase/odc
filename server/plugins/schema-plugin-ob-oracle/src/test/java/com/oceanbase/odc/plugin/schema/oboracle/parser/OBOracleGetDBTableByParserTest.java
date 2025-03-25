@@ -67,9 +67,9 @@ public class OBOracleGetDBTableByParserTest {
     @BeforeClass
     public static void setUp() throws Exception {
         DataSource dataSource = configuration.getDataSource();
-        DruidDataSource longQueryTimeoutdataSource = (DruidDataSource) dataSource;
-        longQueryTimeoutdataSource.setQueryTimeout(30);
-        connection = longQueryTimeoutdataSource.getConnection();
+        DruidDataSource longQueryTimeoutDataSource = (DruidDataSource) dataSource;
+        longQueryTimeoutDataSource.setQueryTimeout(30);
+        connection = longQueryTimeoutDataSource.getConnection();
         dropTables = FileUtil.loadAsString(BASE_PATH + "drop.sql");
         batchExcuteSql(dropTables);
         ddl = FileUtil.loadAsString(BASE_PATH + "testGetTableByParser.sql");
