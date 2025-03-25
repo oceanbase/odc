@@ -514,7 +514,7 @@ public class ConnectSessionService {
                 ConnectionSessionUtil.setQueryLimit(connectionSession,
                         (Integer) ruleService.getValueByRulesetIdAndRuleId(optional.get().getRulesetId(),
                                 ruleService.getRuleIdByRulesetIdAndMetadata(optional.get().getRulesetId(),
-                                        SqlConsoleRules.MAX_RETURN_ROWS.name())));
+                                        SqlConsoleRules.MAX_RETURN_ROWS.getRuleName())));
             }
         }
         ConnectionSessionUtil.setQueryLimit(connectionSession, organizationConfigProvider.getDefaultQueryLimit());
