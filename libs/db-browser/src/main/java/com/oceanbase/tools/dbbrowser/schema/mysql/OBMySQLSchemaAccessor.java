@@ -124,7 +124,8 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
                 .append(" AND MV_NAME = ")
                 .value(param.getMvName())
                 .append(" ORDER BY REFRESH_ID DESC")
-                .append(" LIMIT ").append(param.getQueryLimit());
+                .append(" LIMIT ")
+                .append(param.getQueryLimit());
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBMViewRefreshRecord.class));
     }
 

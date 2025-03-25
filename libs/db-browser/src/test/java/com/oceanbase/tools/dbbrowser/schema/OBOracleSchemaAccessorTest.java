@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecord;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -158,7 +160,7 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
         if (isSupportMaterializedView) {
             DBMViewRefreshParameter DBMViewRefreshParameter =
                     new DBMViewRefreshParameter(getOBOracleSchema(), "TEST_MV_ALLSYNTAX",
-                            DBMaterializedViewRefreshMethod.REFRESH_FORCE, 2L);
+                            DBMaterializedViewRefreshMethod.REFRESH_COMPLETE, 2L);
             Boolean aBoolean = accessor.refreshMVData(DBMViewRefreshParameter);
             Assert.assertTrue(aBoolean);
         }
@@ -212,6 +214,22 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
             List<DBColumnGroupElement> columnGroups =
                     accessor.listTableColumnGroups(getOBOracleSchema(), "TEST_MV_EACHCOLUMN");
             Assert.assertTrue(columnGroups.get(0).isEachColumn());
+        }
+    }
+
+    @Test
+    public void listMViewRefreshRecords_Success() {
+        if (isSupportMaterializedView) {
+            refreshMVData_Success();
+            refreshMVData_Success();
+            DBMViewRefreshRecordParam param = new DBMViewRefreshRecordParam();
+            param.setSchemaName(getOBOracleSchema());
+            param.setMvName("TEST_MV_ALLSYNTAX");
+            List<DBMViewRefreshRecord> dbmViewRefreshRecords = accessor.listMViewRefreshRecords(param);
+            Assert.assertEquals(getOBOracleSchema(), dbmViewRefreshRecords.get(0).getMvOwner());
+            Assert.assertEquals("TEST_MV_ALLSYNTAX", dbmViewRefreshRecords.get(0).getMvName());
+            Assert.assertEquals(DBMaterializedViewRefreshMethod.REFRESH_COMPLETE,
+                dbmViewRefreshRecords.get(0).getRefreshMethod());
         }
     }
 

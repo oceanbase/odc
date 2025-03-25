@@ -185,6 +185,8 @@ public abstract class BaseTestEnv extends BasePropertiesEnv {
                     statement.executeUpdate(sql);
                     sql = "GRANT ALL PRIVILEGES TO " + TEST_OB_ORACLE_DATABASE_NAME;
                     statement.executeUpdate(sql);
+                    sql =  "GRANT DBA TO "+TEST_OB_ORACLE_DATABASE_NAME;
+                    statement.executeUpdate(sql);
                 }
             } catch (Exception e) {
                 throw new IllegalStateException(e);
