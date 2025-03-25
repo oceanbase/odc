@@ -598,8 +598,9 @@ public class ConnectConsoleService {
 
         queryLimit = organizationConfigProvider.getMinimumQueryLimit(queryLimit.toString());
         Long rulesetId = ConnectionSessionUtil.getRuleSetId(connectionSession);
-        int maxQueryLimit = (Integer) ruleService.getValueByRulesetIdAndRuleId(rulesetId,
-                SqlConsoleRules.MAX_RETURN_ROWS.getRuleName());
+        String targetKey = SqlConsoleRules.MAX_RETURN_ROWS.getRuleName();
+        int maxQueryLimit = (Integer) ruleService.getByRulesetIdAndRuleId(rulesetId, targetKey)
+            .getProperties().get(targetKey);
         // if default rows limit is exceeded than max rows limit, still use max rows limit
         if (maxQueryLimit > 0) {
             return Math.min(queryLimit, maxQueryLimit);

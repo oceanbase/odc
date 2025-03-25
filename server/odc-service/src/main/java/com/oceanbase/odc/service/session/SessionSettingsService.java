@@ -34,7 +34,9 @@ import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.LimitMetric;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
+import com.oceanbase.odc.service.config.OrganizationConfigProvider;
 import com.oceanbase.odc.service.regulation.ruleset.RuleService;
+import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
 import com.oceanbase.odc.service.regulation.ruleset.model.SqlConsoleRules;
 import com.oceanbase.odc.service.session.model.SessionSettings;
 
@@ -54,6 +56,9 @@ public class SessionSettingsService {
     private SessionProperties sessionProperties;
 
     @Autowired
+    private OrganizationConfigProvider organizationConfigProvider;
+
+    @Autowired
     private RuleService ruleService;
 
     public SessionSettings getSessionSettings(@NotNull ConnectionSession session) {
@@ -68,8 +73,11 @@ public class SessionSettingsService {
         settings.setDelimiter(ConnectionSessionUtil.getSqlCommentProcessor(session).getDelimiter());
         settings.setQueryLimit(ConnectionSessionUtil.getQueryLimit(session));
         Long rulesetId = ConnectionSessionUtil.getRuleSetId(session);
-        Integer maxQueryLimit = (Integer) ruleService.getValueByRulesetIdAndRuleId(rulesetId,
-                SqlConsoleRules.MAX_RETURN_ROWS.getRuleName());
+        String targetKey = SqlConsoleRules.MAX_RETURN_ROWS.getRuleName();
+        Rule targetRule = ruleService.getByRulesetIdAndRuleId(rulesetId, targetKey);
+        Integer maxQueryLimit = targetRule.getEnabled().equals(true) ?
+            (Integer) targetRule.getProperties().get(targetKey) :
+            organizationConfigProvider.getDefaultMaxQueryLimit();
         settings.setMaxQueryLimit(maxQueryLimit);
         return settings;
     }
@@ -98,8 +106,10 @@ public class SessionSettingsService {
         Integer queryLimit = ConnectionSessionUtil.getQueryLimit(session);
         Long rulesetId = ConnectionSessionUtil.getRuleSetId(session);
         if (!Objects.equals(wait2UpdateQueryLimit, queryLimit)) {
-            Integer environmentQueryLimit = (Integer) ruleService.getValueByRulesetIdAndRuleId(rulesetId,
-                    SqlConsoleRules.MAX_RETURN_ROWS.getRuleName());
+            String targetKey = SqlConsoleRules.MAX_RETURN_ROWS.getRuleName();
+            Integer environmentQueryLimit = (Integer) ruleService
+                .getByRulesetIdAndRuleId(rulesetId, targetKey)
+                .getProperties().get(targetKey);
             wait2UpdateQueryLimit = Math.min(wait2UpdateQueryLimit, environmentQueryLimit);
             ConnectionSessionUtil.setQueryLimit(session, wait2UpdateQueryLimit);
         }
