@@ -69,7 +69,7 @@ public class SessionSettingsService {
         settings.setQueryLimit(ConnectionSessionUtil.getQueryLimit(session));
         Long rulesetId = ConnectionSessionUtil.getRuleSetId(session);
         Integer maxQueryLimit = (Integer) ruleService.getValueByRulesetIdAndRuleId(rulesetId,
-            SqlConsoleRules.MAX_RETURN_ROWS.getRuleName());
+                SqlConsoleRules.MAX_RETURN_ROWS.getRuleName());
         settings.setMaxQueryLimit(maxQueryLimit);
         return settings;
     }
@@ -99,7 +99,7 @@ public class SessionSettingsService {
         Long rulesetId = ConnectionSessionUtil.getRuleSetId(session);
         if (!Objects.equals(wait2UpdateQueryLimit, queryLimit)) {
             Integer environmentQueryLimit = (Integer) ruleService.getValueByRulesetIdAndRuleId(rulesetId,
-                        SqlConsoleRules.MAX_RETURN_ROWS.getRuleName());
+                    SqlConsoleRules.MAX_RETURN_ROWS.getRuleName());
             wait2UpdateQueryLimit = Math.min(wait2UpdateQueryLimit, environmentQueryLimit);
             ConnectionSessionUtil.setQueryLimit(session, wait2UpdateQueryLimit);
         }

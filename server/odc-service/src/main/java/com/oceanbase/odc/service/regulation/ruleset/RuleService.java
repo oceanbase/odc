@@ -249,7 +249,7 @@ public class RuleService {
     @SkipAuthorize("internal authenticated")
     public Object getValueByRulesetIdAndRuleId(@NonNull Long rulesetId, @NonNull String name) {
         RuleApplyingEntity applyingEntity = ruleApplyingRepository.findByOrganizationIdAndRulesetIdAndRuleMetadataName(
-            authenticationFacade.currentOrganizationId(), rulesetId, name);
+                authenticationFacade.currentOrganizationId(), rulesetId, name);
         Long ruleId = applyingEntity.getId();
         Rule targetRule = this.detail(rulesetId, ruleId);
         return targetRule.getProperties().values().iterator().next();

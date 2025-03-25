@@ -512,8 +512,8 @@ public class ConnectSessionService {
             if (optional.isPresent() && optional.get().getRulesetId() != null) {
                 ConnectionSessionUtil.setRuleSetId(connectionSession, optional.get().getRulesetId());
                 ConnectionSessionUtil.setQueryLimit(connectionSession, (Integer) ruleService
-                    .getValueByRulesetIdAndRuleId(optional.get().getRulesetId(),
-                        SqlConsoleRules.MAX_RETURN_ROWS.getRuleName()));
+                        .getValueByRulesetIdAndRuleId(optional.get().getRulesetId(),
+                                SqlConsoleRules.MAX_RETURN_ROWS.getRuleName()));
             }
         }
         ConnectionSessionUtil.setQueryLimit(connectionSession, organizationConfigProvider.getDefaultQueryLimit());
