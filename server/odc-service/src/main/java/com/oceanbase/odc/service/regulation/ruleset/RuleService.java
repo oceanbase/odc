@@ -350,7 +350,7 @@ public class RuleService {
         }
         String key = defaultProperty.keySet().iterator().next();
         String value = organizationConfigProvider.getDefaultMaxQueryLimit().toString();
-        return "\"" + key + "\":" + value;
+        return "{" + "\"" + key + "\":" + value + "}";
     }
 
 }
