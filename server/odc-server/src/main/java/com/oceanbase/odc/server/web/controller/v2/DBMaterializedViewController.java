@@ -30,7 +30,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.oceanbase.odc.core.flow.builder.ReceiveTaskBuilder;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
@@ -134,10 +133,10 @@ public class DBMaterializedViewController {
     @PostMapping(value = "/{sessionId}/databases/{databaseName}/materializedViews/{mvName}/getRefreshRecords")
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public SuccessResponse<Boolean> getRefreshRecords(@PathVariable String sessionId,
-        @PathVariable String databaseName,
-        @PathVariable String mvName) {
+            @PathVariable String databaseName,
+            @PathVariable String mvName) {
         ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
-        //return Responses.success(dbMaterializedViewService.refresh(session, refreshReq));
+        // return Responses.success(dbMaterializedViewService.refresh(session, refreshReq));
         return Responses.success(true);
     }
 

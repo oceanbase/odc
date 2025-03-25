@@ -162,6 +162,7 @@ public interface DBSchemaAccessor {
      * Gets refresh records for the specified materialized view
      */
     List<DBMViewRefreshRecord> listMViewRefreshRecords(DBMViewRefreshRecordParam param);
+
     /**
      * List all variables
      */

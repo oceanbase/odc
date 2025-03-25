@@ -22,8 +22,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecord;
-import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -37,6 +35,8 @@ import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecord;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewRefreshMethod;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
@@ -211,9 +211,10 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
             param.setSchemaName(getOBMySQLDataBaseName());
             param.setMvName("test_mv_allSyntax");
             List<DBMViewRefreshRecord> dbmViewRefreshRecords = accessor.listMViewRefreshRecords(param);
-            Assert.assertEquals(getOBMySQLDataBaseName(),dbmViewRefreshRecords.get(0).getMvOwner());
-            Assert.assertEquals("test_mv_allSyntax",dbmViewRefreshRecords.get(0).getMvName());
-            Assert.assertEquals(DBMaterializedViewRefreshMethod.REFRESH_COMPLETE,dbmViewRefreshRecords.get(0).getRefreshMethod());
+            Assert.assertEquals(getOBMySQLDataBaseName(), dbmViewRefreshRecords.get(0).getMvOwner());
+            Assert.assertEquals("test_mv_allSyntax", dbmViewRefreshRecords.get(0).getMvName());
+            Assert.assertEquals(DBMaterializedViewRefreshMethod.REFRESH_COMPLETE,
+                    dbmViewRefreshRecords.get(0).getRefreshMethod());
         }
     }
 
