@@ -92,6 +92,7 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.queryprofile.OBQueryProfileManager;
 import com.oceanbase.odc.service.regulation.ruleset.RuleService;
+import com.oceanbase.odc.service.regulation.ruleset.model.SqlConsoleRules;
 import com.oceanbase.odc.service.session.interceptor.SqlCheckInterceptor;
 import com.oceanbase.odc.service.session.interceptor.SqlConsoleInterceptor;
 import com.oceanbase.odc.service.session.interceptor.SqlExecuteInterceptorService;
@@ -596,8 +597,9 @@ public class ConnectConsoleService {
         }
 
         queryLimit = organizationConfigProvider.getMinimumQueryLimit(queryLimit.toString());
-        int maxQueryLimit = Integer.parseInt(ruleService.getValueByRulesetIdAndRuleId(
-                ConnectionSessionUtil.getRuleSetId(connectionSession)).toString());
+        Long rulesetId = ConnectionSessionUtil.getRuleSetId(connectionSession);
+        Long ruleId = ruleService.getRuleIdByRulesetIdAndMetadata(rulesetId, SqlConsoleRules.MAX_RETURN_ROWS.name());
+        int maxQueryLimit = Integer.parseInt(ruleService.getValueByRulesetIdAndRuleId(rulesetId, ruleId).toString());
         // if default rows limit is exceeded than max rows limit, still use max rows limit
         if (maxQueryLimit > 0) {
             return Math.min(queryLimit, maxQueryLimit);

@@ -99,6 +99,7 @@ import com.oceanbase.odc.service.monitor.session.ConnectionSessionMonitorListene
 import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.regulation.ruleset.RuleService;
+import com.oceanbase.odc.service.regulation.ruleset.model.SqlConsoleRules;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionIdGenerator;
 import com.oceanbase.odc.service.session.factory.LogicalConnectionSessionFactory;
@@ -511,7 +512,9 @@ public class ConnectSessionService {
             if (optional.isPresent() && optional.get().getRulesetId() != null) {
                 ConnectionSessionUtil.setRuleSetId(connectionSession, optional.get().getRulesetId());
                 ConnectionSessionUtil.setQueryLimit(connectionSession,
-                        (Integer) ruleService.getValueByRulesetIdAndRuleId(optional.get().getRulesetId()));
+                        (Integer) ruleService.getValueByRulesetIdAndRuleId(optional.get().getRulesetId(),
+                                ruleService.getRuleIdByRulesetIdAndMetadata(optional.get().getRulesetId(),
+                                        SqlConsoleRules.MAX_RETURN_ROWS.name())));
             }
         }
         ConnectionSessionUtil.setQueryLimit(connectionSession, organizationConfigProvider.getDefaultQueryLimit());

@@ -247,9 +247,16 @@ public class RuleService {
     }
 
     @SkipAuthorize("internal authenticated")
-    public Object getValueByRulesetIdAndRuleId(@NonNull Long rulesetId) {
-        Rule targetRule = this.detail(rulesetId, QUERY_LIMIT_ID);
+    public Object getValueByRulesetIdAndRuleId(@NonNull Long rulesetId, @NonNull Long ruleId) {
+        Rule targetRule = this.detail(rulesetId, ruleId);
         return targetRule.getProperties().values().iterator().next();
+    }
+
+    @SkipAuthorize("internal authenticated")
+    public Long getRuleIdByRulesetIdAndMetadata(@NonNull Long rulesetId, @NotBlank String name) {
+        RuleApplyingEntity applyingEntity = ruleApplyingRepository.findByOrganizationIdAndRulesetIdAndRuleMetadataName(
+                authenticationFacade.currentOrganizationId(), rulesetId, name);
+        return applyingEntity.getId();
     }
 
     private List<Rule> internalList(@NonNull Long rulesetId, @NonNull QueryRuleMetadataParams params) {

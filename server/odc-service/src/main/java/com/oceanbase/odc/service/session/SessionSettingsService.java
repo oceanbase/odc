@@ -35,6 +35,7 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.LimitMetric;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.service.regulation.ruleset.RuleService;
+import com.oceanbase.odc.service.regulation.ruleset.model.SqlConsoleRules;
 import com.oceanbase.odc.service.session.model.SessionSettings;
 
 /**
@@ -91,9 +92,10 @@ public class SessionSettingsService {
             processor.setDelimiter(settings.getDelimiter());
         }
         Integer queryLimit = ConnectionSessionUtil.getQueryLimit(session);
+        Long rulesetId = ConnectionSessionUtil.getRuleSetId(session);
         if (!Objects.equals(wait2UpdateQueryLimit, queryLimit)) {
-            int environmentQueryLimit = (int) ruleService.getValueByRulesetIdAndRuleId(
-                    ConnectionSessionUtil.getRuleSetId(session));
+            int environmentQueryLimit = (int) ruleService.getValueByRulesetIdAndRuleId(rulesetId,
+                    ruleService.getRuleIdByRulesetIdAndMetadata(rulesetId, SqlConsoleRules.MAX_RETURN_ROWS.name()));
             wait2UpdateQueryLimit = Math.min(wait2UpdateQueryLimit, environmentQueryLimit);
             ConnectionSessionUtil.setQueryLimit(session, wait2UpdateQueryLimit);
         }
