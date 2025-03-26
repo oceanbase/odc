@@ -33,6 +33,8 @@ import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecord;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewRefreshMethod;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
@@ -108,6 +110,23 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
         sb.append(");");
         jdbcOperations.execute(sb.toString());
         return Boolean.TRUE;
+    }
+
+    @Override
+    public List<DBMViewRefreshRecord> listMViewRefreshRecords(DBMViewRefreshRecordParam param) {
+        MySQLSqlBuilder sb = new MySQLSqlBuilder();
+        sb.append("SELECT ")
+                .value(param.getSchemaName())
+                .append(" as mv_owner, ")
+                .value(param.getMvName())
+                .append(" as mv_name,REFRESH_ID as refresh_id,REFRESH_METHOD as refresh_method,REFRESH_OPTIMIZATIONS as refresh_optimizations,ADDITIONAL_EXECUTIONS as additional_executions,START_TIME as start_time, END_TIME as end_time,ELAPSED_TIME as elapsed_time,LOG_SETUP_TIME as log_setup_time,LOG_PURGE_TIME as log_purge_time,INITIAL_NUM_ROWS as initial_num_rows,FINAL_NUM_ROWS as final_num_rows FROM oceanbase.DBA_MVREF_STATS where MV_OWNER =")
+                .value(param.getSchemaName())
+                .append(" AND MV_NAME = ")
+                .value(param.getMvName())
+                .append(" ORDER BY REFRESH_ID DESC")
+                .append(" LIMIT ")
+                .append(param.getQueryLimit());
+        return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBMViewRefreshRecord.class));
     }
 
     @Override

@@ -21,6 +21,8 @@ import java.util.List;
 import org.pf4j.ExtensionPoint;
 
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecord;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 
@@ -41,4 +43,5 @@ public interface MViewExtensionPoint extends ExtensionPoint {
 
     Boolean refresh(Connection connection, DBMViewRefreshParameter parameter);
 
+    List<DBMViewRefreshRecord> listRefreshRecords(Connection connection, DBMViewRefreshRecordParam param);
 }

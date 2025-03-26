@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.db.model;
 
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
@@ -37,6 +38,7 @@ public class MViewRefreshReq {
     private String mvName;
     @NotNull
     DBMaterializedViewRefreshMethod method;
+    @Min(1)
     private Long parallelismDegree;
 
     public DBMViewRefreshParameter convertToDBMViewRefreshParameter() {
