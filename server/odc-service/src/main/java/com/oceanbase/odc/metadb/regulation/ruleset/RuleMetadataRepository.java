@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 package com.oceanbase.odc.metadb.regulation.ruleset;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 

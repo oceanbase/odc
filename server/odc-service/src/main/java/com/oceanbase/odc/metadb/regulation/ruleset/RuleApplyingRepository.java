@@ -35,6 +35,7 @@ public interface RuleApplyingRepository extends OdcJpaRepository<RuleApplyingEnt
 
     List<RuleApplyingEntity> findByOrganizationIdAndRulesetId(Long organizationId, Long rulesetId);
 
+
     Optional<RuleApplyingEntity> findByOrganizationIdAndId(Long organizationId, Long id);
 
     Optional<RuleApplyingEntity> findByOrganizationIdAndRulesetIdAndRuleMetadataId(Long organizationId, Long rulesetId,
