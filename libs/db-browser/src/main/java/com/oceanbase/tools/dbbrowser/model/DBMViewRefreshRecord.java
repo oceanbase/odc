@@ -16,8 +16,9 @@
 package com.oceanbase.tools.dbbrowser.model;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonGetter;
 
 import lombok.Data;
 
@@ -58,14 +59,22 @@ public class DBMViewRefreshRecord {
     private String refreshMethod;
     private String refreshOptimizations;
     private String additionalExecutions;
-    @JsonFormat(shape = JsonFormat.Shape.NUMBER)
     private LocalDateTime startTime;
-    @JsonFormat(shape = JsonFormat.Shape.NUMBER)
     private LocalDateTime endTime;
     private Long elapsedTime;
     private Long logSetupTime;
     private Long logPurgeTime;
     private Long initialNumRows;
     private Long finalNumRows;
+
+    @JsonGetter("startTime")
+    public Long getStartTimeAsTimestamp() {
+        return startTime != null ? startTime.atZone(ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli() : null;
+    }
+
+    @JsonGetter("endTime")
+    public Long getEndTimeAsTimestamp() {
+        return endTime != null ? endTime.atZone(ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli() : null;
+    }
 
 }
