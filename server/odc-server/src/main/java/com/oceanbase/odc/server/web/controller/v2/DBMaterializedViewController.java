@@ -24,6 +24,7 @@ import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -60,6 +61,7 @@ import io.swagger.annotations.ApiOperation;
 
 @RestController
 @RequestMapping("/api/v2/connect/sessions")
+@Validated
 public class DBMaterializedViewController {
 
     @Autowired
@@ -139,7 +141,9 @@ public class DBMaterializedViewController {
     public ListResponse<DBMViewRefreshRecord> getRefreshRecords(@PathVariable String sessionId,
             @PathVariable String databaseName,
             @PathVariable String mvName,
-            @RequestParam(required = false, defaultValue = "1000") @Min(1) @Max(100000) Integer queryLimit) {
+            @RequestParam(required = false, defaultValue = "1000") @Min(value = 1,
+                    message = "queryLimit must be greater than or equal to 1") @Max(value = 100000,
+                            message = "queryLimit must be less than or equal to 100000") Integer queryLimit) {
         DBMViewRefreshRecordParam param = new DBMViewRefreshRecordParam(databaseName, mvName,
                 queryLimit);
         ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
