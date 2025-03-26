@@ -144,7 +144,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     public void refreshMVData_Success() {
         if (isSupportMaterializedView) {
             DBMViewRefreshParameter DBMViewRefreshParameter =
-                    new DBMViewRefreshParameter(getOBMySQLDataBaseName(), "test_mv_allSyntax",
+                    new DBMViewRefreshParameter(getOBMySQLDataBaseName(), "test_mv_all_syntax",
                             DBMaterializedViewRefreshMethod.REFRESH_COMPLETE, 2L);
             Boolean aBoolean = accessor.refreshMVData(DBMViewRefreshParameter);
             Assert.assertTrue(aBoolean);
@@ -154,8 +154,8 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     @Test
     public void getMView_Success() {
         if (isSupportMaterializedView) {
-            DBMaterializedView test_mv_allSyntax = accessor.getMView(getOBMySQLDataBaseName(), "test_mv_allSyntax");
-            Assert.assertEquals("test_mv_allSyntax", test_mv_allSyntax.getName());
+            DBMaterializedView test_mv_allSyntax = accessor.getMView(getOBMySQLDataBaseName(), "test_mv_all_syntax");
+            Assert.assertEquals("test_mv_all_syntax", test_mv_allSyntax.getName());
             Assert.assertEquals(4, test_mv_allSyntax.getColumns().size());
             Assert.assertEquals(DBMaterializedViewRefreshMethod.REFRESH_COMPLETE,
                     test_mv_allSyntax.getRefreshMethod());
@@ -166,7 +166,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
             Assert.assertTrue(test_mv_computation.getEnableQueryComputation());
 
             DBMaterializedView test_mv_queryRewrite =
-                    accessor.getMView(getOBMySQLDataBaseName(), "test_mv_queryRewrite");
+                    accessor.getMView(getOBMySQLDataBaseName(), "test_mv_query_rewrite");
             Assert.assertTrue(test_mv_queryRewrite.getEnableQueryRewrite());
 
             DBMaterializedView test_mv_complete = accessor.getMView(getOBMySQLDataBaseName(), "test_mv_complete");
@@ -189,7 +189,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     public void listMViewConstraints_Success() {
         if (isSupportMaterializedView) {
             List<DBTableConstraint> constraints =
-                    accessor.listMViewConstraints(getOBMySQLDataBaseName(), "test_mv_allSyntax");
+                    accessor.listMViewConstraints(getOBMySQLDataBaseName(), "test_mv_all_syntax");
             Assert.assertTrue(constraints.size() >= 1);
         }
     }
@@ -198,7 +198,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     public void listTableColumnGroups_stmtIsCreateMaterializedView_Success() {
         if (isSupportMaterializedView) {
             List<DBColumnGroupElement> columnGroups =
-                    accessor.listTableColumnGroups(getOBMySQLDataBaseName(), "test_mv_eachColumn");
+                    accessor.listTableColumnGroups(getOBMySQLDataBaseName(), "test_mv_each_column");
             Assert.assertTrue(columnGroups.get(0).isEachColumn());
         }
     }
@@ -208,10 +208,10 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
         if (isSupportMaterializedView) {
             refreshMVData_Success();
             DBMViewRefreshRecordParam param =
-                    new DBMViewRefreshRecordParam(getOBMySQLDataBaseName(), "test_mv_allSyntax", 1);
+                    new DBMViewRefreshRecordParam(getOBMySQLDataBaseName(), "test_mv_all_syntax", 1);
             List<DBMViewRefreshRecord> dbmViewRefreshRecords = accessor.listMViewRefreshRecords(param);
             Assert.assertEquals(getOBMySQLDataBaseName(), dbmViewRefreshRecords.get(0).getMvOwner());
-            Assert.assertEquals("test_mv_allSyntax", dbmViewRefreshRecords.get(0).getMvName());
+            Assert.assertEquals("test_mv_all_syntax", dbmViewRefreshRecords.get(0).getMvName());
             Assert.assertEquals("COMPLETE",
                     dbmViewRefreshRecords.get(0).getRefreshMethod());
         }

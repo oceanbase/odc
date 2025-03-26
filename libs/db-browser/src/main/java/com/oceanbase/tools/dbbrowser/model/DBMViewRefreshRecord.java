@@ -15,9 +15,9 @@
  */
 package com.oceanbase.tools.dbbrowser.model;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
-import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import lombok.Data;
 
@@ -58,22 +58,14 @@ public class DBMViewRefreshRecord {
     private String refreshMethod;
     private String refreshOptimizations;
     private String additionalExecutions;
-    private Date startTime;
-    private Date endTime;
+    @JsonFormat(shape = JsonFormat.Shape.NUMBER)
+    private LocalDateTime startTime;
+    @JsonFormat(shape = JsonFormat.Shape.NUMBER)
+    private LocalDateTime endTime;
     private Long elapsedTime;
     private Long logSetupTime;
     private Long logPurgeTime;
     private Long initialNumRows;
     private Long finalNumRows;
-
-    @JsonGetter("startTime")
-    public Long getStartTimeAsTimestamp() {
-        return startTime != null ? startTime.getTime() : null;
-    }
-
-    @JsonGetter("endTime")
-    public Long getEndTimeAsTimestamp() {
-        return endTime != null ? endTime.getTime() : null;
-    }
 
 }

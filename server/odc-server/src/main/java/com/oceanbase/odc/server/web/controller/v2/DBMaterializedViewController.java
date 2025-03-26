@@ -20,6 +20,8 @@ import java.util.Base64;
 import java.util.Collections;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -137,7 +139,7 @@ public class DBMaterializedViewController {
     public ListResponse<DBMViewRefreshRecord> getRefreshRecords(@PathVariable String sessionId,
             @PathVariable String databaseName,
             @PathVariable String mvName,
-            @RequestParam(required = false, defaultValue = "1000") Integer queryLimit) {
+            @RequestParam(required = false, defaultValue = "1000") @Min(1) @Max(100000) Integer queryLimit) {
         DBMViewRefreshRecordParam param = new DBMViewRefreshRecordParam(databaseName, mvName,
                 queryLimit);
         ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
