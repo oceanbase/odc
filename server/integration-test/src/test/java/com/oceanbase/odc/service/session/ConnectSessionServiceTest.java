@@ -39,7 +39,7 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.metadb.iam.UserEntity;
-import com.oceanbase.odc.service.config.OrganizationConfigProvider;
+import com.oceanbase.odc.service.config.OrganizationConfigUtils;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.ConnectionTesting;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -71,11 +71,11 @@ public class ConnectSessionServiceTest extends AuthorityTestEnv {
     @MockBean
     private AuthorizationFacade authorizationFacade;
     @MockBean
-    private ConnectionTesting connectionTesting;
+    private ConnectionTesting       connectionTesting;
     @MockBean
-    private OrganizationConfigProvider organizationConfigProvider;
+    private OrganizationConfigUtils organizationConfigUtils;
     @Autowired
-    private ConnectSessionService sessionService;
+    private ConnectSessionService   sessionService;
 
     @Before
     public void setUp() throws Exception {
@@ -98,7 +98,7 @@ public class ConnectSessionServiceTest extends AuthorityTestEnv {
     public void testCreateSession_sessionCreated() {
         Mockito.when(connectionService.getForConnectionSkipPermissionCheck(connectionId))
                 .thenReturn(buildTestConnection(DialectType.OB_ORACLE));
-        Mockito.when(organizationConfigProvider.getDefaultQueryLimit())
+        Mockito.when(organizationConfigUtils.getDefaultQueryLimit())
                 .thenReturn(1000);
         ConnectionSession connectionSession = sessionService.create(connectionId, null);
 
@@ -108,7 +108,7 @@ public class ConnectSessionServiceTest extends AuthorityTestEnv {
 
     @Test
     public void testCreateSessionForPublicConnection_sessionCreated() {
-        Mockito.when(organizationConfigProvider.getDefaultQueryLimit())
+        Mockito.when(organizationConfigUtils.getDefaultQueryLimit())
                 .thenReturn(1000);
         ConnectionConfig connectionConfig = buildTestConnection(DialectType.OB_ORACLE);
         connectionConfig.setVisibleScope(ConnectionVisibleScope.ORGANIZATION);
@@ -121,7 +121,7 @@ public class ConnectSessionServiceTest extends AuthorityTestEnv {
 
     @Test
     public void testCreateSessionForReadonlyPublicConnection_sessionCreated() {
-        Mockito.when(organizationConfigProvider.getDefaultQueryLimit())
+        Mockito.when(organizationConfigUtils.getDefaultQueryLimit())
                 .thenReturn(1000);
         ConnectionConfig connectionConfig = buildTestConnection(DialectType.OB_ORACLE);
         connectionConfig.setVisibleScope(ConnectionVisibleScope.ORGANIZATION);
@@ -139,7 +139,7 @@ public class ConnectSessionServiceTest extends AuthorityTestEnv {
 
     @Test
     public void testCreateSessionWithSysyUser_sessionCreated() {
-        Mockito.when(organizationConfigProvider.getDefaultQueryLimit())
+        Mockito.when(organizationConfigUtils.getDefaultQueryLimit())
                 .thenReturn(1000);
         ConnectionConfig connectionConfig = buildTestConnection(DialectType.OB_ORACLE);
         connectionConfig.setSysTenantUsername(null);
@@ -153,7 +153,7 @@ public class ConnectSessionServiceTest extends AuthorityTestEnv {
 
     @Test
     public void testGetSession_sessionGetted() {
-        Mockito.when(organizationConfigProvider.getDefaultQueryLimit())
+        Mockito.when(organizationConfigUtils.getDefaultQueryLimit())
                 .thenReturn(1000);
         ConnectionSession connectionSession = createSession();
         ConnectionSession gettedSession = sessionService.nullSafeGet(connectionSession.getId());
@@ -163,7 +163,7 @@ public class ConnectSessionServiceTest extends AuthorityTestEnv {
 
     @Test
     public void testGetSession_nullGetted() {
-        Mockito.when(organizationConfigProvider.getDefaultQueryLimit())
+        Mockito.when(organizationConfigUtils.getDefaultQueryLimit())
                 .thenReturn(1000);
         DefaultConnectSessionIdGenerator idGenerator = new DefaultConnectSessionIdGenerator();
         CreateSessionReq req = new CreateSessionReq();
@@ -178,7 +178,7 @@ public class ConnectSessionServiceTest extends AuthorityTestEnv {
 
     @Test
     public void testGetSession_NotFoundExceptionGetted() {
-        Mockito.when(organizationConfigProvider.getDefaultQueryLimit())
+        Mockito.when(organizationConfigUtils.getDefaultQueryLimit())
                 .thenReturn(1000);
         ConnectionSession connectionSession = createSession();
         when(authenticationFacade.currentUserId()).thenReturn(userId + 10);
@@ -189,7 +189,7 @@ public class ConnectSessionServiceTest extends AuthorityTestEnv {
 
     @Test
     public void testCloseSession_SuccessClosed() {
-        Mockito.when(organizationConfigProvider.getDefaultQueryLimit())
+        Mockito.when(organizationConfigUtils.getDefaultQueryLimit())
                 .thenReturn(1000);
         ConnectionSession connectionSession = createSession();
         sessionService.close(connectionSession.getId());
@@ -197,7 +197,7 @@ public class ConnectSessionServiceTest extends AuthorityTestEnv {
 
     @Test
     public void testGetClosedSession_NullGetted() {
-        Mockito.when(organizationConfigProvider.getDefaultQueryLimit())
+        Mockito.when(organizationConfigUtils.getDefaultQueryLimit())
                 .thenReturn(1000);
         ConnectionSession connectionSession = createSession();
         sessionService.close(connectionSession.getId());

@@ -30,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 @SkipAuthorize("odc internal usage")
-public class OrganizationConfigProvider {
+public class OrganizationConfigUtils {
 
     @Autowired
     private OrganizationConfigService organizationConfigService;
@@ -48,16 +48,15 @@ public class OrganizationConfigProvider {
         return configuration.getValue();
     }
 
-    public void checkMaxQueryLimitValidity(Integer currentConfig) {
-        Integer organizationConfig = getDefaultMaxQueryLimit();
-        if (currentConfig > organizationConfig) {
+    public void checkMaxQueryLimitValidity(Integer limitConfig, Integer currentConfig) {
+        if (currentConfig > limitConfig) {
             log.warn("The current configuration value: {} is greater than"
                     + "the max query limit value in the organization configurations: {}",
-                    currentConfig, organizationConfig);
+                    currentConfig, limitConfig);
             throw new IllegalArgumentException(
                     "This configuration value cannot exceed "
                             + "the max query limit in the organization configurations: "
-                            + organizationConfig);
+                            + limitConfig);
         }
     }
 

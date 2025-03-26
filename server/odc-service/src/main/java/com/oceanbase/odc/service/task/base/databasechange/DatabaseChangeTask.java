@@ -74,7 +74,7 @@ import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.common.util.SqlUtils;
-import com.oceanbase.odc.service.config.OrganizationConfigProvider;
+import com.oceanbase.odc.service.config.OrganizationConfigUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.datasecurity.accessor.DatasourceColumnAccessor;
 import com.oceanbase.odc.service.datasecurity.extractor.ColumnExtractor;
@@ -204,7 +204,7 @@ public class DatabaseChangeTask extends TaskBase<FlowTaskResult> {
                 log.info("Database change sql: {}", sql);
                 try {
                     List<SqlTuple> sqlTuples = Collections.singletonList(SqlTuple.newTuple(sql));
-                    Integer queryLimit = SpringContextUtil.getBean(OrganizationConfigProvider.class)
+                    Integer queryLimit = SpringContextUtil.getBean(OrganizationConfigUtils.class)
                             .getMinimumQueryLimit(this.databaseChangeParameters.getQueryLimit());
                     OdcStatementCallBack statementCallback = new OdcStatementCallBack(sqlTuples, connectionSession,
                             true, queryLimit);

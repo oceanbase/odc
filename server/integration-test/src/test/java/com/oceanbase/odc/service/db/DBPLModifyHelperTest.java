@@ -40,7 +40,7 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
-import com.oceanbase.odc.service.config.OrganizationConfigProvider;
+import com.oceanbase.odc.service.config.OrganizationConfigUtils;
 import com.oceanbase.odc.service.db.model.EditPLReq;
 import com.oceanbase.odc.service.db.model.EditPLResp;
 import com.oceanbase.odc.service.session.ConnectSessionService;
@@ -59,9 +59,9 @@ public class DBPLModifyHelperTest extends ServiceTestEnv {
     private static final String ODC_TEST_TRIGGER_TABLE = "ODC_TEST_TRIGGER_TABLE";
 
     @MockBean
-    private ConnectSessionService sessionService;
+    private ConnectSessionService   sessionService;
     @MockBean
-    private OrganizationConfigProvider organizationConfigProvider;
+    private OrganizationConfigUtils organizationConfigUtils;
 
     @Autowired
     private DBPLModifyHelper dbplModifyHelper;
@@ -128,18 +128,18 @@ public class DBPLModifyHelperTest extends ServiceTestEnv {
         SqlCommentProcessor sqlCommentProcessor = new SqlCommentProcessor(DialectType.OB_MYSQL, true, true, true);
         testConnectionSession.setAttribute(ConnectionSessionConstants.SQL_COMMENT_PROCESSOR_KEY, sqlCommentProcessor);
         String sessionId = testConnectionSession.getId();
-        Mockito.when(organizationConfigProvider.getDefaultQueryLimit()).thenReturn(100);
-        Mockito.when(organizationConfigProvider.getDefaultMaxQueryLimit()).thenReturn(1000);
-        Mockito.when(organizationConfigProvider.getMinimumQueryLimit(Mockito.anyInt())).thenReturn(10);
+        Mockito.when(organizationConfigUtils.getDefaultQueryLimit()).thenReturn(100);
+        Mockito.when(organizationConfigUtils.getDefaultMaxQueryLimit()).thenReturn(1000);
+        Mockito.when(organizationConfigUtils.getMinimumQueryLimit(Mockito.anyInt())).thenReturn(10);
         Mockito.when(sessionService.nullSafeGet(sessionId, true)).thenReturn(testConnectionSession);
         Mockito.when(sessionService.nullSafeGet(sessionId)).thenReturn(testConnectionSession);
     }
 
     @Test
     public void editProcedureForOBMysql_normal_successResult() throws Exception {
-        Mockito.when(organizationConfigProvider.getDefaultQueryLimit()).thenReturn(100);
-        Mockito.when(organizationConfigProvider.getDefaultMaxQueryLimit()).thenReturn(1000);
-        Mockito.when(organizationConfigProvider.getMinimumQueryLimit(Mockito.anyInt())).thenReturn(10);
+        Mockito.when(organizationConfigUtils.getDefaultQueryLimit()).thenReturn(100);
+        Mockito.when(organizationConfigUtils.getDefaultMaxQueryLimit()).thenReturn(1000);
+        Mockito.when(organizationConfigUtils.getMinimumQueryLimit(Mockito.anyInt())).thenReturn(10);
         ConnectionSession testConnectionSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
         String editTestProcedure = "CREATE PROCEDURE " + ODC_TEST_PROCEDURE + "(IN num1 INT, OUT square1 INT)\n"
                 + "BEGIN\n"
@@ -155,9 +155,9 @@ public class DBPLModifyHelperTest extends ServiceTestEnv {
 
     @Test
     public void editProcedureForOBMysql_odcTempProcedureHaveExisted_failResult() throws Exception {
-        Mockito.when(organizationConfigProvider.getDefaultQueryLimit()).thenReturn(100);
-        Mockito.when(organizationConfigProvider.getDefaultMaxQueryLimit()).thenReturn(1000);
-        Mockito.when(organizationConfigProvider.getMinimumQueryLimit(Mockito.anyInt())).thenReturn(10);
+        Mockito.when(organizationConfigUtils.getDefaultQueryLimit()).thenReturn(100);
+        Mockito.when(organizationConfigUtils.getDefaultMaxQueryLimit()).thenReturn(1000);
+        Mockito.when(organizationConfigUtils.getMinimumQueryLimit(Mockito.anyInt())).thenReturn(10);
         ConnectionSession testConnectionSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
         SyncJdbcExecutor syncJdbcExecutor = testConnectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.CONSOLE_DS_KEY);
@@ -181,9 +181,9 @@ public class DBPLModifyHelperTest extends ServiceTestEnv {
 
     @Test
     public void editFunctionForOBMysql_normal_successResult() throws Exception {
-        Mockito.when(organizationConfigProvider.getDefaultQueryLimit()).thenReturn(100);
-        Mockito.when(organizationConfigProvider.getDefaultMaxQueryLimit()).thenReturn(1000);
-        Mockito.when(organizationConfigProvider.getMinimumQueryLimit(Mockito.anyInt())).thenReturn(10);
+        Mockito.when(organizationConfigUtils.getDefaultQueryLimit()).thenReturn(100);
+        Mockito.when(organizationConfigUtils.getDefaultMaxQueryLimit()).thenReturn(1000);
+        Mockito.when(organizationConfigUtils.getMinimumQueryLimit(Mockito.anyInt())).thenReturn(10);
         ConnectionSession testConnectionSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
         String editTestFunction = "CREATE FUNCTION " + ODC_TEST_FUNCTION + "(num1 INT) \n"
                 + "RETURNS INT\n"
@@ -199,9 +199,9 @@ public class DBPLModifyHelperTest extends ServiceTestEnv {
 
     @Test
     public void editFunctionForOBMysql_odcTempFunctionHaveExisted_failResultResult() throws Exception {
-        Mockito.when(organizationConfigProvider.getDefaultQueryLimit()).thenReturn(100);
-        Mockito.when(organizationConfigProvider.getDefaultMaxQueryLimit()).thenReturn(1000);
-        Mockito.when(organizationConfigProvider.getMinimumQueryLimit(Mockito.anyInt())).thenReturn(10);
+        Mockito.when(organizationConfigUtils.getDefaultQueryLimit()).thenReturn(100);
+        Mockito.when(organizationConfigUtils.getDefaultMaxQueryLimit()).thenReturn(1000);
+        Mockito.when(organizationConfigUtils.getMinimumQueryLimit(Mockito.anyInt())).thenReturn(10);
         ConnectionSession testConnectionSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
         SyncJdbcExecutor syncJdbcExecutor = testConnectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.CONSOLE_DS_KEY);
@@ -227,9 +227,9 @@ public class DBPLModifyHelperTest extends ServiceTestEnv {
 
     @Test
     public void editTriggerForOBMysql_normal_successResult() throws Exception {
-        Mockito.when(organizationConfigProvider.getDefaultQueryLimit()).thenReturn(100);
-        Mockito.when(organizationConfigProvider.getDefaultMaxQueryLimit()).thenReturn(1000);
-        Mockito.when(organizationConfigProvider.getMinimumQueryLimit(Mockito.anyInt())).thenReturn(10);
+        Mockito.when(organizationConfigUtils.getDefaultQueryLimit()).thenReturn(100);
+        Mockito.when(organizationConfigUtils.getDefaultMaxQueryLimit()).thenReturn(1000);
+        Mockito.when(organizationConfigUtils.getMinimumQueryLimit(Mockito.anyInt())).thenReturn(10);
         ConnectionSession testConnectionSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
         String editTestTrigger = "CREATE TRIGGER " + ODC_TEST_TRIGGER + "\n"
                 + "BEFORE INSERT ON " + ODC_TEST_TRIGGER_TABLE + "\n"
@@ -253,9 +253,9 @@ public class DBPLModifyHelperTest extends ServiceTestEnv {
 
     @Test
     public void editTriggerForOBMysql_odcTempTriggerHaveExisted_failResult() throws Exception {
-        Mockito.when(organizationConfigProvider.getDefaultQueryLimit()).thenReturn(100);
-        Mockito.when(organizationConfigProvider.getDefaultMaxQueryLimit()).thenReturn(1000);
-        Mockito.when(organizationConfigProvider.getMinimumQueryLimit(Mockito.anyInt())).thenReturn(10);
+        Mockito.when(organizationConfigUtils.getDefaultQueryLimit()).thenReturn(100);
+        Mockito.when(organizationConfigUtils.getDefaultMaxQueryLimit()).thenReturn(1000);
+        Mockito.when(organizationConfigUtils.getMinimumQueryLimit(Mockito.anyInt())).thenReturn(10);
         ConnectionSession testConnectionSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
         SyncJdbcExecutor syncJdbcExecutor = testConnectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.CONSOLE_DS_KEY);

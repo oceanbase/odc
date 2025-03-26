@@ -71,7 +71,7 @@ import com.oceanbase.odc.core.task.ExecuteMonitorTaskManager;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentEntity;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.service.common.util.SidUtils;
-import com.oceanbase.odc.service.config.OrganizationConfigProvider;
+import com.oceanbase.odc.service.config.OrganizationConfigUtils;
 import com.oceanbase.odc.service.config.UserConfigFacade;
 import com.oceanbase.odc.service.connection.CloudMetadataClient;
 import com.oceanbase.odc.service.connection.CloudMetadataClient.CloudPermissionAction;
@@ -166,10 +166,10 @@ public class ConnectSessionService {
     @Autowired
     private DBSessionManageFacade dbSessionManageFacade;
     @Autowired
-    private RuleService ruleService;
+    private       RuleService             ruleService;
     @Autowired
-    private OrganizationConfigProvider organizationConfigProvider;
-    private final Map<String, Lock> sessionId2Lock = new ConcurrentHashMap<>();
+    private       OrganizationConfigUtils organizationConfigUtils;
+    private final Map<String, Lock>       sessionId2Lock = new ConcurrentHashMap<>();
 
     @PostConstruct
     public void init() {
@@ -502,7 +502,7 @@ public class ConnectSessionService {
         processor.setDelimiter(userConfigFacade.getDefaultDelimiter());
         ConnectionSessionUtil.setSqlCommentProcessor(connectionSession, processor);
         ConnectionSessionUtil.setUserId(connectionSession, authenticationFacade.currentUserId());
-        ConnectionSessionUtil.setQueryLimit(connectionSession, organizationConfigProvider.getDefaultQueryLimit());
+        ConnectionSessionUtil.setQueryLimit(connectionSession, organizationConfigUtils.getDefaultQueryLimit());
         if (connectionSession.getDialectType().isOracle()) {
             ConnectionSessionUtil.initConsoleSessionTimeZone(connectionSession, connectProperties.getDefaultTimeZone());
         }

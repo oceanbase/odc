@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.regulation.ruleset;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -50,7 +49,7 @@ import com.oceanbase.odc.metadb.regulation.ruleset.DefaultRuleApplyingRepository
 import com.oceanbase.odc.metadb.regulation.ruleset.RuleApplyingEntity;
 import com.oceanbase.odc.metadb.regulation.ruleset.RuleApplyingRepository;
 import com.oceanbase.odc.service.common.model.Stats;
-import com.oceanbase.odc.service.config.OrganizationConfigProvider;
+import com.oceanbase.odc.service.config.OrganizationConfigUtils;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.regulation.ruleset.model.QueryRuleMetadataParams;
@@ -95,7 +94,7 @@ public class RuleService {
     private LoadingCache<Long, List<Rule>> rulesetId2RulesCache;
 
     @Autowired
-    private OrganizationConfigProvider organizationConfigProvider;
+    private OrganizationConfigUtils organizationConfigUtils;
 
     @SkipAuthorize("odc internal usage")
     public List<Rule> list(@NonNull Long rulesetId, @NonNull QueryRuleMetadataParams params) {
@@ -245,28 +244,6 @@ public class RuleService {
         return rules;
     }
 
-    @SkipAuthorize("internal authenticated")
-    public Rule getByRulesetIdAndMetadataName(@NonNull Long rulesetId, @NonNull SqlConsoleRules key) {
-        Optional<RuleApplyingEntity> applyingEntity = ruleApplyingRepository
-                .findByOrganizationIdAndRulesetIdAndRuleMetadataName(
-                        authenticationFacade.currentOrganizationId(), rulesetId, key.getRuleName());
-        if (applyingEntity.isPresent()) {
-            return entityToModel(applyingEntity.get());
-        }
-        log.info("rule applying not found, try to get default rule applying...");
-        Ruleset ruleset = rulesetService.detail(rulesetId);
-        RuleMetadata ruleMetadata = metadataService.detail(key.getRuleName());
-        Optional<DefaultRuleApplyingEntity> defaultApplyingEntity = defaultRuleApplyingRepository
-                .findByRuleMetadataIdAndRulesetName(ruleMetadata.getId(), ruleset.getName());
-        if (!defaultApplyingEntity.isPresent()) {
-            throw new UnexpectedException(
-                    "default rule applying not found, rulesetId = " + rulesetId + ", key = " + key);
-        }
-        Rule rule = entityToModel(defaultApplyingEntity.get());
-        rule.setOrganizationId(authenticationFacade.currentOrganizationId());
-        return rule;
-    }
-
     private List<Rule> internalList(@NonNull Long rulesetId, @NonNull QueryRuleMetadataParams params) {
         List<RuleMetadata> ruleMetadatas = metadataService.list(params);
         if (CollectionUtils.isEmpty(ruleMetadatas)) {
@@ -318,25 +295,6 @@ public class RuleService {
         return rules;
     }
 
-    private Rule entityToModel(DefaultRuleApplyingEntity defaultApplyingEntity) {
-        Rule rule = new Rule();
-        rule.setId(defaultApplyingEntity.getId());
-        rule.setLevel(defaultApplyingEntity.getLevel());
-        rule.setEnabled(defaultApplyingEntity.getEnabled());
-        rule.setCreateTime(defaultApplyingEntity.getCreateTime());
-        rule.setUpdateTime(defaultApplyingEntity.getUpdateTime());
-        if (CollectionUtils.isNotEmpty(defaultApplyingEntity.getAppliedDialectTypes())) {
-            rule.setAppliedDialectTypes(
-                    defaultApplyingEntity.getAppliedDialectTypes().stream().map(DialectType::fromValue)
-                            .collect(Collectors.toList()));
-        }
-        if (StringUtils.isNotEmpty(defaultApplyingEntity.getPropertiesJson())) {
-            rule.setProperties(JsonUtils.fromJson(defaultApplyingEntity.getPropertiesJson(),
-                    new TypeReference<Map<String, Object>>() {}));
-        }
-        return rule;
-    }
-
     private Rule entityToModel(RuleApplyingEntity ruleApplyingEntity) {
         Rule rule = new Rule();
         rule.setId(ruleApplyingEntity.getId());
@@ -364,7 +322,8 @@ public class RuleService {
         // if this is "max query limit" property, do check
         if (Objects.nonNull(properties.get(SqlConsoleRules.MAX_RETURN_ROWS.getPropertyName()))) {
             Integer currentValue = (Integer) properties.get(SqlConsoleRules.MAX_RETURN_ROWS.getPropertyName());
-            organizationConfigProvider.checkMaxQueryLimitValidity(currentValue);
+            organizationConfigUtils.checkMaxQueryLimitValidity(
+                organizationConfigUtils.getDefaultMaxQueryLimit(), currentValue);
         }
         return propertiesJson;
     }

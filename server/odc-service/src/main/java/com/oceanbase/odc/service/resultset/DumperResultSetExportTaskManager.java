@@ -41,7 +41,7 @@ import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConstant
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
 import com.oceanbase.odc.service.common.FileManager;
 import com.oceanbase.odc.service.common.model.FileBucket;
-import com.oceanbase.odc.service.config.OrganizationConfigProvider;
+import com.oceanbase.odc.service.config.OrganizationConfigUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.datasecurity.DataMaskingService;
 import com.oceanbase.odc.service.datasecurity.model.MaskingAlgorithm;
@@ -90,7 +90,7 @@ public class DumperResultSetExportTaskManager implements ResultSetExportTaskMana
     private DataTransferAdapter dataTransferAdapter;
 
     @Autowired
-    private OrganizationConfigProvider organizationConfigProvider;
+    private OrganizationConfigUtils organizationConfigUtils;
 
     @PostConstruct
     public void init() {
@@ -140,7 +140,7 @@ public class DumperResultSetExportTaskManager implements ResultSetExportTaskMana
                 throw new IllegalArgumentException("max rows value: " + longValue + " is out of Integer range.");
             }
             Long maxRows = Long.valueOf(
-                    organizationConfigProvider.getMinimumQueryLimit((parameter.getMaxRows().intValue())));
+                    organizationConfigUtils.getMinimumQueryLimit((parameter.getMaxRows().intValue())));
             parameter.setSql(SqlRewriteUtil.addQueryLimit(parameter.getSql(), session, maxRows));
 
             ResultSetExportTask task = new ResultSetExportTask(workingDir, logDir, parameter, session,

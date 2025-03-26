@@ -77,7 +77,7 @@ import com.oceanbase.odc.core.sql.parser.EmptyAstFactory;
 import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.common.util.WebResponseUtils;
-import com.oceanbase.odc.service.config.OrganizationConfigProvider;
+import com.oceanbase.odc.service.config.OrganizationConfigUtils;
 import com.oceanbase.odc.service.config.UserConfigFacade;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.model.UnauthorizedDBResource;
@@ -147,11 +147,11 @@ public class ConnectConsoleService {
     @Autowired
     private AuthenticationFacade authenticationFacade;
     @Autowired
-    private OBQueryProfileManager profileManager;
+    private OBQueryProfileManager   profileManager;
     @Autowired
-    private OrganizationConfigProvider organizationConfigProvider;
+    private OrganizationConfigUtils organizationConfigUtils;
     @Autowired
-    private RuleService ruleService;
+    private RuleService             ruleService;
 
     public SqlExecuteResult queryTableOrViewData(@NotNull String sessionId,
             @NotNull @Valid QueryTableOrViewDataReq req) throws Exception {
@@ -588,7 +588,7 @@ public class ConnectConsoleService {
 
     private Integer checkQueryLimit(Integer queryLimit) {
         if (Objects.isNull(queryLimit)) {
-            queryLimit = organizationConfigProvider.getDefaultQueryLimit();
+            queryLimit = organizationConfigUtils.getDefaultQueryLimit();
         }
         return queryLimit;
     }
