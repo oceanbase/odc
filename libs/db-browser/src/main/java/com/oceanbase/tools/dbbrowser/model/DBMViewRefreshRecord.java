@@ -20,6 +20,9 @@ import java.time.ZoneId;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.Data;
 
 /**
@@ -69,12 +72,12 @@ public class DBMViewRefreshRecord {
 
     @JsonGetter("startTime")
     public Long getStartTimeAsTimestamp() {
-        return startTime != null ? startTime.atZone(ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli() : null;
+        return startTime != null ? startTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() : null;
     }
 
     @JsonGetter("endTime")
     public Long getEndTimeAsTimestamp() {
-        return endTime != null ? endTime.atZone(ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli() : null;
+        return endTime != null ? endTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() : null;
     }
 
 }
