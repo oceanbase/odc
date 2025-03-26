@@ -323,7 +323,7 @@ public class RuleService {
         if (Objects.nonNull(properties.get(SqlConsoleRules.MAX_RETURN_ROWS.getPropertyName()))) {
             Integer currentValue = (Integer) properties.get(SqlConsoleRules.MAX_RETURN_ROWS.getPropertyName());
             organizationConfigUtils.checkMaxQueryLimitValidity(
-                organizationConfigUtils.getDefaultMaxQueryLimit(), currentValue);
+                    organizationConfigUtils.getDefaultMaxQueryLimit(), currentValue);
         }
         return propertiesJson;
     }

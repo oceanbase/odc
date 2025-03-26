@@ -166,10 +166,10 @@ public class ConnectSessionService {
     @Autowired
     private DBSessionManageFacade dbSessionManageFacade;
     @Autowired
-    private       RuleService             ruleService;
+    private RuleService ruleService;
     @Autowired
-    private       OrganizationConfigUtils organizationConfigUtils;
-    private final Map<String, Lock>       sessionId2Lock = new ConcurrentHashMap<>();
+    private OrganizationConfigUtils organizationConfigUtils;
+    private final Map<String, Lock> sessionId2Lock = new ConcurrentHashMap<>();
 
     @PostConstruct
     public void init() {

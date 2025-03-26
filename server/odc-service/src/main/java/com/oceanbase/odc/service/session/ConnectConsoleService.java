@@ -147,11 +147,11 @@ public class ConnectConsoleService {
     @Autowired
     private AuthenticationFacade authenticationFacade;
     @Autowired
-    private OBQueryProfileManager   profileManager;
+    private OBQueryProfileManager profileManager;
     @Autowired
     private OrganizationConfigUtils organizationConfigUtils;
     @Autowired
-    private RuleService             ruleService;
+    private RuleService ruleService;
 
     public SqlExecuteResult queryTableOrViewData(@NotNull String sessionId,
             @NotNull @Valid QueryTableOrViewDataReq req) throws Exception {
