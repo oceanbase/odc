@@ -99,7 +99,6 @@ import com.oceanbase.odc.service.monitor.session.ConnectionSessionMonitorListene
 import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.regulation.ruleset.RuleService;
-import com.oceanbase.odc.service.regulation.ruleset.model.SqlConsoleRules;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionIdGenerator;
 import com.oceanbase.odc.service.session.factory.LogicalConnectionSessionFactory;
@@ -503,21 +502,16 @@ public class ConnectSessionService {
         processor.setDelimiter(userConfigFacade.getDefaultDelimiter());
         ConnectionSessionUtil.setSqlCommentProcessor(connectionSession, processor);
         ConnectionSessionUtil.setUserId(connectionSession, authenticationFacade.currentUserId());
-
+        ConnectionSessionUtil.setQueryLimit(connectionSession, organizationConfigProvider.getDefaultQueryLimit());
         if (connectionSession.getDialectType().isOracle()) {
             ConnectionSessionUtil.initConsoleSessionTimeZone(connectionSession, connectProperties.getDefaultTimeZone());
         }
         if (envId != null) {
             Optional<EnvironmentEntity> optional = this.environmentRepository.findById(envId);
             if (optional.isPresent() && optional.get().getRulesetId() != null) {
-                String targetKey = SqlConsoleRules.MAX_RETURN_ROWS.getRuleName();
                 ConnectionSessionUtil.setRuleSetId(connectionSession, optional.get().getRulesetId());
-                ConnectionSessionUtil.setQueryLimit(connectionSession, (Integer) ruleService
-                        .getByRulesetIdAndRuleId(optional.get().getRulesetId(), targetKey)
-                        .getProperties().get(targetKey));
             }
         }
-        ConnectionSessionUtil.setQueryLimit(connectionSession, organizationConfigProvider.getDefaultQueryLimit());
     }
 
     private ConnectionSession getWithCreatorCheck(@NonNull String sessionId) {

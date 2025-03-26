@@ -52,7 +52,8 @@ public interface RuleApplyingRepository extends OdcJpaRepository<RuleApplyingEnt
             + "ra.ruleset_id = :rulesetId and ra.rule_metadata_id in "
             + "(select rm.id from regulation_rule_metadata rm where rm.name = :name)",
             nativeQuery = true)
-    RuleApplyingEntity findByOrganizationIdAndRulesetIdAndRuleMetadataName(@Param("organizationId") Long organizationId,
+    Optional<RuleApplyingEntity> findByOrganizationIdAndRulesetIdAndRuleMetadataName(
+            @Param("organizationId") Long organizationId,
             @Param("rulesetId") Long rulesetId, @Param("name") String name);
 
     @Transactional

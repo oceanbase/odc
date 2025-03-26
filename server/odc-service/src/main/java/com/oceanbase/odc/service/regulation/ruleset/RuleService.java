@@ -57,6 +57,7 @@ import com.oceanbase.odc.service.regulation.ruleset.model.QueryRuleMetadataParam
 import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
 import com.oceanbase.odc.service.regulation.ruleset.model.RuleMetadata;
 import com.oceanbase.odc.service.regulation.ruleset.model.Ruleset;
+import com.oceanbase.odc.service.regulation.ruleset.model.SqlConsoleRules;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -245,11 +246,25 @@ public class RuleService {
     }
 
     @SkipAuthorize("internal authenticated")
-    public Rule getByRulesetIdAndRuleId(@NonNull Long rulesetId, @NonNull String name) {
-        RuleApplyingEntity applyingEntity = ruleApplyingRepository.findByOrganizationIdAndRulesetIdAndRuleMetadataName(
-                authenticationFacade.currentOrganizationId(), rulesetId, name);
-        Long ruleId = applyingEntity.getId();
-        return this.detail(rulesetId, ruleId);
+    public Rule getByRulesetIdAndMetadataName(@NonNull Long rulesetId, @NonNull SqlConsoleRules key) {
+        Optional<RuleApplyingEntity> applyingEntity = ruleApplyingRepository
+                .findByOrganizationIdAndRulesetIdAndRuleMetadataName(
+                        authenticationFacade.currentOrganizationId(), rulesetId, key.getRuleName());
+        if (applyingEntity.isPresent()) {
+            return entityToModel(applyingEntity.get());
+        }
+        log.info("rule applying not found, try to get default rule applying...");
+        Ruleset ruleset = rulesetService.detail(rulesetId);
+        RuleMetadata ruleMetadata = metadataService.detail(key.getRuleName());
+        Optional<DefaultRuleApplyingEntity> defaultApplyingEntity = defaultRuleApplyingRepository
+                .findByRuleMetadataIdAndRulesetName(ruleMetadata.getId(), ruleset.getName());
+        if (!defaultApplyingEntity.isPresent()) {
+            throw new UnexpectedException(
+                    "default rule applying not found, rulesetId = " + rulesetId + ", key = " + key);
+        }
+        Rule rule = entityToModel(defaultApplyingEntity.get());
+        rule.setOrganizationId(authenticationFacade.currentOrganizationId());
+        return rule;
     }
 
     private List<Rule> internalList(@NonNull Long rulesetId, @NonNull QueryRuleMetadataParams params) {
@@ -308,6 +323,25 @@ public class RuleService {
         return rules;
     }
 
+    private Rule entityToModel(DefaultRuleApplyingEntity defaultApplyingEntity) {
+        Rule rule = new Rule();
+        rule.setId(defaultApplyingEntity.getId());
+        rule.setLevel(defaultApplyingEntity.getLevel());
+        rule.setEnabled(defaultApplyingEntity.getEnabled());
+        rule.setCreateTime(defaultApplyingEntity.getCreateTime());
+        rule.setUpdateTime(defaultApplyingEntity.getUpdateTime());
+        if (CollectionUtils.isNotEmpty(defaultApplyingEntity.getAppliedDialectTypes())) {
+            rule.setAppliedDialectTypes(
+                    defaultApplyingEntity.getAppliedDialectTypes().stream().map(DialectType::fromValue)
+                            .collect(Collectors.toList()));
+        }
+        if (StringUtils.isNotEmpty(defaultApplyingEntity.getPropertiesJson())) {
+            rule.setProperties(JsonUtils.fromJson(defaultApplyingEntity.getPropertiesJson(),
+                    new TypeReference<Map<String, Object>>() {}));
+        }
+        return rule;
+    }
+
     private Rule entityToModel(RuleApplyingEntity ruleApplyingEntity) {
         Rule rule = new Rule();
         rule.setId(ruleApplyingEntity.getId());
@@ -348,9 +382,7 @@ public class RuleService {
         if (!(defaultProperty.values().iterator().next()).equals(applyingProperty.values().iterator().next())) {
             return applyingEntity.getPropertiesJson();
         }
-        String key = defaultProperty.keySet().iterator().next();
-        String value = organizationConfigProvider.getDefaultMaxQueryLimit().toString();
-        return "{" + "\"" + key + "\":" + value + "}";
+        return defaultEntity.getPropertiesJson();
     }
 
 }

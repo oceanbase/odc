@@ -92,7 +92,6 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.queryprofile.OBQueryProfileManager;
 import com.oceanbase.odc.service.regulation.ruleset.RuleService;
-import com.oceanbase.odc.service.regulation.ruleset.model.SqlConsoleRules;
 import com.oceanbase.odc.service.session.interceptor.SqlCheckInterceptor;
 import com.oceanbase.odc.service.session.interceptor.SqlConsoleInterceptor;
 import com.oceanbase.odc.service.session.interceptor.SqlExecuteInterceptorService;
@@ -175,7 +174,7 @@ public class ConnectConsoleService {
         sqlBuilder.append(" t.* ").append(" FROM ")
                 .schemaPrefixIfNotBlank(req.getSchemaName()).identifier(req.getTableOrViewName()).append(" t");
 
-        Integer queryLimit = checkQueryLimit(connectionSession, req.getQueryLimit());
+        Integer queryLimit = checkQueryLimit(req.getQueryLimit());
         if (DialectType.OB_ORACLE == connectionSession.getDialectType()) {
             String version = ConnectionSessionUtil.getVersion(connectionSession);
             if (VersionUtils.isGreaterThanOrEqualsTo(version, "2.2.50")) {
@@ -303,7 +302,7 @@ public class ConnectConsoleService {
                 }
             }
         }
-        Integer queryLimit = checkQueryLimit(connectionSession, request.getQueryLimit());
+        Integer queryLimit = checkQueryLimit(request.getQueryLimit());
         boolean continueExecutionOnError =
                 Objects.nonNull(request.getContinueExecutionOnError()) ? request.getContinueExecutionOnError()
                         : userConfigFacade.isContinueExecutionOnError();
@@ -587,19 +586,9 @@ public class ConnectConsoleService {
         return result;
     }
 
-    private Integer checkQueryLimit(ConnectionSession connectionSession, Integer queryLimit) {
+    private Integer checkQueryLimit(Integer queryLimit) {
         if (Objects.isNull(queryLimit)) {
             queryLimit = organizationConfigProvider.getDefaultQueryLimit();
-        }
-
-        queryLimit = organizationConfigProvider.getMinimumQueryLimit(queryLimit.toString());
-        Long rulesetId = ConnectionSessionUtil.getRuleSetId(connectionSession);
-        String targetKey = SqlConsoleRules.MAX_RETURN_ROWS.getRuleName();
-        int maxQueryLimit = (Integer) ruleService.getByRulesetIdAndRuleId(rulesetId, targetKey)
-                .getProperties().get(targetKey);
-        // if default rows limit is exceeded than max rows limit, still use max rows limit
-        if (maxQueryLimit > 0) {
-            return Math.min(queryLimit, maxQueryLimit);
         }
         return queryLimit;
     }
