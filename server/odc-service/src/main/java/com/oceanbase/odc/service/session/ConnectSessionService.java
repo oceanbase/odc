@@ -98,7 +98,6 @@ import com.oceanbase.odc.service.lab.model.LabProperties;
 import com.oceanbase.odc.service.monitor.session.ConnectionSessionMonitorListener;
 import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
-import com.oceanbase.odc.service.regulation.ruleset.RuleService;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionIdGenerator;
 import com.oceanbase.odc.service.session.factory.LogicalConnectionSessionFactory;
@@ -165,8 +164,6 @@ public class ConnectSessionService {
     private StateHostGenerator stateHostGenerator;
     @Autowired
     private DBSessionManageFacade dbSessionManageFacade;
-    @Autowired
-    private RuleService ruleService;
     @Autowired
     private OrganizationConfigUtils organizationConfigUtils;
     private final Map<String, Lock> sessionId2Lock = new ConcurrentHashMap<>();
