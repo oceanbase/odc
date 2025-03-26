@@ -131,7 +131,7 @@ public class DBMaterializedViewController {
         return Responses.success(dbMaterializedViewService.refresh(session, refreshReq));
     }
 
-    @ApiOperation(value = "getRefreshRecords", notes = "refresh data of the materialized view.")
+    @ApiOperation(value = "getRefreshRecords", notes = "obtain refresh records for the specified materialized view.")
     @PostMapping(value = "/{sessionId}/databases/{databaseName}/materializedViews/{mvName}/getRefreshRecords")
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public ListResponse<DBMViewRefreshRecord> getRefreshRecords(@PathVariable String sessionId,
