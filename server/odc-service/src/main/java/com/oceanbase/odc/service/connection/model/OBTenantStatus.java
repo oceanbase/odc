@@ -32,7 +32,7 @@ public enum OBTenantStatus {
 
     private final String name;
     private static final List<String> NOT_CONNECTABLE_VALUES =
-            Arrays.asList("PENDING_OFFLINE", "DELETED", "STOPPED", "END", "PENDING_CREATE");
+            Arrays.asList("PENDING_OFFLINE", "DELETED", "STOPPED", "END", "PENDING_CREATE", "MODIFYING_PRIMARY_ZONE");
 
     OBTenantStatus(String name) {
         this.name = name;
