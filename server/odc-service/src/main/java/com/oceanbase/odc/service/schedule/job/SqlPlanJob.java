@@ -147,7 +147,7 @@ public class SqlPlanJob implements OdcJob {
         parameters.setSqlObjectIds(sqlPlanParameters.getSqlObjectIds());
         parameters.setTimeoutMillis(sqlPlanParameters.getTimeoutMillis());
         parameters.setQueryLimit(SpringContextUtil.getBean(OrganizationConfigProvider.class)
-                .getMinimumQueryLimit(sqlPlanParameters.getQueryLimit().toString()));
+                .getMinimumQueryLimit(sqlPlanParameters.getQueryLimit()));
         parameters.setErrorStrategy(sqlPlanParameters.getErrorStrategy());
         parameters.setSessionTimeZone(connectProperties.getDefaultTimeZone());
         Map<String, String> jobData = new HashMap<>();

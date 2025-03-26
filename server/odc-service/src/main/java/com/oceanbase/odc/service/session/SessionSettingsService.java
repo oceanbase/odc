@@ -109,8 +109,9 @@ public class SessionSettingsService {
             processor.setDelimiter(settings.getDelimiter());
         }
         Integer queryLimit = ConnectionSessionUtil.getQueryLimit(session);
-        Long rulesetId = ConnectionSessionUtil.getRuleSetId(session);
+
         if (!Objects.equals(wait2UpdateQueryLimit, queryLimit)) {
+            Long rulesetId = ConnectionSessionUtil.getRuleSetId(session);
             SqlConsoleRules targetKey = SqlConsoleRules.MAX_RETURN_ROWS;
             Integer environmentQueryLimit = (Integer) ruleService
                     .getByRulesetIdAndMetadataName(rulesetId, targetKey)

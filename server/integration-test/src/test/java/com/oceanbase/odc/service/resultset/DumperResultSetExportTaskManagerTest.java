@@ -110,7 +110,7 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
 
     @Test
     public void startTask_ExportSQL_GenerateFileSuccess() throws Exception {
-        Mockito.when(organizationConfigProvider.getMinimumQueryLimit(Mockito.anyString()))
+        Mockito.when(organizationConfigProvider.getMinimumQueryLimit(Mockito.anyInt()))
                 .thenReturn(1000);
         ResultSetExportTaskParameter req =
                 createResultSetExportTaskReq(DataTransferFormat.SQL, EncodingType.UTF_8, mysqlSession);
@@ -124,7 +124,7 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
 
     @Test
     public void startTask_ExportCSV_GenerateFileSuccess() throws Exception {
-        Mockito.when(organizationConfigProvider.getMinimumQueryLimit(Mockito.anyString()))
+        Mockito.when(organizationConfigProvider.getMinimumQueryLimit(Mockito.anyInt()))
                 .thenReturn(1000);
         ResultSetExportTaskParameter req =
                 createResultSetExportTaskReq(DataTransferFormat.CSV, EncodingType.GBK, mysqlSession);
@@ -142,7 +142,7 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
 
     @Test
     public void startTask_ExportCSV_ExportFailed() {
-        Mockito.when(organizationConfigProvider.getMinimumQueryLimit(Mockito.anyString()))
+        Mockito.when(organizationConfigProvider.getMinimumQueryLimit(Mockito.anyInt()))
                 .thenReturn(1000);
         ResultSetExportTaskParameter req = new ResultSetExportTaskParameter();
         req.setSql("select * from not_exist_table");
@@ -164,7 +164,7 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
 
     @Test
     public void startTask_ExportEXCEL_GenerateFileSuccess() throws Exception {
-        Mockito.when(organizationConfigProvider.getMinimumQueryLimit(Mockito.anyString()))
+        Mockito.when(organizationConfigProvider.getMinimumQueryLimit(Mockito.anyInt()))
                 .thenReturn(1000);
         ResultSetExportTaskParameter req =
                 createResultSetExportTaskReq(DataTransferFormat.EXCEL, EncodingType.GBK, mysqlSession);
@@ -178,7 +178,7 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
 
     @Test
     public void startTask_ExportSQL_GenerateFileSuccess_WithoutTableName() throws Exception {
-        Mockito.when(organizationConfigProvider.getMinimumQueryLimit(Mockito.anyString()))
+        Mockito.when(organizationConfigProvider.getMinimumQueryLimit(Mockito.anyInt()))
                 .thenReturn(1000);
         ResultSetExportTaskParameter req =
                 createResultSetExportTaskReq(DataTransferFormat.SQL, EncodingType.UTF_8, mysqlSession);
@@ -192,7 +192,7 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
 
     @Test
     public void startTask_ExportCSV_Oracle_GenerateFileSuccess() throws Exception {
-        Mockito.when(organizationConfigProvider.getMinimumQueryLimit(Mockito.anyString()))
+        Mockito.when(organizationConfigProvider.getMinimumQueryLimit(Mockito.anyInt()))
                 .thenReturn(1000);
         ResultSetExportTaskParameter req =
                 createResultSetExportTaskReq(DataTransferFormat.CSV, EncodingType.GBK, oracleSession);
@@ -210,7 +210,7 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
 
     @Test
     public void startTask_ExportCSV_WithMaxRowsLimit_MySQL() throws Exception {
-        Mockito.when(organizationConfigProvider.getMinimumQueryLimit(Mockito.anyString()))
+        Mockito.when(organizationConfigProvider.getMinimumQueryLimit(Mockito.anyInt()))
                 .thenReturn(1000);
         ResultSetExportTaskParameter req =
                 createResultSetExportTaskReq(DataTransferFormat.CSV, EncodingType.GBK, oracleSession);
@@ -229,7 +229,7 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
 
     @Test
     public void startTask_ExportCSV_WithMaxRowsLimit_Oracle() throws Exception {
-        Mockito.when(organizationConfigProvider.getMinimumQueryLimit(Mockito.anyString()))
+        Mockito.when(organizationConfigProvider.getMinimumQueryLimit(Mockito.anyInt()))
                 .thenReturn(1000);
         ResultSetExportTaskParameter req =
                 createResultSetExportTaskReq(DataTransferFormat.CSV, EncodingType.GBK, oracleSession);

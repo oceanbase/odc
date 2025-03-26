@@ -182,7 +182,7 @@ public class RuleService {
                     () -> new UnexpectedException("rule applying not found, ruleId = " + ruleId));
             savedRuleApplyingOpt.setLevel(rule.getLevel());
             savedRuleApplyingOpt.setEnabled(rule.getEnabled());
-            savedRuleApplyingOpt.setPropertiesJson(JsonUtils.toJson(rule.getProperties()));
+            savedRuleApplyingOpt.setPropertiesJson(adaptiveProperties(rule.getProperties()));
             if (Objects.nonNull(rule.getAppliedDialectTypes())) {
                 savedRuleApplyingOpt.setAppliedDialectTypes(
                         rule.getAppliedDialectTypes().stream().map(DialectType::name).collect(Collectors.toList()));
@@ -212,7 +212,7 @@ public class RuleService {
             saved.setRuleMetadataId(defaultApplying.getRuleMetadataId());
             saved.setLevel(rule.getLevel());
             saved.setEnabled(rule.getEnabled());
-            saved.setPropertiesJson(JsonUtils.toJson(rule.getProperties()));
+            saved.setPropertiesJson(JsonUtils.toJson(adaptiveProperties(rule.getProperties())));
             if (Objects.nonNull(rule.getAppliedDialectTypes())) {
                 saved.setAppliedDialectTypes(
                         rule.getAppliedDialectTypes().stream().map(DialectType::name).collect(Collectors.toList()));
@@ -310,11 +310,6 @@ public class RuleService {
                 merged = RuleApplyingEntity.merge(defaultApplyings.get(0),
                         Optional.of(metadataId2RuleApplying.get(metadata.getId()).get(0)));
             }
-            // compatible with stock data
-            if (metadata.getName().contains("sql-console.max-return-rows")) {
-                String property = compatibleWithStockData(defaultApplyings.get(0), merged);
-                merged.setPropertiesJson(property);
-            }
             Rule rule = entityToModel(merged);
             rule.setRulesetId(rulesetId);
             rule.setMetadata(metadata);
@@ -361,28 +356,16 @@ public class RuleService {
         return rule;
     }
 
-    private Map<String, Object> adaptiveProperties(Map<String, Object> properties) {
-        String metaKey = properties.keySet().iterator().next();
-        if (!metaKey.contains("sql-console.max-return-rows")) {
-            return properties;
+    private String adaptiveProperties(Map<String, Object> properties) {
+        String propertiesJson = JsonUtils.toJson(properties);
+        if (properties == null || properties.isEmpty()) {
+            return propertiesJson;
         }
-        Integer currentValue = (Integer) properties.values().iterator().next();
-        Integer newValue = organizationConfigProvider.checkMaxQueryLimitValidity(currentValue);
-        Map<String, Object> result = new HashMap<>();
-        result.put(metaKey, newValue);
-        return result;
-    }
-
-    private String compatibleWithStockData(DefaultRuleApplyingEntity defaultEntity, RuleApplyingEntity applyingEntity) {
-        Map<String, Object> defaultProperty = JsonUtils.fromJson(defaultEntity.getPropertiesJson(),
-                new TypeReference<Map<String, Object>>() {});
-        Map<String, Object> applyingProperty = JsonUtils.fromJson(applyingEntity.getPropertiesJson(),
-                new TypeReference<Map<String, Object>>() {});
-        // if default value is edited, use the edited value
-        if (!(defaultProperty.values().iterator().next()).equals(applyingProperty.values().iterator().next())) {
-            return applyingEntity.getPropertiesJson();
+        // if this is "max query limit" property, do check
+        if (Objects.nonNull(properties.get(SqlConsoleRules.MAX_RETURN_ROWS.getPropertyName()))) {
+            Integer currentValue = (Integer) properties.get(SqlConsoleRules.MAX_RETURN_ROWS.getPropertyName());
+            organizationConfigProvider.checkMaxQueryLimitValidity(currentValue);
         }
-        return defaultEntity.getPropertiesJson();
+        return propertiesJson;
     }
-
 }
