@@ -221,7 +221,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
     public void listMViewRefreshRecords_Success() {
         if (isSupportMaterializedView) {
             refreshMVData_Success();
-            refreshMVData_Success();
             DBMViewRefreshRecordParam param =
                     new DBMViewRefreshRecordParam(getOBOracleSchema(), "TEST_MV_ALLSYNTAX", 1);
             List<DBMViewRefreshRecord> dbmViewRefreshRecords = accessor.listMViewRefreshRecords(param);
