@@ -402,7 +402,8 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
 
         jdbcOperations.query(sb.toString(), (rs) -> {
             function.setDefiner(rs.getString(1));
-            function.setDdl(String.format("CREATE OR REPLACE %s;", rs.getClob(5).toString()));
+            String body = rs.getClob(5).toString();
+            function.setDdl(String.format("CREATE OR REPLACE %s", body.endsWith(";") ? body : body + ";"));
             function.setStatus(rs.getString(9));
             function.setCreateTime(Timestamp.valueOf(rs.getString(7)));
             function.setModifyTime(Timestamp.valueOf(rs.getString(8)));
@@ -573,7 +574,8 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         procedure.setProName(procedureName);
         jdbcOperations.query(sb.toString(), (rs) -> {
             procedure.setDefiner(rs.getString("OWNER"));
-            procedure.setDdl(String.format("create or replace %s;", rs.getClob("TEXT").toString()));
+            String body = rs.getClob("TEXT").toString();
+            procedure.setDdl(String.format("CREATE OR REPLACE %s", body.endsWith(";") ? body : body + ";"));
             procedure.setStatus(rs.getString("STATUS"));
             procedure.setCreateTime(rs.getTimestamp("CREATED"));
             procedure.setModifyTime(rs.getTimestamp("LAST_DDL_TIME"));
