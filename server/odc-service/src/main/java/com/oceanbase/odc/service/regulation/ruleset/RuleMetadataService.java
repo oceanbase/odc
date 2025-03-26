@@ -58,11 +58,4 @@ public class RuleMetadataService {
         return RuleMetadataMapper.fromEntity(metadataRepository.findById(id).orElseThrow(() -> new NotFoundException(
                 ErrorCodes.NotFound, null, "ruleMetadata not found, id=" + id)));
     }
-
-    @SkipAuthorize("internal authenticated")
-    public RuleMetadata detail(@NonNull String name) {
-        return RuleMetadataMapper.fromEntity(metadataRepository.findByName(name)
-                .orElseThrow(() -> new NotFoundException(
-                        ErrorCodes.NotFound, null, "ruleMetadata not found, name=" + name)));
-    }
 }

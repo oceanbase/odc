@@ -81,11 +81,11 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
 
     private final String sessionid = "10000";
     @MockBean
-    private ConnectSessionService   sessionService;
+    private ConnectSessionService sessionService;
     @MockBean
     private OrganizationConfigUtils organizationConfigUtils;
     @Autowired
-    private ConnectConsoleService   consoleService;
+    private ConnectConsoleService consoleService;
     @Autowired
     private DefaultDBSessionManage defaultConnectSessionManage;
 

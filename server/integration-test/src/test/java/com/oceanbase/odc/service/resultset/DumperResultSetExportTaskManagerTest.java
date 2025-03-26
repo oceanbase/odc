@@ -62,7 +62,7 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
     @Autowired
     private DumperResultSetExportTaskManager manager;
     @MockBean
-    private OrganizationConfigUtils          organizationConfigUtils;
+    private OrganizationConfigUtils organizationConfigUtils;
 
     @Before
     public void init() {

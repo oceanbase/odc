@@ -14,13 +14,9 @@
  * limitations under the License.
  */
 package com.oceanbase.odc.metadb.regulation.ruleset;
-
-import java.util.Optional;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 public interface RuleMetadataRepository extends JpaRepository<MetadataEntity, Long>,
         JpaSpecificationExecutor<MetadataEntity> {
-    Optional<MetadataEntity> findByName(String name);
 }

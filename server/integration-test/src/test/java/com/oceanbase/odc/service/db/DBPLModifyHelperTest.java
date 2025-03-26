@@ -59,7 +59,7 @@ public class DBPLModifyHelperTest extends ServiceTestEnv {
     private static final String ODC_TEST_TRIGGER_TABLE = "ODC_TEST_TRIGGER_TABLE";
 
     @MockBean
-    private ConnectSessionService   sessionService;
+    private ConnectSessionService sessionService;
     @MockBean
     private OrganizationConfigUtils organizationConfigUtils;
 

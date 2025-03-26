@@ -71,11 +71,11 @@ public class ConnectSessionServiceTest extends AuthorityTestEnv {
     @MockBean
     private AuthorizationFacade authorizationFacade;
     @MockBean
-    private ConnectionTesting       connectionTesting;
+    private ConnectionTesting connectionTesting;
     @MockBean
     private OrganizationConfigUtils organizationConfigUtils;
     @Autowired
-    private ConnectSessionService   sessionService;
+    private ConnectSessionService sessionService;
 
     @Before
     public void setUp() throws Exception {
