@@ -211,6 +211,28 @@ function build_sqlconsole() {
         return 1
     fi
 
+
+    # 检查当前 Node.js 版本，确保升级到 Node.js 16.14 或以上版本
+    local node_version=$(node -v 2>/dev/null | sed 's/^v//') # 获取 Node.js 版本并去掉 "v"
+    if [[ -z "$node_version" || "$(echo $node_version | cut -d. -f1)" -lt 16 || "$(echo $node_version | cut -d. -f2)" -lt 14 ]]; then
+        func_echo "Upgrading Node.js to version 16.14 or higher"
+
+        # 检测并安装 nvm（Node Version Manager）
+        if ! command -v nvm >/dev/null 2>&1; then
+            func_echo "nvm not found, installing nvm..."
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
+            # 加载 nvm 环境，避免重新登录
+            export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        fi
+
+        func_echo "Installing Node.js using nvm"
+        nvm install 16
+        nvm use 16
+    else
+        func_echo "Node.js is already at version 16.14 or higher: ${node_version}"
+    fi
+
     if ! npm install pnpm@8 -g; then
         func_echo "npm install pnpm -g failed"
         return 2
