@@ -492,7 +492,7 @@ public class OBUtils {
                 .append(dialectType.isMysql() ? "oceanbase" : "sys")
                 .append(".gv$ob_sql_audit where trace_id=")
                 .value(traceId)
-                .append(" and length(query_sql)>0 and is_inner_sql=0 ")
+                .append(" and is_inner_sql=0 ")
                 .append(dialectType.isMysql() ? "limit 1" : "and rownum<=1");
         try (ResultSet rs = statement.executeQuery(sqlBuilder.toString())) {
             if (!rs.next()) {
