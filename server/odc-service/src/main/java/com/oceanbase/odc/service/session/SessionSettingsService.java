@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.session;
 
 import java.sql.Connection;
 import java.util.Objects;
-import java.util.Optional;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -36,11 +35,7 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.LimitMetric;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.service.config.OrganizationConfigUtils;
-import com.oceanbase.odc.service.regulation.ruleset.SqlConsoleRuleService;
-import com.oceanbase.odc.service.regulation.ruleset.model.SqlConsoleRules;
 import com.oceanbase.odc.service.session.model.SessionSettings;
-
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * Transaction service object, used to config some settings
@@ -49,7 +44,6 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2021-06-08 11:32
  * @since ODC_release_2.4.2
  */
-@Slf4j
 @Service
 @Validated
 @SkipAuthorize("inside connect session")
@@ -60,9 +54,6 @@ public class SessionSettingsService {
 
     @Autowired
     private OrganizationConfigUtils organizationConfigUtils;
-
-    @Autowired
-    private SqlConsoleRuleService sqlConsoleRuleService;
 
     public SessionSettings getSessionSettings(@NotNull ConnectionSession session) {
         SessionSettings settings = new SessionSettings();
@@ -75,11 +66,8 @@ public class SessionSettingsService {
         settings.setObVersion(ConnectionSessionUtil.getVersion(session));
         settings.setDelimiter(ConnectionSessionUtil.getSqlCommentProcessor(session).getDelimiter());
         settings.setQueryLimit(ConnectionSessionUtil.getQueryLimit(session));
-
-        Optional<Integer> envMaxQueryLimit = sqlConsoleRuleService.getProperties(
-                ConnectionSessionUtil.getRuleSetId(session), SqlConsoleRules.MAX_RETURN_ROWS,
-                session.getDialectType(), Integer.class);
-        envMaxQueryLimit.ifPresent(settings::setMaxQueryLimit);
+        settings.setMaxQueryLimit(organizationConfigUtils.getSessionMaxQueryLimit(
+            ConnectionSessionUtil.getRuleSetId(session), session.getDialectType()));
         return settings;
     }
 
@@ -107,13 +95,10 @@ public class SessionSettingsService {
         Integer queryLimit = ConnectionSessionUtil.getQueryLimit(session);
 
         if (!Objects.equals(wait2UpdateQueryLimit, queryLimit)) {
-            Optional<Integer> envMaxQueryLimit = sqlConsoleRuleService.getProperties(
-                    ConnectionSessionUtil.getRuleSetId(session), SqlConsoleRules.MAX_RETURN_ROWS,
-                    session.getDialectType(), Integer.class);
-            envMaxQueryLimit.ifPresent(maxLimit -> {
-                organizationConfigUtils.checkQueryLimitValidity(maxLimit, wait2UpdateQueryLimit);
-                ConnectionSessionUtil.setQueryLimit(session, wait2UpdateQueryLimit);
-            });
+            Integer maxQueryLimit = organizationConfigUtils.getSessionMaxQueryLimit(
+                    ConnectionSessionUtil.getRuleSetId(session), session.getDialectType());
+            organizationConfigUtils.checkQueryLimitValidity(maxQueryLimit, wait2UpdateQueryLimit);
+            ConnectionSessionUtil.setQueryLimit(session, wait2UpdateQueryLimit);
         }
         return settings;
     }

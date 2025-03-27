@@ -17,13 +17,17 @@ package com.oceanbase.odc.service.config;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.regulation.ruleset.SqlConsoleRuleService;
+import com.oceanbase.odc.service.regulation.ruleset.model.SqlConsoleRules;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -35,7 +39,9 @@ public class OrganizationConfigUtils {
     @Autowired
     private OrganizationConfigService organizationConfigService;
     @Autowired
-    private AuthenticationFacade authenticationFacade;
+    private AuthenticationFacade  authenticationFacade;
+    @Autowired
+    private SqlConsoleRuleService sqlConsoleRuleService;
 
     public String getOrganizationConfig(String key) {
         long currentOrgId = authenticationFacade.currentOrganizationId();
@@ -58,6 +64,12 @@ public class OrganizationConfigUtils {
                             + "the max query limit in the organization configurations: "
                             + maxLimitConfig);
         }
+    }
+
+    public Integer getSessionMaxQueryLimit(Long rulesetId, DialectType dialectType) {
+        Optional<Integer> envMaxQueryLimit = sqlConsoleRuleService.getProperties(
+            rulesetId, SqlConsoleRules.MAX_RETURN_ROWS, dialectType, Integer.class);
+        return envMaxQueryLimit.orElseGet(this::getDefaultMaxQueryLimit);
     }
 
     public Integer getDefaultMaxQueryLimit() {
