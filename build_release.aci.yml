@@ -49,7 +49,7 @@ stages:
   checkRule:
     - RPM_RELEASE_CHECK_RESULT = 1
 RPM&JAR打包:
-  stage: 构建RPM
+  stage: 构建社区版 ODC RPM
   plugin: ANT-BUILD
   passEnv: true            # 将outputs 的数据传递到其他任务
   pluginConfig:
