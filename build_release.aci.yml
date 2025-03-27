@@ -1,0 +1,221 @@
+version: "1.5"
+
+# 流水线作业的触发选项
+only:
+  triggerType:
+    - manual
+
+stages:
+  - 静态扫描
+  - 构建准备
+  - 构建社区版 ODC RPM
+  - 构建Docker
+  - 打tag
+
+PMD扫描:
+  stage: 静态扫描
+  component: pmd
+  inputs:
+    encoding: UTF-8
+    excludes:
+      - "**/*.interp"
+      - "**/*.tokens"
+      - "**/resources/**"
+      - "**/test/**"
+      - "distribution/**"
+      - "builds/**"
+      - "conf/**"
+      - "**/target/**"
+  checkRule:
+    - blocker = 0 && critical = 0
+
+STC扫描:
+  stage: 静态扫描
+  plugin: STC
+  pluginConfig:
+    specifiedTenantId: oceanbase # 使用oceanbase规则进行扫描，而不是用主站规则
+  checkRule:
+    - total <= 10
+    - urgent = 0 && high = 0
+
+代码格式检查:
+  stage: 静态扫描
+  agent:
+    docker:
+      image: reg.docker.alibaba-inc.com/oceanbase/odc-build:latest
+  script:
+    - export LICENSE_VIOLATION_MESSAGE=$(mvn license:check | grep "[ERROR]" | grep "Failed to execute goal")
+    - export VIOLATION_MESSAGE=$(mvn impsort:check formatter:validate | grep "[ERROR]" | grep "Failed to execute goal")
+    - export HAS_FORMAT_VIOLATION=$([[ ! -z "$VIOLATION_MESSAGE" ]] && echo 1 || echo 0)
+    - export HAS_LICENSE_VIOLATION=$([[ ! -z "$LICENSE_VIOLATION_MESSAGE" ]] && echo 1 || echo 0)
+    - echo "${VIOLATION_MESSAGE}" > "format-violations.txt"
+    - echo "${LICENSE_VIOLATION_MESSAGE}" > "license-violations.txt"
+  variables:
+    - LICENSE_VIOLATION_MESSAGE
+    - VIOLATION_MESSAGE
+    - HAS_FORMAT_VIOLATION
+    - HAS_LICENSE_VIOLATION
+  checkRule:
+    - HAS_FORMAT_VIOLATION = 0
+    - HAS_LICENSE_VIOLATION = 0
+  publisher:
+    archiveArtifacts: 'format-violations.txt,license-violations.txt'
+
+计算版本号:
+  stage: 构建准备
+  script:
+    # 发布时使用日期戳作为 rpm_release，效果如 20210125
+    # docker tag 和 rpm_release 保持一致，效果如 2.3.3-20210125
+    # 注意除了 dev/test 开头的 docker tag，其它都会被认为是正式版，正式版的 docker 无法覆盖写入
+    # 如果当前分支是个人开发分支，缺省的 docker tag 会加上 'test-' 前缀，避免误操作导致正式版 docker 发布
+    # 为支持验证 release 打包过程和提供一定的构建灵活性，可在 pipeline 发起构建时，指定以下变量
+    # - rpm_release，指定 rpm release 号，如指定为 2021011202
+    # - image_tag，指定 docker image tag，如指定为 test-2.3.3-current.user-20210125
+    - current_branch_name="${ACI_COMMIT_REF_NAME}"
+    - sprint_branch_match_regex="(release|dev).*?$"
+    - rpm_release_regex="^[0-9a-zA-Z_]+$"
+    - tag_prefix=`[[ "${current_branch_name}" =~ ${sprint_branch_match_regex} ]] && echo "" || echo "test-"`
+    - multicloud_branch_match_regex=".*multicloud.*"
+    - environment_prefix=`[[ "${current_branch_name}" =~ ${multicloud_branch_match_regex} ]] && echo "multicloud" || echo "aliyun"`
+    - tag_prefix="${tag_prefix}${environment_prefix}"
+    - export DEFAULT_RPM_RELEASE=$(date +%Y%m%d)
+    - export RPM_RELEASE=${ACI_VAR_rpm_release:-$DEFAULT_RPM_RELEASE}
+    - export RPM_RELEASE_CHECK_RESULT=`[[ "${RPM_RELEASE}" =~ ${rpm_release_regex} ]] && echo 1 || echo 0`
+    - export DEFAULT_DOCKER_IMAGE_TAG="${tag_prefix}`cat rpm/odc-server-VER.txt`-${RPM_RELEASE}"
+    - export DOCKER_IMAGE_TAG=${ACI_VAR_image_tag:-$DEFAULT_DOCKER_IMAGE_TAG}
+    - export tag_x86=${DOCKER_IMAGE_TAG}
+    - export tag_arm=${DOCKER_IMAGE_TAG}
+    - if [ "$ACI_VAR_skip_build_x86" = "true" ]; then tag_x86="test-skip-${tag_x86}"; fi
+    - if [ "$ACI_VAR_skip_build_arm" = "true" ]; then tag_arm="test-skip-${DOCKER_IMAGE_TAG}"; fi
+    - export DOCKER_IMAGE_TAG_X86=${tag_x86}
+    - export DOCKER_IMAGE_TAG_ARM=${tag_arm}
+  variables:
+    - RPM_RELEASE
+    - DOCKER_IMAGE_TAG
+    - DOCKER_IMAGE_TAG_X86
+    - DOCKER_IMAGE_TAG_ARM
+    - RPM_RELEASE_CHECK_RESULT
+  checkRule:
+    - RPM_RELEASE_CHECK_RESULT = 1
+
+RPM&JAR打包:
+  stage: 构建社区版 ODC RPM
+  plugin: ANT-BUILD
+  passEnv: true            # 将outputs 的数据传递到其他任务
+  pluginConfig:
+    computeType: large
+    image: reg.docker.alibaba-inc.com/oceanbase/odc-build:latest
+    script:
+      # Build rpm package
+      - TZ='Asia/Shanghai'; export TZ; echo "[ODC Pipeline] Begin rpm build at `date`"
+      - echo "RPM_RELEASE=${RPM_RELEASE}"
+      - sh script/change_version.sh set-release ${RPM_RELEASE}
+      - sh script/build_rpm_starters_and_modules.sh "${ACI_VAR_ODC_MIRROR_CI_TOKEN}" "-P cloud"
+      - ls distribution/docker/resources/odc-server*.rpm && export BUILD_RPM_OK=$?
+      - rpm_file_name="distribution/docker/resources/$(ls distribution/docker/resources | grep odc-server)"
+      - echo "rpm name=$(rpm -qp --queryformat '%{NAME}-%{VERSION}-%{RELEASE}' ${rpm_file_name})"
+    outputs:
+      - name: odc_server_x86_rpm
+        type: custom # 存入OSS
+        paths: [ "./distribution/docker/resources/odc-server*.rpm" ]
+        desc: "RPM of public aliyun odc-server"
+      - name: cloud_starter_jars
+        type: custom # 存入OSS
+        paths: [ "./distribution/docker/resources/starters" ]
+        desc: "cloud starter jars"
+      - name: cloud_module_jars
+        type: custom # 存入OSS
+        paths: [ "./distribution/docker/resources/modules" ]
+        desc: "cloud module jars"
+  variables:
+    - BUILD_RPM_OK
+  checkRule:
+    - BUILD_RPM_OK = 0
+
+
+# 公有云部署使用单独的 namespace 'obcloud'
+Docker镜像打包_odc-server(多云):
+  stage: 构建Docker
+  component: docker-image-build
+  inputs:
+    imageName: reg.docker.alibaba-inc.com/obcloud/odc-server #构建的镜像 name
+    imageTag: obcloud-${{parameters.DOCKER_IMAGE_TAG_X86}} # 构建的镜像 tag
+    dockerfile: distribution/docker/odc/obcloud/Dockerfile # dockerfile文件位置（默认相对代码根目录）
+    skipWhenImageExists: false # true | false, 如果镜像已存在，是否跳过镜像构建，默认 false
+    errWhenImageExists: true # true | false, 如果镜像已存在，是否直接失败，默认 true
+    beforeScript: |-
+      sh script/docker_build_before_script.sh --dockerfile_path distribution/docker/odc/obcloud/Dockerfile --need_modules "true" --cloud_module_jars "${{parameters.cloud_module_jars}}" --odc_property_encryption_password "${{parameters.ODC_PROPERTY_ENCRYPTION_PASSWORD}}" --docker_image_tag_x86 "${{parameters.DOCKER_IMAGE_TAG_X86}}" --odc_server_x86_rpm "${{parameters.odc_server_x86_rpm}}" --cloud_starter_jars "${{parameters.cloud_starter_jars}}" --rasp_cert_secret "${{secrets.RASP_CERT_SECRET}}"
+    beforeScriptImage: reg.docker.alibaba-inc.com/oceanbase/odc-build:latest  # 指定前置脚本运行环境镜像，beforeScript 不为空时需要传值
+    afterScript: null # 后置脚本，按需传递
+    afterScriptImage: null  # 指定后置脚本运行环境镜像，afterScript 不为空时需要传值
+    timeoutInSec: 1200 # 构建任务执行超时时间，单位(秒)
+    nydusSwitch: false # nudys 镜像加速开关 true|false 默认为false
+    cacheStrategy: always # 镜像构建是否使用缓存，默认 always
+    extraTags: # 将镜像推到云镜像仓库
+      - image: zeus-acr-registry.ap-southeast-1.cr.aliyuncs.com/ocp-oceanbase/odc-server:obcloud-${{parameters.DOCKER_IMAGE_TAG_X86}}
+        username: ${{parameters.IMAGE_REG_SG_USERNAME}} # 如果是同一镜像中心，这里不需要额外配置账密
+        password: ${{secrets.IMAGE_REG_SG_PASSWORD}}
+      - image: zeus-acr-cn-beijing-1-registry.cn-beijing.cr.aliyuncs.com/ocp-oceanbase/odc-server:obcloud-${{parameters.DOCKER_IMAGE_TAG_X86}}
+        username: ${{parameters.IMAGE_REG_BJ_USERNAME}} # 如果是同一镜像中心，这里不需要额外配置账密
+        password: ${{secrets.IMAGE_REG_BJ_PASSWORD}}
+
+# 公有云部署使用无需加载
+Docker镜像打包_odc-server(公有云):
+  stage: 构建Docker
+  component: docker-image-build
+  inputs:
+    imageName: reg.docker.alibaba-inc.com/obcloud/odc-server #构建的镜像 name
+    imageTag: alibaba-${{parameters.DOCKER_IMAGE_TAG_X86}} # 构建的镜像 tag
+    dockerfile: distribution/docker/odc/publicaliyun/Dockerfile # dockerfile文件位置（默认相对代码根目录）
+    skipWhenImageExists: false # true | false, 如果镜像已存在，是否跳过镜像构建，默认 false
+    errWhenImageExists: true # true | false, 如果镜像已存在，是否直接失败，默认 true
+    beforeScript: |-
+      sh script/docker_build_before_script.sh --dockerfile_path distribution/docker/odc/publicaliyun/Dockerfile --need_modules false --odc_property_encryption_password "${{parameters.ODC_PROPERTY_ENCRYPTION_PASSWORD}}" --docker_image_tag_x86 "${{parameters.DOCKER_IMAGE_TAG_X86}}" --odc_server_x86_rpm "${{parameters.odc_server_x86_rpm}}" --cloud_starter_jars "${{parameters.cloud_starter_jars}}" --rasp_cert_secret "${{secrets.RASP_CERT_SECRET}}"
+    beforeScriptImage: reg.docker.alibaba-inc.com/oceanbase/odc-build:latest  # 指定前置脚本运行环境镜像，beforeScript 不为空时需要传值
+    afterScript: null # 后置脚本，按需传递
+    afterScriptImage: null  # 指定后置脚本运行环境镜像，afterScript 不为空时需要传值
+    timeoutInSec: 1200 # 构建任务执行超时时间，单位(秒)
+    nydusSwitch: false # nudys 镜像加速开关 true|false 默认为false
+    cacheStrategy: always # 镜像构建是否使用缓存，默认 always
+    extraTags: # 将镜像推到云镜像仓库
+      - image: zeus-acr-registry.ap-southeast-1.cr.aliyuncs.com/ocp-oceanbase/odc-server:alibaba-${{parameters.DOCKER_IMAGE_TAG_X86}}
+        username: ${{parameters.IMAGE_REG_SG_USERNAME}} # 如果是同一镜像中心，这里不需要额外配置账密
+        password: ${{secrets.IMAGE_REG_SG_PASSWORD}}
+      - image: zeus-acr-cn-beijing-1-registry.cn-beijing.cr.aliyuncs.com/ocp-oceanbase/odc-server:alibaba-${{parameters.DOCKER_IMAGE_TAG_X86}}
+        username: ${{parameters.IMAGE_REG_BJ_USERNAME}} # 如果是同一镜像中心，这里不需要额外配置账密
+        password: ${{secrets.IMAGE_REG_BJ_PASSWORD}}
+
+
+Docker镜像打包_odc-man(公有云&多云):
+  stage: 构建Docker
+  component: docker-image-build
+  inputs:
+    imageName: reg.docker.alibaba-inc.com/obcloud/odc-server #构建的镜像 name
+    imageTag: odcman-${{parameters.DOCKER_IMAGE_TAG_X86}} # 构建的镜像 tag
+    dockerfile: distribution/docker/odc/publicaliyun/Dockerfile # dockerfile文件位置（默认相对代码根目录）
+    skipWhenImageExists: false # true | false, 如果镜像已存在，是否跳过镜像构建，默认 false
+    errWhenImageExists: true # true | false, 如果镜像已存在，是否直接失败，默认 true
+    beforeScript: |-
+      sh script/docker_build_before_script.sh --dockerfile_path distribution/docker/odc/publicaliyun/Dockerfile --need_modules false --odc_property_encryption_password "${{parameters.ODC_PROPERTY_ENCRYPTION_PASSWORD}}" --docker_image_tag_x86 "${{parameters.DOCKER_IMAGE_TAG_X86}}" --odc_server_x86_rpm "${{parameters.odc_server_x86_rpm}}" --cloud_starter_jars "${{parameters.cloud_starter_jars}}" --rasp_cert_secret "${{secrets.RASP_CERT_SECRET}}"
+    beforeScriptImage: reg.docker.alibaba-inc.com/oceanbase/odc-build:latest  # 指定前置脚本运行环境镜像，beforeScript 不为空时需要传值
+    afterScript: null # 后置脚本，按需传递
+    afterScriptImage: null  # 指定后置脚本运行环境镜像，afterScript 不为空时需要传值
+    timeoutInSec: 1200 # 构建任务执行超时时间，单位(秒)
+    nydusSwitch: false # nudys 镜像加速开关 true|false 默认为false
+    cacheStrategy: always # 镜像构建是否使用缓存，默认 always
+    extraTags: # 将镜像推到云镜像仓库
+      - image: zeus-acr-registry.ap-southeast-1.cr.aliyuncs.com/ocp-oceanbase/odc-server:odcman-${{parameters.DOCKER_IMAGE_TAG_X86}}
+        username: ${{parameters.IMAGE_REG_SG_USERNAME}} # 如果是同一镜像中心，这里不需要额外配置账密
+        password: ${{secrets.IMAGE_REG_SG_PASSWORD}}
+      - image: zeus-acr-cn-beijing-1-registry.cn-beijing.cr.aliyuncs.com/ocp-oceanbase/odc-server:odcman-${{parameters.DOCKER_IMAGE_TAG_X86}}
+        username: ${{parameters.IMAGE_REG_BJ_USERNAME}} # 如果是同一镜像中心，这里不需要额外配置账密
+        password: ${{secrets.IMAGE_REG_BJ_PASSWORD}}
+
+打Tag:
+  stage: 构建收尾
+  plugin: GIT-TAG
+  pluginConfig:
+    tagName: release_${DOCKER_IMAGE_TAG}
+    tagMsg: "ODC Release ${DOCKER_IMAGE_TAG}"
+    tagReleaseNote: "ODC Release ${DOCKER_IMAGE_TAG}"
+    gitBranch: ${ACI_COMMIT_REF_NAME}

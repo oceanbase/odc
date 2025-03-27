@@ -1,0 +1,82 @@
+version: "1.5"
+
+# 流水线作业的触发选项
+only:
+  triggerType:
+    - pullRequest # 创建 PR 及向 PR 分支 push 代码时触发
+    - tagPush # 新建 tag 时触发
+    - push # push 代码触发
+
+stages:
+  - 静态扫描
+  - 单元测试
+
+单元测试:
+  only:
+    triggerType:
+      - pullRequest
+  stage: 单元测试
+  plugin: LINKQ-UT
+  tools:
+    jdk: '1.8'
+    maven: 3.6.1
+  parameters:
+    encoding: UTF-8
+    MVN_ARGS: '-P ci -Dmaven.repo.local=/root/.m2/repository'
+    COVERAGE_EXCLUSIONS: "**/test/**,**/controller/**,**/*Exception*,**/*Entity*,**/*Repository*,
+    **/*Configuration*,**/*Dao*,**/*Constant*,**/*Dto*,**/*Param*,**/*Req*,**/*Resp*,**/*Response*,
+    **/*Request*,**/integration/**,**/model/**,**/constant/**"
+  pluginConfig:
+    enableAccurate: false # 精准测试（仅在 push 和 pullRequest 时有效，目前存在漏 case 的情况，不要打开）
+    parallelCount: 1
+  checkRule:
+    - failCount = 0
+
+PMD扫描:
+  stage: 静态扫描
+  component: pmd
+  inputs:
+    encoding: UTF-8
+    excludes:
+      - "**/*.interp"
+      - "**/*.tokens"
+      - "**/resources/**"
+      - "**/test/**"
+      - "distribution/**"
+      - "builds/**"
+      - "conf/**"
+      - "**/target/**"
+  checkRule:
+    - blocker = 0 && critical = 0
+
+STC扫描:
+  stage: 静态扫描
+  plugin: STC
+  pluginConfig:
+    specifiedTenantId: oceanbase # 使用oceanbase规则进行扫描，而不是用主站规则
+  checkRule:
+    - total <= 10
+    - urgent = 0 && high = 0
+
+代码格式检查:
+  stage: 静态扫描
+  agent:
+    docker:
+      image: reg.docker.alibaba-inc.com/oceanbase/odc-build:latest
+  script:
+    - export LICENSE_VIOLATION_MESSAGE=$(mvn license:check | grep "[ERROR]" | grep "Failed to execute goal")
+    - export VIOLATION_MESSAGE=$(mvn impsort:check formatter:validate | grep "[ERROR]" | grep "Failed to execute goal")
+    - export HAS_FORMAT_VIOLATION=$([[ ! -z "$VIOLATION_MESSAGE" ]] && echo 1 || echo 0)
+    - export HAS_LICENSE_VIOLATION=$([[ ! -z "$LICENSE_VIOLATION_MESSAGE" ]] && echo 1 || echo 0)
+    - echo "${VIOLATION_MESSAGE}" > "format-violations.txt"
+    - echo "${LICENSE_VIOLATION_MESSAGE}" > "license-violations.txt"
+  variables:
+    - LICENSE_VIOLATION_MESSAGE
+    - VIOLATION_MESSAGE
+    - HAS_FORMAT_VIOLATION
+    - HAS_LICENSE_VIOLATION
+  checkRule:
+    - HAS_FORMAT_VIOLATION = 0
+    - HAS_LICENSE_VIOLATION = 0
+  publisher:
+    archiveArtifacts: 'format-violations.txt,license-violations.txt'
