@@ -206,6 +206,15 @@ public class DBSchemaExtractor {
             this.defaultSchema = defaultSchema;
         }
 
+        public RelationFactor visitCreate_mview_stmt(
+                com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_mview_stmtContext ctx) {
+            RelationFactor relationFactor = MySQLFromReferenceFactory.getRelationFactor(
+                    ctx.view_name().relation_factor().normal_relation_factor());
+            addRelationFactor(MySQLFromReferenceFactory.getRelationFactor(ctx.view_name().relation_factor()));
+            return null;
+        }
+
+
         @Override
         public RelationFactor visitDrop_function_stmt(
                 com.oceanbase.tools.sqlparser.obmysql.OBParser.Drop_function_stmtContext ctx) {

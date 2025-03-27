@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
+import org.apache.catalina.manager.util.SessionUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -87,6 +88,7 @@ import com.oceanbase.odc.service.db.session.KillResult;
 import com.oceanbase.odc.service.db.session.KillSessionOrQueryReq;
 import com.oceanbase.odc.service.dml.ValueEncodeType;
 import com.oceanbase.odc.service.feature.AllFeatures;
+import com.oceanbase.odc.service.feature.VersionDiffConfigService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.queryprofile.OBQueryProfileManager;
@@ -108,6 +110,7 @@ import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
+import com.oceanbase.tools.migrator.common.util.OBVersionUtil;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -146,6 +149,8 @@ public class ConnectConsoleService {
     private AuthenticationFacade authenticationFacade;
     @Autowired
     private OBQueryProfileManager profileManager;
+    @Autowired
+    private VersionDiffConfigService versionDiffConfigService;
 
     public SqlExecuteResult queryTableOrViewData(@NotNull String sessionId,
             @NotNull @Valid QueryTableOrViewDataReq req) throws Exception {
@@ -553,6 +558,15 @@ public class ConnectConsoleService {
             log.warn("Failed to init sql type", e);
         }
         try (TraceStage s = watch.start(SqlExecuteStages.INIT_EDITABLE_INFO)) {
+            // init editable info
+            if(Objects.isNull(cxt.get(VersionDiffConfigService.SUPPORT_EXTERNAL_TABLE))){
+                cxt.put(VersionDiffConfigService.SUPPORT_EXTERNAL_TABLE,versionDiffConfigService.isExternalTableSupported(connectionSession.getDialectType(),
+                    ConnectionSessionUtil.getVersion(connectionSession)));
+            }
+            if (Objects.isNull(cxt.get(VersionDiffConfigService.SUPPORT_MATERIALIZED_VIEW))) {
+                cxt.put(VersionDiffConfigService.SUPPORT_MATERIALIZED_VIEW,versionDiffConfigService.isMViewSupported(connectionSession.getDialectType(),
+                    ConnectionSessionUtil.getVersion(connectionSession)));
+            }
             resultTable = result.initEditableInfo(connectionSession, cxt);
         } catch (Exception e) {
             log.warn("Failed to init editable info", e);

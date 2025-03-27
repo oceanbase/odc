@@ -49,6 +49,7 @@ import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_tenant_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Commit_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_database_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_function_stmtContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_mview_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_table_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_view_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Delete_stmtContext;
@@ -130,6 +131,13 @@ public class MysqlModeSqlParserListener extends OBParserBaseListener implements 
             this.dbObjectType = DBObjectType.OTHERS;
         }
     }
+
+    @Override
+    public void enterCreate_mview_stmt(Create_mview_stmtContext ctx) {
+        setSqlType(SqlType.CREATE);
+        setDbObjectType(DBObjectType.MATERIALIZED_VIEW);
+    }
+
 
     @Override
     public void enterSelect_stmt(Select_stmtContext ctx) {
@@ -315,7 +323,11 @@ public class MysqlModeSqlParserListener extends OBParserBaseListener implements 
     @Override
     public void enterDrop_view_stmt(Drop_view_stmtContext ctx) {
         this.sqlType = SqlType.DROP;
-        this.dbObjectType = DBObjectType.VIEW;
+        if (ctx.MATERIALIZED() == null) {
+            setDbObjectType(DBObjectType.VIEW);
+        } else {
+            setDbObjectType(DBObjectType.MATERIALIZED_VIEW);
+        }
         for (Relation_factorContext relation_factorContext : ctx.table_list().relation_factor()) {
             this.dbObjectNameList.add(relation_factorContext.getText());
         }

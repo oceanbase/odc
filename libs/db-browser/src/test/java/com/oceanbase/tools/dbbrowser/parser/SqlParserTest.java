@@ -358,5 +358,27 @@ public class SqlParserTest {
         Assert.assertEquals(SqlType.ALTER, actual.getSqlType());
     }
 
+    @Test
+    public void parseMysql_createMview_getSqlTypeSucceed() {
+        ParseSqlResult actual =
+                SqlParser.parseMysql("create materialized view `zijia`.`test_mv_allsyntax` as select * from test");
+        Assert.assertEquals(DBObjectType.MATERIALIZED_VIEW, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.CREATE, actual.getSqlType());
+    }
+
+
+    @Test
+    public void parseMysql_dropMview_getSqlTypeSucceed() {
+        ParseSqlResult actual = SqlParser.parseMysql("drop materialized view `zijia`.`test_mv_allsyntax`");
+        Assert.assertEquals(DBObjectType.MATERIALIZED_VIEW, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.DROP, actual.getSqlType());
+    }
+
+    @Test
+    public void parseMysql_dropView_getSqlTypeSucceed() {
+        ParseSqlResult actual = SqlParser.parseMysql("drop view `zijia`.`test_view_allsyntax`");
+        Assert.assertEquals(DBObjectType.VIEW, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.DROP, actual.getSqlType());
+    }
 
 }

@@ -39,7 +39,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.common.util.TraceStage;
 import com.oceanbase.odc.common.util.TraceWatch;
-import com.oceanbase.odc.common.util.VersionUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -56,8 +55,11 @@ import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
 import com.oceanbase.odc.service.common.util.PLObjectErrMsgUtils;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.feature.AllFeatures;
+import com.oceanbase.odc.service.feature.VersionDiffConfigService;
 import com.oceanbase.odc.service.session.model.OdcResultSetMetaData.OdcTable;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
+import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.parser.ParserUtil;
@@ -87,6 +89,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SqlExecuteResult {
     public static final String SHOW_EXTERNAL_TABLES_IN_SCHEMA = "SHOW_EXTERNAL_TABLES_IN_SCHEMA";
+    public static final String SHOW_MATERIALIZED_VIEWS_IN_SCHEMA = "SHOW_MATERIALIZED_VIEWS_IN_SCHEMA";
     public static final String MIN_OB_VERSION_FOR_EXTERNAL_TABLE = "4.3.2";
     private List<String> columnLabels;
     private List<String> columns;
@@ -143,7 +146,10 @@ public class SqlExecuteResult {
 
     public OdcTable initEditableInfo(@NonNull ConnectionSession connectionSession, @NonNull Map<String, Object> cxt) {
         boolean editable = true;
-        editable = !checkContainsExternalTable(connectionSession, cxt);
+        editable = !checkContainsDBObjectType(connectionSession, cxt, SHOW_EXTERNAL_TABLES_IN_SCHEMA,DBObjectType.EXTERNAL_TABLE);
+        if(editable){
+            editable = !checkContainsDBObjectType(connectionSession,cxt,SHOW_MATERIALIZED_VIEWS_IN_SCHEMA,DBObjectType.MATERIALIZED_VIEW);
+        }
         OdcTable resultTable = null;
         Set<OdcTable> relatedTablesOrViews = new HashSet<>();
         if (Objects.isNull(this.resultSetMetaData)) {
@@ -210,39 +216,6 @@ public class SqlExecuteResult {
         }
         return resultTable;
     }
-
-    private boolean checkContainsExternalTable(@NonNull ConnectionSession connectionSession,
-            @NonNull Map<String, Object> cxt) {
-        DialectType dialectType = connectionSession.getDialectType();
-        if (dialectType == DialectType.OB_MYSQL || dialectType == DialectType.OB_ORACLE) {
-            String obVersion = ConnectionSessionUtil.getVersion(connectionSession);
-            if (VersionUtils.isGreaterThanOrEqualsTo(obVersion, MIN_OB_VERSION_FOR_EXTERNAL_TABLE)
-                    && resultSetMetaData != null) {
-                List<JdbcColumnMetaData> columnList = resultSetMetaData.getFieldMetaDataList();
-                Map<String, JdbcColumnMetaData> schemaAndTable2Column = columnList.stream()
-                        .collect(Collectors.groupingBy(jcmd -> jcmd.getCatalogName() + "." + jcmd.getTableName(),
-                                Collectors.collectingAndThen(Collectors.toList(),
-                                        lst -> lst.get(0))));
-                Set<JdbcColumnMetaData> columnSet = new HashSet<>(schemaAndTable2Column.values());
-                for (JdbcColumnMetaData columnMetaData : columnSet) {
-                    String catalogName = columnMetaData.getCatalogName();
-                    String tableName = columnMetaData.getTableName();
-                    Map<String, List<String>> schema2ExternalTables =
-                            (Map<String, List<String>>) cxt.computeIfAbsent(SHOW_EXTERNAL_TABLES_IN_SCHEMA,
-                                    k -> new HashMap<>());
-                    List<String> externalTables = schema2ExternalTables.computeIfAbsent(catalogName, k -> {
-                        DBSchemaAccessor schemaAccessor = DBSchemaAccessors.create(connectionSession);
-                        return schemaAccessor.showExternalTables(catalogName);
-                    });
-                    if (CollectionUtil.contains(externalTables, tableName)) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
 
     public void initColumnInfo(@NonNull ConnectionSession connectionSession, OdcTable resultTable,
             @NonNull DBSchemaAccessor schemaAccessor) {
@@ -489,6 +462,47 @@ public class SqlExecuteResult {
     public String toString() {
         return "SqlId: " + getSqlId() + "\nStatus: " + status + "\nOriginSql: "
                 + getOriginSql() + "\nTotal: " + total + "\nTrack: " + track;
+    }
+
+    private boolean checkContainsDBObjectType(@NonNull ConnectionSession connectionSession,
+        @NonNull Map<String, Object> cxt, String key,DBObjectType type) {
+        if (cxt.get(VersionDiffConfigService.SUPPORT_EXTERNAL_TABLE)==Boolean.TRUE && resultSetMetaData != null) {
+            List<JdbcColumnMetaData> columnList = resultSetMetaData.getFieldMetaDataList();
+            Map<String, JdbcColumnMetaData> schemaAndTable2Column = columnList.stream()
+                .collect(Collectors.groupingBy(jcmd -> jcmd.getCatalogName() + "." + jcmd.getTableName(),
+                    Collectors.collectingAndThen(Collectors.toList(),
+                        lst -> lst.get(0))));
+            Set<JdbcColumnMetaData> columnSet = new HashSet<>(schemaAndTable2Column.values());
+            for (JdbcColumnMetaData columnMetaData : columnSet) {
+                String catalogName = columnMetaData.getCatalogName();
+                String tableName = columnMetaData.getTableName();
+                Map<String, List<String>> schema2dbObjects =
+                    (Map<String, List<String>>) cxt.computeIfAbsent(key,
+                        k -> new HashMap<>());
+                List<String> dbObjects = getDBObjectsInSchemaByType(connectionSession, schema2dbObjects, catalogName,type);
+                if (CollectionUtil.contains(dbObjects, tableName)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+    private List<String> getDBObjectsInSchemaByType(ConnectionSession connectionSession,
+        Map<String, List<String>> schema2DBObjects, String catalogName, DBObjectType type) {
+        if(type==DBObjectType.EXTERNAL_TABLE){
+            return schema2DBObjects.computeIfAbsent(catalogName, k -> {
+                DBSchemaAccessor schemaAccessor = DBSchemaAccessors.create(connectionSession);
+                return schemaAccessor.showExternalTables(catalogName);
+            });
+        }else if (type == DBObjectType.MATERIALIZED_VIEW){
+            return schema2DBObjects.computeIfAbsent(catalogName, k -> {
+                DBSchemaAccessor schemaAccessor = DBSchemaAccessors.create(connectionSession);
+                return schemaAccessor.listMViews(catalogName).stream().map(DBObjectIdentity::getName).collect(Collectors.toList());
+            });
+        }else {
+            throw new IllegalArgumentException("not support type:"+type);
+        }
     }
 
     @Data

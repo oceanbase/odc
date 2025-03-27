@@ -47,22 +47,22 @@ public class MysqlMViewTemplateTest {
     @Test
     public void generateCreateObjectTemplate_allInputs_success() {
         DBObjectTemplate<DBMaterializedView> mysqlMViewTemplate = new MysqlMViewTemplate();
-        DBMaterializedView DBMaterializedView = new DBMaterializedView();
-        DBMaterializedView.setName("mv_0");
-        DBMaterializedView.setSchemaName("schema_0");
-        prepareMViewPrimary(DBMaterializedView);
-        DBMaterializedView.setParallelismDegree(8L);
-        prepareMViewPartition(DBMaterializedView);
-        prepareMViewColumnGroups(DBMaterializedView);
-        DBMaterializedView.setRefreshMethod(DBMaterializedViewRefreshMethod.REFRESH_COMPLETE);
-        prepareMViewStartNowSchedule(DBMaterializedView);
-        DBMaterializedView.setEnableQueryRewrite(false);
-        DBMaterializedView.setEnableQueryComputation(false);
+        DBMaterializedView dbMaterializedView = new DBMaterializedView();
+        dbMaterializedView.setName("mv_0");
+        dbMaterializedView.setSchemaName("schema_0");
+        prepareMViewPrimary(dbMaterializedView);
+        dbMaterializedView.setParallelismDegree(8L);
+        prepareMViewPartition(dbMaterializedView);
+        prepareMViewColumnGroups(dbMaterializedView);
+        dbMaterializedView.setRefreshMethod(DBMaterializedViewRefreshMethod.REFRESH_COMPLETE);
+        prepareMViewStartNowSchedule(dbMaterializedView);
+        dbMaterializedView.setEnableQueryRewrite(false);
+        dbMaterializedView.setEnableQueryComputation(false);
 
         List<DBView.DBViewUnit> viewUnits = prepareViewUnit(2);
-        DBMaterializedView.setViewUnits(viewUnits);
-        DBMaterializedView.setOperations(Collections.singletonList("left join"));
-        DBMaterializedView.setCreateColumns(prepareQueryColumns(2));
+        dbMaterializedView.setViewUnits(viewUnits);
+        dbMaterializedView.setOperations(Collections.singletonList("left join"));
+        dbMaterializedView.setCreateColumns(prepareQueryColumns(2));
 
         String expect = "CREATE MATERIALIZED VIEW `schema_0`.`mv_0`(PRIMARY KEY (`alias_c0`))\n" +
                 "PARALLEL 8\n" +
@@ -83,7 +83,7 @@ public class MysqlMViewTemplateTest {
                 "from\n" +
                 "\t`database_0`.`table_0` tableAlias_0\n" +
                 "\tleft join `database_1`.`table_1` tableAlias_1 on /* TODO enter attribute to join on here */";
-        String actual = mysqlMViewTemplate.generateCreateObjectTemplate(DBMaterializedView);
+        String actual = mysqlMViewTemplate.generateCreateObjectTemplate(dbMaterializedView);
         Assert.assertEquals(expect, actual);
     }
 
