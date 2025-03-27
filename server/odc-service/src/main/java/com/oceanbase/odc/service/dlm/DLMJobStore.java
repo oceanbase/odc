@@ -132,7 +132,7 @@ public class DLMJobStore implements IJobStore {
             sb.append(
                     "processed_row_count=values(processed_row_count),processed_data_size=values(processed_data_size),primary_key_save_point=values(primary_key_save_point)");
             sb.append(",partition_min_key=values(partition_min_key),partition_max_key=values(partition_max_key)");
-            log.info("start to store task generator:{}", taskGenerator);
+            log.debug("start to store task generator:{}", taskGenerator);
             try (Connection conn = dataSource.getConnection();
                     PreparedStatement ps = conn.prepareStatement(sb.toString())) {
                 ps.setString(1, taskGenerator.getId());
@@ -147,11 +147,6 @@ public class DLMJobStore implements IJobStore {
                 ps.setString(9, taskGenerator.getPartitionSavePoint());
                 ps.setString(10, JsonUtils.toJson(taskGenerator.getPartName2MinKey()));
                 ps.setString(11, JsonUtils.toJson(taskGenerator.getPartName2MaxKey()));
-                if (ps.executeUpdate() == 1) {
-                    log.info("Update task generator success.jobId={}", taskGenerator.getJobId());
-                } else {
-                    log.warn("Update task generator affect 0 row.jobId={}", taskGenerator.getJobId());
-                }
             }
         }
     }
@@ -224,11 +219,6 @@ public class DLMJobStore implements IJobStore {
                 ps.setString(7,
                         taskMeta.getCursorPrimaryKey() == null ? "" : taskMeta.getCursorPrimaryKey().toSqlString());
                 ps.setString(8, taskMeta.getPartitionName());
-                if (ps.executeUpdate() == 1) {
-                    log.info("Update task meta success.jobId={}", taskMeta.getJobMeta().getJobId());
-                } else {
-                    log.warn("Update task meta affect 0 row.jobId={}", taskMeta.getJobMeta().getJobId());
-                }
             }
         }
     }
