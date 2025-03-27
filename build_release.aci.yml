@@ -6,7 +6,6 @@ only:
     - manual
 
 stages:
-  - 静态扫描
   - 构建准备
   - 构建社区版 ODC RPM
   - 构建Docker
