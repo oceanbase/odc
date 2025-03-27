@@ -59,7 +59,7 @@ RPM&JAR打包:
       # Build rpm package
       - TZ='Asia/Shanghai'; export TZ; echo "[ODC Pipeline] Begin rpm build at `date`"
       - echo "RPM_RELEASE=${RPM_RELEASE}"
-      - export SYNC_SUBMODULE=0 && export BUILD_FRONTEND=0 && export FETCH_FROM_CDN=1
+      - export SYNC_SUBMODULE=0
       - script/change_version.sh set-release ${RPM_RELEASE}
       - script/build_rpm.sh ${RPM_RELEASE}
       - ls distribution/docker/resources/odc-server*.rpm && export BUILD_RPM_OK=$?
