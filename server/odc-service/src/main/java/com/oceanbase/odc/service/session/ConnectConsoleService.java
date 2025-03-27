@@ -558,7 +558,6 @@ public class ConnectConsoleService {
             log.warn("Failed to init sql type", e);
         }
         try (TraceStage s = watch.start(SqlExecuteStages.INIT_EDITABLE_INFO)) {
-            // init editable info
             if(Objects.isNull(cxt.get(VersionDiffConfigService.SUPPORT_EXTERNAL_TABLE))){
                 cxt.put(VersionDiffConfigService.SUPPORT_EXTERNAL_TABLE,versionDiffConfigService.isExternalTableSupported(connectionSession.getDialectType(),
                     ConnectionSessionUtil.getVersion(connectionSession)));
