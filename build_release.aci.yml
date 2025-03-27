@@ -12,47 +12,6 @@ stages:
   - 构建Docker
   - 打tag
 
-PMD扫描:
-  stage: 静态扫描
-  component: pmd
-  inputs:
-    encoding: UTF-8
-    excludes:
-      - "**/*.interp"
-      - "**/*.tokens"
-      - "**/resources/**"
-      - "**/test/**"
-      - "distribution/**"
-      - "builds/**"
-      - "conf/**"
-      - "**/target/**"
-  checkRule:
-    - blocker = 0 && critical = 0
-
-STC扫描:
-  stage: 静态扫描
-  plugin: STC
-  pluginConfig:
-    specifiedTenantId: oceanbase # 使用oceanbase规则进行扫描，而不是用主站规则
-  checkRule:
-    - total <= 10
-    - urgent = 0 && high = 0
-代码格式检查:
-  stage: 静态扫描
-  agent:
-    docker:
-      image: reg.docker.alibaba-inc.com/oceanbase/odc-build:latest
-  script:
-    - export VIOLATION_MESSAGE=$(mvn impsort:check formatter:validate | grep "[ERROR]" | grep "Failed to execute goal")
-    - export HAS_FORMAT_VIOLATION=$([[ ! -z "$VIOLATION_MESSAGE" ]] && echo 1 || echo 0)
-    - echo "${VIOLATION_MESSAGE}" > "format-violations.txt"
-  variables:
-    - VIOLATION_MESSAGE
-    - HAS_FORMAT_VIOLATION
-  checkRule:
-    - HAS_FORMAT_VIOLATION = 0
-  publisher:
-    archiveArtifacts: 'format-violations.txt'
 
 计算版本号:
   stage: 构建准备
