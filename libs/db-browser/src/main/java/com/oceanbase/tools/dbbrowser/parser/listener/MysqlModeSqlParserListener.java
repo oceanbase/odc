@@ -326,7 +326,7 @@ public class MysqlModeSqlParserListener extends OBParserBaseListener implements 
         if (ctx.MATERIALIZED() == null) {
             this.dbObjectType = DBObjectType.VIEW;
         } else {
-            this.dbObjectType = dbObjectType.MATERIALIZED_VIEW;
+            this.dbObjectType = DBObjectType.MATERIALIZED_VIEW;
         }
         for (Relation_factorContext relation_factorContext : ctx.table_list().relation_factor()) {
             this.dbObjectNameList.add(relation_factorContext.getText());
