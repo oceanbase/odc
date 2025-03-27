@@ -48,9 +48,8 @@ stages:
     - RPM_RELEASE_CHECK_RESULT
   checkRule:
     - RPM_RELEASE_CHECK_RESULT = 1
-
 RPM&JAR打包:
-  stage: 构建社区版 ODC RPM
+  stage: 构建RPM
   plugin: ANT-BUILD
   passEnv: true            # 将outputs 的数据传递到其他任务
   pluginConfig:
@@ -60,8 +59,9 @@ RPM&JAR打包:
       # Build rpm package
       - TZ='Asia/Shanghai'; export TZ; echo "[ODC Pipeline] Begin rpm build at `date`"
       - echo "RPM_RELEASE=${RPM_RELEASE}"
-      - sh script/change_version.sh set-release ${RPM_RELEASE}
-      - sh script/build_rpm_starters_and_modules.sh "${ACI_VAR_ODC_MIRROR_CI_TOKEN}" "-P cloud"
+      - export SYNC_SUBMODULE=0 && export BUILD_FRONTEND=0 && export FETCH_FROM_CDN=1
+      - script/change_version.sh set-release ${RPM_RELEASE}
+      - script/build_rpm.sh ${RPM_RELEASE}
       - ls distribution/docker/resources/odc-server*.rpm && export BUILD_RPM_OK=$?
       - rpm_file_name="distribution/docker/resources/$(ls distribution/docker/resources | grep odc-server)"
       - echo "rpm name=$(rpm -qp --queryformat '%{NAME}-%{VERSION}-%{RELEASE}' ${rpm_file_name})"
@@ -69,15 +69,11 @@ RPM&JAR打包:
       - name: odc_server_x86_rpm
         type: custom # 存入OSS
         paths: [ "./distribution/docker/resources/odc-server*.rpm" ]
-        desc: "RPM of public aliyun odc-server"
-      - name: cloud_starter_jars
+        desc: "RPM of odc-server"
+      - name: odc_server_fat_jar
         type: custom # 存入OSS
-        paths: [ "./distribution/docker/resources/starters" ]
-        desc: "cloud starter jars"
-      - name: cloud_module_jars
-        type: custom # 存入OSS
-        paths: [ "./distribution/docker/resources/modules" ]
-        desc: "cloud module jars"
+        paths: [ "./app/odc-web-starter/target/odc-*executable.jar" ]
+        desc: "fat jar of odc-server"
   variables:
     - BUILD_RPM_OK
   checkRule:
