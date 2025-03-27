@@ -77,6 +77,7 @@ public class SqlConsoleRuleService {
         return rule.getEnabled();
     }
 
+    // todo 需要解决循环依赖的问题
     @SkipAuthorize("odc internal usage")
     public <T> Optional<T> getProperties(@NonNull Long rulesetId, @NonNull SqlConsoleRules consoleRule,
             @NonNull DialectType dialectType, @NonNull Class<T> clazz) {

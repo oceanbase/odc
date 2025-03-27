@@ -200,7 +200,7 @@ public class RuleService {
             saved = savedOpt.get();
             saved.setLevel(rule.getLevel());
             saved.setEnabled(rule.getEnabled());
-            saved.setPropertiesJson(JsonUtils.toJson(adaptiveProperties(rule.getProperties())));
+            saved.setPropertiesJson(adaptiveProperties(rule.getProperties()));
             if (Objects.nonNull(rule.getAppliedDialectTypes())) {
                 saved.setAppliedDialectTypes(
                         rule.getAppliedDialectTypes().stream().map(DialectType::name).collect(Collectors.toList()));
@@ -211,7 +211,7 @@ public class RuleService {
             saved.setRuleMetadataId(defaultApplying.getRuleMetadataId());
             saved.setLevel(rule.getLevel());
             saved.setEnabled(rule.getEnabled());
-            saved.setPropertiesJson(JsonUtils.toJson(adaptiveProperties(rule.getProperties())));
+            saved.setPropertiesJson(adaptiveProperties(rule.getProperties()));
             if (Objects.nonNull(rule.getAppliedDialectTypes())) {
                 saved.setAppliedDialectTypes(
                         rule.getAppliedDialectTypes().stream().map(DialectType::name).collect(Collectors.toList()));
