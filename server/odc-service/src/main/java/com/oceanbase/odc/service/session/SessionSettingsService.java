@@ -111,7 +111,7 @@ public class SessionSettingsService {
                     ConnectionSessionUtil.getRuleSetId(session), SqlConsoleRules.MAX_RETURN_ROWS,
                     session.getDialectType(), Integer.class);
             envMaxQueryLimit.ifPresent(maxLimit -> {
-                organizationConfigUtils.checkMaxQueryLimitValidity(maxLimit, wait2UpdateQueryLimit);
+                organizationConfigUtils.checkQueryLimitValidity(maxLimit, wait2UpdateQueryLimit);
                 ConnectionSessionUtil.setQueryLimit(session, wait2UpdateQueryLimit);
             });
         }

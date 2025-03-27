@@ -30,15 +30,15 @@ public class ConfigValueValidator {
         PreConditions.notNull(meta, "meta");
         checkValueNotNull(meta, value);
         checkValueAllowed(meta, value);
-        checkValueMin(meta, value);
-        checkValueMax(meta, value);
+        checkValueMinBasedOnMeta(meta, value);
+        checkValueMaxBasedOnMeta(meta, value);
     }
 
     public static void validateOrganizationConfig(ConfigurationMeta meta, SessionProperties properties, String value) {
         PreConditions.notNull(meta, "meta");
         checkValueNotNull(meta, value);
         checkValueAllowed(meta, value);
-        checkValueMin(meta, value);
+        checkValueMinBasedOnMeta(meta, value);
         // check that the max query limit is less than the value of the metadata
         checkValueMaxBasedOnSystemConfig(meta, properties, value);
 
@@ -61,7 +61,7 @@ public class ConfigValueValidator {
         }
     }
 
-    private static void checkValueMax(ConfigurationMeta meta, String value) {
+    private static void checkValueMaxBasedOnMeta(ConfigurationMeta meta, String value) {
         if (Objects.nonNull(meta.getMaxValue())) {
             if (meta.getMaxValue().compareTo(new BigDecimal(value)) < 0) {
                 throw new IllegalArgumentException(
@@ -71,7 +71,7 @@ public class ConfigValueValidator {
         }
     }
 
-    private static void checkValueMin(ConfigurationMeta meta, String value) {
+    private static void checkValueMinBasedOnMeta(ConfigurationMeta meta, String value) {
         if (Objects.nonNull(meta.getMinValue())) {
             if (meta.getMinValue().compareTo(new BigDecimal(value)) > 0) {
                 throw new IllegalArgumentException(

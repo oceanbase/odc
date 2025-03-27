@@ -95,8 +95,6 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
                 .thenReturn(1000);
         Mockito.when(organizationConfigUtils.getDefaultMaxQueryLimit())
                 .thenReturn(1000);
-        Mockito.when(organizationConfigUtils.getMinimumQueryLimit(Mockito.anyInt()))
-                .thenReturn(1000);
         String sql = "kill session /*";
         injectAsyncJdbcExecutor(JdbcGeneralResult.successResult(SqlTuple.newTuple(sql)));
         SqlAsyncExecuteResp resp = consoleService.streamExecute(sessionid, getSqlAsyncExecuteReq(sql));
@@ -111,8 +109,6 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
         Mockito.when(organizationConfigUtils.getDefaultQueryLimit())
                 .thenReturn(1000);
         Mockito.when(organizationConfigUtils.getDefaultMaxQueryLimit())
-                .thenReturn(1000);
-        Mockito.when(organizationConfigUtils.getMinimumQueryLimit(Mockito.anyInt()))
                 .thenReturn(1000);
         String sql = "kill session /*";
         JdbcGeneralResult failedResult = JdbcGeneralResult.failedResult(SqlTuple.newTuple(sql), new Exception("test"));
@@ -131,8 +127,6 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
                 .thenReturn(1000);
         Mockito.when(organizationConfigUtils.getDefaultMaxQueryLimit())
                 .thenReturn(1000);
-        Mockito.when(organizationConfigUtils.getMinimumQueryLimit(Mockito.anyInt()))
-                .thenReturn(1000);
         String sql = "delimiter $$";
         injectAsyncJdbcExecutor(JdbcGeneralResult.successResult(SqlTuple.newTuple(sql)));
         SqlAsyncExecuteResp resp = consoleService.streamExecute(sessionid, getSqlAsyncExecuteReq(sql));
@@ -146,8 +140,6 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
         Mockito.when(organizationConfigUtils.getDefaultQueryLimit())
                 .thenReturn(1000);
         Mockito.when(organizationConfigUtils.getDefaultMaxQueryLimit())
-                .thenReturn(1000);
-        Mockito.when(organizationConfigUtils.getMinimumQueryLimit(Mockito.anyInt()))
                 .thenReturn(1000);
         String sql = "select * from tableaas";
         injectAsyncJdbcExecutor(JdbcGeneralResult.successResult(SqlTuple.newTuple(sql)));
@@ -164,8 +156,6 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
                 .thenReturn(1000);
         Mockito.when(organizationConfigUtils.getDefaultMaxQueryLimit())
                 .thenReturn(1000);
-        Mockito.when(organizationConfigUtils.getMinimumQueryLimit(Mockito.anyInt()))
-                .thenReturn(1000);
         String sql = "select * from tableaas";
         injectAsyncJdbcExecutor(JdbcGeneralResult.successResult(SqlTuple.newTuple(sql)),
                 ConnectType.OB_MYSQL);
@@ -181,8 +171,6 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
         Mockito.when(organizationConfigUtils.getDefaultQueryLimit())
                 .thenReturn(1000);
         Mockito.when(organizationConfigUtils.getDefaultMaxQueryLimit())
-                .thenReturn(1000);
-        Mockito.when(organizationConfigUtils.getMinimumQueryLimit(Mockito.anyInt()))
                 .thenReturn(1000);
         String sql = "select * from table_test";
         JdbcGeneralResult executeResult = getJdbcGeneralResultWithQueryData(sql);

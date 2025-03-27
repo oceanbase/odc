@@ -48,20 +48,16 @@ public class OrganizationConfigUtils {
         return configuration.getValue();
     }
 
-    public void checkMaxQueryLimitValidity(Integer limitConfig, Integer currentConfig) {
-        if (currentConfig > limitConfig) {
+    public void checkQueryLimitValidity(Integer maxLimitConfig, Integer currentConfig) {
+        if (currentConfig > maxLimitConfig) {
             log.warn("The current configuration value: {} is greater than"
                     + "the max query limit value in the organization configurations: {}",
-                    currentConfig, limitConfig);
+                    currentConfig, maxLimitConfig);
             throw new IllegalArgumentException(
                     "This configuration value cannot exceed "
                             + "the max query limit in the organization configurations: "
-                            + limitConfig);
+                            + maxLimitConfig);
         }
-    }
-
-    public Integer getMinimumQueryLimit(Integer currentConfig) {
-        return Math.min(getDefaultMaxQueryLimit(), currentConfig);
     }
 
     public Integer getDefaultMaxQueryLimit() {

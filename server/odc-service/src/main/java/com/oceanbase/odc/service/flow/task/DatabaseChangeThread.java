@@ -156,10 +156,10 @@ public class DatabaseChangeThread extends Thread {
                 }
                 try {
                     List<SqlTuple> sqlTuples = Collections.singletonList(SqlTuple.newTuple(sql));
-                    Integer queryLimit = SpringContextUtil.getBean(OrganizationConfigUtils.class)
-                            .getMinimumQueryLimit(parameters.getQueryLimit());
+                    OrganizationConfigUtils configUtils = SpringContextUtil.getBean(OrganizationConfigUtils.class);
+                    configUtils.checkQueryLimitValidity(configUtils.getDefaultMaxQueryLimit(), parameters.getQueryLimit());
                     OdcStatementCallBack statementCallback =
-                            new OdcStatementCallBack(sqlTuples, connectionSession, true, queryLimit);
+                        new OdcStatementCallBack(sqlTuples, connectionSession, true, parameters.getQueryLimit());
                     statementCallback.setMaxCachedLines(0);
                     statementCallback.setMaxCachedSize(0);
                     statementCallback.setDbmsoutputMaxRows(0);

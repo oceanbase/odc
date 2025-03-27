@@ -135,13 +135,13 @@ public class DumperResultSetExportTaskManager implements ResultSetExportTaskMana
             if (maskingService.isMaskingEnabled()) {
                 parameter.setRowDataMaskingAlgorithms(getRowDataMaskingAlgorithms(parameter.getSql(), session));
             }
-            Long longValue = parameter.getMaxRows();
-            if (longValue > Integer.MAX_VALUE) {
-                throw new IllegalArgumentException("max rows value: " + longValue + " is out of Integer range.");
+            if (parameter.getMaxRows() > Integer.MAX_VALUE) {
+                throw new IllegalArgumentException("query limit max value: " + parameter.getMaxRows()
+                                                   + " is out of Integer range.");
             }
-            Long maxRows = Long.valueOf(
-                    organizationConfigUtils.getMinimumQueryLimit((parameter.getMaxRows().intValue())));
-            parameter.setSql(SqlRewriteUtil.addQueryLimit(parameter.getSql(), session, maxRows));
+            organizationConfigUtils.checkQueryLimitValidity(organizationConfigUtils.getDefaultMaxQueryLimit(),
+                parameter.getMaxRows().intValue());
+            parameter.setSql(SqlRewriteUtil.addQueryLimit(parameter.getSql(), session, parameter.getMaxRows()));
 
             ResultSetExportTask task = new ResultSetExportTask(workingDir, logDir, parameter, session,
                     cloudObjectStorageService, dataTransferProperties, dataTransferAdapter.getMaxDumpSizeBytes());

@@ -204,10 +204,11 @@ public class DatabaseChangeTask extends TaskBase<FlowTaskResult> {
                 log.info("Database change sql: {}", sql);
                 try {
                     List<SqlTuple> sqlTuples = Collections.singletonList(SqlTuple.newTuple(sql));
-                    Integer queryLimit = SpringContextUtil.getBean(OrganizationConfigUtils.class)
-                            .getMinimumQueryLimit(this.databaseChangeParameters.getQueryLimit());
+                    OrganizationConfigUtils configUtils = SpringContextUtil.getBean(OrganizationConfigUtils.class);
+                    configUtils.checkQueryLimitValidity(configUtils.getDefaultMaxQueryLimit(),
+                        this.databaseChangeParameters.getQueryLimit());
                     OdcStatementCallBack statementCallback = new OdcStatementCallBack(sqlTuples, connectionSession,
-                            true, queryLimit);
+                            true, this.databaseChangeParameters.getQueryLimit());
                     statementCallback.setMaxCachedLines(0);
                     statementCallback.setMaxCachedSize(0);
                     statementCallback.setDbmsoutputMaxRows(0);

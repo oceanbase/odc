@@ -172,26 +172,8 @@ public class OrganizationConfigService {
     }
 
     private Map<String, Configuration> internalQuery(Long organizationId) {
-        return queryListForInternalUse(organizationId).stream()
+        return queryList(organizationId).stream()
                 .collect(Collectors.toMap(Configuration::getKey, c -> c));
-    }
-
-    private List<Configuration> queryListForInternalUse(@NotNull Long organizationId) {
-        Map<String, Configuration> keyToConfiguration = Optional
-                .ofNullable(organizationConfigDAO.queryByOrganizationId(organizationId))
-                .orElse(Collections.emptyList())
-                .stream().map(Configuration::convert2DTO)
-                .collect(Collectors.toMap(Configuration::getKey, e -> e));
-
-        List<Configuration> configurations = queryListDefault();
-        configurations.forEach(configuration -> {
-            keyToConfiguration.computeIfPresent(configuration.getKey(), (key, config) -> {
-                configuration.setValue(config.getValue());
-                return config;
-            });
-        });
-
-        return configurations;
     }
 
 }
