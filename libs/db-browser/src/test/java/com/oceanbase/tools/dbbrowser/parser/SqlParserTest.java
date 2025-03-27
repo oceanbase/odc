@@ -381,4 +381,27 @@ public class SqlParserTest {
         Assert.assertEquals(SqlType.DROP, actual.getSqlType());
     }
 
+    @Test
+    public void parseOracle_createMview_getSqlTypeSucceed() {
+        ParseSqlResult actual =
+                SqlParser.parseOracle("create materialized view `zijia`.`test_mv_allsyntax` as select * from test");
+        Assert.assertEquals(DBObjectType.MATERIALIZED_VIEW, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.CREATE, actual.getSqlType());
+    }
+
+
+    @Test
+    public void parseOracle_dropMview_getSqlTypeSucceed() {
+        ParseSqlResult actual = SqlParser.parseOracle("drop materialized view `zijia`.`test_mv_allsyntax`");
+        Assert.assertEquals(DBObjectType.MATERIALIZED_VIEW, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.DROP, actual.getSqlType());
+    }
+
+    @Test
+    public void parseOracle_dropView_getSqlTypeSucceed() {
+        ParseSqlResult actual = SqlParser.parseOracle("drop view `zijia`.`test_view_allsyntax`");
+        Assert.assertEquals(DBObjectType.VIEW, actual.getDbObjectType());
+        Assert.assertEquals(SqlType.DROP, actual.getSqlType());
+    }
+
 }

@@ -345,7 +345,11 @@ public class OracleModeSqlParserListener extends OBParserBaseListener implements
     @Override
     public void enterDrop_view_stmt(Drop_view_stmtContext ctx) {
         this.sqlType = SqlType.DROP;
-        this.dbObjectType = DBObjectType.VIEW;
+        if (ctx.MATERIALIZED() == null) {
+            this.dbObjectType = DBObjectType.VIEW;
+        } else {
+            this.dbObjectType = DBObjectType.MATERIALIZED_VIEW;
+        }
         this.dbObjectNameList.add(handleObjectName(ctx.relation_factor().getText()));
     }
 
@@ -720,6 +724,12 @@ public class OracleModeSqlParserListener extends OBParserBaseListener implements
     public void enterCall_stmt(OBParser.Call_stmtContext ctx) {
         setSqlType(SqlType.CALL);
         this.dbObjectType = DBObjectType.PROCEDURE;
+    }
+
+    @Override
+    public void enterCreate_mview_stmt(OBParser.Create_mview_stmtContext ctx) {
+        setSqlType(SqlType.CREATE);
+        setDbObjectType(DBObjectType.MATERIALIZED_VIEW);
     }
 
 }
