@@ -27,7 +27,6 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.poi.ss.formula.functions.T;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -220,7 +219,8 @@ public class DBSchemaExtractor {
 
         @Override
         public RelationFactor visitDrop_view_stmt(Drop_view_stmtContext ctx) {
-            ctx.table_list().relation_factor().forEach(item -> addRelationFactor(MySQLFromReferenceFactory.getRelationFactor(item)));
+            ctx.table_list().relation_factor()
+                    .forEach(item -> addRelationFactor(MySQLFromReferenceFactory.getRelationFactor(item)));
             return null;
         }
 
@@ -421,13 +421,13 @@ public class DBSchemaExtractor {
         @Override
         public RelationFactor visitCreate_mview_stmt(OBParser.Create_mview_stmtContext ctx) {
             addRelationFactor(OracleFromReferenceFactory.getRelationFactor(
-                ctx.view_name().relation_factor()));
+                    ctx.view_name().relation_factor()));
             return null;
         }
 
         public RelationFactor visitDrop_view_stmt(OBParser.Drop_view_stmtContext ctx) {
-           addRelationFactor(OracleFromReferenceFactory.getRelationFactor(ctx.relation_factor()));
-           return null;
+            addRelationFactor(OracleFromReferenceFactory.getRelationFactor(ctx.relation_factor()));
+            return null;
         }
 
         @Override

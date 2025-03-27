@@ -344,11 +344,11 @@ public class OracleModeSqlParserListener extends OBParserBaseListener implements
 
     @Override
     public void enterDrop_view_stmt(Drop_view_stmtContext ctx) {
-        this.sqlType = SqlType.DROP;
+        setSqlType(SqlType.DROP);
         if (ctx.MATERIALIZED() == null) {
-            this.dbObjectType = DBObjectType.VIEW;
+            setDbObjectType(DBObjectType.VIEW);
         } else {
-            this.dbObjectType = DBObjectType.MATERIALIZED_VIEW;
+            setDbObjectType(DBObjectType.MATERIALIZED_VIEW);
         }
         this.dbObjectNameList.add(handleObjectName(ctx.relation_factor().getText()));
     }

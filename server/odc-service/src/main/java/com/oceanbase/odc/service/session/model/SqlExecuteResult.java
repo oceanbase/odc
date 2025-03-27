@@ -146,9 +146,11 @@ public class SqlExecuteResult {
 
     public OdcTable initEditableInfo(@NonNull ConnectionSession connectionSession, @NonNull Map<String, Object> cxt) {
         boolean editable = true;
-        editable = !checkContainsDBObjectType(connectionSession, cxt, SHOW_EXTERNAL_TABLES_IN_SCHEMA,DBObjectType.EXTERNAL_TABLE);
-        if(editable){
-            editable = !checkContainsDBObjectType(connectionSession,cxt,SHOW_MATERIALIZED_VIEWS_IN_SCHEMA,DBObjectType.MATERIALIZED_VIEW);
+        editable = !checkContainsDBObjectType(connectionSession, cxt, SHOW_EXTERNAL_TABLES_IN_SCHEMA,
+                DBObjectType.EXTERNAL_TABLE);
+        if (editable) {
+            editable = !checkContainsDBObjectType(connectionSession, cxt, SHOW_MATERIALIZED_VIEWS_IN_SCHEMA,
+                    DBObjectType.MATERIALIZED_VIEW);
         }
         OdcTable resultTable = null;
         Set<OdcTable> relatedTablesOrViews = new HashSet<>();
@@ -465,21 +467,22 @@ public class SqlExecuteResult {
     }
 
     private boolean checkContainsDBObjectType(@NonNull ConnectionSession connectionSession,
-        @NonNull Map<String, Object> cxt, String key,DBObjectType type) {
-        if (cxt.get(VersionDiffConfigService.SUPPORT_EXTERNAL_TABLE)==Boolean.TRUE && resultSetMetaData != null) {
+            @NonNull Map<String, Object> cxt, String key, DBObjectType type) {
+        if (cxt.get(VersionDiffConfigService.SUPPORT_EXTERNAL_TABLE) == Boolean.TRUE && resultSetMetaData != null) {
             List<JdbcColumnMetaData> columnList = resultSetMetaData.getFieldMetaDataList();
             Map<String, JdbcColumnMetaData> schemaAndTable2Column = columnList.stream()
-                .collect(Collectors.groupingBy(jcmd -> jcmd.getCatalogName() + "." + jcmd.getTableName(),
-                    Collectors.collectingAndThen(Collectors.toList(),
-                        lst -> lst.get(0))));
+                    .collect(Collectors.groupingBy(jcmd -> jcmd.getCatalogName() + "." + jcmd.getTableName(),
+                            Collectors.collectingAndThen(Collectors.toList(),
+                                    lst -> lst.get(0))));
             Set<JdbcColumnMetaData> columnSet = new HashSet<>(schemaAndTable2Column.values());
             for (JdbcColumnMetaData columnMetaData : columnSet) {
                 String catalogName = columnMetaData.getCatalogName();
                 String tableName = columnMetaData.getTableName();
                 Map<String, List<String>> schema2dbObjects =
-                    (Map<String, List<String>>) cxt.computeIfAbsent(key,
-                        k -> new HashMap<>());
-                List<String> dbObjects = getDBObjectsInSchemaByType(connectionSession, schema2dbObjects, catalogName,type);
+                        (Map<String, List<String>>) cxt.computeIfAbsent(key,
+                                k -> new HashMap<>());
+                List<String> dbObjects =
+                        getDBObjectsInSchemaByType(connectionSession, schema2dbObjects, catalogName, type);
                 if (CollectionUtil.contains(dbObjects, tableName)) {
                     return true;
                 }
@@ -488,20 +491,22 @@ public class SqlExecuteResult {
 
         return false;
     }
+
     private List<String> getDBObjectsInSchemaByType(ConnectionSession connectionSession,
-        Map<String, List<String>> schema2DBObjects, String catalogName, DBObjectType type) {
-        if(type==DBObjectType.EXTERNAL_TABLE){
+            Map<String, List<String>> schema2DBObjects, String catalogName, DBObjectType type) {
+        if (type == DBObjectType.EXTERNAL_TABLE) {
             return schema2DBObjects.computeIfAbsent(catalogName, k -> {
                 DBSchemaAccessor schemaAccessor = DBSchemaAccessors.create(connectionSession);
                 return schemaAccessor.showExternalTables(catalogName);
             });
-        }else if (type == DBObjectType.MATERIALIZED_VIEW){
+        } else if (type == DBObjectType.MATERIALIZED_VIEW) {
             return schema2DBObjects.computeIfAbsent(catalogName, k -> {
                 DBSchemaAccessor schemaAccessor = DBSchemaAccessors.create(connectionSession);
-                return schemaAccessor.listMViews(catalogName).stream().map(DBObjectIdentity::getName).collect(Collectors.toList());
+                return schemaAccessor.listMViews(catalogName).stream().map(DBObjectIdentity::getName)
+                        .collect(Collectors.toList());
             });
-        }else {
-            throw new IllegalArgumentException("not support type:"+type);
+        } else {
+            throw new IllegalArgumentException("not support type:" + type);
         }
     }
 

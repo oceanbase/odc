@@ -322,7 +322,7 @@ public class MysqlModeSqlParserListener extends OBParserBaseListener implements 
 
     @Override
     public void enterDrop_view_stmt(Drop_view_stmtContext ctx) {
-        this.sqlType = SqlType.DROP;
+        setSqlType(SqlType.DROP);
         if (ctx.MATERIALIZED() == null) {
             setDbObjectType(DBObjectType.VIEW);
         } else {

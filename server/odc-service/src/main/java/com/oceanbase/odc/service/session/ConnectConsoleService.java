@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
-import org.apache.catalina.manager.util.SessionUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -110,7 +109,6 @@ import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
-import com.oceanbase.tools.migrator.common.util.OBVersionUtil;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -558,13 +556,15 @@ public class ConnectConsoleService {
             log.warn("Failed to init sql type", e);
         }
         try (TraceStage s = watch.start(SqlExecuteStages.INIT_EDITABLE_INFO)) {
-            if(Objects.isNull(cxt.get(VersionDiffConfigService.SUPPORT_EXTERNAL_TABLE))){
-                cxt.put(VersionDiffConfigService.SUPPORT_EXTERNAL_TABLE,versionDiffConfigService.isExternalTableSupported(connectionSession.getDialectType(),
-                    ConnectionSessionUtil.getVersion(connectionSession)));
+            if (Objects.isNull(cxt.get(VersionDiffConfigService.SUPPORT_EXTERNAL_TABLE))) {
+                cxt.put(VersionDiffConfigService.SUPPORT_EXTERNAL_TABLE,
+                        versionDiffConfigService.isExternalTableSupported(connectionSession.getDialectType(),
+                                ConnectionSessionUtil.getVersion(connectionSession)));
             }
             if (Objects.isNull(cxt.get(VersionDiffConfigService.SUPPORT_MATERIALIZED_VIEW))) {
-                cxt.put(VersionDiffConfigService.SUPPORT_MATERIALIZED_VIEW,versionDiffConfigService.isMViewSupported(connectionSession.getDialectType(),
-                    ConnectionSessionUtil.getVersion(connectionSession)));
+                cxt.put(VersionDiffConfigService.SUPPORT_MATERIALIZED_VIEW,
+                        versionDiffConfigService.isMViewSupported(connectionSession.getDialectType(),
+                                ConnectionSessionUtil.getVersion(connectionSession)));
             }
             resultTable = result.initEditableInfo(connectionSession, cxt);
         } catch (Exception e) {
