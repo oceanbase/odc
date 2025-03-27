@@ -86,7 +86,7 @@ public class PlanGraphBuilder {
         id2Operator.put(operator.getGraphId(), operator);
         if (!"-1".equals(parentId)) {
             long rows = jsonMap.containsKey("EST.ROWS") && NumberUtils.isDigits(jsonMap.get("EST.ROWS").toString())
-                    ? (long) jsonMap.get("EST.ROWS")
+                    ? Long.parseLong(jsonMap.get("EST.ROWS").toString())
                     : 0;
             graph.insertEdge(id2Operator.get(parentId), operator, rows);
         }
@@ -100,7 +100,7 @@ public class PlanGraphBuilder {
         }
         String durationKey = jsonMap.containsKey("EST.TIME(us)") ? "EST.TIME(us)" : "COST";
         long dbTime = jsonMap.containsKey(durationKey) && NumberUtils.isDigits(jsonMap.get(durationKey).toString())
-                ? (long) jsonMap.get(durationKey)
+                ? Long.parseLong(jsonMap.get(durationKey).toString())
                 : 0;
         operator.setDuration(dbTime);
         operator.getOverview().put(durationKey, dbTime + "");
