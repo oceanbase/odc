@@ -289,7 +289,8 @@ public class ResourceRoleService {
 
     @SkipAuthorize("internal usage")
     public List<UserResourceRole> listByUserId(Long userId) {
-        List<UserResourceRole> userResourceRoles = fromEntities(userResourceRoleRepository.findByUserId(userId));
+        List<UserResourceRole> userResourceRoles = fromEntities(userResourceRoleRepository
+                .findByOrganizationIdAndUserId(authenticationFacade.currentOrganizationId(), userId));
         List<UserGlobalResourceRole> globalResourceRoles =
                 globalResourceRoleService.findGlobalResourceRoleUsersByOrganizationIdAndUserId(
                         authenticationFacade.currentOrganizationId(),
