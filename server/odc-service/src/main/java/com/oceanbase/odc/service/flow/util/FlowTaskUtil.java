@@ -57,6 +57,7 @@ import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParamete
 import com.oceanbase.odc.service.permission.project.ApplyProjectParameter;
 import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
+import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
 import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
@@ -79,6 +80,30 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class FlowTaskUtil {
+
+    private static final Map<Long, RiskLevel> PRE_CHECK_RISK_LEVEL_MAP = new HashMap<>();
+
+    /**
+     * The same risk level is used to guarantee a complete flow instance execution cycle
+     * 
+     * @param preCheckTaskId
+     * @return
+     */
+    public static RiskLevel getRiskLevelWithPreCheckTaskId(@NonNull Long preCheckTaskId) {
+        try {
+            return PRE_CHECK_RISK_LEVEL_MAP.getOrDefault(preCheckTaskId, null);
+        } finally {
+            removeRiskLevelWithPreCheckTaskId(preCheckTaskId);
+        }
+    }
+
+    public static void putRiskLevelWithPreCheckTaskId(@NonNull Long preCheckTaskId, @NonNull RiskLevel riskLevel) {
+        PRE_CHECK_RISK_LEVEL_MAP.put(preCheckTaskId, riskLevel);
+    }
+
+    public static void removeRiskLevelWithPreCheckTaskId(@NonNull Long preCheckTaskId) {
+        PRE_CHECK_RISK_LEVEL_MAP.remove(preCheckTaskId);
+    }
 
     public static void setParameters(@NonNull Map<String, Object> variables, @NonNull String parametersJson) {
         variables.put(RuntimeTaskConstants.PARAMETERS, parametersJson);

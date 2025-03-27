@@ -224,7 +224,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
                         .orElseThrow(() -> new IllegalStateException("Unknown error"));
             } else if (taskEntity.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION
                     || taskEntity.getTaskType() == TaskType.APPLY_TABLE_PERMISSION) {
-                riskLevel = riskLevelService.findHighestRiskLevel();
+                riskLevel = FlowTaskUtil.getRiskLevelWithPreCheckTaskId(preCheckTaskEntity.getId());
             } else if (riskLevelDescriber != null) {
                 riskLevel = approvalFlowConfigSelector.select(riskLevelDescriber);
             } else {
