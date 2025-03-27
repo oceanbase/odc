@@ -39,7 +39,7 @@ public class OrganizationConfigUtils {
     @Autowired
     private OrganizationConfigService organizationConfigService;
     @Autowired
-    private AuthenticationFacade  authenticationFacade;
+    private AuthenticationFacade authenticationFacade;
     @Autowired
     private SqlConsoleRuleService sqlConsoleRuleService;
 
@@ -68,7 +68,7 @@ public class OrganizationConfigUtils {
 
     public Integer getSessionMaxQueryLimit(Long rulesetId, DialectType dialectType) {
         Optional<Integer> envMaxQueryLimit = sqlConsoleRuleService.getProperties(
-            rulesetId, SqlConsoleRules.MAX_RETURN_ROWS, dialectType, Integer.class);
+                rulesetId, SqlConsoleRules.MAX_RETURN_ROWS, dialectType, Integer.class);
         return envMaxQueryLimit.orElseGet(this::getDefaultMaxQueryLimit);
     }
 

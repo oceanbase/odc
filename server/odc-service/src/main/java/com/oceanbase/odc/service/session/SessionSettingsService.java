@@ -67,7 +67,7 @@ public class SessionSettingsService {
         settings.setDelimiter(ConnectionSessionUtil.getSqlCommentProcessor(session).getDelimiter());
         settings.setQueryLimit(ConnectionSessionUtil.getQueryLimit(session));
         settings.setMaxQueryLimit(organizationConfigUtils.getSessionMaxQueryLimit(
-            ConnectionSessionUtil.getRuleSetId(session), session.getDialectType()));
+                ConnectionSessionUtil.getRuleSetId(session), session.getDialectType()));
         return settings;
     }
 
