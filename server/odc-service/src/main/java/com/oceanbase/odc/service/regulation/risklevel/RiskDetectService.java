@@ -15,9 +15,12 @@
  */
 package com.oceanbase.odc.service.regulation.risklevel;
 
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -31,6 +34,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.google.common.collect.Sets;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -49,6 +53,7 @@ import com.oceanbase.odc.service.regulation.risklevel.model.RiskDetectRule;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
 
+import cn.hutool.core.util.ObjectUtil;
 import lombok.NonNull;
 
 /**
@@ -101,6 +106,34 @@ public class RiskDetectService {
             }
         }
         return matched;
+    }
+
+    @SkipAuthorize("internal usage")
+    public Map<RiskLevelDescriber, Set<RiskLevel>> batchDetect(List<RiskDetectRule> rules,
+            @NonNull Collection<RiskLevelDescriber> describers) {
+        if (CollectionUtils.isEmpty(describers)) {
+            return Collections.emptyMap();
+        }
+        RiskLevel defaultRiskLevel = null;
+        Map<RiskLevelDescriber, Set<RiskLevel>> describer2RiskLevels = new HashMap<>();
+        for (RiskLevelDescriber describer : describers) {
+            if (CollectionUtils.isEmpty(rules)) {
+                defaultRiskLevel = ObjectUtil.defaultIfNull(defaultRiskLevel, riskLevelService.findDefaultRiskLevel());
+                describer2RiskLevels.put(describer, Sets.newHashSet(defaultRiskLevel));
+                continue;
+            }
+            Set<RiskLevel> matched = new HashSet<>();
+            for (RiskDetectRule rule : rules) {
+                if (Objects.isNull(rule.getRootNode())) {
+                    continue;
+                }
+                if (rule.getRootNode().evaluate(describer)) {
+                    matched.add(rule.getRiskLevel());
+                }
+            }
+            describer2RiskLevels.put(describer, matched);
+        }
+        return describer2RiskLevels;
     }
 
     @SkipAuthorize("internal authenticated")
@@ -166,7 +199,7 @@ public class RiskDetectService {
             return Collections.emptyList();
         }
         return ruleEntities.stream()
-                .map(ruleEntity -> entityToModel(ruleEntity))
+                .map(this::entityToModel)
                 .collect(Collectors.toList());
     }
 
