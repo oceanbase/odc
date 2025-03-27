@@ -137,10 +137,10 @@ public class DumperResultSetExportTaskManager implements ResultSetExportTaskMana
             }
             if (parameter.getMaxRows() > Integer.MAX_VALUE) {
                 throw new IllegalArgumentException("query limit max value: " + parameter.getMaxRows()
-                                                   + " is out of Integer range.");
+                        + " is out of Integer range.");
             }
             organizationConfigUtils.checkQueryLimitValidity(organizationConfigUtils.getDefaultMaxQueryLimit(),
-                parameter.getMaxRows().intValue());
+                    parameter.getMaxRows().intValue());
             parameter.setSql(SqlRewriteUtil.addQueryLimit(parameter.getSql(), session, parameter.getMaxRows()));
 
             ResultSetExportTask task = new ResultSetExportTask(workingDir, logDir, parameter, session,

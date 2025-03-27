@@ -206,7 +206,7 @@ public class DatabaseChangeTask extends TaskBase<FlowTaskResult> {
                     List<SqlTuple> sqlTuples = Collections.singletonList(SqlTuple.newTuple(sql));
                     OrganizationConfigUtils configUtils = SpringContextUtil.getBean(OrganizationConfigUtils.class);
                     configUtils.checkQueryLimitValidity(configUtils.getDefaultMaxQueryLimit(),
-                        this.databaseChangeParameters.getQueryLimit());
+                            this.databaseChangeParameters.getQueryLimit());
                     OdcStatementCallBack statementCallback = new OdcStatementCallBack(sqlTuples, connectionSession,
                             true, this.databaseChangeParameters.getQueryLimit());
                     statementCallback.setMaxCachedLines(0);
