@@ -322,8 +322,8 @@ public class RuleService {
         // if this is "max query limit" property, do check
         if (Objects.nonNull(properties.get(SqlConsoleRules.MAX_RETURN_ROWS.getPropertyName()))) {
             Integer currentValue = (Integer) properties.get(SqlConsoleRules.MAX_RETURN_ROWS.getPropertyName());
-            organizationConfigUtils.checkQueryLimitValidity(
-                    organizationConfigUtils.getDefaultMaxQueryLimit(), currentValue);
+            Verify.notGreaterThan(currentValue, organizationConfigUtils.getDefaultMaxQueryLimit(),
+                    "max query limit value");
         }
         return propertiesJson;
     }

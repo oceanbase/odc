@@ -37,6 +37,7 @@ import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConstants;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferFormat;
 import com.oceanbase.odc.service.common.FileManager;
@@ -139,8 +140,8 @@ public class DumperResultSetExportTaskManager implements ResultSetExportTaskMana
                 throw new IllegalArgumentException("query limit max value: " + parameter.getMaxRows()
                         + " is out of Integer range.");
             }
-            organizationConfigUtils.checkQueryLimitValidity(organizationConfigUtils.getDefaultMaxQueryLimit(),
-                    parameter.getMaxRows().intValue());
+            Verify.notGreaterThan(parameter.getMaxRows().intValue(), organizationConfigUtils.getDefaultQueryLimit(),
+                    "query limit value");
             parameter.setSql(SqlRewriteUtil.addQueryLimit(parameter.getSql(), session, parameter.getMaxRows()));
 
             ResultSetExportTask task = new ResultSetExportTask(workingDir, logDir, parameter, session,

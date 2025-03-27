@@ -33,6 +33,7 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.LimitMetric;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.service.config.OrganizationConfigUtils;
@@ -106,9 +107,9 @@ public class SessionSettingsService {
             Optional<Integer> envMaxQueryLimit = sqlConsoleRuleService.getProperties(
                     ConnectionSessionUtil.getRuleSetId(session), SqlConsoleRules.MAX_RETURN_ROWS,
                     session.getDialectType(), Integer.class);
-            organizationConfigUtils.checkQueryLimitValidity(
+            Verify.notGreaterThan(wait2UpdateQueryLimit,
                     envMaxQueryLimit.orElseGet(organizationConfigUtils::getDefaultMaxQueryLimit),
-                    wait2UpdateQueryLimit);
+                    "query limit value");
             ConnectionSessionUtil.setQueryLimit(session, wait2UpdateQueryLimit);
         }
         return settings;
