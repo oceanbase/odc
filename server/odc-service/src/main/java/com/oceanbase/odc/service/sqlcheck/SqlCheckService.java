@@ -206,9 +206,7 @@ public class SqlCheckService {
         List<SqlCheckRuleFactory> candidates = SqlCheckRules.getAllFactories(dialectType, jdbc);
         return rules.stream().filter(rule -> {
             RuleMetadata metadata = rule.getMetadata();
-            if (metadata == null) {
-                return false;
-            } else if (!Boolean.TRUE.equals(rule.getEnabled())) {
+            if (metadata == null || !Boolean.TRUE.equals(rule.getEnabled())) {
                 return false;
             }
             return Objects.equals(metadata.getType(), RuleType.SQL_CHECK);

@@ -57,7 +57,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.google.common.collect.Sets;
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.common.i18n.I18n;
 import com.oceanbase.odc.common.json.JsonUtils;
@@ -753,21 +752,6 @@ public class FlowInstanceService {
         Verify.singleton(taskIds, "Multi task for one instance is not allowed, id " + id);
         Long taskId = taskIds.iterator().next();
         return taskService.detail(taskId);
-    }
-
-    public Optional<TaskEntity> getPreCheckTaskByFlowInstanceId(@NonNull Long flowInstanceId) {
-        List<ServiceTaskInstanceEntity> serviceTasks = serviceTaskRepository.findByFlowInstanceIdIn(
-                Sets.newHashSet(flowInstanceId))
-                .stream()
-                .filter(s -> s.getTaskType() == TaskType.PRE_CHECK || s.getTaskType() == TaskType.SQL_CHECK)
-                .collect(Collectors.toList());
-        if (CollectionUtils.isEmpty(serviceTasks)) {
-            return Optional.empty();
-        }
-        Verify.singleton(serviceTasks,
-                "Multi preCheckTask or sqlCheckTask for one instance is not allowed, flowInstanceId " + flowInstanceId);
-        TaskEntity task = taskService.detail(serviceTasks.get(0).getTargetTaskId());
-        return Optional.of(task);
     }
 
     private void checkCreateFlowInstancePermission(CreateFlowInstanceReq req) {

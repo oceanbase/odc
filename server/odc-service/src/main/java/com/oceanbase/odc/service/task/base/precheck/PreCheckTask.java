@@ -280,11 +280,9 @@ public class PreCheckTask extends TaskBase<FlowTaskResult> {
             return Collections.emptyList();
         }
         List<SqlCheckRuleFactory> candidates = SqlCheckRules.getAllFactories(dialectType, jdbc);
-        return rules.stream().filter(r -> {
-            RuleMetadata metadata = r.getMetadata();
-            if (metadata == null) {
-                return false;
-            } else if (!Boolean.TRUE.equals(r.getEnabled())) {
+        return rules.stream().filter(rule -> {
+            RuleMetadata metadata = rule.getMetadata();
+            if (metadata == null || !Boolean.TRUE.equals(rule.getEnabled())) {
                 return false;
             }
             return Objects.equals(metadata.getType(), RuleType.SQL_CHECK);
