@@ -38,9 +38,4 @@ public interface SqlCheckRule {
     List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context);
 
     List<DialectType> getSupportsDialectTypes();
-
-    default SqlCheckRule getRule() {
-        return this;
-    }
-
 }

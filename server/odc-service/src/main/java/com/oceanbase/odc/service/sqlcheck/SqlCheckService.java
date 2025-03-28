@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -62,6 +61,7 @@ import com.oceanbase.odc.service.sqlcheck.model.MultipleSqlCheckReq;
 import com.oceanbase.odc.service.sqlcheck.model.MultipleSqlCheckResult;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckReq;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckResponse;
+import com.oceanbase.odc.service.sqlcheck.rule.BaseAffectedRowsExceedLimit;
 import com.oceanbase.odc.service.sqlcheck.rule.SqlCheckRules;
 
 import lombok.NonNull;
@@ -105,7 +105,7 @@ public class SqlCheckService {
         DefaultSqlChecker sqlChecker =
                 new DefaultSqlChecker(session.getDialectType(), req.getDelimiter(), sqlCheckRules);
         AffectedRowCalculator affectedRowCalculator = new AffectedRowCalculator(req.getDelimiter(),
-                session.getDialectType(), getAffectedRowsRules(rules, session));
+                session.getDialectType(), getAffectedRowsRuleBySession(session));
         List<CheckViolation> checkViolations = sqlChecker.check(req.getScriptContent());
         fullFillRiskLevel(rules, checkViolations);
         return SqlCheckResponse.of(affectedRowCalculator.getAffectedRows(req.getScriptContent()),
@@ -172,11 +172,12 @@ public class SqlCheckService {
         try (SingleConnectionDataSource dataSource = (SingleConnectionDataSource) factory.getDataSource()) {
             JdbcTemplate jdbc = new JdbcTemplate(dataSource);
             List<SqlCheckRule> checkRules = getRules(rules, () -> SqlCheckUtil.getDbVersion(config, dataSource),
-                    config.getDialectType(), jdbc, getEnabledRulePredicate());
+                    config.getDialectType(), jdbc);
             DefaultSqlChecker sqlChecker = new DefaultSqlChecker(config.getDialectType(), null, checkRules);
-            AffectedRowCalculator affectedRowCalculator = new AffectedRowCalculator(config.getDialectType(),
-                    getRules(rules, () -> SqlCheckUtil.getDbVersion(config, dataSource),
-                            config.getDialectType(), jdbc, getAffectedRowRulePredicate()));
+            BaseAffectedRowsExceedLimit affectedRowsRule = SqlCheckUtil.getAffectedRowsRule(
+                    () -> SqlCheckUtil.getDbVersion(config, dataSource), config.getDialectType(), jdbc);
+            AffectedRowCalculator affectedRowCalculator =
+                    new AffectedRowCalculator(config.getDialectType(), affectedRowsRule);
             List<CheckViolation> checkViolations = new ArrayList<>();
             for (OffsetString sql : sqls) {
                 List<CheckViolation> violations = sqlChecker.check(Collections.singletonList(sql), checkContext);
@@ -187,23 +188,31 @@ public class SqlCheckService {
         }
     }
 
-    public List<SqlCheckRule> getRules(List<Rule> rules, @NonNull ConnectionSession session) {
-        return getRules(rules, () -> ConnectionSessionUtil.getVersion(session), session.getDialectType(),
-                session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY), getEnabledRulePredicate());
+    public BaseAffectedRowsExceedLimit getAffectedRowsRuleBySession(@NonNull ConnectionSession session) {
+        return SqlCheckUtil.getAffectedRowsRule(() -> ConnectionSessionUtil.getVersion(session),
+                session.getDialectType(), session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY));
     }
 
-    public List<SqlCheckRule> getAffectedRowsRules(List<Rule> rules, @NonNull ConnectionSession session) {
+    public List<SqlCheckRule> getRules(List<Rule> rules, @NonNull ConnectionSession session) {
         return getRules(rules, () -> ConnectionSessionUtil.getVersion(session), session.getDialectType(),
-                session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY), getAffectedRowRulePredicate());
+                session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY));
     }
 
     public List<SqlCheckRule> getRules(List<Rule> rules, Supplier<String> dbVersionSupplier,
-            @NonNull DialectType dialectType, @NonNull JdbcOperations jdbc, @NonNull Predicate<Rule> filter) {
+            @NonNull DialectType dialectType, @NonNull JdbcOperations jdbc) {
         if (CollectionUtils.isEmpty(rules)) {
             return Collections.emptyList();
         }
         List<SqlCheckRuleFactory> candidates = SqlCheckRules.getAllFactories(dialectType, jdbc);
-        return rules.stream().filter(filter).map(rule -> {
+        return rules.stream().filter(rule -> {
+            RuleMetadata metadata = rule.getMetadata();
+            if (metadata == null) {
+                return false;
+            } else if (!Boolean.TRUE.equals(rule.getEnabled())) {
+                return false;
+            }
+            return Objects.equals(metadata.getType(), RuleType.SQL_CHECK);
+        }).map(rule -> {
             try {
                 return SqlCheckRules.createByRule(candidates, dbVersionSupplier, dialectType, rule);
             } catch (Exception e) {
@@ -229,27 +238,6 @@ public class SqlCheckService {
             }
         });
         return violatedRules;
-    }
-
-    private Predicate<Rule> getAffectedRowRulePredicate() {
-        return rule -> {
-            RuleMetadata metadata = rule.getMetadata();
-            return metadata != null
-                    && "${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-affected-rows.name}"
-                            .equals(metadata.getName());
-        };
-    }
-
-    private Predicate<Rule> getEnabledRulePredicate() {
-        return rule -> {
-            RuleMetadata metadata = rule.getMetadata();
-            if (metadata == null) {
-                return false;
-            } else if (!Boolean.TRUE.equals(rule.getEnabled())) {
-                return false;
-            }
-            return Objects.equals(metadata.getType(), RuleType.SQL_CHECK);
-        };
     }
 
 }

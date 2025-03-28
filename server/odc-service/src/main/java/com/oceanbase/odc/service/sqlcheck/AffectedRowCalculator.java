@@ -16,10 +16,6 @@
 package com.oceanbase.odc.service.sqlcheck;
 
 import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-
-import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.split.OffsetString;
@@ -40,19 +36,20 @@ public class AffectedRowCalculator {
 
     private String delimiter;
     private DialectType dialectType;
-    private List<SqlCheckRule> affectedRowRules;
+    private BaseAffectedRowsExceedLimit affectedRowRule;
 
     private AffectedRowCalculator() {}
 
     public AffectedRowCalculator(String delimiter, @NonNull DialectType dialectType,
-            @NonNull List<SqlCheckRule> affectedRowRules) {
+            @NonNull BaseAffectedRowsExceedLimit affectedRowRule) {
         this.delimiter = delimiter;
         this.dialectType = dialectType;
-        this.affectedRowRules = affectedRowRules;
+        this.affectedRowRule = affectedRowRule;
     }
 
-    public AffectedRowCalculator(@NonNull DialectType dialectType, @NonNull List<SqlCheckRule> affectedRowRules) {
-        this(null, dialectType, affectedRowRules);
+    public AffectedRowCalculator(@NonNull DialectType dialectType,
+            @NonNull BaseAffectedRowsExceedLimit affectedRowRule) {
+        this(null, dialectType, affectedRowRule);
     }
 
     public long getAffectedRows(@NonNull String sqlScript) {
@@ -61,13 +58,11 @@ public class AffectedRowCalculator {
 
     public long getAffectedRows(@NonNull Collection<OffsetString> sqls) {
         long affectedRows = 0L;
-        Optional<SqlCheckRule> calculatorOp = getCalculatorRule();
-        if (calculatorOp.isPresent() && (calculatorOp.get().getRule() instanceof BaseAffectedRowsExceedLimit)) {
-            BaseAffectedRowsExceedLimit calculator = (BaseAffectedRowsExceedLimit) (calculatorOp.get().getRule());
+        if (affectedRowRule != null) {
             for (OffsetString sql : sqls) {
                 try {
                     Statement statement = SqlCheckUtil.parseSingleSql(dialectType, sql.getStr());
-                    affectedRows += calculator.getStatementAffectedRows(statement);
+                    affectedRows += affectedRowRule.getStatementAffectedRows(statement);
                 } catch (Exception e) {
                     log.warn("Get affected rows failed", e);
                 }
@@ -75,12 +70,4 @@ public class AffectedRowCalculator {
         }
         return affectedRows;
     }
-
-    private Optional<SqlCheckRule> getCalculatorRule() {
-        if (CollectionUtils.isNotEmpty(affectedRowRules)) {
-            return Optional.of(affectedRowRules.get(0));
-        }
-        return Optional.empty();
-    }
-
 }

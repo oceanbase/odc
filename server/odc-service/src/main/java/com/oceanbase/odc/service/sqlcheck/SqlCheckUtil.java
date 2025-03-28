@@ -18,10 +18,12 @@ package com.oceanbase.odc.service.sqlcheck;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -29,6 +31,7 @@ import javax.sql.DataSource;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
+import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -38,9 +41,11 @@ import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
+import com.oceanbase.odc.service.sqlcheck.factory.SqlAffectedRowsFactory;
 import com.oceanbase.odc.service.sqlcheck.model.CheckResult;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
+import com.oceanbase.odc.service.sqlcheck.rule.BaseAffectedRowsExceedLimit;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
@@ -278,5 +283,18 @@ public class SqlCheckUtil {
             sqls.add(new OffsetString(lastSqlOffset, bufferStr));
         }
         return sqls;
+    }
+
+    public static BaseAffectedRowsExceedLimit getAffectedRowsRule(@NonNull Supplier<String> dbVersionSupplier,
+            @NonNull DialectType dialectType, @NonNull JdbcOperations jdbc) {
+        return getAffectedRowsRule(dbVersionSupplier, dialectType, jdbc, null);
+    }
+
+    public static BaseAffectedRowsExceedLimit getAffectedRowsRule(@NonNull Supplier<String> dbVersionSupplier,
+            @NonNull DialectType dialectType, @NonNull JdbcOperations jdbc, Map<String, Object> parameters) {
+        SqlCheckRuleContext sqlCheckRuleContext =
+                SqlCheckRuleContext.create(dbVersionSupplier, dialectType, parameters);
+        SqlAffectedRowsFactory sqlAffectedRowsFactory = new SqlAffectedRowsFactory(jdbc);
+        return (BaseAffectedRowsExceedLimit) sqlAffectedRowsFactory.generate(sqlCheckRuleContext);
     }
 }

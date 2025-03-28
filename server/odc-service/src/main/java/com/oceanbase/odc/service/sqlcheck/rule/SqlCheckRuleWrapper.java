@@ -62,9 +62,4 @@ class SqlCheckRuleWrapper implements SqlCheckRule {
                 .filter(d -> !CollectionUtils.isEmpty(supports) && supports.contains(d))
                 .collect(Collectors.toList());
     }
-
-    @Override
-    public SqlCheckRule getRule() {
-        return this.target;
-    }
 }

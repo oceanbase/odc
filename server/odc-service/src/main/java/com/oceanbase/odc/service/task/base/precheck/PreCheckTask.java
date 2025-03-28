@@ -24,7 +24,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -259,12 +258,11 @@ public class PreCheckTask extends TaskBase<FlowTaskResult> {
         try (SingleConnectionDataSource dataSource = (SingleConnectionDataSource) factory.getDataSource()) {
             JdbcTemplate jdbc = new JdbcTemplate(dataSource);
             List<SqlCheckRule> checkRules =
-                    getRules(rules, () -> SqlCheckUtil.getDbVersion(config, dataSource), config.getDialectType(), jdbc,
-                            getEnabledRulePredicate());
+                    getRules(rules, () -> SqlCheckUtil.getDbVersion(config, dataSource), config.getDialectType(), jdbc);
             DefaultSqlChecker sqlChecker = new DefaultSqlChecker(config.getDialectType(), null, checkRules);
             this.affectedRowCalculator = new AffectedRowCalculator(config.getDialectType(),
-                    getRules(rules, () -> SqlCheckUtil.getDbVersion(config, dataSource), config.getDialectType(), jdbc,
-                            getAffectedRowRulePredicate()));
+                    SqlCheckUtil.getAffectedRowsRule(() -> SqlCheckUtil.getDbVersion(config, dataSource),
+                            config.getDialectType(), jdbc));
             List<CheckViolation> checkViolations = new ArrayList<>();
             for (OffsetString sql : sqls) {
                 List<CheckViolation> violations = sqlChecker.check(Collections.singletonList(sql), checkContext);
@@ -277,12 +275,20 @@ public class PreCheckTask extends TaskBase<FlowTaskResult> {
 
     private List<SqlCheckRule> getRules(List<Rule> rules, Supplier<String> dbVersionSupplier,
             @NonNull DialectType dialectType,
-            @NonNull JdbcOperations jdbc, @NonNull Predicate<Rule> filter) {
+            @NonNull JdbcOperations jdbc) {
         if (CollectionUtils.isEmpty(rules)) {
             return Collections.emptyList();
         }
         List<SqlCheckRuleFactory> candidates = SqlCheckRules.getAllFactories(dialectType, jdbc);
-        return rules.stream().filter(filter).map(rule -> {
+        return rules.stream().filter(r -> {
+            RuleMetadata metadata = r.getMetadata();
+            if (metadata == null) {
+                return false;
+            } else if (!Boolean.TRUE.equals(r.getEnabled())) {
+                return false;
+            }
+            return Objects.equals(metadata.getType(), RuleType.SQL_CHECK);
+        }).map(rule -> {
             try {
                 return SqlCheckRules.createByRule(candidates, dbVersionSupplier, dialectType, rule);
             } catch (Exception e) {
@@ -321,26 +327,4 @@ public class PreCheckTask extends TaskBase<FlowTaskResult> {
             }
         }
     }
-
-    private Predicate<Rule> getAffectedRowRulePredicate() {
-        return rule -> {
-            RuleMetadata metadata = rule.getMetadata();
-            return metadata != null
-                    && "${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-affected-rows.name}"
-                            .equals(metadata.getName());
-        };
-    }
-
-    private Predicate<Rule> getEnabledRulePredicate() {
-        return r -> {
-            RuleMetadata metadata = r.getMetadata();
-            if (metadata == null) {
-                return false;
-            } else if (!Boolean.TRUE.equals(r.getEnabled())) {
-                return false;
-            }
-            return Objects.equals(metadata.getType(), RuleType.SQL_CHECK);
-        };
-    }
-
 }
