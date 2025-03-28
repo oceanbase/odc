@@ -17,11 +17,8 @@ package com.oceanbase.odc.service.sqlcheck;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.common.lang.Pair;
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -31,15 +28,12 @@ import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.core.sql.split.SqlSplitter;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
-import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 import com.oceanbase.odc.service.sqlcheck.parser.SyntaxErrorStatement;
-import com.oceanbase.odc.service.sqlcheck.rule.BaseAffectedRowsExceedLimit;
 import com.oceanbase.tools.sqlparser.SyntaxErrorException;
 import com.oceanbase.tools.sqlparser.oracle.PlSqlLexer;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 
 import lombok.NonNull;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * {@link BaseSqlChecker}
@@ -49,7 +43,6 @@ import lombok.extern.slf4j.Slf4j;
  * @since ODC_release_4.1.0
  * @see SqlChecker
  */
-@Slf4j
 abstract class BaseSqlChecker implements SqlChecker {
 
     private final static String DEFAULT_DELIMITER = ";";
@@ -166,40 +159,8 @@ abstract class BaseSqlChecker implements SqlChecker {
         return sqls;
     }
 
-    public long getAffectedRows(@NonNull List<OffsetString> offsetStrings) {
-        if (CollectionUtils.isEmpty(offsetStrings)) {
-            return 0L;
-        }
-        Optional<SqlCheckRule> ruleOp = getAllRules().stream().filter(
-                r -> r.getType() == SqlCheckRuleType.RESTRICT_SQL_AFFECTED_ROWS)
-                .findFirst();
-        long affectedRows = 0L;
-        if (ruleOp.isPresent()) {
-            SqlCheckRule rawSqlCheckRule = ruleOp.get().getRule();
-            if (rawSqlCheckRule instanceof BaseAffectedRowsExceedLimit) {
-                BaseAffectedRowsExceedLimit sqlCheckRule = (BaseAffectedRowsExceedLimit) rawSqlCheckRule;
-                for (OffsetString offsetString : offsetStrings) {
-                    try {
-                        Statement statement = doParse(offsetString.getStr());
-                        affectedRows += sqlCheckRule.getStatementAffectedRows(statement);
-                    } catch (Exception e) {
-                        log.warn("Get Affected Row Failed, sql={}", offsetString, e);
-                    }
-                }
-            } else {
-                log.warn("Unsupported SqlCheckRule to get AffectedRows, type={}", rawSqlCheckRule.getType());
-            }
-        }
-        return affectedRows;
-    }
-
-    public long getAffectedRows(@NonNull String sqlScript) {
-        return getAffectedRows(splitByCommentProcessor(sqlScript));
-    }
-
     protected abstract Statement doParse(String sql);
 
     protected abstract List<CheckViolation> doCheck(Statement statement, SqlCheckContext context);
 
-    protected abstract List<SqlCheckRule> getAllRules();
 }

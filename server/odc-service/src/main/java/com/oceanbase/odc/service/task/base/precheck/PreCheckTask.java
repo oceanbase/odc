@@ -58,6 +58,7 @@ import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
+import com.oceanbase.odc.service.sqlcheck.AffectedRowCalculator;
 import com.oceanbase.odc.service.sqlcheck.DefaultSqlChecker;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
@@ -89,6 +90,7 @@ public class PreCheckTask extends TaskBase<FlowTaskResult> {
     private volatile boolean success = false;
     private SqlCheckTaskResult sqlCheckResult = null;
     private DatabasePermissionCheckResult permissionCheckResult = null;
+    private AffectedRowCalculator affectedRowCalculator;
 
     public PreCheckTask() {}
 
@@ -110,16 +112,18 @@ public class PreCheckTask extends TaskBase<FlowTaskResult> {
             List<OffsetString> sqls = new ArrayList<>();
             this.overLimit = getSqlContentUntilOverLimit(sqls, this.parameters.getMaxReadContentBytes());
             List<UnauthorizedDBResource> unauthorizedDBResources = new ArrayList<>();
-            PreCheckResult preCheckResult = PreCheckResult.empty();
+            List<CheckViolation> violations = new ArrayList<>();
             if (CollectionUtils.isNotEmpty(sqls)) {
-                preCheckResult = checkAndGetPreCheckResult(sqls);
+                violations.addAll(checkViolations(sqls));
                 log.info("SQL check successfully, taskId={}", taskId);
                 unauthorizedDBResources.addAll(filterUnAuthorizedDatabase(sqls));
                 log.info("Database permission check successfully, taskId={}", taskId);
             }
             this.permissionCheckResult = new DatabasePermissionCheckResult(unauthorizedDBResources);
-            this.sqlCheckResult = SqlCheckTaskResult.success(preCheckResult.getCheckViolations());
-            this.sqlCheckResult.setAffectedRows(preCheckResult.getAffectedRows());
+            this.sqlCheckResult = SqlCheckTaskResult.success(violations);
+            if (affectedRowCalculator != null) {
+                this.sqlCheckResult.setAffectedRows(affectedRowCalculator.getAffectedRows(sqls));
+            }
             this.success = true;
             log.info("Pre-check task end up running, task id: {}", taskId);
         } catch (Throwable e) {
@@ -242,9 +246,9 @@ public class PreCheckTask extends TaskBase<FlowTaskResult> {
         return false;
     }
 
-    private PreCheckResult checkAndGetPreCheckResult(List<OffsetString> sqls) {
+    private List<CheckViolation> checkViolations(List<OffsetString> sqls) {
         if (CollectionUtils.isEmpty(sqls)) {
-            return PreCheckResult.empty();
+            return Collections.emptyList();
         }
         ConnectionConfig config = this.parameters.getConnectionConfig();
         List<Rule> rules = this.parameters.getRules();
@@ -256,20 +260,18 @@ public class PreCheckTask extends TaskBase<FlowTaskResult> {
             JdbcTemplate jdbc = new JdbcTemplate(dataSource);
             List<SqlCheckRule> checkRules =
                     getRules(rules, () -> SqlCheckUtil.getDbVersion(config, dataSource), config.getDialectType(), jdbc,
-                            filterRulePredicate());
-            List<SqlCheckRule> allRules =
+                            filterRulePredicate(false));
+            DefaultSqlChecker sqlChecker = new DefaultSqlChecker(config.getDialectType(), null, checkRules);
+            this.affectedRowCalculator = new AffectedRowCalculator(sqlChecker, config.getDialectType(),
                     getRules(rules, () -> SqlCheckUtil.getDbVersion(config, dataSource), config.getDialectType(), jdbc,
-                            rule -> true);
-            DefaultSqlChecker sqlChecker = new DefaultSqlChecker(config.getDialectType(), null, checkRules, allRules);
+                            filterRulePredicate(true)));
             List<CheckViolation> checkViolations = new ArrayList<>();
             for (OffsetString sql : sqls) {
                 List<CheckViolation> violations = sqlChecker.check(Collections.singletonList(sql), checkContext);
                 fullFillRiskLevel(rules, violations);
                 checkViolations.addAll(violations);
             }
-            return PreCheckResult.empty()
-                    .setCheckViolations(checkViolations)
-                    .setAffectedRows(sqlChecker.getAffectedRows(sqls));
+            return checkViolations;
         }
     }
 
@@ -320,7 +322,10 @@ public class PreCheckTask extends TaskBase<FlowTaskResult> {
         }
     }
 
-    private Predicate<Rule> filterRulePredicate() {
+    private Predicate<Rule> filterRulePredicate(boolean filterAll) {
+        if (filterAll) {
+            return rule -> true;
+        }
         return rule -> {
             RuleMetadata metadata = rule.getMetadata();
             if (metadata == null || !Boolean.TRUE.equals(rule.getEnabled())) {
