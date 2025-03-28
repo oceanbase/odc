@@ -142,11 +142,8 @@ public class SqlExecuteResult {
     }
 
     public OdcTable initEditableInfo(@NonNull ConnectionSession connectionSession, @NonNull Map<String, Object> cxt) {
-        boolean editable = true;
-        editable = !checkContainsExternalTables(connectionSession, cxt);
-        if (editable) {
-            editable = !checkContainsMaterializedViews(connectionSession, cxt);
-        }
+        boolean editable = !checkContainsExternalTables(connectionSession, cxt)
+                && !checkContainsMaterializedViews(connectionSession, cxt);
         OdcTable resultTable = null;
         Set<OdcTable> relatedTablesOrViews = new HashSet<>();
         if (Objects.isNull(this.resultSetMetaData)) {
