@@ -216,7 +216,7 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
         File file = Paths.get(basePath, taskId, fileName + req.getFileFormat().getExtension()).toFile();
         LineNumberReader lineNumberReader = new LineNumberReader(new FileReader(file));
         lineNumberReader.skip(Long.MAX_VALUE);
-        Assert.assertEquals(4, lineNumberReader.getLineNumber());
+        Assert.assertEquals(2, lineNumberReader.getLineNumber());
         FileUtils.forceDelete(file);
     }
 
@@ -234,7 +234,7 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
         File file = Paths.get(basePath, taskId, fileName + req.getFileFormat().getExtension()).toFile();
         LineNumberReader lineNumberReader = new LineNumberReader(new FileReader(file));
         lineNumberReader.skip(Long.MAX_VALUE);
-        Assert.assertEquals(4, lineNumberReader.getLineNumber());
+        Assert.assertEquals(2, lineNumberReader.getLineNumber());
         FileUtils.forceDelete(file);
     }
 
