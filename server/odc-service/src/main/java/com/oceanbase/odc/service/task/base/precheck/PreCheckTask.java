@@ -262,7 +262,7 @@ public class PreCheckTask extends TaskBase<FlowTaskResult> {
                     getRules(rules, () -> SqlCheckUtil.getDbVersion(config, dataSource), config.getDialectType(), jdbc,
                             filterRulePredicate(false));
             DefaultSqlChecker sqlChecker = new DefaultSqlChecker(config.getDialectType(), null, checkRules);
-            this.affectedRowCalculator = new AffectedRowCalculator(sqlChecker, config.getDialectType(),
+            this.affectedRowCalculator = new AffectedRowCalculator(config.getDialectType(),
                     getRules(rules, () -> SqlCheckUtil.getDbVersion(config, dataSource), config.getDialectType(), jdbc,
                             filterRulePredicate(true)));
             List<CheckViolation> checkViolations = new ArrayList<>();

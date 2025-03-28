@@ -104,7 +104,7 @@ public class SqlCheckService {
         }
         DefaultSqlChecker sqlChecker =
                 new DefaultSqlChecker(session.getDialectType(), req.getDelimiter(), sqlCheckRules);
-        AffectedRowCalculator affectedRowCalculator = new AffectedRowCalculator(sqlChecker, req.getDelimiter(),
+        AffectedRowCalculator affectedRowCalculator = new AffectedRowCalculator(req.getDelimiter(),
                 session.getDialectType(), getAllRules(rules, session));
         List<CheckViolation> checkViolations = sqlChecker.check(req.getScriptContent());
         fullFillRiskLevel(rules, checkViolations);
@@ -174,8 +174,8 @@ public class SqlCheckService {
             List<SqlCheckRule> checkRules = getRules(rules, () -> SqlCheckUtil.getDbVersion(config, dataSource),
                     config.getDialectType(), jdbc, getRulePredicate(false));
             DefaultSqlChecker sqlChecker = new DefaultSqlChecker(config.getDialectType(), null, checkRules);
-            AffectedRowCalculator affectedRowCalculator = new AffectedRowCalculator(sqlChecker,
-                    config.getDialectType(), getRules(rules, () -> SqlCheckUtil.getDbVersion(config, dataSource),
+            AffectedRowCalculator affectedRowCalculator = new AffectedRowCalculator(config.getDialectType(),
+                    getRules(rules, () -> SqlCheckUtil.getDbVersion(config, dataSource),
                             config.getDialectType(), jdbc, getRulePredicate(true)));
             List<CheckViolation> checkViolations = new ArrayList<>();
             for (OffsetString sql : sqls) {

@@ -20,15 +20,10 @@ import java.util.List;
 import java.util.Optional;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.core.sql.split.OffsetString;
-import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 import com.oceanbase.odc.service.sqlcheck.rule.BaseAffectedRowsExceedLimit;
 import com.oceanbase.tools.sqlparser.statement.Statement;
-import com.oceanbase.tools.sqlparser.statement.delete.Delete;
-import com.oceanbase.tools.sqlparser.statement.insert.Insert;
-import com.oceanbase.tools.sqlparser.statement.update.Update;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -42,28 +37,25 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AffectedRowCalculator {
 
-    private DefaultSqlChecker sqlChecker;
     private String delimiter;
     private DialectType dialectType;
     private List<SqlCheckRule> rules;
 
     private AffectedRowCalculator() {}
 
-    public AffectedRowCalculator(@NonNull DefaultSqlChecker sqlChecker, String delimiter,
-            @NonNull DialectType dialectType, @NonNull List<SqlCheckRule> rules) {
-        this.sqlChecker = sqlChecker;
+    public AffectedRowCalculator(String delimiter, @NonNull DialectType dialectType,
+            @NonNull List<SqlCheckRule> rules) {
         this.delimiter = delimiter;
         this.dialectType = dialectType;
         this.rules = rules;
     }
 
-    public AffectedRowCalculator(@NonNull DefaultSqlChecker sqlChecker, @NonNull DialectType dialectType,
-            @NonNull List<SqlCheckRule> rules) {
-        this(sqlChecker, null, dialectType, rules);
+    public AffectedRowCalculator(@NonNull DialectType dialectType, @NonNull List<SqlCheckRule> rules) {
+        this(null, dialectType, rules);
     }
 
     public long getAffectedRows(@NonNull String sqlScript) {
-        return getAffectedRows(splitSql(sqlScript));
+        return getAffectedRows(SqlCheckUtil.splitSql(sqlScript, dialectType, delimiter));
     }
 
     public long getAffectedRows(@NonNull Collection<OffsetString> sqls) {
@@ -73,8 +65,7 @@ public class AffectedRowCalculator {
             BaseAffectedRowsExceedLimit calculator = (BaseAffectedRowsExceedLimit) (calculatorOp.get().getRule());
             for (OffsetString sql : sqls) {
                 try {
-                    Statement statement = sqlChecker.doParse(sql.getStr());
-                    checkSupport(statement);
+                    Statement statement = SqlCheckUtil.parseSingleSql(dialectType, sql.getStr());
                     affectedRows += calculator.getStatementAffectedRows(statement);
                 } catch (Exception e) {
                     log.warn("Get affected rows failed", e);
@@ -84,39 +75,11 @@ public class AffectedRowCalculator {
         return affectedRows;
     }
 
-    private List<OffsetString> splitSql(String sqlScript) {
-        SqlCommentProcessor processor = new SqlCommentProcessor(dialectType, true, true);
-        processor.setDelimiter(delimiter);
-        StringBuffer buffer = new StringBuffer();
-        List<OffsetString> sqls = processor.split(buffer, sqlScript);
-        String bufferStr = buffer.toString();
-        if (!bufferStr.trim().isEmpty()) {
-            int lastSqlOffset;
-            if (sqls.isEmpty()) {
-                int index = sqlScript.indexOf(bufferStr.trim());
-                lastSqlOffset = index == -1 ? 0 : index;
-            } else {
-                int from = sqls.get(sqls.size() - 1).getOffset() + sqls.get(sqls.size() - 1).getStr().length();
-                int index = sqlScript.indexOf(bufferStr.trim(), from);
-                lastSqlOffset = index == -1 ? from : index;
-            }
-            sqls.add(new OffsetString(lastSqlOffset, bufferStr));
-        }
-        return sqls;
-    }
-
     private Optional<SqlCheckRule> getCalculatorRule() {
         return rules.stream()
                 .filter(r -> r.getSupportsDialectTypes().contains(dialectType))
                 .filter(r -> r.getType() == SqlCheckRuleType.RESTRICT_SQL_AFFECTED_ROWS)
                 .findFirst();
-    }
-
-    private void checkSupport(@NonNull Statement statement) {
-        if ((statement instanceof Insert) || (statement instanceof Update) || (statement instanceof Delete)) {
-            return;
-        }
-        throw new UnsupportedException("Unsupported statement type: " + statement.getClass().getName());
     }
 
 }

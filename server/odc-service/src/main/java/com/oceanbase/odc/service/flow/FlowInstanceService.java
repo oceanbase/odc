@@ -131,7 +131,6 @@ import com.oceanbase.odc.service.flow.model.FlowMetaInfo;
 import com.oceanbase.odc.service.flow.model.FlowNodeInstanceDetailResp.FlowNodeInstanceMapper;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
-import com.oceanbase.odc.service.flow.model.PreCheckTaskResult;
 import com.oceanbase.odc.service.flow.model.QueryFlowInstanceParams;
 import com.oceanbase.odc.service.flow.processor.EnablePreprocess;
 import com.oceanbase.odc.service.flow.task.BaseRuntimeFlowableDelegate;
@@ -541,23 +540,11 @@ public class FlowInstanceService {
     }
 
     public FlowInstanceDetailResp detail(@NotNull Long id) {
-        FlowInstanceDetailResp flowInstanceDetailResp = mapFlowInstanceWithReadPermission(id, flowInstance -> {
+        return mapFlowInstanceWithReadPermission(id, flowInstance -> {
             FlowInstanceMapper instanceMapper = mapperFactory.generateMapperByInstance(flowInstance, false);
             FlowNodeInstanceMapper nodeInstanceMapper = mapperFactory.generateNodeMapperByInstance(flowInstance, false);
             return instanceMapper.map(flowInstance, nodeInstanceMapper);
         });
-        // Only DatabaseChange supports to get DML affectedRows
-        if (flowInstanceDetailResp != null && flowInstanceDetailResp.getType() == TaskType.ASYNC) {
-            Optional<TaskEntity> preCheckOp = getPreCheckTaskByFlowInstanceId(id);
-            if (preCheckOp.isPresent()) {
-                PreCheckTaskResult preCheckTaskResult = JsonUtils.fromJson(preCheckOp.get().getResultJson(),
-                        PreCheckTaskResult.class);
-                if (preCheckTaskResult != null && preCheckTaskResult.getSqlCheckResult() != null) {
-                    flowInstanceDetailResp.setAffectedRows(preCheckTaskResult.getSqlCheckResult().getAffectedRows());
-                }
-            }
-        }
-        return flowInstanceDetailResp;
     }
 
     @Transactional(rollbackFor = Exception.class)

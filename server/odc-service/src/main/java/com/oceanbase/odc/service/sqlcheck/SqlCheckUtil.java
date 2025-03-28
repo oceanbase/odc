@@ -34,6 +34,8 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactory;
+import com.oceanbase.odc.core.sql.split.OffsetString;
+import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
 import com.oceanbase.odc.service.sqlcheck.model.CheckResult;
@@ -253,4 +255,28 @@ public class SqlCheckUtil {
         }
     }
 
+    public static List<OffsetString> splitSql(@NonNull String sqlScript, @NonNull DialectType dialectType,
+            String delimiter) {
+        if (StringUtils.isEmpty(sqlScript)) {
+            return Collections.emptyList();
+        }
+        SqlCommentProcessor processor = new SqlCommentProcessor(dialectType, true, true);
+        processor.setDelimiter(delimiter);
+        StringBuffer buffer = new StringBuffer();
+        List<OffsetString> sqls = processor.split(buffer, sqlScript);
+        String bufferStr = buffer.toString();
+        if (!bufferStr.trim().isEmpty()) {
+            int lastSqlOffset;
+            if (sqls.isEmpty()) {
+                int index = sqlScript.indexOf(bufferStr.trim());
+                lastSqlOffset = index == -1 ? 0 : index;
+            } else {
+                int from = sqls.get(sqls.size() - 1).getOffset() + sqls.get(sqls.size() - 1).getStr().length();
+                int index = sqlScript.indexOf(bufferStr.trim(), from);
+                lastSqlOffset = index == -1 ? from : index;
+            }
+            sqls.add(new OffsetString(lastSqlOffset, bufferStr));
+        }
+        return sqls;
+    }
 }
