@@ -24,6 +24,7 @@ import org.quartz.JobExecutionContext;
 
 import com.alibaba.fastjson.JSON;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
@@ -32,6 +33,7 @@ import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
+import com.oceanbase.odc.service.config.OrganizationConfigUtils;
 import com.oceanbase.odc.service.config.SystemConfigService;
 import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.connection.ConnectionService;
@@ -145,6 +147,9 @@ public class SqlPlanJob implements OdcJob {
         parameters.setDelimiter(sqlPlanParameters.getDelimiter());
         parameters.setSqlObjectIds(sqlPlanParameters.getSqlObjectIds());
         parameters.setTimeoutMillis(sqlPlanParameters.getTimeoutMillis());
+        OrganizationConfigUtils configUtils = SpringContextUtil.getBean(OrganizationConfigUtils.class);
+        Verify.notGreaterThan(sqlPlanParameters.getQueryLimit(), configUtils.getDefaultQueryLimit(),
+                "query limit value");
         parameters.setQueryLimit(sqlPlanParameters.getQueryLimit());
         parameters.setErrorStrategy(sqlPlanParameters.getErrorStrategy());
         parameters.setSessionTimeZone(connectProperties.getDefaultTimeZone());
