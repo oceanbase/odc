@@ -27,7 +27,6 @@ import com.oceanbase.odc.service.task.supervisor.TaskSupervisor;
 import com.oceanbase.odc.service.task.supervisor.endpoint.SupervisorEndpoint;
 import com.oceanbase.odc.service.task.supervisor.runtime.LocalTaskCommandExecutor;
 import com.oceanbase.odc.service.task.supervisor.runtime.TaskSupervisorServer;
-import com.oceanbase.odc.service.task.util.TaskSupervisorUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,21 +40,25 @@ import lombok.extern.slf4j.Slf4j;
 public class LocalProcessResource {
     protected final SupervisorEndpointRepository supervisorEndpointRepository;
     protected TaskSupervisorServer taskSupervisorServer;
+    private final SupervisorEndpoint supervisorEndpoint;
+    private final Integer supervisorOwnerPort;
 
-    public LocalProcessResource(SupervisorEndpointRepository supervisorEndpointRepository) {
+    public LocalProcessResource(SupervisorEndpointRepository supervisorEndpointRepository,
+            SupervisorEndpoint supervisorEndpoint, Integer supervisorOwnerPort) {
         this.supervisorEndpointRepository = supervisorEndpointRepository;
+        this.supervisorOwnerPort = supervisorOwnerPort;
+        this.supervisorEndpoint = supervisorEndpoint;
     }
 
     public void prepareLocalProcessResource() {
-        SupervisorEndpoint localEndpoint = TaskSupervisorUtil.getDefaultSupervisorEndpoint();
-        startTaskSupervisorServer(localEndpoint);
-        tryRegisterTaskSupervisorAgent(localEndpoint);
+        startTaskSupervisorServer(supervisorEndpoint);
+        tryRegisterTaskSupervisorAgent(supervisorEndpoint);
     }
 
     private void startTaskSupervisorServer(SupervisorEndpoint supervisorEndpoint) {
         TaskSupervisor taskSupervisor =
                 new TaskSupervisor(supervisorEndpoint,
-                        JobConstants.ODC_AGENT_CLASS_NAME);
+                        supervisorOwnerPort, JobConstants.ODC_AGENT_CLASS_NAME);
         taskSupervisorServer =
                 new TaskSupervisorServer(supervisorEndpoint.getPort(), new LocalTaskCommandExecutor(taskSupervisor));
         try {

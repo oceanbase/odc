@@ -21,6 +21,10 @@ import java.util.Map;
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecord;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBPackage;
@@ -128,6 +132,36 @@ public interface DBSchemaAccessor {
      * Show all system view names list
      */
     List<String> showSystemViews(String schemaName);
+
+    /**
+     * List all materialized view as DBObjectIdentity in the specified schema
+     */
+    List<DBObjectIdentity> listMViews(String schemaName);
+
+    /**
+     * List all materialized view as DBObjectIdentity in current datasource
+     */
+    List<DBObjectIdentity> listAllMViewsLike(String viewNameLike);
+
+    /**
+     * Synchronize materialized view data
+     */
+    Boolean refreshMVData(DBMViewRefreshParameter parameter);
+
+    /**
+     * Get materialized view details
+     */
+    DBMaterializedView getMView(String schemaName, String mViewName);
+
+    /**
+     * Get constraints in the specified materialized view
+     */
+    List<DBTableConstraint> listMViewConstraints(String schemaName, String mViewName);
+
+    /**
+     * Gets refresh records for the specified materialized view
+     */
+    List<DBMViewRefreshRecord> listMViewRefreshRecords(DBMViewRefreshRecordParam param);
 
     /**
      * List all variables

@@ -27,6 +27,7 @@ import org.springframework.data.domain.Page;
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
+import com.oceanbase.odc.service.common.model.HostProperties;
 import com.oceanbase.odc.service.resource.ResourceManager;
 import com.oceanbase.odc.service.task.caller.ResourceIDUtil;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
@@ -49,6 +50,7 @@ import com.oceanbase.odc.service.task.supervisor.endpoint.SupervisorEndpoint;
  */
 public abstract class DaemonV2TestBase {
     protected JobConfiguration configuration;
+    protected HostProperties hostProperties;
     protected TaskFrameworkService taskFrameworkService;
     protected TaskFrameworkProperties taskFrameworkProperties;
     protected JobEntity jobEntity;
@@ -80,6 +82,8 @@ public abstract class DaemonV2TestBase {
         Mockito.when(taskFrameworkService.updateTaskResult(ArgumentMatchers.any(), ArgumentMatchers.any(),
                 ArgumentMatchers.any())).thenReturn(1);
         hostUrlProvider = Mockito.mock(HostUrlProvider.class);
+        hostProperties = Mockito.mock(HostProperties.class);
+        Mockito.when(hostProperties.getPort()).thenReturn("8989");
         configuration = Mockito.mock(JobConfiguration.class);
         startJobRateLimiter = Mockito.mock(StartJobRateLimiter.class);
         jobCredentialProvider = Mockito.mock(JobCredentialProvider.class);
@@ -98,6 +102,7 @@ public abstract class DaemonV2TestBase {
         Mockito.when(configuration.getTransactionManager()).thenReturn(new SimpleTransactionManager());
         Mockito.when(configuration.getJobCredentialProvider()).thenReturn(jobCredentialProvider);
         Mockito.when(configuration.getEventPublisher()).thenReturn(eventPublisher);
+        Mockito.when(configuration.getHostProperties()).thenReturn(hostProperties);
         jobEntity = new JobEntity();
         jobEntity.setId(1024L);
         Map<String, String> jobProperties = new HashMap<>();

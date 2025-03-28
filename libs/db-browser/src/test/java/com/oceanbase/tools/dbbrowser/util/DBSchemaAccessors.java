@@ -25,6 +25,7 @@ import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.DBBrowserFactory;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -34,6 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DBSchemaAccessors {
 
     private final JdbcTemplate jdbcTemplate;
+    @Getter
     private String version;
 
     public DBSchemaAccessors(DataSource dataSource) {

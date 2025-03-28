@@ -24,6 +24,11 @@ abstract class AbstractOracleDataDictTableNames implements OracleDataDictTableNa
     }
 
     @Override
+    public String MVIEWS() {
+        return prefix() + "MVIEWS";
+    }
+
+    @Override
     public String VIEWS() {
         return prefix() + "VIEWS";
     }

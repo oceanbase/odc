@@ -1591,6 +1591,7 @@ table_option
     | PARTITION_TYPE COMP_EQ? USER_SPECIFIED
     | MICRO_INDEX_CLUSTERED COMP_EQ? BOOL_VALUE
     | AUTO_REFRESH COMP_EQ? (OFF|IMMEDIATE|INTERVAL)
+    | ENABLE_MACRO_BLOCK_BLOOM_FILTER COMP_EQ? BOOL_VALUE
     ;
 
 parallel_option
@@ -1990,21 +1991,23 @@ create_view_stmt
     ;
 
 create_mview_stmt
-    : CREATE MATERIALIZED VIEW view_name (LeftParen mv_column_list RightParen)? table_option_list? (partition_option | auto_partition_option)? (WITH_COLUMN_GROUP LeftParen column_group_list RightParen)? create_mview_opts AS view_subquery view_with_opt
+    : CREATE MATERIALIZED VIEW view_name (LeftParen mv_column_list RightParen)? table_option_list? (partition_option | auto_partition_option)? with_column_group? create_mview_opts? AS view_subquery view_with_opt
     ;
 
 create_mview_opts
     : mview_refresh_opt
-    | mview_refresh_opt mview_enable_disable ON QUERY COMPUTATION
-    | mview_refresh_opt mview_enable_disable QUERY REWRITE
-    | mview_refresh_opt mview_enable_disable ON QUERY COMPUTATION mview_enable_disable QUERY REWRITE
-    | mview_refresh_opt mview_enable_disable QUERY REWRITE mview_enable_disable ON QUERY COMPUTATION
-    | empty
+    | mview_refresh_opt on_query_computation_clause
+    | mview_refresh_opt query_rewrite_clause
+    | mview_refresh_opt on_query_computation_clause query_rewrite_clause
+    | mview_refresh_opt query_rewrite_clause on_query_computation_clause
     ;
 
-mview_enable_disable
-    : DISABLE
-    | ENABLE
+query_rewrite_clause
+    : (DISABLE | ENABLE) QUERY REWRITE
+    ;
+
+on_query_computation_clause
+    : (DISABLE | ENABLE) ON QUERY COMPUTATION
     ;
 
 mview_refresh_opt
@@ -3030,8 +3033,7 @@ common_table_expr
 
 mv_column_list
     : column_name_list
-    | column_name_list Comma PRIMARY KEY LeftParen column_name_list RightParen ((USING INDEX opt_index_options) | (USING INDEX))?
-    | PRIMARY KEY LeftParen column_name_list RightParen ((USING INDEX opt_index_options) | (USING INDEX))?
+    | (column_name_list Comma)? out_of_line_primary_index[true]
     ;
 
 alias_name_list
@@ -5565,6 +5567,7 @@ unreserved_keyword_normal
     | EXTENDED
     | EXTENDED_NOADDR
     | ENABLE_EXTENDED_ROWID
+    | ENABLE_MACRO_BLOCK_BLOOM_FILTER
     | EXTENT_SIZE
     | EXTERNAL_STORAGE_DEST
     | EXTRA

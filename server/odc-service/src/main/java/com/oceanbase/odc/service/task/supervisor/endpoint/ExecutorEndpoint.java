@@ -28,6 +28,8 @@ public class ExecutorEndpoint {
     private String protocol;
     private String host;
     private Integer supervisorPort;
+    // owner of supervisor to run other protocol, may be null, if not provided
+    private Integer supervisorOwnerPort;
     private Integer executorPort;
     private String identifier;
 

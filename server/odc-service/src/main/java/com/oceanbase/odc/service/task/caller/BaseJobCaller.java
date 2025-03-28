@@ -26,6 +26,8 @@ import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.listener.JobCallerEvent;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
+import com.oceanbase.odc.service.task.supervisor.endpoint.ExecutorEndpoint;
+import com.oceanbase.odc.service.task.util.JobUtils;
 import com.oceanbase.odc.service.task.util.TaskExecutorClient;
 import com.oceanbase.odc.service.task.util.TaskSupervisorUtil;
 
@@ -52,8 +54,10 @@ public abstract class BaseJobCaller implements JobCaller {
         }
         try {
             executorInfo = doStart(context);
-            executorIdentifier = executorInfo.getExecutorIdentifier();;
+            ExecutorEndpoint executorEndpoint = executorInfo.getExecutorEndpoint();
+            executorIdentifier = JobUtils.getCorrectedExecutorIdentifier(executorEndpoint, jobConfiguration);
             rows = taskFrameworkService.startSuccess(ji.getId(), executorInfo.getResourceID(),
+                    executorEndpoint.getExecutorPort(),
                     executorIdentifier.toString(), context);
             if (rows > 0) {
                 afterStartSucceed(executorIdentifier, ji);
