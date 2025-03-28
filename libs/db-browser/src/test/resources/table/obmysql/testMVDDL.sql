@@ -8,7 +8,7 @@ CREATE TABLE if not exists test_mv_base (
 CREATE MATERIALIZED VIEW LOG ON test_mv_base
   WITH SEQUENCE (col2, col3,col4) INCLUDING NEW VALUES;
 
-CREATE MATERIALIZED VIEW test_mv_allSyntax(
+CREATE MATERIALIZED VIEW test_mv_all_syntax(
   PRIMARY KEY(prim))
     PARALLEL 5
     PARTITION BY HASH (prim)
@@ -25,11 +25,11 @@ CREATE MATERIALIZED VIEW `test_mv_computation`
   ENABLE ON QUERY COMPUTATION
   AS SELECT col1,count(*) FROM test_mv_base group by col1;
 
-CREATE MATERIALIZED VIEW `test_mv_queryRewrite`
+CREATE MATERIALIZED VIEW `test_mv_query_rewrite`
   ENABLE QUERY REWRITE
   AS SELECT * FROM test_mv_base;
 
-CREATE MATERIALIZED VIEW `test_mv_eachColumn`
+CREATE MATERIALIZED VIEW `test_mv_each_column`
   WITH COLUMN GROUP(each column)
   AS SELECT * FROM test_mv_base;
 
@@ -49,7 +49,7 @@ CREATE MATERIALIZED VIEW `test_mv_never`
   NEVER REFRESH
   AS SELECT * FROM test_mv_base;
 
-CREATE MATERIALIZED VIEW `test_mv_autoRefresh`
+CREATE MATERIALIZED VIEW `test_mv_auto_refresh`
   REFRESH COMPLETE
   START WITH sysdate() NEXT sysdate() + interval 1 day
   AS SELECT * FROM test_mv_base;

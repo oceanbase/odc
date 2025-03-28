@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.metadb.schedule;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -110,8 +111,8 @@ public interface ScheduleTaskRepository extends JpaRepository<ScheduleTaskEntity
                         params.getEndTime()))
                 .and(OdcJpaRepository.eq(ScheduleTaskEntity_.id, params.getId()))
                 .and(OdcJpaRepository.in(ScheduleTaskEntity_.status, params.getStatuses()))
-                .and(OdcJpaRepository.in(ScheduleTaskEntity_.jobName, params.getScheduleIds()));
+                .and(OdcJpaRepository.in(ScheduleTaskEntity_.jobName, params.getScheduleIds()))
+                .and(OdcJpaRepository.in(ScheduleTaskEntity_.jobGroup, params.getJobGroups()));
         return findAll(specification, pageable);
     }
-
 }

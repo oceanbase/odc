@@ -33,11 +33,17 @@ import org.junit.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.tools.dbbrowser.env.BaseTestEnv;
+import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
 import com.oceanbase.tools.dbbrowser.model.DBIndexType;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecord;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewRefreshMethod;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
@@ -61,6 +67,7 @@ import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.schema.OBMySQLSchemaAccessorTest.DataType;
 import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessors;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
+import com.oceanbase.tools.dbbrowser.util.VersionUtils;
 
 import lombok.Data;
 
@@ -71,16 +78,19 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
     private static final String BASE_PATH = "src/test/resources/table/oboracle/";
     private static String ddl;
     private static String dropTables;
+    private static String dropMVs;
     private static String testFunctionDDL;
     private static String testPackageDDL;
     private static String testProcedureDDL;
     private static String testTriggerDDL;
-    private static List<DataType> verifyDataTypes = new ArrayList<>();
-    private static List<ColumnAttributes> columnAttributes = new ArrayList<>();
-    private static JdbcTemplate jdbcTemplate = new JdbcTemplate(getOBOracleDataSource());
+    private static final List<DataType> verifyDataTypes = new ArrayList<>();
+    private static final List<ColumnAttributes> columnAttributes = new ArrayList<>();
+    private static final JdbcTemplate jdbcTemplate = new JdbcTemplate(getOBOracleDataSource());
     private static final String typeName = "emp_type_" + new Random().nextInt(10000);
-    private static final DBSchemaAccessor accessor = new DBSchemaAccessors(getOBOracleDataSource()).createOBOracle();
-
+    private static final DBSchemaAccessors dbSchemaAccessors = new DBSchemaAccessors(getOBOracleDataSource());
+    private static final DBSchemaAccessor accessor = dbSchemaAccessors.createOBOracle();
+    private static final boolean isSupportMaterializedView =
+            VersionUtils.isGreaterThanOrEqualsTo(dbSchemaAccessors.getVersion(), "4.3.5.1");
 
     @BeforeClass
     public static void before() throws Exception {
@@ -95,6 +105,10 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
         dropTables = loadAsString(BASE_PATH + "drop.sql");
 
         batchExcuteSql(dropTables);
+        if (isSupportMaterializedView) {
+            dropMVs = loadAsString(BASE_PATH + "dropMV.sql");
+            batchExcuteSql(dropMVs);
+        }
 
         jdbcTemplate.execute(ddl);
         testFunctionDDL = loadAsString(BASE_PATH + "testFunctionDDL.sql");
@@ -105,16 +119,115 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
         batchExcuteSql(testProcedureDDL);
         testTriggerDDL = loadAsString(BASE_PATH + "testTriggerDDL.sql");
         batchExcuteSql(testTriggerDDL);
+        if (isSupportMaterializedView) {
+            String createMV = loadAsString(BASE_PATH + "testMVDDL.sql");
+            batchExcuteSql(createMV);
+        }
     }
 
     @AfterClass
     public static void after() throws Exception {
         batchExcuteSql(dropTables);
+        if (isSupportMaterializedView) {
+            batchExcuteSql(dropMVs);
+        }
     }
 
     private static void batchExcuteSql(String str) {
         for (String ddl : str.split("/")) {
             jdbcTemplate.execute(ddl);
+        }
+    }
+
+    @Test
+    public void listAllMVs_Success() {
+        if (isSupportMaterializedView) {
+            List<DBObjectIdentity> dbObjectIdentities = accessor.listAllMViewsLike("");
+            Assert.assertTrue(dbObjectIdentities.size() >= 9);
+        }
+    }
+
+    @Test
+    public void listMViews_Success() {
+        if (isSupportMaterializedView) {
+            List<DBObjectIdentity> dbObjectIdentities = accessor.listMViews(getOBOracleSchema());
+            Assert.assertEquals(9, dbObjectIdentities.size());
+        }
+    }
+
+    @Test
+    public void refreshMVData_Success() {
+        if (isSupportMaterializedView) {
+            DBMViewRefreshParameter DBMViewRefreshParameter =
+                    new DBMViewRefreshParameter(getOBOracleSchema(), "TEST_MV_ALLSYNTAX",
+                            DBMaterializedViewRefreshMethod.REFRESH_COMPLETE, 2L);
+            Boolean aBoolean = accessor.refreshMVData(DBMViewRefreshParameter);
+            Assert.assertTrue(aBoolean);
+        }
+    }
+
+    @Test
+    public void getMView_Success() {
+        if (isSupportMaterializedView) {
+            DBMaterializedView test_mv_allSyntax = accessor.getMView(getOBOracleSchema(), "TEST_MV_ALLSYNTAX");
+            Assert.assertEquals("TEST_MV_ALLSYNTAX", test_mv_allSyntax.getName());
+            Assert.assertEquals(4, test_mv_allSyntax.getColumns().size());
+            Assert.assertEquals(DBMaterializedViewRefreshMethod.REFRESH_COMPLETE,
+                    test_mv_allSyntax.getRefreshMethod());
+            Assert.assertFalse(test_mv_allSyntax.getEnableQueryRewrite());
+            Assert.assertFalse(test_mv_allSyntax.getEnableQueryComputation());
+
+            DBMaterializedView test_mv_computation = accessor.getMView(getOBOracleSchema(), "TEST_MV_COMPUTATION");
+            Assert.assertTrue(test_mv_computation.getEnableQueryComputation());
+
+            DBMaterializedView test_mv_queryRewrite =
+                    accessor.getMView(getOBOracleSchema(), "TEST_MV_QUERYREWRITE");
+            Assert.assertTrue(test_mv_queryRewrite.getEnableQueryRewrite());
+
+            DBMaterializedView test_mv_complete = accessor.getMView(getOBOracleSchema(), "TEST_MV_COMPLETE");
+            Assert.assertEquals(DBMaterializedViewRefreshMethod.REFRESH_COMPLETE,
+                    test_mv_complete.getRefreshMethod());
+
+            DBMaterializedView test_mv_fast = accessor.getMView(getOBOracleSchema(), "TEST_MV_FAST");
+            Assert.assertEquals(DBMaterializedViewRefreshMethod.REFRESH_FAST, test_mv_fast.getRefreshMethod());
+
+            DBMaterializedView test_mv_force = accessor.getMView(getOBOracleSchema(), "TEST_MV_FORCE");
+            Assert.assertEquals(DBMaterializedViewRefreshMethod.REFRESH_FORCE, test_mv_force.getRefreshMethod());
+
+            DBMaterializedView test_mv_never = accessor.getMView(getOBOracleSchema(), "TEST_MV_NEVER");
+            Assert.assertEquals(DBMaterializedViewRefreshMethod.NEVER_REFRESH, test_mv_never.getRefreshMethod());
+        }
+    }
+
+    @Test
+    public void listMViewConstraints_Success() {
+        if (isSupportMaterializedView) {
+            List<DBTableConstraint> constraints =
+                    accessor.listMViewConstraints(getOBOracleSchema(), "TEST_MV_ALLSYNTAX");
+            Assert.assertTrue(constraints.size() >= 1);
+        }
+    }
+
+    @Test
+    public void listTableColumnGroups_stmtIsCreateMaterializedView_Success() {
+        if (isSupportMaterializedView) {
+            List<DBColumnGroupElement> columnGroups =
+                    accessor.listTableColumnGroups(getOBOracleSchema(), "TEST_MV_EACHCOLUMN");
+            Assert.assertTrue(columnGroups.get(0).isEachColumn());
+        }
+    }
+
+    @Test
+    public void listMViewRefreshRecords_Success() {
+        if (isSupportMaterializedView) {
+            refreshMVData_Success();
+            DBMViewRefreshRecordParam param =
+                    new DBMViewRefreshRecordParam(getOBOracleSchema(), "TEST_MV_ALLSYNTAX", 1);
+            List<DBMViewRefreshRecord> dbmViewRefreshRecords = accessor.listMViewRefreshRecords(param);
+            Assert.assertEquals(getOBOracleSchema(), dbmViewRefreshRecords.get(0).getMvOwner());
+            Assert.assertEquals("TEST_MV_ALLSYNTAX", dbmViewRefreshRecords.get(0).getMvName());
+            Assert.assertEquals("COMPLETE",
+                    dbmViewRefreshRecords.get(0).getRefreshMethod());
         }
     }
 

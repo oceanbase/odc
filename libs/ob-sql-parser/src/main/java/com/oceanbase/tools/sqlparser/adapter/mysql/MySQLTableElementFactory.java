@@ -95,6 +95,10 @@ public class MySQLTableElementFactory extends OBParserBaseVisitor<TableElement>
         this.parserRuleContext = tableElementContext;
     }
 
+    public MySQLTableElementFactory(@NonNull Out_of_line_primary_indexContext tableElementContext) {
+        this.parserRuleContext = tableElementContext;
+    }
+
     public MySQLTableElementFactory(@NonNull Column_definitionContext columnDefinitionContext) {
         this.parserRuleContext = columnDefinitionContext;
     }
@@ -167,12 +171,27 @@ public class MySQLTableElementFactory extends OBParserBaseVisitor<TableElement>
         List<SortColumn> columns = ctx.column_name_list().column_name().stream()
                 .map(c -> new SortColumn(c, new ColumnReference(c, null, null, c.getText())))
                 .collect(Collectors.toList());
-        IndexOptions indexOptions = getIndexOptions(ctx.index_using_algorithm(), ctx.opt_index_options());
+        IndexOptions indexOptions = null;
+        for (int i = 0; i < ctx.index_using_algorithm().size(); i++) {
+            if (indexOptions == null) {
+                indexOptions = getIndexOptions(ctx.index_using_algorithm(i), null);
+            } else {
+                indexOptions.merge(getIndexOptions(ctx.index_using_algorithm(i), null));
+            }
+        }
+        if (indexOptions == null) {
+            indexOptions = getIndexOptions(null, ctx.opt_index_options());
+        } else {
+            IndexOptions other = getIndexOptions(null, ctx.opt_index_options());
+            if (other != null) {
+                indexOptions.merge(other);
+            }
+        }
         ConstraintState state = null;
         if (indexOptions != null) {
             state = ctx.opt_index_options() != null
                     ? new ConstraintState(ctx.opt_index_options())
-                    : new ConstraintState(ctx.index_using_algorithm());
+                    : new ConstraintState(ctx.index_using_algorithm(0));
             state.setIndexOptions(indexOptions);
         }
         OutOfLineConstraint constraint = new OutOfLineConstraint(ctx, state, columns);

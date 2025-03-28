@@ -42,7 +42,6 @@ public class DBMaterializedView implements DBObject {
     private DBMaterializedViewRefreshSchedule refreshSchedule;
     private Boolean enableQueryRewrite;
     private Boolean enableQueryComputation;
-
     /**
      * reuse properties in {@link DBView} to construct query statements
      */

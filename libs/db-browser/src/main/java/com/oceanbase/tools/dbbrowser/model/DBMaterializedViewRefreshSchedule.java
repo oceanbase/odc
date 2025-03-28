@@ -17,8 +17,6 @@ package com.oceanbase.tools.dbbrowser.model;
 
 import java.util.Date;
 
-import com.ibm.icu.impl.duration.TimeUnit;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -42,11 +40,17 @@ public class DBMaterializedViewRefreshSchedule {
 
     private TimeUnit unit;
 
+    // These properties are used to demonstrate the automatic refresh configuration
+    private String startExpression;
+
+    private String nextExpression;
+
     public enum TimeUnit {
         SECOND,
         MINUTE,
         HOUR,
         DAY,
+        // just for ob mysql
         WEEK,
         MONTH,
         YEAR;

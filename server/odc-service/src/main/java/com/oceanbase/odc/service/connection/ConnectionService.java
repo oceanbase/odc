@@ -739,9 +739,10 @@ public class ConnectionService {
         if (org.springframework.util.CollectionUtils.isEmpty(ids)) {
             return Collections.emptyMap();
         }
-        return entitiesToModels(repository.findAllById(ids), authenticationFacade.currentOrganizationId(), true, true)
-                .stream()
-                .collect(Collectors.groupingBy(ConnectionConfig::getId));
+        List<ConnectionConfig> connectionConfigs = entitiesToModels(repository.findAllById(ids),
+                authenticationFacade.currentOrganizationId(), true, true);
+        fullFillAttributes(connectionConfigs);
+        return connectionConfigs.stream().collect(Collectors.groupingBy(ConnectionConfig::getId));
     }
 
     @SkipAuthorize("odc internal usages")

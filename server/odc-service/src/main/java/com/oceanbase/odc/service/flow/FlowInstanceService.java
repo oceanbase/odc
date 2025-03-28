@@ -52,6 +52,8 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -83,6 +85,7 @@ import com.oceanbase.odc.metadb.collaboration.EnvironmentEntity;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
+import com.oceanbase.odc.metadb.flow.FlowInstanceRepository.FlowInstanceProjection;
 import com.oceanbase.odc.metadb.flow.FlowInstanceSpecs;
 import com.oceanbase.odc.metadb.flow.FlowInstanceViewEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceViewRepository;
@@ -96,6 +99,7 @@ import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
+import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.common.util.SqlUtils;
@@ -132,6 +136,7 @@ import com.oceanbase.odc.service.flow.model.FlowMetaInfo;
 import com.oceanbase.odc.service.flow.model.FlowNodeInstanceDetailResp.FlowNodeInstanceMapper;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
+import com.oceanbase.odc.service.flow.model.InnerQueryFlowInstanceParams;
 import com.oceanbase.odc.service.flow.model.QueryFlowInstanceParams;
 import com.oceanbase.odc.service.flow.processor.EnablePreprocess;
 import com.oceanbase.odc.service.flow.task.BaseRuntimeFlowableDelegate;
@@ -274,6 +279,11 @@ public class FlowInstanceService {
     @Autowired
     @Lazy
     private ApprovalFlowConfigSelector approvalFlowConfigSelector;
+    @Autowired
+    @Lazy
+    private ProjectService projectService;
+    @Autowired
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     private static final long MAX_EXPORT_OBJECT_COUNT = 10000;
     private static final String ODC_SITE_URL = "odc.site.url";
@@ -1478,10 +1488,88 @@ public class FlowInstanceService {
         return flowInstanceRepository.findFlowInstanceIdByScheduleIdAndStatus(scheduleId, status);
     }
 
+    private List<ServiceTaskInstanceEntity> innerListDistinctServiceTaskInstances(
+            @NonNull InnerQueryFlowInstanceParams params) {
+        StringBuilder querySql = new StringBuilder();
+        HashMap<String, Object> queryParamMap = new HashMap<>();
+        queryParamMap.put("organizationId", authenticationFacade.currentOrganizationId());
+        querySql.append("SELECT flow_instance_id, task_type FROM flow_instance_node_task ");
+        querySql.append("WHERE organization_id = :organizationId ");
+        if (CollectionUtils.isNotEmpty(params.getFlowInstanceIds())) {
+            queryParamMap.put("flowInstanceIds", params.getFlowInstanceIds());
+            querySql.append("AND flow_instance_id in (:flowInstanceIds) ");
+        }
+        if (CollectionUtils.isNotEmpty(params.getTaskTypes())) {
+            queryParamMap.put("taskTypes",
+                    params.getTaskTypes().stream().map(Enum::name).collect(Collectors.toSet()));
+            querySql.append("AND task_type in (:taskTypes) ");
+        }
+        if (params.getStartTime() != null) {
+            queryParamMap.put("startTime", params.getStartTime());
+            querySql.append("AND create_time >= :startTime ");
+        }
+        if (params.getEndTime() != null) {
+            queryParamMap.put("endTime", params.getEndTime());
+            querySql.append("AND create_time <= :endTime ");
+        }
+        querySql.append("GROUP BY flow_instance_id;");
+        return namedParameterJdbcTemplate.query(
+                querySql.toString(), queryParamMap,
+                new BeanPropertyRowMapper<>(ServiceTaskInstanceEntity.class));
+    }
+
+    /**
+     * This query is actually a problem, currently can not be based on the type of ASYNC subtask to
+     * reverse the parent task is a AlterSchedule or MultiDatabaseChange. If the parent task is a
+     * AlterSchedule, In this case, parent_instance_id in the flow_instance table stores the id of
+     * schedule_schedule. In the case of MultiDatabaseChange, the id of the flow_instance table is
+     * stored. The two tables may be identical
+     */
+    public List<FlowInstanceState> listSubTaskStates(
+            @NonNull InnerQueryFlowInstanceParams params) {
+        Set<Long> joinedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
+        if (CollectionUtils.isEmpty(joinedProjectIds) || CollectionUtils.isEmpty(params.getParentInstanceIds())) {
+            return Collections.emptyList();
+        }
+
+        Map<Long, FlowStatus> flowInstanceId2Status = flowInstanceRepository.findProjectionByParentInstanceIdIn(
+                params.getParentInstanceIds()).stream()
+                .collect(Collectors.toMap(FlowInstanceProjection::getId, FlowInstanceProjection::getStatus,
+                        (exist, replace) -> exist));
+        if (CollectionUtils.isEmpty(flowInstanceId2Status.keySet())) {
+            return Collections.emptyList();
+        }
+
+        params.setFlowInstanceIds(flowInstanceId2Status.keySet());
+        Map<Long, TaskType> flowInstanceId2SubTaskType = innerListDistinctServiceTaskInstances(params)
+                .stream().collect(Collectors.toMap(ServiceTaskInstanceEntity::getFlowInstanceId,
+                        ServiceTaskInstanceEntity::getTaskType, (exist, replace) -> exist));
+
+        if (CollectionUtils.isEmpty(flowInstanceId2SubTaskType.keySet())) {
+            return Collections.emptyList();
+        }
+
+        final List<FlowInstanceState> flowInstanceStates = new ArrayList<>();
+        flowInstanceId2Status.forEach((id, flowStatus) -> {
+            TaskType taskType = flowInstanceId2SubTaskType.get(id);
+            if (flowStatus != null && taskType != null) {
+                flowInstanceStates.add(new FlowInstanceState(taskType, flowStatus));
+            }
+        });
+        return flowInstanceStates;
+    }
+
     @Data
     public static class ShadowTableComparingUpdateEvent {
         private Long comparingTaskId;
         private Long flowInstanceId;
+    }
+
+    @Data
+    @AllArgsConstructor
+    public static class FlowInstanceState {
+        private TaskType taskType;
+        private FlowStatus status;
     }
 
     @Getter

@@ -20,8 +20,11 @@ import java.util.Base64;
 import java.util.Collections;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -42,6 +45,8 @@ import com.oceanbase.odc.service.db.model.MViewRefreshReq;
 import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.odc.service.state.model.StateName;
 import com.oceanbase.odc.service.state.model.StatefulRoute;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecord;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
@@ -56,6 +61,7 @@ import io.swagger.annotations.ApiOperation;
 
 @RestController
 @RequestMapping("/api/v2/connect/sessions")
+@Validated
 public class DBMaterializedViewController {
 
     @Autowired
@@ -127,6 +133,21 @@ public class DBMaterializedViewController {
         refreshReq.setDatabaseName(databaseName);
         ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
         return Responses.success(dbMaterializedViewService.refresh(session, refreshReq));
+    }
+
+    @ApiOperation(value = "getRefreshRecords", notes = "obtain refresh records for the specified materialized view.")
+    @GetMapping(value = "/{sessionId}/databases/{databaseName}/materializedViews/{mvName}/refreshRecords")
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
+    public ListResponse<DBMViewRefreshRecord> getRefreshRecords(@PathVariable String sessionId,
+            @PathVariable String databaseName,
+            @PathVariable String mvName,
+            @RequestParam(required = false, defaultValue = "1000") @Min(value = 1,
+                    message = "queryLimit must be greater than or equal to 1") @Max(value = 100000,
+                            message = "queryLimit must be less than or equal to 100000") Integer queryLimit) {
+        DBMViewRefreshRecordParam param = new DBMViewRefreshRecordParam(databaseName, mvName,
+                queryLimit);
+        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
+        return Responses.list(dbMaterializedViewService.listRefreshRecords(session, param));
     }
 
 }
