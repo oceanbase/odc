@@ -18,11 +18,9 @@ package com.oceanbase.odc.core.alarm;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.ServiceLoader;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.annotation.Nullable;
 
@@ -33,16 +31,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 class AlarmService {
 
-    private final List<AlarmEventListener> listeners = new ArrayList<>();
+    private final List<AlarmEventListener> listeners = new CopyOnWriteArrayList<>();
 
-    public AlarmService() {
-        ServiceLoader<AlarmEventListener> load = ServiceLoader.load(AlarmEventListener.class);
-        Iterator<AlarmEventListener> iterator = load.iterator();
-        while (iterator.hasNext()) {
-            AlarmEventListener next = iterator.next();
-            log.debug("AlarmEventListener:" + next.getClass().getName() + "have been loaded");
-            listeners.add(next);
-        }
+    public AlarmService() {}
+
+    public void addListener(AlarmEventListener listener) {
+        listeners.add(listener);
     }
 
     public void alarm(String eventName, Map<String, String> eventMessage) {
