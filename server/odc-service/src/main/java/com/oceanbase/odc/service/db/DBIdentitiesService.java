@@ -74,9 +74,9 @@ public class DBIdentitiesService {
                 .forEach(i -> all.computeIfAbsent(i.getSchemaName(), SchemaIdentities::of).add(i));
     }
 
-    void listMViews(DBSchemaAccessor schemaAccessor, Map<String, SchemaIdentities> all){
+    void listMViews(DBSchemaAccessor schemaAccessor, Map<String, SchemaIdentities> all) {
         schemaAccessor.listAllMViewsLike("")
-            .forEach(i -> all.computeIfAbsent(i.getSchemaName(), SchemaIdentities::of).add(i));
+                .forEach(i -> all.computeIfAbsent(i.getSchemaName(), SchemaIdentities::of).add(i));
     }
 
 }
