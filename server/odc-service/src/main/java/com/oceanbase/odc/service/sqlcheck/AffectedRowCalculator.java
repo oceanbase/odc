@@ -19,9 +19,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.commons.collections4.CollectionUtils;
+
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.split.OffsetString;
-import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 import com.oceanbase.odc.service.sqlcheck.rule.BaseAffectedRowsExceedLimit;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 
@@ -39,19 +40,19 @@ public class AffectedRowCalculator {
 
     private String delimiter;
     private DialectType dialectType;
-    private List<SqlCheckRule> rules;
+    private List<SqlCheckRule> affectedRowRules;
 
     private AffectedRowCalculator() {}
 
     public AffectedRowCalculator(String delimiter, @NonNull DialectType dialectType,
-            @NonNull List<SqlCheckRule> rules) {
+            @NonNull List<SqlCheckRule> affectedRowRules) {
         this.delimiter = delimiter;
         this.dialectType = dialectType;
-        this.rules = rules;
+        this.affectedRowRules = affectedRowRules;
     }
 
-    public AffectedRowCalculator(@NonNull DialectType dialectType, @NonNull List<SqlCheckRule> rules) {
-        this(null, dialectType, rules);
+    public AffectedRowCalculator(@NonNull DialectType dialectType, @NonNull List<SqlCheckRule> affectedRowRules) {
+        this(null, dialectType, affectedRowRules);
     }
 
     public long getAffectedRows(@NonNull String sqlScript) {
@@ -76,10 +77,10 @@ public class AffectedRowCalculator {
     }
 
     private Optional<SqlCheckRule> getCalculatorRule() {
-        return rules.stream()
-                .filter(r -> r.getSupportsDialectTypes().contains(dialectType))
-                .filter(r -> r.getType() == SqlCheckRuleType.RESTRICT_SQL_AFFECTED_ROWS)
-                .findFirst();
+        if (CollectionUtils.isNotEmpty(affectedRowRules)) {
+            return Optional.of(affectedRowRules.get(0));
+        }
+        return Optional.empty();
     }
 
 }

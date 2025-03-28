@@ -105,7 +105,7 @@ public class SqlCheckService {
         DefaultSqlChecker sqlChecker =
                 new DefaultSqlChecker(session.getDialectType(), req.getDelimiter(), sqlCheckRules);
         AffectedRowCalculator affectedRowCalculator = new AffectedRowCalculator(req.getDelimiter(),
-                session.getDialectType(), getAllRules(rules, session));
+                session.getDialectType(), getAffectedRowsRules(rules, session));
         List<CheckViolation> checkViolations = sqlChecker.check(req.getScriptContent());
         fullFillRiskLevel(rules, checkViolations);
         return SqlCheckResponse.of(affectedRowCalculator.getAffectedRows(req.getScriptContent()),
@@ -172,11 +172,11 @@ public class SqlCheckService {
         try (SingleConnectionDataSource dataSource = (SingleConnectionDataSource) factory.getDataSource()) {
             JdbcTemplate jdbc = new JdbcTemplate(dataSource);
             List<SqlCheckRule> checkRules = getRules(rules, () -> SqlCheckUtil.getDbVersion(config, dataSource),
-                    config.getDialectType(), jdbc, getRulePredicate(false));
+                    config.getDialectType(), jdbc, getEnabledRulePredicate());
             DefaultSqlChecker sqlChecker = new DefaultSqlChecker(config.getDialectType(), null, checkRules);
             AffectedRowCalculator affectedRowCalculator = new AffectedRowCalculator(config.getDialectType(),
                     getRules(rules, () -> SqlCheckUtil.getDbVersion(config, dataSource),
-                            config.getDialectType(), jdbc, getRulePredicate(true)));
+                            config.getDialectType(), jdbc, getAffectedRowRulePredicate()));
             List<CheckViolation> checkViolations = new ArrayList<>();
             for (OffsetString sql : sqls) {
                 List<CheckViolation> violations = sqlChecker.check(Collections.singletonList(sql), checkContext);
@@ -189,12 +189,12 @@ public class SqlCheckService {
 
     public List<SqlCheckRule> getRules(List<Rule> rules, @NonNull ConnectionSession session) {
         return getRules(rules, () -> ConnectionSessionUtil.getVersion(session), session.getDialectType(),
-                session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY), getRulePredicate(false));
+                session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY), getEnabledRulePredicate());
     }
 
-    public List<SqlCheckRule> getAllRules(List<Rule> rules, @NonNull ConnectionSession session) {
+    public List<SqlCheckRule> getAffectedRowsRules(List<Rule> rules, @NonNull ConnectionSession session) {
         return getRules(rules, () -> ConnectionSessionUtil.getVersion(session), session.getDialectType(),
-                session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY), getRulePredicate(true));
+                session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY), getAffectedRowRulePredicate());
     }
 
     public List<SqlCheckRule> getRules(List<Rule> rules, Supplier<String> dbVersionSupplier,
@@ -231,17 +231,21 @@ public class SqlCheckService {
         return violatedRules;
     }
 
-    private Predicate<Rule> getRulePredicate(boolean filterAll) {
-        if (filterAll) {
-            return rule -> true;
-        }
+    private Predicate<Rule> getAffectedRowRulePredicate() {
+        return rule -> {
+            RuleMetadata metadata = rule.getMetadata();
+            return metadata != null
+                    && "${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-affected-rows.name}"
+                            .equals(metadata.getName());
+        };
+    }
+
+    private Predicate<Rule> getEnabledRulePredicate() {
         return rule -> {
             RuleMetadata metadata = rule.getMetadata();
             if (metadata == null) {
                 return false;
-            } else if (!((Boolean.TRUE.equals(rule.getEnabled()))
-                    || "${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.restrict-sql-affected-rows.name}"
-                            .equals(metadata.getName()))) {
+            } else if (!Boolean.TRUE.equals(rule.getEnabled())) {
                 return false;
             }
             return Objects.equals(metadata.getType(), RuleType.SQL_CHECK);
