@@ -29,6 +29,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
@@ -109,6 +110,7 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
 
     @Test
     public void startTask_ExportSQL_GenerateFileSuccess() throws Exception {
+        Mockito.when(organizationConfigUtils.getDefaultQueryLimit()).thenReturn(100);
         ResultSetExportTaskParameter req =
                 createResultSetExportTaskReq(DataTransferFormat.SQL, EncodingType.UTF_8, mysqlSession);
         ResultSetExportTaskContext context = manager.start(mysqlConnectionConfig, req, taskId);
@@ -121,6 +123,7 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
 
     @Test
     public void startTask_ExportCSV_GenerateFileSuccess() throws Exception {
+        Mockito.when(organizationConfigUtils.getDefaultQueryLimit()).thenReturn(100);
         ResultSetExportTaskParameter req =
                 createResultSetExportTaskReq(DataTransferFormat.CSV, EncodingType.GBK, mysqlSession);
         CSVFormat csvFormat = new CSVFormat();
@@ -137,6 +140,7 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
 
     @Test
     public void startTask_ExportCSV_ExportFailed() {
+        Mockito.when(organizationConfigUtils.getDefaultQueryLimit()).thenReturn(100);
         ResultSetExportTaskParameter req = new ResultSetExportTaskParameter();
         req.setSql("select * from not_exist_table");
         req.setMaxRows(1000L);
@@ -157,6 +161,7 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
 
     @Test
     public void startTask_ExportEXCEL_GenerateFileSuccess() throws Exception {
+        Mockito.when(organizationConfigUtils.getDefaultQueryLimit()).thenReturn(100);
         ResultSetExportTaskParameter req =
                 createResultSetExportTaskReq(DataTransferFormat.EXCEL, EncodingType.GBK, mysqlSession);
         req.setCsvFormat(new CSVFormat());
@@ -169,6 +174,7 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
 
     @Test
     public void startTask_ExportSQL_GenerateFileSuccess_WithoutTableName() throws Exception {
+        Mockito.when(organizationConfigUtils.getDefaultQueryLimit()).thenReturn(100);
         ResultSetExportTaskParameter req =
                 createResultSetExportTaskReq(DataTransferFormat.SQL, EncodingType.UTF_8, mysqlSession);
         req.setTableName(null);
@@ -181,6 +187,7 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
 
     @Test
     public void startTask_ExportCSV_Oracle_GenerateFileSuccess() throws Exception {
+        Mockito.when(organizationConfigUtils.getDefaultQueryLimit()).thenReturn(100);
         ResultSetExportTaskParameter req =
                 createResultSetExportTaskReq(DataTransferFormat.CSV, EncodingType.GBK, oracleSession);
         CSVFormat csvFormat = new CSVFormat();
@@ -197,6 +204,7 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
 
     @Test
     public void startTask_ExportCSV_WithMaxRowsLimit_MySQL() throws Exception {
+        Mockito.when(organizationConfigUtils.getDefaultQueryLimit()).thenReturn(100);
         ResultSetExportTaskParameter req =
                 createResultSetExportTaskReq(DataTransferFormat.CSV, EncodingType.GBK, oracleSession);
         req.setMaxRows(1L);
@@ -214,6 +222,7 @@ public class DumperResultSetExportTaskManagerTest extends ServiceTestEnv {
 
     @Test
     public void startTask_ExportCSV_WithMaxRowsLimit_Oracle() throws Exception {
+        Mockito.when(organizationConfigUtils.getDefaultQueryLimit()).thenReturn(100);
         ResultSetExportTaskParameter req =
                 createResultSetExportTaskReq(DataTransferFormat.CSV, EncodingType.GBK, oracleSession);
         req.setMaxRows(1L);
