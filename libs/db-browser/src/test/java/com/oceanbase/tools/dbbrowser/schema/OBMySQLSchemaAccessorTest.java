@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -222,9 +223,12 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
         if (isSupportMaterializedView) {
             Map<String, List<DBTableColumn>> columns = accessor.listBasicMViewColumns(getOBMySQLDataBaseName());
             Assert.assertTrue(columns.containsKey("test_mv_all_syntax"));
+            Assert.assertTrue(columns.get("test_mv_all_syntax").stream().allMatch(column -> column.getSchemaName().equals(getOBMySQLDataBaseName())));
+            Assert.assertEquals(Arrays.asList("prim", "col2", "col3", "col4"),(columns.get("test_mv_all_syntax").stream().map(DBTableColumn::getName).collect(Collectors.toList())));
+
             Assert.assertTrue(columns.containsKey("test_mv_computation"));
-            Assert.assertEquals(4, columns.get("test_mv_all_syntax").size());
-            Assert.assertEquals(2, columns.get("test_mv_computation").size());
+            Assert.assertTrue(columns.get("test_mv_computation").stream().allMatch(column -> column.getSchemaName().equals(getOBMySQLDataBaseName())));
+            Assert.assertEquals(Arrays.asList("col1", "count(*)"),(columns.get("test_mv_computation").stream().map(DBTableColumn::getName).collect(Collectors.toList())));
         }
     }
 
@@ -240,7 +244,6 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
                 Assert.assertEquals(column.getTableName(), "test_mv_all_syntax");
                 Assert.assertEquals(column.getSchemaName(), getOBMySQLDataBaseName());
             });
-
         }
     }
 

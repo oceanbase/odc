@@ -1253,4 +1253,17 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBMViewRefreshRecord.class));
     }
 
+    @Override
+    public Map<String, List<DBTableColumn>> listBasicMViewColumns(String schemaName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_MATERIALIZED_VIEW_COLUMNS);
+        List<DBTableColumn> tableColumns = jdbcOperations.query(sql, new Object[] {schemaName, schemaName},
+            listBasicColumnsRowMapper());
+        return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
+    }
+
+    public List<DBTableColumn> listBasicMViewColumns(String schemaName, String externalTableName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_MATERIALIZED_VIEW_COLUMNS);
+        return jdbcOperations.query(sql, new Object[] {schemaName, externalTableName}, listBasicColumnsRowMapper());
+    }
+
 }
