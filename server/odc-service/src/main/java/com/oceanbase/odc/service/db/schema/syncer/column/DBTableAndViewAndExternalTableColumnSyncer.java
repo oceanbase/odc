@@ -48,7 +48,8 @@ public class DBTableAndViewAndExternalTableColumnSyncer extends AbstractDBColumn
 
     @Override
     public Collection<DBObjectType> getColumnRelatedObjectTypes() {
-        return Arrays.asList(DBObjectType.TABLE, DBObjectType.VIEW, DBObjectType.EXTERNAL_TABLE);
+        return Arrays.asList(DBObjectType.TABLE, DBObjectType.VIEW, DBObjectType.EXTERNAL_TABLE,
+                DBObjectType.MATERIALIZED_VIEW);
     }
 
     @Override

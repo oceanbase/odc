@@ -21,6 +21,9 @@ package com.oceanbase.tools.dbbrowser.schema.constant;
  * @Description: []
  */
 public final class Statements {
+    public static final String LIST_BASIC_MATERIALIZED_VIEW_COLUMNS = "list-basic-materialized-view-columns";
+    public static final String LIST_BASIC_SCHEMA_MATERIALIZED_VIEW_COLUMNS =
+            "list-basic-schema-materialized-view-columns";
     public static final String LIST_BASIC_EXTERNAL_TABLE_COLUMNS = "list-basic-external-table-columns";
     public static final String LIST_BASIC_SCHEMA_EXTERNAL_TABLE_COLUMNS = "list-basic-schema-external-table-columns";
     public static final String LIST_BASIC_TABLE_COLUMNS = "list-basic-table-columns";

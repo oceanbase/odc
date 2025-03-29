@@ -326,6 +326,16 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
+    public Map<String, List<DBTableColumn>> listBasicMViewColumns(String schemaName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public List<DBTableColumn> listBasicMViewColumns(String schemaName, String externalTableName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
     public Map<String, List<DBTableColumn>> listBasicColumnsInfo(String schemaName) {
         throw new UnsupportedOperationException("Not supported yet");
     }

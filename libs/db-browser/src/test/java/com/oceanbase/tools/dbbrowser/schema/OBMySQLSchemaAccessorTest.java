@@ -218,6 +218,33 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void listBasicMViewColumns_InSchema_Success() {
+        if (isSupportMaterializedView) {
+            Map<String, List<DBTableColumn>> columns = accessor.listBasicMViewColumns(getOBMySQLDataBaseName());
+            Assert.assertTrue(columns.containsKey("test_mv_all_syntax"));
+            Assert.assertTrue(columns.containsKey("test_mv_computation"));
+            Assert.assertEquals(4, columns.get("test_mv_all_syntax").size());
+            Assert.assertEquals(2, columns.get("test_mv_computation").size());
+        }
+    }
+
+    @Test
+    public void listBasicMViewColumns_InMView_Success() {
+        if (isSupportMaterializedView) {
+            List<DBTableColumn> columns =
+                    accessor.listBasicMViewColumns(getOBMySQLDataBaseName(), "test_mv_all_syntax");
+            Assert.assertEquals(4, columns.size());
+            List<String> expect = Arrays.asList("prim", "col2", "col3", "col4");
+            columns.forEach(column -> {
+                Assert.assertTrue(expect.contains(column.getName()));
+                Assert.assertEquals(column.getTableName(), "test_mv_all_syntax");
+                Assert.assertEquals(column.getSchemaName(), getOBMySQLDataBaseName());
+            });
+
+        }
+    }
+
+    @Test
     public void listUsers_Success() {
         List<DBObjectIdentity> dbUsers = accessor.listUsers();
         Assert.assertFalse(dbUsers.isEmpty());
