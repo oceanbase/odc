@@ -236,12 +236,16 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
         if (isSupportMaterializedView) {
             Map<String, List<DBTableColumn>> columns = accessor.listBasicMViewColumns(getOBOracleSchema());
             Assert.assertTrue(columns.containsKey("TEST_MV_ALLSYNTAX"));
-            Assert.assertTrue(columns.get("TEST_MV_ALLSYNTAX").stream().allMatch(column -> column.getSchemaName().equals(getOBOracleSchema())));
-            Assert.assertEquals(Arrays.asList("PRIM", "COL2", "COL3", "COL4"),(columns.get("TEST_MV_ALLSYNTAX").stream().map(DBTableColumn::getName).collect(Collectors.toList())));
+            Assert.assertTrue(columns.get("TEST_MV_ALLSYNTAX").stream()
+                    .allMatch(column -> column.getSchemaName().equals(getOBOracleSchema())));
+            Assert.assertEquals(Arrays.asList("PRIM", "COL2", "COL3", "COL4"), (columns.get("TEST_MV_ALLSYNTAX")
+                    .stream().map(DBTableColumn::getName).collect(Collectors.toList())));
 
             Assert.assertTrue(columns.containsKey("TEST_MV_COMPUTATION"));
-            Assert.assertTrue(columns.get("TEST_MV_COMPUTATION").stream().allMatch(column -> column.getSchemaName().equals(getOBOracleSchema())));
-            Assert.assertEquals(Arrays.asList("COL1", "CNT"),(columns.get("TEST_MV_COMPUTATION").stream().map(DBTableColumn::getName).collect(Collectors.toList())));
+            Assert.assertTrue(columns.get("TEST_MV_COMPUTATION").stream()
+                    .allMatch(column -> column.getSchemaName().equals(getOBOracleSchema())));
+            Assert.assertEquals(Arrays.asList("COL1", "CNT"), (columns.get("TEST_MV_COMPUTATION").stream()
+                    .map(DBTableColumn::getName).collect(Collectors.toList())));
         }
     }
 
@@ -249,7 +253,7 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
     public void listBasicMViewColumns_InMView_Success() {
         if (isSupportMaterializedView) {
             List<DBTableColumn> columns =
-                accessor.listBasicMViewColumns(getOBOracleSchema(), "TEST_MV_ALLSYNTAX");
+                    accessor.listBasicMViewColumns(getOBOracleSchema(), "TEST_MV_ALLSYNTAX");
             Assert.assertEquals(4, columns.size());
             List<String> expect = Arrays.asList("PRIM", "COL2", "COL3", "COL4");
             columns.forEach(column -> {

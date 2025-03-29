@@ -32,8 +32,10 @@ import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import lombok.NonNull;
 
 /**
- * @desription: {@link DBTableAndViewColumnSyncer} is used to synchronize {@link DBObjectType#COLUMN} in
- * {@link DBObjectType#TABLE}, {@link DBObjectType#VIEW} ,{@link DBObjectType#EXTERNAL_TABLE} and {@link DBObjectType#MATERIALIZED_VIEW} to ODC dependent metadata
+ * @desription: {@link DBTableAndViewColumnSyncer} is used to synchronize
+ *              {@link DBObjectType#COLUMN} in {@link DBObjectType#TABLE}, {@link DBObjectType#VIEW}
+ *              ,{@link DBObjectType#EXTERNAL_TABLE} and {@link DBObjectType#MATERIALIZED_VIEW} to
+ *              ODC dependent metadata
  * @author gaoda.xy
  * @date 2024/4/10 20:13
  */

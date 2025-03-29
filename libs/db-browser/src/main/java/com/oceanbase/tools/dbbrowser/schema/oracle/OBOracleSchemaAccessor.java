@@ -1257,7 +1257,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     public Map<String, List<DBTableColumn>> listBasicMViewColumns(String schemaName) {
         String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_MATERIALIZED_VIEW_COLUMNS);
         List<DBTableColumn> tableColumns = jdbcOperations.query(sql, new Object[] {schemaName, schemaName},
-            listBasicColumnsRowMapper());
+                listBasicColumnsRowMapper());
         return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
     }
 
