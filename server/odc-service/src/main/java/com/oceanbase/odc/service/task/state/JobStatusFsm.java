@@ -33,6 +33,10 @@ public class JobStatusFsm {
      * @return
      */
     public JobStatus determinateJobStatus(JobStatus currentStatus, TaskStatus taskStatus) {
+        // check if final state has reached
+        if (currentStatus.isTerminated()) {
+            return currentStatus;
+        }
         switch (taskStatus) {
             // prepare is task init status, job should expected in running status
             // running Job status is expected, if job = canceling, outside may set to cancel when task timeout
@@ -50,8 +54,6 @@ public class JobStatusFsm {
             // task done will drive job status to done
             case DONE:
                 return JobStatus.DONE;
-            case EXEC_TIMEOUT:
-                return JobStatus.EXEC_TIMEOUT;
             default:
                 throw new IllegalStateException("status " + taskStatus + " not handled");
         }
