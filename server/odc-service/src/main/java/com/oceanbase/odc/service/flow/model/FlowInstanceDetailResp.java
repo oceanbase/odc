@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
@@ -101,6 +102,7 @@ public class FlowInstanceDetailResp {
     private Date completeTime;
     private List<FlowNodeInstanceDetailResp> nodeList;
     private Project project;
+    private Long affectedRows;
 
     @Getter
     @Builder
@@ -298,6 +300,15 @@ public class FlowInstanceDetailResp {
                 return resp;
             }
             resp.setDatabase(getDatabaseById.apply(taskEntity.getDatabaseId()));
+            Optional<TaskEntity> preCheckOp =
+                    taskEntities.stream().filter(t -> t.getTaskType() == TaskType.PRE_CHECK).findFirst();
+            if (preCheckOp.isPresent()) {
+                PreCheckTaskResult preCheckTaskResult = JsonUtils.fromJson(preCheckOp.get().getResultJson(),
+                        PreCheckTaskResult.class);
+                if (preCheckTaskResult != null && preCheckTaskResult.getSqlCheckResult() != null) {
+                    resp.setAffectedRows(preCheckTaskResult.getSqlCheckResult().getAffectedRows());
+                }
+            }
             return resp;
         }
 
