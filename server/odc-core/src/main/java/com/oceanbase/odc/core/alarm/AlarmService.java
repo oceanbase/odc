@@ -37,6 +37,7 @@ class AlarmService {
 
     public void addListener(AlarmEventListener listener) {
         listeners.add(listener);
+        log.info("Add AlarmEventListener: {}", listener);
     }
 
     public void alarm(String eventName, Map<String, String> eventMessage) {
