@@ -269,6 +269,17 @@ public interface DBSchemaAccessor {
     List<DBTableColumn> listBasicExternalTableColumns(String schemaName, String externalTableName);
 
     /**
+     * Get all materialized view columns(hold only basic info) in the specified schema
+     */
+    Map<String, List<DBTableColumn>> listBasicMViewColumns(String schemaName);
+
+    /**
+     * Get all materialized view columns(hold only basic info) in the specified schema and materialized
+     * view
+     */
+    List<DBTableColumn> listBasicMViewColumns(String schemaName, String externalTableName);
+
+    /**
      * Get all table and view columns info (hold only basic info: schema, table and column name) in the
      * specified schema
      */

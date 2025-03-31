@@ -16,6 +16,7 @@
 package com.oceanbase.tools.dbbrowser.schema.mysql;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.jdbc.core.JdbcOperations;
 
@@ -24,6 +25,7 @@ import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecord;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 
 /**
@@ -65,6 +67,15 @@ public class OBMySQLBetween432And4351SchemaAccessor extends OBMySQLSchemaAccesso
 
     @Override
     public List<DBMViewRefreshRecord> listMViewRefreshRecords(DBMViewRefreshRecordParam param) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public Map<String, List<DBTableColumn>> listBasicMViewColumns(String schemaName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    public List<DBTableColumn> listBasicMViewColumns(String schemaName, String externalTableName) {
         throw new UnsupportedOperationException("not support yet");
     }
 

@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -214,6 +215,39 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
             Assert.assertEquals("test_mv_all_syntax", dbmViewRefreshRecords.get(0).getMvName());
             Assert.assertEquals("COMPLETE",
                     dbmViewRefreshRecords.get(0).getRefreshMethod());
+        }
+    }
+
+    @Test
+    public void listBasicMViewColumns_InSchema_Success() {
+        if (isSupportMaterializedView) {
+            Map<String, List<DBTableColumn>> columns = accessor.listBasicMViewColumns(getOBMySQLDataBaseName());
+            Assert.assertTrue(columns.containsKey("test_mv_all_syntax"));
+            Assert.assertTrue(columns.get("test_mv_all_syntax").stream()
+                    .allMatch(column -> column.getSchemaName().equals(getOBMySQLDataBaseName())));
+            Assert.assertEquals(Arrays.asList("prim", "col2", "col3", "col4"), (columns.get("test_mv_all_syntax")
+                    .stream().map(DBTableColumn::getName).collect(Collectors.toList())));
+
+            Assert.assertTrue(columns.containsKey("test_mv_computation"));
+            Assert.assertTrue(columns.get("test_mv_computation").stream()
+                    .allMatch(column -> column.getSchemaName().equals(getOBMySQLDataBaseName())));
+            Assert.assertEquals(Arrays.asList("col1", "count(*)"), (columns.get("test_mv_computation").stream()
+                    .map(DBTableColumn::getName).collect(Collectors.toList())));
+        }
+    }
+
+    @Test
+    public void listBasicMViewColumns_InMView_Success() {
+        if (isSupportMaterializedView) {
+            List<DBTableColumn> columns =
+                    accessor.listBasicMViewColumns(getOBMySQLDataBaseName(), "test_mv_all_syntax");
+            Assert.assertEquals(4, columns.size());
+            List<String> expect = Arrays.asList("prim", "col2", "col3", "col4");
+            columns.forEach(column -> {
+                Assert.assertTrue(expect.contains(column.getName()));
+                Assert.assertEquals(column.getTableName(), "test_mv_all_syntax");
+                Assert.assertEquals(column.getSchemaName(), getOBMySQLDataBaseName());
+            });
         }
     }
 

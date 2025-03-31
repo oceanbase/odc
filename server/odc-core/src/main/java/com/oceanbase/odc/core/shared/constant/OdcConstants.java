@@ -54,6 +54,8 @@ public class OdcConstants {
     public static final String PROCEDURE_GET_LINE = "OBODC_PROCEDURE_GET_LINE";
 
     public static final String VALIDATE_DDL_TABLE_POSTFIX = "___ODC___TMP";
+    public static final String MATERIALIZED_VIEW_LOG_PREFIX = "MLOG$_";
+    public static final String CONTAINER_TABLE_PREFIX = "__MV_CONTAINER_";
 
     public static final String PL_OBJECT_STATUS_VALID = "VALID";
     public static final String PL_OBJECT_STATUS_INVALID = "INVALID";
