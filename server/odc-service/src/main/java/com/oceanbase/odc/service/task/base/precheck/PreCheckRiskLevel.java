@@ -36,12 +36,12 @@ public class PreCheckRiskLevel implements Serializable {
 
     private static final long serialVersionUID = -612562837803359928L;
     /**
-     * ref {@link RiskLevel#getId()} ()}
+     * ref {@link RiskLevel#getId()}
      */
     private Long riskLevelId;
 
     /**
-     * ref {@link RiskLevel#getLevel()} ()}
+     * ref {@link RiskLevel#getLevel()}
      */
     private Integer riskLevel;
 
