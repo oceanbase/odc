@@ -183,6 +183,7 @@ import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.task.TaskService;
+import com.oceanbase.odc.service.task.base.precheck.PreCheckRiskLevel;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
@@ -396,6 +397,9 @@ public class FlowInstanceService {
         Map<Long, List<List<String>>> approvalConfigId2Candidates = new HashMap<>();
         for (Entry<Long, Set<Long>> entry : approvalConfigId2ResourceRoleIds.entrySet()) {
             for (Long resourceRoleId : entry.getValue()) {
+                if (resourceRoleId == null) {
+                    continue;
+                }
                 ResourceRoleEntity resourceRole = resourceRoleId2ResourceRole.get(resourceRoleId);
                 Set<Long> candidateResourceRoleIds = new HashSet<>();
                 if (resourceRole != null && resourceRole.getResourceType() == ResourceType.ODC_DATABASE) {
@@ -461,6 +465,7 @@ public class FlowInstanceService {
                 List<ApplyDatabase> applyDatabases = databases.stream().filter(
                         d -> e.getCandidateResourceIds().contains(d.getId())).collect(Collectors.toList());
                 parameter.setDatabases(applyDatabases);
+                parameter.setRiskLevel(PreCheckRiskLevel.from(e.getRiskLevel()));
                 createReq.setParameters(parameter);
                 return innerCreateWithRiskLevel(createReq, e.getRiskLevel());
             }).collect(Collectors.toList());
@@ -478,6 +483,7 @@ public class FlowInstanceService {
                 List<ApplyTable> applyTables = tables.stream().filter(
                         d -> e.getCandidateResourceIds().contains(d.getDatabaseId())).collect(Collectors.toList());
                 parameter.setTables(applyTables);
+                parameter.setRiskLevel(PreCheckRiskLevel.from(e.getRiskLevel()));
                 createReq.setParameters(parameter);
                 return innerCreateWithRiskLevel(createReq, e.getRiskLevel());
             }).collect(Collectors.toList());
@@ -1017,7 +1023,6 @@ public class FlowInstanceService {
                 || flowInstanceReq.getTaskType() == TaskType.APPLY_TABLE_PERMISSION) {
             Verify.singleton(riskLevels, "RiskLevel");
             Verify.notNull(preCheckTaskEntity.getId(), "PreCheckTaskId");
-            FlowTaskUtil.putRiskLevelWithPreCheckTaskId(preCheckTaskEntity.getId(), riskLevels.get(0));
         }
 
         TaskEntity taskEntity = taskService.create(flowInstanceReq, (int) TimeUnit.SECONDS
@@ -1053,7 +1058,6 @@ public class FlowInstanceService {
             flowInstance.buildTopology();
             flowInstanceReq.setId(flowInstance.getId());
         } catch (Exception e) {
-            FlowTaskUtil.removeRiskLevelWithPreCheckTaskId(preCheckTaskEntity.getId());
             log.warn("Failed to build FlowInstance, flowInstanceReq={}", flowInstanceReq, e);
             throw e;
         } finally {
