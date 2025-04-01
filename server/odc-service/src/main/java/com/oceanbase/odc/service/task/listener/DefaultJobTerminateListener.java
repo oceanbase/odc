@@ -29,6 +29,9 @@ import com.oceanbase.odc.core.alarm.AlarmEventNames;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.task.JobEntity;
+import com.oceanbase.odc.service.notification.Broker;
+import com.oceanbase.odc.service.notification.NotificationProperties;
+import com.oceanbase.odc.service.notification.helper.EventBuilder;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.schedule.alarm.ScheduleAlarmUtils;
@@ -58,6 +61,12 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
     private ScheduleService scheduleService;
     @Autowired
     private List<TerminateProcessor> terminateProcessors;
+    @Autowired
+    private NotificationProperties notificationProperties;
+    @Autowired
+    private Broker broker;
+    @Autowired
+    private EventBuilder eventBuilder;
 
     @Override
     public void onEvent(JobTerminateEvent event) {
@@ -80,6 +89,7 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
             if (event.getStatus() == JobStatus.EXEC_TIMEOUT) {
                 ScheduleAlarmUtils.timeout(scheduleTask.getId());
             }
+            notify(scheduleTask);
             // invoke task related processor
             doProcessor(jobEntity, scheduleTask);
         });
@@ -103,6 +113,18 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
             if (processor.interested(jobEntity.getJobType())) {
                 processor.process(scheduleTask, jobEntity);
             }
+        }
+    }
+
+    private void notify(ScheduleTask task) {
+        if (!notificationProperties.isEnabled()) {
+            return;
+        }
+        try {
+            broker.enqueueEvent(task.getStatus() == TaskStatus.DONE ? eventBuilder.ofSucceededTask(task)
+                    : eventBuilder.ofFailedTask(task));
+        } catch (Exception e) {
+            log.warn("Failed to enqueue event.", e);
         }
     }
 }

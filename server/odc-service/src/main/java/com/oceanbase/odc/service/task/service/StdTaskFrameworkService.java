@@ -80,7 +80,6 @@ import com.oceanbase.odc.service.task.executor.HeartbeatRequest;
 import com.oceanbase.odc.service.task.executor.TaskResult;
 import com.oceanbase.odc.service.task.listener.DefaultJobProcessUpdateEvent;
 import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
-import com.oceanbase.odc.service.task.processor.result.ResultProcessor;
 import com.oceanbase.odc.service.task.resource.AbstractK8sResourceOperatorBuilder;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
@@ -138,8 +137,6 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     private ExecutorEndpointManager executorEndpointManager;
     // default impl
     private JobStatusFsm jobStatusFsm = new JobStatusFsm();
-    @Autowired
-    private List<ResultProcessor> resultProcessors;
 
     @Override
     public JobEntity find(Long id) {
@@ -351,6 +348,11 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             log.warn("Job identity is not exists by id {}", taskResult.getJobIdentity().getId());
             return;
         }
+        TaskResult previous = JsonUtils.fromJson(je.getResultJson(), TaskResult.class);
+        if (taskResult.isProgressChanged(previous)) {
+            taskResultPublisherExecutor
+                    .execute(() -> publisher.publishEvent(new DefaultJobProcessUpdateEvent(taskResult)));
+        }
         // that's may be a dangerous operation if task report too frequent
         saveOrUpdateLogMetadata(taskResult, je.getId(), je.getStatus());
         if (je.getStatus().isTerminated() || je.getStatus() == JobStatus.CANCELING) {
@@ -377,7 +379,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         }
 
         String executorEndpoint = executorEndpointManager.getExecutorEndpoint(je);
-        TaskResult result = taskExecutorClient.getResult(executorEndpoint, JobIdentity.of(id));
+        TaskResult result = getTaskResult(executorEndpoint, je);
         if (result.getStatus() == TaskStatus.PREPARING) {
             log.info("Job is preparing, ignore refresh, jobId={}, currentStatus={}", id, result.getStatus());
             return;
@@ -394,7 +396,6 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             return;
         }
         log.info("Progress changed, will update result, jobId={}, currentProgress={}", id, result.getProgress());
-        handleTaskResult(je.getJobType(), result);
         saveOrUpdateLogMetadata(result, je.getId(), je.getStatus());
 
         if (result.getStatus().isTerminated() && MapUtils.isEmpty(result.getLogMetadata())) {
@@ -412,8 +413,6 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             log.warn("Update task result failed, the job may finished or deleted already, jobId={}", jobEntity.getId());
             return;
         }
-        taskResultPublisherExecutor
-                .execute(() -> publisher.publishEvent(new DefaultJobProcessUpdateEvent(result)));
 
         if (publisher != null && result.getStatus() != null && result.getStatus().isTerminated()) {
             taskResultPublisherExecutor.execute(() -> publisher
@@ -460,7 +459,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         }
         try {
             String executorEndpoint = executorEndpointManager.getExecutorEndpoint(je);
-            TaskResult result = taskExecutorClient.getResult(executorEndpoint, JobIdentity.of(id));
+            TaskResult result = getTaskResult(executorEndpoint, je);
 
             if (je.getRunMode().isK8s() && MapUtils.isEmpty(result.getLogMetadata())) {
                 log.info("Refresh log failed due to log have not uploaded,  jobId={}, currentStatus={}", je.getId(),
@@ -471,7 +470,6 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             // TODO(tianke): move this logic to event listener
             jobRepository.updateResultJson(JsonUtils.toJson(result), result.getJobIdentity().getId());
             saveOrUpdateLogMetadata(result, je.getId(), je.getStatus());
-            handleTaskResult(je.getJobType(), result);
             return true;
         } catch (Exception exception) {
             log.warn("Refresh log meta failed,errorMsg={}", exception.getMessage());
@@ -520,7 +518,6 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
     private int updateTaskResult(TaskResult taskResult, JobEntity currentJob, JobStatus expectedStatus) {
         JobEntity jse = new JobEntity();
-        handleTaskResult(currentJob.getJobType(), taskResult);
         jse.setResultJson(JsonUtils.toJson(taskResult));
         jse.setStatus(expectedStatus);
         jse.setProgressPercentage(taskResult.getProgress());
@@ -695,11 +692,15 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
                 JobAttributeEntity::getAttributeValue));
     }
 
-    private void handleTaskResult(String jobType, TaskResult taskResult) {
-        for (ResultProcessor processor : resultProcessors) {
-            if (processor.interested(jobType)) {
-                processor.process(taskResult);
-            }
+    // get task result from task pod when k8s mode and call task result processor if result is updated
+    private TaskResult getTaskResult(String executorEndpoint, JobEntity je) throws JobException {
+        TaskResult result = taskExecutorClient.getResult(executorEndpoint, JobIdentity.of(je.getId()));
+        TaskResult previous = JsonUtils.fromJson(je.getResultJson(), TaskResult.class);
+        if (result.isProgressChanged(previous)) {
+            taskResultPublisherExecutor
+                    .execute(() -> publisher.publishEvent(new DefaultJobProcessUpdateEvent(result)));
         }
+        return result;
     }
+
 }
