@@ -65,6 +65,7 @@ import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.common.i18n.I18n;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.lang.Holder;
+import com.oceanbase.odc.common.util.MapUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.flow.model.TaskParameters;
@@ -360,6 +361,9 @@ public class FlowInstanceService {
                     .filter(Objects::nonNull)
                     .collect(Collectors.toCollection(LinkedHashSet::new));
         }
+        if (CollectionUtils.isEmpty(dbIds)) {
+            throw new IllegalStateException("databaseIds is not supposed to be empty");
+        }
         Map<RiskLevelDescriber, Long> riskLevelDescribers2DbId = databaseService.listDatabasesDetailsByIds(dbIds)
                 .stream()
                 .collect(Collectors.toMap(d -> RiskLevelDescriber.of(d, createReq.getTaskType().name()),
@@ -370,19 +374,19 @@ public class FlowInstanceService {
         Map<Long, RiskLevel> dbId2RiskLevel = new HashMap<>();
         RiskLevel defultHighestRiskLevel = null;
         for (Entry<RiskLevelDescriber, Long> entry : riskLevelDescribers2DbId.entrySet()) {
-            RiskLevel riskLevel = describer2MaxRiskLevel.getOrDefault(entry.getKey(), defultHighestRiskLevel =
-                    ObjectUtil.defaultIfNull(defultHighestRiskLevel, riskLevelService.findHighestRiskLevel()));
+            defultHighestRiskLevel =
+                    ObjectUtil.defaultIfNull(defultHighestRiskLevel, riskLevelService.findHighestRiskLevel());
+            RiskLevel riskLevel = describer2MaxRiskLevel.getOrDefault(entry.getKey(), defultHighestRiskLevel);
             dbId2RiskLevel.put(entry.getValue(), riskLevel);
         }
         return dbId2RiskLevel;
     }
 
-    public List<MergedFlowInstanceCreatedData> mergeFlowInstances(@NonNull @Valid CreateFlowInstanceReq createReq) {
-        if (createReq.getTaskType() != TaskType.APPLY_DATABASE_PERMISSION
-                && createReq.getTaskType() != TaskType.APPLY_TABLE_PERMISSION) {
-            throw new UnsupportedException("unsupported task type: " + createReq.getTaskType());
+    private Map<Long, List<List<String>>> getResourceRoleIdMappingCandidateIdentifiers(
+            @NonNull @Valid CreateFlowInstanceReq createReq, @NonNull Map<Long, RiskLevel> dbId2RiskLevel) {
+        if (MapUtils.isEmpty(dbId2RiskLevel)) {
+            return Collections.emptyMap();
         }
-        final Map<Long, RiskLevel> dbId2RiskLevel = getDbMappingRiskLevel(createReq);
         Map<Long, Set<Long>> approvalConfigId2ResourceRoleIds = dbId2RiskLevel.values().stream().collect(
                 Collectors.toMap(RiskLevel::getApprovalFlowConfigId,
                         r -> r.getApprovalFlowConfig().getNodes().stream().map(
@@ -409,15 +413,29 @@ public class FlowInstanceService {
                 }
                 List<String> candidates = candidateResourceRoleIds.stream().filter(Objects::nonNull).map(
                         e -> StringUtils.join(e, ":", resourceRoleId)).collect(Collectors.toList());
-                approvalConfigId2Candidates.computeIfAbsent(entry.getKey(), k -> new ArrayList<>()).add(candidates);
+                approvalConfigId2Candidates.computeIfAbsent(resourceRoleId, k -> new ArrayList<>()).add(candidates);
             }
         }
-        Map<String, Set<Long>> resourceIdentifier2ApprovalUserIds = resourceRoleService.listByResourceIdentifierIn(
+        return approvalConfigId2Candidates;
+    }
+
+    public List<MergedFlowInstanceCreatedData> mergeFlowWhenApplyPermissionOfDbOrTable(
+            @NonNull @Valid CreateFlowInstanceReq createReq) {
+        if (createReq.getTaskType() != TaskType.APPLY_DATABASE_PERMISSION
+                && createReq.getTaskType() != TaskType.APPLY_TABLE_PERMISSION) {
+            throw new UnsupportedException("unsupported task type: " + createReq.getTaskType());
+        }
+        final Map<Long, RiskLevel> dbId2RiskLevel = getDbMappingRiskLevel(createReq);
+        Map<Long, List<List<String>>> approvalConfigId2Candidates =
+                getResourceRoleIdMappingCandidateIdentifiers(createReq, dbId2RiskLevel);
+        Set<String> toQueryResourceIdentifiers =
                 approvalConfigId2Candidates.values().stream().flatMap(List::stream).flatMap(List::stream)
-                        .collect(Collectors.toSet()))
-                .stream()
-                .collect(Collectors.groupingBy(r -> r.getResourceId() + ":" + r.getResourceRoleId(),
-                        Collectors.mapping(UserResourceRole::getUserId, Collectors.toSet())));
+                        .collect(Collectors.toSet());
+        Map<String, Set<Long>> resourceIdentifier2ApprovalUserIds =
+                resourceRoleService.listByResourceIdentifierIn(toQueryResourceIdentifiers)
+                        .stream()
+                        .collect(Collectors.groupingBy(r -> r.getResourceId() + ":" + r.getResourceRoleId(),
+                                Collectors.mapping(UserResourceRole::getUserId, Collectors.toSet())));
 
         Map<MergedFlowInstanceIdentifier, Set<Long>> mergedIdentifier2CandidateResourceIds = new HashMap<>();
         dbId2RiskLevel.forEach((dbId, riskLevel) -> {
@@ -460,7 +478,8 @@ public class FlowInstanceService {
             if (CollectionUtils.isNotEmpty(databases) && databases.size() > MAX_APPLY_DATABASE_SIZE) {
                 throw new IllegalStateException("The number of databases to apply for exceeds the maximum limit");
             }
-            List<MergedFlowInstanceCreatedData> mergedFlowInstanceCreatedDataList = mergeFlowInstances(createReq);
+            List<MergedFlowInstanceCreatedData> mergedFlowInstanceCreatedDataList =
+                    mergeFlowWhenApplyPermissionOfDbOrTable(createReq);
             return mergedFlowInstanceCreatedDataList.stream().map(e -> {
                 List<ApplyDatabase> applyDatabases = databases.stream().filter(
                         d -> e.getCandidateResourceIds().contains(d.getId())).collect(Collectors.toList());
@@ -478,7 +497,8 @@ public class FlowInstanceService {
                     && databaseId2Tables.keySet().size() > MAX_APPLY_DATABASE_SIZE) {
                 throw new IllegalStateException("The number of databases to apply for exceeds the maximum limit");
             }
-            List<MergedFlowInstanceCreatedData> mergedFlowInstanceCreatedDataList = mergeFlowInstances(createReq);
+            List<MergedFlowInstanceCreatedData> mergedFlowInstanceCreatedDataList =
+                    mergeFlowWhenApplyPermissionOfDbOrTable(createReq);
             return mergedFlowInstanceCreatedDataList.stream().map(e -> {
                 List<ApplyTable> applyTables = tables.stream().filter(
                         d -> e.getCandidateResourceIds().contains(d.getDatabaseId())).collect(Collectors.toList());
