@@ -58,7 +58,6 @@ import com.oceanbase.odc.plugin.task.api.partitionplan.model.DateBasedPartitionN
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.PartitionPlanVariableKey;
 import com.oceanbase.odc.plugin.task.api.partitionplan.util.ParameterUtil;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
-import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanDBTable;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanKeyConfig;
@@ -174,10 +173,10 @@ public class PartitionPlanService {
         } else {
             tblName2PartiConfig = new HashMap<>();
         }
-        Database database = this.databaseService.detail(databaseId);
+        String schema = ConnectionSessionUtil.getCurrentSchema(connectionSession);
         List<DBTable> dbTables = getJdbcOpt(connectionSession)
                 .execute((ConnectionCallback<List<DBTable>>) con -> extensionPoint.listAllPartitionedTables(con,
-                        ConnectionSessionUtil.getTenantName(connectionSession), database.getName(), null));
+                        ConnectionSessionUtil.getTenantName(connectionSession), schema, null));
         return dbTables.stream().map(dbTable -> {
             PartitionPlanDBTable partitionPlanTable = new PartitionPlanDBTable();
             partitionPlanTable.setName(dbTable.getName());
