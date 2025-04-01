@@ -192,11 +192,13 @@ public class PartitionPlanService {
 
     public List<PartitionPlanPreViewResp> generatePartitionDdl(@NonNull String sessionId,
             @NonNull List<PartitionPlanTableConfig> tableConfigs, Boolean onlyForPartitionName) {
-        return generatePartitionDdl(sessionService.nullSafeGet(sessionId, true), tableConfigs, onlyForPartitionName);
+        return generatePartitionDdl(sessionService.nullSafeGet(sessionId, true), tableConfigs, onlyForPartitionName,
+                false);
     }
 
     public List<PartitionPlanPreViewResp> generatePartitionDdl(@NonNull ConnectionSession connectionSession,
-            @NonNull List<PartitionPlanTableConfig> tableConfigs, Boolean onlyForPartitionName) {
+            @NonNull List<PartitionPlanTableConfig> tableConfigs, Boolean onlyForPartitionName,
+            Boolean isTaskExecuting) {
         DialectType dialectType = connectionSession.getDialectType();
         AutoPartitionExtensionPoint extensionPoint = TaskPluginUtil.getAutoPartitionExtensionPoint(dialectType);
         if (extensionPoint == null) {
@@ -206,10 +208,20 @@ public class PartitionPlanService {
                 .collect(Collectors.toList());
         String schema = ConnectionSessionUtil.getCurrentSchema(connectionSession);
         JdbcOperations jdbc = getJdbcOpt(connectionSession);
+        if (isTaskExecuting) {
+            List<String> currentTableName = jdbc.execute(
+                    (ConnectionCallback<List<DBTable>>) con -> extensionPoint.listAllPartitionedTables(con,
+                            ConnectionSessionUtil.getTenantName(connectionSession),
+                            schema, null))
+                    .stream().map(DBTable::getName).collect(Collectors.toList());
+            tableNames = tableNames.stream().filter(currentTableName::contains).collect(Collectors.toList());
+        }
+        List<String> finalTableNames = tableNames;
         Map<String, DBTable> name2Table =
                 jdbc.execute((ConnectionCallback<List<DBTable>>) con -> extensionPoint.listAllPartitionedTables(con,
                         ConnectionSessionUtil.getTenantName(connectionSession),
-                        schema, tableNames)).stream().collect(Collectors.toMap(DBTable::getName, dbTable -> dbTable));
+                        schema, finalTableNames)).stream()
+                        .collect(Collectors.toMap(DBTable::getName, dbTable -> dbTable));
         if (Boolean.TRUE.equals(onlyForPartitionName)) {
             return tableConfigs.stream().map(i -> jdbc.execute((ConnectionCallback<PartitionPlanPreViewResp>) con -> {
                 try {
