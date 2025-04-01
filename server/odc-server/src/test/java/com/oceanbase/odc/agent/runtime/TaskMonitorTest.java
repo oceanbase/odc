@@ -15,13 +15,20 @@
  */
 package com.oceanbase.odc.agent.runtime;
 
+import java.util.Collections;
+import java.util.Map;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
+import com.oceanbase.odc.service.task.Task;
+import com.oceanbase.odc.service.task.caller.JobContext;
+import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.executor.TaskResult;
+import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 /**
  * @author longpeng.zlp
@@ -45,5 +52,38 @@ public class TaskMonitorTest {
         TaskMonitor taskMonitor = new TaskMonitor(Mockito.mock(TaskContainer.class), taskReporter, Mockito.mock(
                 CloudObjectStorageService.class));
         Assert.assertTrue(taskMonitor.reportTaskResultWithRetry(new TaskResult(), 3, 1));
+    }
+
+    @Test
+    public void testTaskMonitorTimeout() {
+        TaskReporter taskReporter = Mockito.mock(TaskReporter.class);
+        Mockito.when(taskReporter.report(ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(true);
+        TaskMonitor taskMonitor = new TaskMonitor(createContainer(1000), taskReporter, Mockito.mock(
+                CloudObjectStorageService.class));
+        Assert.assertTrue(taskMonitor.isTimeout());
+    }
+
+    @Test
+    public void testTaskMonitorNotTimeout() {
+        TaskReporter taskReporter = Mockito.mock(TaskReporter.class);
+        Mockito.when(taskReporter.report(ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(true);
+        TaskMonitor taskMonitor =
+                new TaskMonitor(createContainer(System.currentTimeMillis() + 100000), taskReporter, Mockito.mock(
+                        CloudObjectStorageService.class));
+        Assert.assertTrue(!taskMonitor.isTimeout());
+    }
+
+    protected TaskContainer createContainer(long endTimeMs) {
+        TaskContainer taskContainer = Mockito.mock(TaskContainer.class);
+        Task task = Mockito.mock(Task.class);
+        JobContext jobContext = Mockito.mock(JobContext.class);
+        JobIdentity jobIdentity = JobIdentity.of(1024L);
+        Map<String, String> jobParameters = Collections
+                .singletonMap(JobParametersKeyConstants.TASK_EXECUTION_END_TIME_MILLIS, String.valueOf(endTimeMs));
+        Mockito.when(jobContext.getJobParameters()).thenReturn(jobParameters);
+        Mockito.when(jobContext.getJobIdentity()).thenReturn(jobIdentity);
+        Mockito.when(task.getJobContext()).thenReturn(jobContext);
+        Mockito.when(taskContainer.getTask()).thenReturn(task);
+        return taskContainer;
     }
 }

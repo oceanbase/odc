@@ -138,7 +138,8 @@ public class ProcessModeTest extends BaseJobTest {
         jobData.put(JobParametersKeyConstants.CONNECTION_CONFIG, JobUtils.toJson(config));
         jobData.put(JobParametersKeyConstants.FLOW_INSTANCE_ID, exceptedTaskId + "");
         jobData.put(JobParametersKeyConstants.CURRENT_SCHEMA, config.getDefaultSchema());
-        jobData.put(JobParametersKeyConstants.TASK_EXECUTION_TIMEOUT_MILLIS, 30 * 60 * 1000 + "");
+        jobData.put(JobParametersKeyConstants.TASK_EXECUTION_END_TIME_MILLIS,
+                String.valueOf(System.currentTimeMillis() + 30 * 60 * 1000));
         ObjectStorageConfiguration storageConfig = new ObjectStorageConfiguration();
         storageConfig.setCloudProvider(CloudProvider.NONE);
 
