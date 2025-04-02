@@ -16,31 +16,29 @@
 package com.oceanbase.tools.dbbrowser.editor;
 
 import com.oceanbase.tools.dbbrowser.AbstractDBBrowserFactory;
-import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLNoLessThan5700IndexEditor;
-import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLIndexEditor;
+import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLMViewIndexEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OBOracleIndexEditor;
-import com.oceanbase.tools.dbbrowser.editor.oracle.OracleIndexEditor;
 
-import lombok.Setter;
-import lombok.experimental.Accessors;
-
-@Setter
-@Accessors(chain = true)
-public class DBTableIndexEditorFactory extends AbstractDBBrowserFactory<DBTableIndexEditor> {
-
+/**
+ * @description:
+ * @author: zijia.cj
+ * @date: 2025/4/2 18:14
+ * @since: 4.3.4
+ */
+public class DBMViewIndexEditorFactory extends AbstractDBBrowserFactory<DBTableIndexEditor> {
     @Override
     public DBTableIndexEditor buildForDoris() {
-        return buildForMySQL();
+        throw new UnsupportedOperationException("not support");
     }
 
     @Override
     public DBTableIndexEditor buildForMySQL() {
-        return new MySQLNoLessThan5700IndexEditor();
+        throw new UnsupportedOperationException("not support");
     }
 
     @Override
     public DBTableIndexEditor buildForOBMySQL() {
-        return new OBMySQLIndexEditor();
+        return new OBMySQLMViewIndexEditor();
     }
 
     @Override
@@ -50,17 +48,16 @@ public class DBTableIndexEditorFactory extends AbstractDBBrowserFactory<DBTableI
 
     @Override
     public DBTableIndexEditor buildForOracle() {
-        return new OracleIndexEditor();
+        throw new UnsupportedOperationException("not support");
     }
 
     @Override
     public DBTableIndexEditor buildForOdpSharding() {
-        return buildForOBMySQL();
+        throw new UnsupportedOperationException("not support");
     }
 
     @Override
     public DBTableIndexEditor buildForPostgres() {
-        throw new UnsupportedOperationException("Not supported yet");
+        throw new UnsupportedOperationException("not support");
     }
-
 }

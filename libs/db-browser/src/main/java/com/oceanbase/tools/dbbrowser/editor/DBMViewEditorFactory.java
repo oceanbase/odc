@@ -20,7 +20,6 @@ import org.apache.commons.lang3.Validate;
 import com.oceanbase.tools.dbbrowser.AbstractDBBrowserFactory;
 import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLMViewEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OBOracleMViewEditor;
-import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -50,7 +49,7 @@ public class DBMViewEditorFactory extends AbstractDBBrowserFactory<DBMViewEditor
 
     @Override
     public DBMViewEditor buildForOBMySQL() {
-        return new OBMySQLMViewEditor(getTableIndexEditor(),
+        return new OBMySQLMViewEditor(getMViewIndexEditor(),
                 getTableColumnEditor(),
                 getTableConstraintEditor(),
                 getTablePartitionEditor());
@@ -58,7 +57,7 @@ public class DBMViewEditorFactory extends AbstractDBBrowserFactory<DBMViewEditor
 
     @Override
     public DBMViewEditor buildForOBOracle() {
-        return new OBOracleMViewEditor(getTableIndexEditor(),
+        return new OBOracleMViewEditor(getMViewIndexEditor(),
                 getTableColumnEditor(),
                 getTableConstraintEditor(),
                 getTablePartitionEditor());
@@ -79,9 +78,8 @@ public class DBMViewEditorFactory extends AbstractDBBrowserFactory<DBMViewEditor
         return null;
     }
 
-    private DBTableIndexEditor getTableIndexEditor() {
-        DBTableIndexEditorFactory indexFactory = new DBTableIndexEditorFactory();
-        indexFactory.setDbObjectType(DBObjectType.MATERIALIZED_VIEW);
+    private DBTableIndexEditor getMViewIndexEditor() {
+        DBMViewIndexEditorFactory indexFactory = new DBMViewIndexEditorFactory();
         indexFactory.setType(this.type);
         return indexFactory.create();
     }

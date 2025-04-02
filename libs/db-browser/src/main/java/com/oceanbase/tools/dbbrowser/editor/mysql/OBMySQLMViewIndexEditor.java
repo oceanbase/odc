@@ -28,7 +28,7 @@ import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
  * @date: 2025/4/2 11:04
  * @since: 4.3.4
  */
-public class OBMySQLDBMViewIndexEditor extends OBMySQLIndexEditor {
+public class OBMySQLMViewIndexEditor extends OBMySQLIndexEditor {
     @Override
     public String generateDropObjectDDL(@NotNull DBTableIndex dbObject) {
         SqlBuilder sqlBuilder = sqlBuilder();
