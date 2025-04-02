@@ -34,7 +34,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.google.common.collect.Sets;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -109,31 +108,22 @@ public class RiskDetectService {
     }
 
     @SkipAuthorize("internal usage")
-    public Map<RiskLevelDescriber, Set<RiskLevel>> batchDetect(List<RiskDetectRule> rules,
+    public Map<RiskLevelDescriber, RiskLevel> batchDetectHighestRiskLevel(List<RiskDetectRule> rules,
             @NonNull Collection<RiskLevelDescriber> describers) {
         if (CollectionUtils.isEmpty(describers)) {
             return Collections.emptyMap();
         }
         RiskLevel defaultRiskLevel = null;
-        Map<RiskLevelDescriber, Set<RiskLevel>> describer2RiskLevels = new HashMap<>();
+        Map<RiskLevelDescriber, RiskLevel> describer2HighestRiskLevels = new HashMap<>();
         for (RiskLevelDescriber describer : describers) {
             if (CollectionUtils.isEmpty(rules)) {
                 defaultRiskLevel = ObjectUtil.defaultIfNull(defaultRiskLevel, riskLevelService.findDefaultRiskLevel());
-                describer2RiskLevels.put(describer, Sets.newHashSet(defaultRiskLevel));
+                describer2HighestRiskLevels.put(describer, defaultRiskLevel);
                 continue;
             }
-            Set<RiskLevel> matched = new HashSet<>();
-            for (RiskDetectRule rule : rules) {
-                if (Objects.isNull(rule.getRootNode())) {
-                    continue;
-                }
-                if (rule.getRootNode().evaluate(describer)) {
-                    matched.add(rule.getRiskLevel());
-                }
-            }
-            describer2RiskLevels.put(describer, matched);
+            describer2HighestRiskLevels.put(describer, riskLevelService.findHighestRiskLevel(detect(rules, describer)));
         }
-        return describer2RiskLevels;
+        return describer2HighestRiskLevels;
     }
 
     @SkipAuthorize("internal authenticated")

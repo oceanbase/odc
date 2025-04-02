@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
@@ -382,7 +383,47 @@ public class FlowInstanceService {
         return dbId2RiskLevel;
     }
 
-    public List<MergedFlowInstanceCreatedData> mergeFlowWhenApplyPermissionOfDbOrTable(
+    private List<String> listCandidateIdentifiers(@NonNull ApprovalFlowConfig config,
+            @NonNull Supplier<Long> dbIdSupplier, @NonNull Supplier<Long> projectIdSupplier,
+            @NonNull Map<Long, ResourceRoleEntity> resourceRoleId2ResourceRole) {
+        List<String> candidateIdentifier = new ArrayList<>();
+        for (ApprovalNodeConfig node : config.getNodes()) {
+            if (node.getResourceRoleId() != null) {
+                ResourceRoleEntity resourceRole = resourceRoleId2ResourceRole.get(node.getResourceRoleId());
+                if (resourceRole != null && resourceRole.getResourceType() == ResourceType.ODC_DATABASE) {
+                    candidateIdentifier.add(dbIdSupplier.get() + ":" + node.getResourceRoleId());
+                } else {
+                    candidateIdentifier.add(projectIdSupplier.get() + ":" + node.getResourceRoleId());
+                }
+            }
+        }
+        return candidateIdentifier;
+    }
+
+    private Map<Long, List<Set<Long>>> getDbIdMappingApprovalUserIds(
+            @NonNull Map<Long, List<String>> dbId2CandidateIdentifier) {
+        Map<Long, List<Set<Long>>> dbId2ApprovalUserIds = new HashMap<>();
+        Set<String> toQueryResourceIdentifiers = dbId2CandidateIdentifier.values().stream().flatMap(List::stream)
+                .collect(Collectors.toSet());
+        if (CollectionUtils.isEmpty(toQueryResourceIdentifiers)) {
+            return dbId2ApprovalUserIds;
+        }
+        Map<String, Set<Long>> resourceIdentifier2ApprovalUserIds =
+                resourceRoleService.listByResourceIdentifierIn(toQueryResourceIdentifiers)
+                        .stream()
+                        .collect(Collectors.groupingBy(r -> r.getResourceId() + ":" + r.getResourceRoleId(),
+                                Collectors.mapping(UserResourceRole::getUserId, Collectors.toSet())));
+        for (Entry<Long, List<String>> dbId2CandidateIdentifierEntry : dbId2CandidateIdentifier.entrySet()) {
+            Long dbId = dbId2CandidateIdentifierEntry.getKey();
+            for (String identifier : dbId2CandidateIdentifierEntry.getValue()) {
+                dbId2ApprovalUserIds.computeIfAbsent(dbId, k -> new ArrayList<>())
+                        .add(resourceIdentifier2ApprovalUserIds.getOrDefault(identifier, Collections.emptySet()));
+            }
+        }
+        return dbId2ApprovalUserIds;
+    }
+
+    public List<MergedDbCreatedData> mergeDbWhenApplyPermissionOfDbOrTable(
             @NonNull @Valid CreateFlowInstanceReq createReq) {
         if (createReq.getTaskType() != TaskType.APPLY_DATABASE_PERMISSION
                 && createReq.getTaskType() != TaskType.APPLY_TABLE_PERMISSION) {
@@ -399,53 +440,25 @@ public class FlowInstanceService {
         Map<Long, List<String>> dbId2CandidateIdentifier = new HashMap<>();
         for (Entry<Long, RiskLevel> dbId2RiskLevelEntry : dbId2RiskLevel.entrySet()) {
             ApprovalFlowConfig approvalFlowConfig = dbId2RiskLevelEntry.getValue().getApprovalFlowConfig();
-            List<String> candidateIdentifier = new ArrayList<>();
-            for (ApprovalNodeConfig node : approvalFlowConfig.getNodes()) {
-                if (node.getResourceRoleId() != null) {
-                    ResourceRoleEntity resourceRole = resourceRoleId2ResourceRole.get(node.getResourceRoleId());
-                    if (resourceRole != null && resourceRole.getResourceType() == ResourceType.ODC_DATABASE) {
-                        candidateIdentifier.add(dbId2RiskLevelEntry.getKey() + ":" + node.getResourceRoleId());
-                    } else {
-                        candidateIdentifier.add(createReq.getProjectId() + ":" + node.getResourceRoleId());
-                    }
-                }
-            }
-            dbId2CandidateIdentifier.put(dbId2RiskLevelEntry.getKey(), candidateIdentifier);
+            dbId2CandidateIdentifier.put(dbId2RiskLevelEntry.getKey(), listCandidateIdentifiers(approvalFlowConfig,
+                    dbId2RiskLevelEntry::getKey,
+                    createReq::getProjectId,
+                    resourceRoleId2ResourceRole));
         }
-        Map<Long, List<Set<Long>>> dbId2ApprovalUserIds = new HashMap<>();
-        Set<String> toQueryResourceIdentifiers = dbId2CandidateIdentifier.values().stream().flatMap(List::stream)
-                .collect(Collectors.toSet());
-        Map<String, Set<Long>> resourceIdentifier2ApprovalUserIds =
-                resourceRoleService.listByResourceIdentifierIn(toQueryResourceIdentifiers)
-                        .stream()
-                        .collect(Collectors.groupingBy(r -> r.getResourceId() + ":" + r.getResourceRoleId(),
-                                Collectors.mapping(UserResourceRole::getUserId, Collectors.toSet())));
-        for (Entry<Long, List<String>> dbId2CandidateIdentifierEntry : dbId2CandidateIdentifier.entrySet()) {
-            Long dbId = dbId2CandidateIdentifierEntry.getKey();
-            for (String identifier : dbId2CandidateIdentifierEntry.getValue()) {
-                dbId2ApprovalUserIds.computeIfAbsent(dbId, k -> new ArrayList<>())
-                        .add(resourceIdentifier2ApprovalUserIds.getOrDefault(identifier, Collections.emptySet()));
-            }
-        }
-        Map<MergedFlowInstanceIdentifier, MergedFlowInstanceCreatedData> mergeData = new HashMap<>();
+        Map<Long, List<Set<Long>>> dbId2ApprovalUserIds = getDbIdMappingApprovalUserIds(dbId2CandidateIdentifier);
+        Map<MergedDbIdentifier, MergedDbCreatedData> mergedMap = new HashMap<>();
         for (Entry<Long, List<String>> dbId2CandidateIdentifierEntry : dbId2CandidateIdentifier.entrySet()) {
             Long dbId = dbId2CandidateIdentifierEntry.getKey();
             RiskLevel riskLevel = dbId2RiskLevel.get(dbId);
-            MergedFlowInstanceIdentifier mergedFlowInstanceIdentifier = new MergedFlowInstanceIdentifier();
-            mergedFlowInstanceIdentifier.setApprovalUserIds(dbId2ApprovalUserIds.get(dbId));
-            mergedFlowInstanceIdentifier.setRiskLevel(riskLevel);
-            MergedFlowInstanceCreatedData mergedFlowInstanceCreatedData =
-                    mergeData.getOrDefault(mergedFlowInstanceIdentifier,
-                            new MergedFlowInstanceCreatedData());
-            if (mergedFlowInstanceCreatedData.getRiskLevel() == null) {
-                mergedFlowInstanceCreatedData.setRiskLevel(riskLevel);
-                mergedFlowInstanceCreatedData.setCandidateResourceIds(Sets.newHashSet(dbId));
-                mergeData.put(mergedFlowInstanceIdentifier, mergedFlowInstanceCreatedData);
+            MergedDbIdentifier mergedDbIdentifier =
+                    new MergedDbIdentifier(dbId2ApprovalUserIds.get(dbId), riskLevel.getId());
+            if (!mergedMap.containsKey(mergedDbIdentifier)) {
+                mergedMap.put(mergedDbIdentifier, new MergedDbCreatedData(riskLevel, Sets.newHashSet(dbId)));
             } else {
-                mergedFlowInstanceCreatedData.getCandidateResourceIds().add(dbId);
+                mergedMap.get(mergedDbIdentifier).getCandidateResourceIds().add(dbId);
             }
         }
-        return new ArrayList<>(mergeData.values());
+        return new ArrayList<>(mergedMap.values());
     }
 
     @EnablePreprocess
@@ -457,9 +470,9 @@ public class FlowInstanceService {
             if (CollectionUtils.isNotEmpty(databases) && databases.size() > MAX_APPLY_DATABASE_SIZE) {
                 throw new IllegalStateException("The number of databases to apply for exceeds the maximum limit");
             }
-            List<MergedFlowInstanceCreatedData> mergedFlowInstanceCreatedDataList =
-                    mergeFlowWhenApplyPermissionOfDbOrTable(createReq);
-            return mergedFlowInstanceCreatedDataList.stream().map(e -> {
+            List<MergedDbCreatedData> mergedDbCreatedDataList =
+                    mergeDbWhenApplyPermissionOfDbOrTable(createReq);
+            return mergedDbCreatedDataList.stream().map(e -> {
                 List<ApplyDatabase> applyDatabases = databases.stream().filter(
                         d -> e.getCandidateResourceIds().contains(d.getId())).collect(Collectors.toList());
                 parameter.setDatabases(applyDatabases);
@@ -476,9 +489,9 @@ public class FlowInstanceService {
                     && databaseId2Tables.keySet().size() > MAX_APPLY_DATABASE_SIZE) {
                 throw new IllegalStateException("The number of databases to apply for exceeds the maximum limit");
             }
-            List<MergedFlowInstanceCreatedData> mergedFlowInstanceCreatedDataList =
-                    mergeFlowWhenApplyPermissionOfDbOrTable(createReq);
-            return mergedFlowInstanceCreatedDataList.stream().map(e -> {
+            List<MergedDbCreatedData> mergedDbCreatedDataList =
+                    mergeDbWhenApplyPermissionOfDbOrTable(createReq);
+            return mergedDbCreatedDataList.stream().map(e -> {
                 List<ApplyTable> applyTables = tables.stream().filter(
                         d -> e.getCandidateResourceIds().contains(d.getDatabaseId())).collect(Collectors.toList());
                 parameter.setTables(applyTables);
@@ -1584,29 +1597,25 @@ public class FlowInstanceService {
 
     @Data
     @Accessors(chain = true)
-    @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-    private static class MergedFlowInstanceIdentifier {
+    @AllArgsConstructor
+    @EqualsAndHashCode
+    private static class MergedDbIdentifier {
         /**
          * For a complete approval process, there are N approval nodes, and each approval node has M
          * approval User eg: [1,2] -> [1,3]
          */
-        @EqualsAndHashCode.Include
         private List<Set<Long>> approvalUserIds;
 
         /**
          * Different databases go through the approval process corresponding to different risk levels
          */
-        private RiskLevel riskLevel;
-
-        @EqualsAndHashCode.Include
-        private Long getRiskLevelIdForEquality() {
-            return riskLevel != null ? riskLevel.getId() : null;
-        }
+        private Long riskLevelId;
     }
 
     @Data
+    @AllArgsConstructor
     @Accessors(chain = true)
-    public static class MergedFlowInstanceCreatedData {
+    public static class MergedDbCreatedData {
         private RiskLevel riskLevel;
         private Set<Long> candidateResourceIds;
     }

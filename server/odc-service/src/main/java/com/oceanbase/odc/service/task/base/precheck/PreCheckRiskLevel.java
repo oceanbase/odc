@@ -28,7 +28,7 @@ import lombok.NonNull;
  * @Author: ysj
  * @Date: 2025/3/31 14:07
  * @Since: 4.3.4
- * @Description: For flow instance that applies database/table permission, it can confirm risklevel
+ * @Description: For flow instance that applies database/table permission, it can confirm riskLevel
  *               and to store on {@link TaskEntity#getParametersJson()}
  */
 @Data
@@ -46,9 +46,18 @@ public class PreCheckRiskLevel implements Serializable {
     private Integer riskLevel;
 
     /**
-     * ref {@link ApprovalFlowConfig#getExecutionExpirationIntervalSeconds()}
+     * ref {@link RiskLevel#getApprovalFlowConfig()}
      */
-    private Integer executionExpirationIntervalSeconds;
+    private ApprovalConfig approvalConfig;
+
+    @Data
+    public static class ApprovalConfig {
+
+        /**
+         * ref {@link ApprovalFlowConfig#getExecutionExpirationIntervalSeconds()}
+         */
+        private Integer executionExpirationIntervalSeconds;
+    }
 
     public static PreCheckRiskLevel from(@NonNull RiskLevel riskLevel) {
         ApprovalFlowConfig approvalFlowConfig = riskLevel.getApprovalFlowConfig();
@@ -56,8 +65,10 @@ public class PreCheckRiskLevel implements Serializable {
         preCheckRiskLevel.setRiskLevelId(riskLevel.getId());
         preCheckRiskLevel.setRiskLevel(riskLevel.getLevel());
         if (approvalFlowConfig != null) {
-            preCheckRiskLevel
+            ApprovalConfig approvalConfig = new ApprovalConfig();
+            approvalConfig
                     .setExecutionExpirationIntervalSeconds(approvalFlowConfig.getExecutionExpirationIntervalSeconds());
+            preCheckRiskLevel.setApprovalConfig(approvalConfig);
         }
         return preCheckRiskLevel;
     }
@@ -66,10 +77,11 @@ public class PreCheckRiskLevel implements Serializable {
         RiskLevel riskLevel = new RiskLevel();
         riskLevel.setId(preCheckRiskLevel.getRiskLevelId());
         riskLevel.setLevel(preCheckRiskLevel.getRiskLevel());
-        if (preCheckRiskLevel.getExecutionExpirationIntervalSeconds() != null) {
+        if (preCheckRiskLevel.getApprovalConfig() != null) {
             ApprovalFlowConfig approvalFlowConfig = new ApprovalFlowConfig();
             approvalFlowConfig
-                    .setExecutionExpirationIntervalSeconds(preCheckRiskLevel.getExecutionExpirationIntervalSeconds());
+                    .setExecutionExpirationIntervalSeconds(
+                            preCheckRiskLevel.getApprovalConfig().getExecutionExpirationIntervalSeconds());
             riskLevel.setApprovalFlowConfig(approvalFlowConfig);
         }
         return riskLevel;
