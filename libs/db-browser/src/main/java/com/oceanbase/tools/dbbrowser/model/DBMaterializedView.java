@@ -99,6 +99,7 @@ public class DBMaterializedView implements DBObject {
         dbTable.setIndexes(indexes);
         dbTable.setConstraints(constraints);
         dbTable.setPartition(partition);
+        dbTable.setTableOptions(new DBTable.DBTableOptions());
         return dbTable;
     }
 

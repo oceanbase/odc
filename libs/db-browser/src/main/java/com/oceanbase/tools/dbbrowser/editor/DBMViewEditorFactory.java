@@ -19,6 +19,7 @@ import org.apache.commons.lang3.Validate;
 
 import com.oceanbase.tools.dbbrowser.AbstractDBBrowserFactory;
 import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLMViewEditor;
+import com.oceanbase.tools.dbbrowser.editor.oracle.OBOracleMViewEditor;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.Setter;
@@ -57,7 +58,10 @@ public class DBMViewEditorFactory extends AbstractDBBrowserFactory<DBMViewEditor
 
     @Override
     public DBMViewEditor buildForOBOracle() {
-        throw new UnsupportedOperationException("not support yet");
+        return new OBOracleMViewEditor(getTableIndexEditor(),
+                getTableColumnEditor(),
+                getTableConstraintEditor(),
+                getTablePartitionEditor());
     }
 
     @Override
