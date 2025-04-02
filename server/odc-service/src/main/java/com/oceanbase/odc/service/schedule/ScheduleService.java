@@ -1166,6 +1166,12 @@ public class ScheduleService {
         return scheduleTaskStats;
     }
 
+    /**
+     * This is a temporary method that only uses ODC 4.3.4
+     * 
+     * @param params
+     * @return
+     */
     private List<ScheduleTaskStat> listTaskStatWithoutTaskFramework(
             @NonNull QueryScheduleStatParams params) {
         Set<Long> joinedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());

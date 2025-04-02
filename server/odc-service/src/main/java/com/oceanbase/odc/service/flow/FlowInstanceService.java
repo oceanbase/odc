@@ -1316,6 +1316,12 @@ public class FlowInstanceService {
         return flowInstanceRepository.findFlowInstanceIdByScheduleIdAndStatus(scheduleId, status);
     }
 
+    /**
+     * This is a temporary method that only uses ODC 4.3.4
+     * 
+     * @param params
+     * @return
+     */
     private List<ServiceTaskInstanceEntity> innerListDistinctServiceTaskInstances(
             @NonNull InnerQueryFlowInstanceParams params) {
         StringBuilder querySql = new StringBuilder();
@@ -1346,21 +1352,28 @@ public class FlowInstanceService {
                 new BeanPropertyRowMapper<>(ServiceTaskInstanceEntity.class));
     }
 
+    /**
+     * This is a temporary method that only uses ODC 4.3.4
+     * 
+     * @param params
+     * @return
+     */
     private List<FlowInstanceState> listPartitionPlanSubTaskStates(@NonNull InnerQueryFlowInstanceParams params) {
         Set<Long> joinedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
         if (CollectionUtils.isEmpty(joinedProjectIds) || CollectionUtils.isEmpty(params.getTaskTypes())
                 || !params.getTaskTypes().contains(TaskType.PARTITION_PLAN)) {
             return Collections.emptyList();
         }
-        Set<Long> parentFlowInstanceIds = innerListDistinctServiceTaskInstances(new InnerQueryFlowInstanceParams()
-                .setTaskTypes(Collections.singleton(TaskType.PARTITION_PLAN)))
-                        .stream().map(ServiceTaskInstanceEntity::getFlowInstanceId).collect(Collectors.toSet());
-        if (CollectionUtils.isEmpty(parentFlowInstanceIds)) {
+        Set<Long> partitionPlanFlowInstanceIds =
+                innerListDistinctServiceTaskInstances(new InnerQueryFlowInstanceParams()
+                        .setTaskTypes(Collections.singleton(TaskType.PARTITION_PLAN)))
+                                .stream().map(ServiceTaskInstanceEntity::getFlowInstanceId).collect(Collectors.toSet());
+        if (CollectionUtils.isEmpty(partitionPlanFlowInstanceIds)) {
             return Collections.emptyList();
         }
         Specification<FlowInstanceEntity> spec = FlowInstanceSpecs.createTimeLate(params.getStartTime())
                 .and(FlowInstanceSpecs.createTimeBefore(params.getEndTime()))
-                .and(FlowInstanceSpecs.parentInstanceIdIn(parentFlowInstanceIds))
+                .and(FlowInstanceSpecs.parentInstanceIdIn(partitionPlanFlowInstanceIds))
                 .and(FlowInstanceSpecs.projectIdIn(joinedProjectIds));
         final List<FlowInstanceState> partitionPlanFlowInstanceStates = new ArrayList<>();
         flowInstanceRepository.findAll(spec).forEach(flowInstance -> {
@@ -1370,6 +1383,12 @@ public class FlowInstanceService {
         return partitionPlanFlowInstanceStates;
     }
 
+    /**
+     * This is a temporary method that only uses ODC 4.3.4
+     * 
+     * @param params
+     * @return
+     */
     private List<FlowInstanceState> listSqlPlanSubTaskStates(@NonNull InnerQueryFlowInstanceParams params) {
         if (CollectionUtils.isEmpty(params.getParentInstanceIds()) || CollectionUtils.isEmpty(params.getTaskTypes())) {
             return Collections.emptyList();
@@ -1397,6 +1416,12 @@ public class FlowInstanceService {
         return flowInstanceStates;
     }
 
+    /**
+     * This is a temporary method that only uses ODC 4.3.4
+     * 
+     * @param params
+     * @return
+     */
     public List<FlowInstanceState> listSubTaskStates(
             @NonNull InnerQueryFlowInstanceParams params) {
         Set<Long> joinedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
