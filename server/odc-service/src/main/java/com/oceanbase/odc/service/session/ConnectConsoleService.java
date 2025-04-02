@@ -88,6 +88,7 @@ import com.oceanbase.odc.service.db.session.KillResult;
 import com.oceanbase.odc.service.db.session.KillSessionOrQueryReq;
 import com.oceanbase.odc.service.dml.ValueEncodeType;
 import com.oceanbase.odc.service.feature.AllFeatures;
+import com.oceanbase.odc.service.feature.VersionDiffConfigService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.queryprofile.OBQueryProfileManager;
@@ -147,6 +148,8 @@ public class ConnectConsoleService {
     private AuthenticationFacade authenticationFacade;
     @Autowired
     private OBQueryProfileManager profileManager;
+    @Autowired
+    private VersionDiffConfigService versionDiffConfigService;
     @Autowired
     private OrganizationConfigUtils organizationConfigUtils;
 
@@ -556,6 +559,12 @@ public class ConnectConsoleService {
             log.warn("Failed to init sql type", e);
         }
         try (TraceStage s = watch.start(SqlExecuteStages.INIT_EDITABLE_INFO)) {
+            cxt.computeIfAbsent(VersionDiffConfigService.SUPPORT_EXTERNAL_TABLE,
+                    key -> versionDiffConfigService.isExternalTableSupported(connectionSession.getDialectType(),
+                            ConnectionSessionUtil.getVersion(connectionSession)));
+            cxt.computeIfAbsent(VersionDiffConfigService.SUPPORT_MATERIALIZED_VIEW,
+                    key -> versionDiffConfigService.isMViewSupported(connectionSession.getDialectType(),
+                            ConnectionSessionUtil.getVersion(connectionSession)));
             resultTable = result.initEditableInfo(connectionSession, cxt);
         } catch (Exception e) {
             log.warn("Failed to init editable info", e);

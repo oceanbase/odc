@@ -689,6 +689,16 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
+    public Map<String, List<DBTableColumn>> listBasicMViewColumns(String schemaName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public List<DBTableColumn> listBasicMViewColumns(String schemaName, String externalTableName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
     public Map<String, List<DBTableColumn>> listBasicColumnsInfo(String schemaName) {
         String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_COLUMNS_INFO);
         List<DBTableColumn> tableColumns =

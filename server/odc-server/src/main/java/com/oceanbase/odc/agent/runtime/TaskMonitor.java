@@ -59,7 +59,6 @@ class TaskMonitor {
     private final TaskReporter reporter;
     private final TaskContainer<?> taskContainer;
     private final CloudObjectStorageService cloudObjectStorageService;
-    private volatile long startTimeMilliSeconds;
     private ScheduledExecutorService reportScheduledExecutor;
     private ScheduledExecutorService heartScheduledExecutor;
     private Map<String, String> logMetadata = new HashMap<>();
@@ -84,7 +83,6 @@ class TaskMonitor {
 
     public void monitor() {
         log.info("monitor starting, jobId={}", getJobId());
-        this.startTimeMilliSeconds = System.currentTimeMillis();
         initReportScheduler();
         initHeartbeatScheduler();
     }
@@ -184,12 +182,12 @@ class TaskMonitor {
     protected boolean isTimeout() {
         String milliSecStr =
                 getTask().getJobContext().getJobParameters()
-                        .get(JobParametersKeyConstants.TASK_EXECUTION_TIMEOUT_MILLIS);
+                        .get(JobParametersKeyConstants.TASK_EXECUTION_END_TIME_MILLIS);
 
         if (StringUtils.isNotBlank(milliSecStr)) {
-            boolean timeout = System.currentTimeMillis() - startTimeMilliSeconds > Long.parseLong(milliSecStr);
+            boolean timeout = System.currentTimeMillis() > Long.parseLong(milliSecStr);
             if (timeout) {
-                log.info("Task timeout, jobId={}, timeoutMills={}", getJobId(), milliSecStr);
+                log.info("Task timeout, jobId={}, endTimeMills={}", getJobId(), milliSecStr);
             }
             return timeout;
         } else {

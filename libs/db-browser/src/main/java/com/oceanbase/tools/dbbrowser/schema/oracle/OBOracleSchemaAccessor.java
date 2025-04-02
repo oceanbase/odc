@@ -402,7 +402,8 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
 
         jdbcOperations.query(sb.toString(), (rs) -> {
             function.setDefiner(rs.getString(1));
-            function.setDdl(String.format("CREATE OR REPLACE %s;", rs.getClob(5).toString()));
+            String body = rs.getClob(5).toString();
+            function.setDdl(String.format("CREATE OR REPLACE %s", body.endsWith(";") ? body : body + ";"));
             function.setStatus(rs.getString(9));
             function.setCreateTime(Timestamp.valueOf(rs.getString(7)));
             function.setModifyTime(Timestamp.valueOf(rs.getString(8)));
@@ -573,7 +574,8 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         procedure.setProName(procedureName);
         jdbcOperations.query(sb.toString(), (rs) -> {
             procedure.setDefiner(rs.getString("OWNER"));
-            procedure.setDdl(String.format("create or replace %s;", rs.getClob("TEXT").toString()));
+            String body = rs.getClob("TEXT").toString();
+            procedure.setDdl(String.format("CREATE OR REPLACE %s", body.endsWith(";") ? body : body + ";"));
             procedure.setStatus(rs.getString("STATUS"));
             procedure.setCreateTime(rs.getTimestamp("CREATED"));
             procedure.setModifyTime(rs.getTimestamp("LAST_DDL_TIME"));
@@ -1251,6 +1253,19 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
                 .append(param.getQueryLimit())
                 .append(" ROWS ONLY");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBMViewRefreshRecord.class));
+    }
+
+    @Override
+    public Map<String, List<DBTableColumn>> listBasicMViewColumns(String schemaName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_MATERIALIZED_VIEW_COLUMNS);
+        List<DBTableColumn> tableColumns = jdbcOperations.query(sql, new Object[] {schemaName, schemaName},
+                listBasicColumnsRowMapper());
+        return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
+    }
+
+    public List<DBTableColumn> listBasicMViewColumns(String schemaName, String externalTableName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_MATERIALIZED_VIEW_COLUMNS);
+        return jdbcOperations.query(sql, new Object[] {schemaName, externalTableName}, listBasicColumnsRowMapper());
     }
 
 }

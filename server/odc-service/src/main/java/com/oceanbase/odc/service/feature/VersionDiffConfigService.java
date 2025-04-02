@@ -46,6 +46,8 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @SkipAuthorize("inside connect session")
 public class VersionDiffConfigService {
+    public static final String SUPPORT_EXTERNAL_TABLE = "support_external_table";
+    public static final String SUPPORT_MATERIALIZED_VIEW = "support_materialized_view";
     private static final String SUPPORT_PREFIX = "support";
     private static final String MAX_SUPPORT_KILL_OB_VERSION =
             "odc.session.kill-query-or-session.max-supported-ob-version";
@@ -54,8 +56,6 @@ public class VersionDiffConfigService {
     private static final String SUPPORT_KILL_SESSION = "support_kill_session";
     private static final String SUPPORT_KILL_QUERY = "support_kill_query";
     private static final String SUPPORT_PL_DEBUG = "support_pl_debug";
-    private static final String SUPPORT_EXTERNAL_TABLE = "support_external_table";
-    private static final String SUPPORT_MATERIALIZED_VIEW = "support_materialized_view";
     private static final String COLUMN_DATA_TYPE = "column_data_type";
     private static final String ARM_OB_PREFIX = "aarch64";
     private static final String ARM_OB_SUPPORT_PL_DEBUG_MIN_VERSION = "3.2.3";
