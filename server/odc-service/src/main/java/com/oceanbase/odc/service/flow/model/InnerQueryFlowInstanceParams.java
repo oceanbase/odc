@@ -20,7 +20,6 @@ import java.util.Set;
 
 import com.oceanbase.odc.core.shared.constant.TaskType;
 
-import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -32,7 +31,6 @@ import lombok.experimental.Accessors;
  */
 @Data
 @Accessors(chain = true)
-@Builder
 public class InnerQueryFlowInstanceParams {
 
     private Set<Long> flowInstanceIds;

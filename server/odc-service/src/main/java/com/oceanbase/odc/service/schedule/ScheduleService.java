@@ -1166,6 +1166,12 @@ public class ScheduleService {
         return scheduleTaskStats;
     }
 
+    /**
+     * This is a temporary method that only uses ODC 4.3.4
+     * 
+     * @param params
+     * @return
+     */
     private List<ScheduleTaskStat> listTaskStatWithoutTaskFramework(
             @NonNull QueryScheduleStatParams params) {
         Set<Long> joinedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
@@ -1182,21 +1188,22 @@ public class ScheduleService {
         if (CollectionUtils.isEmpty(scheduleTypes)) {
             return Collections.emptyList();
         }
-        Set<Long> scheduleIds = filterSchedules(
+        List<ScheduleEntity> scheduleEntities = filterSchedules(
                 scheduleRepository.findByOrganizationIdAndProjectIdInAndTypeIn(
                         authenticationFacade.currentOrganizationId(),
-                        joinedProjectIds, scheduleTypes))
-                                .stream().map(ScheduleEntity::getId).collect(Collectors.toSet());
-        if (CollectionUtils.isEmpty(scheduleIds)) {
+                        joinedProjectIds, scheduleTypes));
+        if (CollectionUtils.isEmpty(scheduleEntities)) {
             return Collections.emptyList();
         }
+        Set<Long> sqlPlanScheduleIds = scheduleEntities.stream()
+                .filter(s -> s.getType() == ScheduleType.SQL_PLAN)
+                .map(ScheduleEntity::getId).collect(Collectors.toSet());
 
-        InnerQueryFlowInstanceParams innerQueryFlowInstanceParams = InnerQueryFlowInstanceParams.builder()
-                .parentInstanceIds(scheduleIds)
-                .taskTypes(Sets.newHashSet(TaskType.ASYNC, TaskType.PARTITION_PLAN))
-                .startTime(params.getStartTime())
-                .endTime(params.getEndTime())
-                .build();
+        InnerQueryFlowInstanceParams innerQueryFlowInstanceParams = new InnerQueryFlowInstanceParams()
+                .setParentInstanceIds(sqlPlanScheduleIds)
+                .setTaskTypes(Sets.newHashSet(TaskType.ASYNC, TaskType.PARTITION_PLAN))
+                .setStartTime(params.getStartTime())
+                .setEndTime(params.getEndTime());
         List<FlowInstanceState> flowInstanceStates = flowInstanceService.listSubTaskStates(
                 innerQueryFlowInstanceParams);
         if (CollectionUtils.isEmpty(flowInstanceStates)) {
