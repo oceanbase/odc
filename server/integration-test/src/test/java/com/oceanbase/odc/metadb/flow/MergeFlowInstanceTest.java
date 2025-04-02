@@ -29,6 +29,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 
 import com.google.common.collect.Sets;
@@ -83,7 +84,7 @@ public class MergeFlowInstanceTest extends ServiceTestEnv {
     private ApprovalFlowConfigSelector approvalFlowConfigSelector;
     @SpyBean
     private ResourceRoleService resourceRoleService;
-    @SpyBean
+    @Autowired
     private AuthenticationFacade authenticationFacade;
     private List<Long> databaseIds = new ArrayList<Long>() {
         {
