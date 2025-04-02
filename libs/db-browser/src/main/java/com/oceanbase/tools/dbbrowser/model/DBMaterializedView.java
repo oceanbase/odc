@@ -25,7 +25,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
+import lombok.ToString.Exclude;
 
 /**
  * @description:
@@ -36,11 +36,8 @@ import lombok.ToString;
 @Setter
 @Getter
 public class DBMaterializedView implements DBObject {
-    /**
-     * 所属 schema，API 层面不可见
-     */
     @JsonIgnore
-    @ToString.Exclude
+    @Exclude
     private DBSchema schema;
     @NotEmpty
     private String name;
