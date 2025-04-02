@@ -190,7 +190,6 @@ import com.oceanbase.odc.service.task.base.precheck.PreCheckRiskLevel;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
-import cn.hutool.core.util.ObjectUtil;
 import io.micrometer.core.instrument.Tag;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -377,7 +376,8 @@ public class FlowInstanceService {
         RiskLevel defultHighestRiskLevel = null;
         for (Entry<RiskLevelDescriber, Long> entry : riskLevelDescribers2DbId.entrySet()) {
             defultHighestRiskLevel =
-                    ObjectUtil.defaultIfNull(defultHighestRiskLevel, riskLevelService.findHighestRiskLevel());
+                    cn.hutool.core.util.ObjectUtil.defaultIfNull(defultHighestRiskLevel,
+                            riskLevelService.findHighestRiskLevel());
             RiskLevel riskLevel = describer2MaxRiskLevel.getOrDefault(entry.getKey(), defultHighestRiskLevel);
             dbId2RiskLevel.put(entry.getValue(), riskLevel);
         }
