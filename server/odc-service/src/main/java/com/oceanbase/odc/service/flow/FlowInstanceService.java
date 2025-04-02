@@ -61,11 +61,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.google.common.collect.Sets;
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.common.i18n.I18n;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.lang.Holder;
-import com.oceanbase.odc.common.util.MapUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.flow.model.TaskParameters;
@@ -382,91 +382,70 @@ public class FlowInstanceService {
         return dbId2RiskLevel;
     }
 
-    private Map<Long, List<List<String>>> getResourceRoleIdMappingCandidateIdentifiers(
-            @NonNull @Valid CreateFlowInstanceReq createReq, @NonNull Map<Long, RiskLevel> dbId2RiskLevel) {
-        if (MapUtils.isEmpty(dbId2RiskLevel)) {
-            return Collections.emptyMap();
-        }
-        Map<Long, Set<Long>> approvalConfigId2ResourceRoleIds = dbId2RiskLevel.values().stream().collect(
-                Collectors.toMap(RiskLevel::getApprovalFlowConfigId,
-                        r -> r.getApprovalFlowConfig().getNodes().stream().map(
-                                ApprovalNodeConfig::getResourceRoleId).collect(
-                                        Collectors.toSet()),
-                        (e, r) -> e));
-        Map<Long, ResourceRoleEntity> resourceRoleId2ResourceRole = resourceRoleService.listResourceRoleByIds(
-                approvalConfigId2ResourceRoleIds.values().stream().flatMap(Collection::stream)
-                        .collect(Collectors.toSet()))
-                .stream()
-                .collect(Collectors.toMap(ResourceRoleEntity::getId, Function.identity(), (e, r) -> e));
-        Map<Long, List<List<String>>> approvalConfigId2Candidates = new HashMap<>();
-        for (Entry<Long, Set<Long>> entry : approvalConfigId2ResourceRoleIds.entrySet()) {
-            for (Long resourceRoleId : entry.getValue()) {
-                if (resourceRoleId == null) {
-                    continue;
-                }
-                ResourceRoleEntity resourceRole = resourceRoleId2ResourceRole.get(resourceRoleId);
-                Set<Long> candidateResourceRoleIds = new HashSet<>();
-                if (resourceRole != null && resourceRole.getResourceType() == ResourceType.ODC_DATABASE) {
-                    candidateResourceRoleIds.add(resourceRoleId);
-                } else {
-                    candidateResourceRoleIds.add(createReq.getProjectId());
-                }
-                List<String> candidates = candidateResourceRoleIds.stream().filter(Objects::nonNull).map(
-                        e -> StringUtils.join(e, ":", resourceRoleId)).collect(Collectors.toList());
-                approvalConfigId2Candidates.computeIfAbsent(resourceRoleId, k -> new ArrayList<>()).add(candidates);
-            }
-        }
-        return approvalConfigId2Candidates;
-    }
-
     public List<MergedFlowInstanceCreatedData> mergeFlowWhenApplyPermissionOfDbOrTable(
             @NonNull @Valid CreateFlowInstanceReq createReq) {
         if (createReq.getTaskType() != TaskType.APPLY_DATABASE_PERMISSION
                 && createReq.getTaskType() != TaskType.APPLY_TABLE_PERMISSION) {
-            throw new UnsupportedException("unsupported task type: " + createReq.getTaskType());
+            throw new UnsupportedException("Only APPLY_DATABASE_PERMISSION or APPLY_TABLE_PERMISSION are supported");
         }
-        final Map<Long, RiskLevel> dbId2RiskLevel = getDbMappingRiskLevel(createReq);
-        Map<Long, List<List<String>>> approvalConfigId2Candidates =
-                getResourceRoleIdMappingCandidateIdentifiers(createReq, dbId2RiskLevel);
-        Set<String> toQueryResourceIdentifiers =
-                approvalConfigId2Candidates.values().stream().flatMap(List::stream).flatMap(List::stream)
-                        .collect(Collectors.toSet());
+        Map<Long, RiskLevel> dbId2RiskLevel = getDbMappingRiskLevel(createReq);
+        Set<Long> allResourceRoleIds = dbId2RiskLevel.values().stream().map(
+                r -> r.getApprovalFlowConfig().getNodes().stream().map(
+                        ApprovalNodeConfig::getResourceRoleId).collect(Collectors.toSet()))
+                .flatMap(Set::stream).collect(Collectors.toSet());
+        Map<Long, ResourceRoleEntity> resourceRoleId2ResourceRole =
+                resourceRoleService.listResourceRoleByIds(allResourceRoleIds).stream()
+                        .collect(Collectors.toMap(ResourceRoleEntity::getId, v -> v, (e, r) -> e));
+        Map<Long, List<String>> dbId2CandidateIdentifier = new HashMap<>();
+        for (Entry<Long, RiskLevel> dbId2RiskLevelEntry : dbId2RiskLevel.entrySet()) {
+            ApprovalFlowConfig approvalFlowConfig = dbId2RiskLevelEntry.getValue().getApprovalFlowConfig();
+            List<String> candidateIdentifier = new ArrayList<>();
+            for (ApprovalNodeConfig node : approvalFlowConfig.getNodes()) {
+                if (node.getResourceRoleId() != null) {
+                    ResourceRoleEntity resourceRole = resourceRoleId2ResourceRole.get(node.getResourceRoleId());
+                    if (resourceRole != null && resourceRole.getResourceType() == ResourceType.ODC_DATABASE) {
+                        candidateIdentifier.add(dbId2RiskLevelEntry.getKey() + ":" + node.getResourceRoleId());
+                    } else {
+                        candidateIdentifier.add(createReq.getProjectId() + ":" + node.getResourceRoleId());
+                    }
+                }
+            }
+            dbId2CandidateIdentifier.put(dbId2RiskLevelEntry.getKey(), candidateIdentifier);
+        }
+        Map<Long, List<Set<Long>>> dbId2ApprovalUserIds = new HashMap<>();
+        Set<String> toQueryResourceIdentifiers = dbId2CandidateIdentifier.values().stream().flatMap(List::stream)
+                .collect(Collectors.toSet());
         Map<String, Set<Long>> resourceIdentifier2ApprovalUserIds =
                 resourceRoleService.listByResourceIdentifierIn(toQueryResourceIdentifiers)
                         .stream()
                         .collect(Collectors.groupingBy(r -> r.getResourceId() + ":" + r.getResourceRoleId(),
                                 Collectors.mapping(UserResourceRole::getUserId, Collectors.toSet())));
-
-        Map<MergedFlowInstanceIdentifier, Set<Long>> mergedIdentifier2CandidateResourceIds = new HashMap<>();
-        dbId2RiskLevel.forEach((dbId, riskLevel) -> {
-            Long approvalConfigId = riskLevel.getApprovalFlowConfig().getId();
-            List<List<String>> candidatesForNodes = approvalConfigId2Candidates.getOrDefault(approvalConfigId,
-                    Collections.emptyList());
-            List<Set<Long>> approvalUserIdsForNodes = new ArrayList<>();
-            for (List<String> candidates : candidatesForNodes) {
-                Set<Long> approvalUserIds = new HashSet<>();
-                for (String candidate : candidates) {
-                    Set<Long> userIds = resourceIdentifier2ApprovalUserIds.get(candidate);
-                    if (CollectionUtils.isNotEmpty(userIds)) {
-                        approvalUserIds.addAll(userIds);
-                    }
-                }
-                approvalUserIdsForNodes.add(approvalUserIds);
+        for (Entry<Long, List<String>> dbId2CandidateIdentifierEntry : dbId2CandidateIdentifier.entrySet()) {
+            Long dbId = dbId2CandidateIdentifierEntry.getKey();
+            for (String identifier : dbId2CandidateIdentifierEntry.getValue()) {
+                dbId2ApprovalUserIds.computeIfAbsent(dbId, k -> new ArrayList<>())
+                        .add(resourceIdentifier2ApprovalUserIds.getOrDefault(identifier, Collections.emptySet()));
             }
-            MergedFlowInstanceIdentifier mergedFlowInstanceIdentifier =
-                    new MergedFlowInstanceIdentifier().setRiskLevel(riskLevel)
-                            .setApprovalUserIds(approvalUserIdsForNodes);
-            mergedIdentifier2CandidateResourceIds.computeIfAbsent(mergedFlowInstanceIdentifier, k -> new HashSet<>())
-                    .add(dbId);
-        });
-
-        return mergedIdentifier2CandidateResourceIds.entrySet().stream()
-                .map(entry -> {
-                    MergedFlowInstanceCreatedData data = new MergedFlowInstanceCreatedData();
-                    data.setCandidateResourceIds(entry.getValue());
-                    data.setRiskLevel(entry.getKey().getRiskLevel());
-                    return data;
-                }).collect(Collectors.toList());
+        }
+        Map<MergedFlowInstanceIdentifier, MergedFlowInstanceCreatedData> mergeData = new HashMap<>();
+        for (Entry<Long, List<String>> dbId2CandidateIdentifierEntry : dbId2CandidateIdentifier.entrySet()) {
+            Long dbId = dbId2CandidateIdentifierEntry.getKey();
+            RiskLevel riskLevel = dbId2RiskLevel.get(dbId);
+            MergedFlowInstanceIdentifier mergedFlowInstanceIdentifier = new MergedFlowInstanceIdentifier();
+            mergedFlowInstanceIdentifier.setApprovalUserIds(dbId2ApprovalUserIds.get(dbId));
+            mergedFlowInstanceIdentifier.setRiskLevel(riskLevel);
+            MergedFlowInstanceCreatedData mergedFlowInstanceCreatedData =
+                    mergeData.getOrDefault(mergedFlowInstanceIdentifier,
+                            new MergedFlowInstanceCreatedData());
+            if (mergedFlowInstanceCreatedData.getRiskLevel() == null) {
+                mergedFlowInstanceCreatedData.setRiskLevel(riskLevel);
+                mergedFlowInstanceCreatedData.setCandidateResourceIds(Sets.newHashSet(dbId));
+                mergeData.put(mergedFlowInstanceIdentifier, mergedFlowInstanceCreatedData);
+            } else {
+                mergedFlowInstanceCreatedData.getCandidateResourceIds().add(dbId);
+            }
+        }
+        return new ArrayList<>(mergeData.values());
     }
 
     @EnablePreprocess
