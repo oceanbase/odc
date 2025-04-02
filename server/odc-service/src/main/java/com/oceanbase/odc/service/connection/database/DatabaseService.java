@@ -940,10 +940,10 @@ public class DatabaseService {
         }
         final Map<Long, DatabaseEntity> dbId2Database = databaseRepository.findByIdIn(databaseIds).stream().collect(
                 Collectors.toMap(DatabaseEntity::getId, Function.identity()));
-        Verify.equals(databaseIds.size(), dbId2Database.size(), "Database");
 
         // Ensure that the databases tracked down remain in relative order according to databaseIds
-        List<DatabaseEntity> dbs = databaseIds.stream().map(dbId2Database::get).collect(Collectors.toList());
+        List<DatabaseEntity> dbs =
+                databaseIds.stream().map(dbId2Database::get).filter(Objects::nonNull).collect(Collectors.toList());
         return entitiesToModels(new PageImpl<>(dbs),
                 includesPermittedAction).getContent();
     }

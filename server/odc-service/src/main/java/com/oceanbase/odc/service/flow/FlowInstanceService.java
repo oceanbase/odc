@@ -64,6 +64,7 @@ import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.common.i18n.I18n;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.lang.Holder;
+import com.oceanbase.odc.common.util.ObjectUtil;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.flow.model.TaskParameters;
@@ -1315,6 +1316,12 @@ public class FlowInstanceService {
         return flowInstanceRepository.findFlowInstanceIdByScheduleIdAndStatus(scheduleId, status);
     }
 
+    /**
+     * This is a temporary method that only uses ODC 4.3.4
+     * 
+     * @param params
+     * @return
+     */
     private List<ServiceTaskInstanceEntity> innerListDistinctServiceTaskInstances(
             @NonNull InnerQueryFlowInstanceParams params) {
         StringBuilder querySql = new StringBuilder();
@@ -1346,43 +1353,83 @@ public class FlowInstanceService {
     }
 
     /**
-     * This query is actually a problem, currently can not be based on the type of ASYNC subtask to
-     * reverse the parent task is a AlterSchedule or MultiDatabaseChange. If the parent task is a
-     * AlterSchedule, In this case, parent_instance_id in the flow_instance table stores the id of
-     * schedule_schedule. In the case of MultiDatabaseChange, the id of the flow_instance table is
-     * stored. The two tables may be identical
+     * This is a temporary method that only uses ODC 4.3.4
+     * 
+     * @param params
+     * @return
      */
-    public List<FlowInstanceState> listSubTaskStates(
-            @NonNull InnerQueryFlowInstanceParams params) {
+    private List<FlowInstanceState> listPartitionPlanSubTaskStates(@NonNull InnerQueryFlowInstanceParams params) {
         Set<Long> joinedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
-        if (CollectionUtils.isEmpty(joinedProjectIds) || CollectionUtils.isEmpty(params.getParentInstanceIds())) {
+        if (CollectionUtils.isEmpty(joinedProjectIds) || CollectionUtils.isEmpty(params.getTaskTypes())
+                || !params.getTaskTypes().contains(TaskType.PARTITION_PLAN)) {
             return Collections.emptyList();
         }
+        Set<Long> partitionPlanFlowInstanceIds =
+                innerListDistinctServiceTaskInstances(new InnerQueryFlowInstanceParams()
+                        .setTaskTypes(Collections.singleton(TaskType.PARTITION_PLAN)))
+                                .stream().map(ServiceTaskInstanceEntity::getFlowInstanceId).collect(Collectors.toSet());
+        if (CollectionUtils.isEmpty(partitionPlanFlowInstanceIds)) {
+            return Collections.emptyList();
+        }
+        Specification<FlowInstanceEntity> spec = FlowInstanceSpecs.createTimeLate(params.getStartTime())
+                .and(FlowInstanceSpecs.createTimeBefore(params.getEndTime()))
+                .and(FlowInstanceSpecs.parentInstanceIdIn(partitionPlanFlowInstanceIds))
+                .and(FlowInstanceSpecs.projectIdIn(joinedProjectIds));
+        final List<FlowInstanceState> partitionPlanFlowInstanceStates = new ArrayList<>();
+        flowInstanceRepository.findAll(spec).forEach(flowInstance -> {
+            partitionPlanFlowInstanceStates
+                    .add(new FlowInstanceState(TaskType.PARTITION_PLAN, flowInstance.getStatus()));
+        });
+        return partitionPlanFlowInstanceStates;
+    }
 
+    /**
+     * This is a temporary method that only uses ODC 4.3.4
+     * 
+     * @param params
+     * @return
+     */
+    private List<FlowInstanceState> listSqlPlanSubTaskStates(@NonNull InnerQueryFlowInstanceParams params) {
+        if (CollectionUtils.isEmpty(params.getParentInstanceIds()) || CollectionUtils.isEmpty(params.getTaskTypes())) {
+            return Collections.emptyList();
+        }
+        InnerQueryFlowInstanceParams copiedParams = ObjectUtil.deepCopy(params,
+                InnerQueryFlowInstanceParams.class);
+        copiedParams.getTaskTypes().retainAll(Collections.singleton(TaskType.ASYNC));
         Map<Long, FlowStatus> flowInstanceId2Status = flowInstanceRepository.findProjectionByParentInstanceIdIn(
-                params.getParentInstanceIds()).stream()
+                copiedParams.getParentInstanceIds()).stream()
                 .collect(Collectors.toMap(FlowInstanceProjection::getId, FlowInstanceProjection::getStatus,
                         (exist, replace) -> exist));
         if (CollectionUtils.isEmpty(flowInstanceId2Status.keySet())) {
             return Collections.emptyList();
         }
-
-        params.setFlowInstanceIds(flowInstanceId2Status.keySet());
-        Map<Long, TaskType> flowInstanceId2SubTaskType = innerListDistinctServiceTaskInstances(params)
+        copiedParams.setFlowInstanceIds(flowInstanceId2Status.keySet());
+        Map<Long, TaskType> flowInstanceId2SubTaskType = innerListDistinctServiceTaskInstances(copiedParams)
                 .stream().collect(Collectors.toMap(ServiceTaskInstanceEntity::getFlowInstanceId,
                         ServiceTaskInstanceEntity::getTaskType, (exist, replace) -> exist));
-
-        if (CollectionUtils.isEmpty(flowInstanceId2SubTaskType.keySet())) {
-            return Collections.emptyList();
-        }
-
         final List<FlowInstanceState> flowInstanceStates = new ArrayList<>();
         flowInstanceId2Status.forEach((id, flowStatus) -> {
-            TaskType taskType = flowInstanceId2SubTaskType.get(id);
-            if (flowStatus != null && taskType != null) {
-                flowInstanceStates.add(new FlowInstanceState(taskType, flowStatus));
+            if (flowStatus != null && flowInstanceId2SubTaskType.containsKey(id)) {
+                flowInstanceStates.add(new FlowInstanceState(TaskType.ASYNC, flowStatus));
             }
         });
+        return flowInstanceStates;
+    }
+
+    /**
+     * This is a temporary method that only uses ODC 4.3.4
+     * 
+     * @param params
+     * @return
+     */
+    public List<FlowInstanceState> listSubTaskStates(
+            @NonNull InnerQueryFlowInstanceParams params) {
+        Set<Long> joinedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
+        if (CollectionUtils.isEmpty(joinedProjectIds)) {
+            return Collections.emptyList();
+        }
+        List<FlowInstanceState> flowInstanceStates = listSqlPlanSubTaskStates(params);
+        flowInstanceStates.addAll(listPartitionPlanSubTaskStates(params));
         return flowInstanceStates;
     }
 
