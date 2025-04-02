@@ -1219,13 +1219,6 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
             mView.setLastRefreshStartTime(rs.getTimestamp("LAST_REFRESH_DATE"));
             mView.setLastRefreshEndTime(rs.getTimestamp("LAST_REFRESH_END_TIME"));
         });
-        // OracleSqlBuilder getDDL = new OracleSqlBuilder();
-        // getDDL.append("show create table ").identifier(schemaName).append(".").identifier(mViewName);
-        // jdbcOperations.query(getDDL.toString(), (rs) -> {
-        // mView.setDdl(rs.getString(2));
-        // });
-        // DBView dbView = fillColumnInfoByDesc(mView.generateDBView());
-        // mView.setColumns(dbView.getColumns());
         return mView;
     }
 
