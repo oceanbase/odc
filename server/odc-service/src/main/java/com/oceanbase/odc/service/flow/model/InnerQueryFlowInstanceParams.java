@@ -32,7 +32,6 @@ import lombok.experimental.Accessors;
  */
 @Data
 @Accessors(chain = true)
-@Builder
 public class InnerQueryFlowInstanceParams {
 
     private Set<Long> flowInstanceIds;
