@@ -17,10 +17,7 @@ package com.oceanbase.tools.dbbrowser.editor.mysql;
 
 import com.oceanbase.tools.dbbrowser.editor.DBMViewEditor;
 import com.oceanbase.tools.dbbrowser.editor.DBObjectEditor;
-import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
-import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
-import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 
@@ -31,9 +28,8 @@ import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
  * @since: 4.3.4
  */
 public class OBMySQLMViewEditor extends DBMViewEditor {
-    public OBMySQLMViewEditor(DBObjectEditor<DBTableIndex> indexEditor, DBObjectEditor<DBTableColumn> columnEditor,
-            DBObjectEditor<DBTableConstraint> constraintEditor, DBObjectEditor<DBTablePartition> partitionEditor) {
-        super(new OBMySQLTableEditor(indexEditor, columnEditor, constraintEditor, partitionEditor));
+    public OBMySQLMViewEditor(DBObjectEditor<DBTableIndex> indexEditor) {
+        super(indexEditor);
     }
 
     @Override

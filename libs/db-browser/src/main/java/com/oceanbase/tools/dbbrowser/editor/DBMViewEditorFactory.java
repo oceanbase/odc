@@ -49,18 +49,12 @@ public class DBMViewEditorFactory extends AbstractDBBrowserFactory<DBMViewEditor
 
     @Override
     public DBMViewEditor buildForOBMySQL() {
-        return new OBMySQLMViewEditor(getMViewIndexEditor(),
-                getTableColumnEditor(),
-                getTableConstraintEditor(),
-                getTablePartitionEditor());
+        return new OBMySQLMViewEditor(getMViewIndexEditor());
     }
 
     @Override
     public DBMViewEditor buildForOBOracle() {
-        return new OBOracleMViewEditor(getMViewIndexEditor(),
-                getTableColumnEditor(),
-                getTableConstraintEditor(),
-                getTablePartitionEditor());
+        return new OBOracleMViewEditor(getMViewIndexEditor());
     }
 
     @Override

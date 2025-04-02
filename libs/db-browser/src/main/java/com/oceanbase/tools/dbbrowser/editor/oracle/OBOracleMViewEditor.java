@@ -17,10 +17,7 @@ package com.oceanbase.tools.dbbrowser.editor.oracle;
 
 import com.oceanbase.tools.dbbrowser.editor.DBMViewEditor;
 import com.oceanbase.tools.dbbrowser.editor.DBObjectEditor;
-import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
-import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
-import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 
@@ -32,11 +29,8 @@ import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
  */
 public class OBOracleMViewEditor extends DBMViewEditor {
 
-    public OBOracleMViewEditor(DBObjectEditor<DBTableIndex> indexEditor,
-            DBObjectEditor<DBTableColumn> columnEditor,
-            DBObjectEditor<DBTableConstraint> constraintEditor,
-            DBObjectEditor<DBTablePartition> partitionEditor) {
-        super(new OracleTableEditor(indexEditor, columnEditor, constraintEditor, partitionEditor));
+    public OBOracleMViewEditor(DBObjectEditor<DBTableIndex> indexEditor) {
+        super(indexEditor);
     }
 
     @Override

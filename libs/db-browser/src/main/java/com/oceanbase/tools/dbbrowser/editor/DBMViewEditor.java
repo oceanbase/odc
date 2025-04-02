@@ -16,15 +16,17 @@
 package com.oceanbase.tools.dbbrowser.editor;
 
 import java.util.Collection;
+import java.util.List;
 
 import javax.validation.constraints.NotNull;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
-import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import com.oceanbase.tools.dbbrowser.template.BaseMViewTemplate;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 
@@ -38,12 +40,15 @@ import lombok.Setter;
  * @since: 4.3.4
  */
 public abstract class DBMViewEditor implements DBObjectEditor<DBMaterializedView> {
+    // @Getter
+    // @Setter
+    // protected DBObjectEditor<DBTable> tableEditor;
     @Getter
     @Setter
-    protected DBObjectEditor<DBTable> tableEditor;
+    protected DBObjectEditor<DBTableIndex> indexEditor;
 
-    public DBMViewEditor(DBObjectEditor<DBTable> tableEditor) {
-        this.tableEditor = tableEditor;
+    public DBMViewEditor(DBObjectEditor<DBTableIndex> indexEditor) {
+        this.indexEditor = indexEditor;
     }
 
     /**
@@ -74,7 +79,11 @@ public abstract class DBMViewEditor implements DBObjectEditor<DBMaterializedView
     @Override
     public String generateUpdateObjectDDL(@NotNull DBMaterializedView oldTable,
             @NotNull DBMaterializedView newTable) {
-        return this.tableEditor.generateUpdateObjectDDL(oldTable.generateDBTable(), newTable.generateDBTable());
+        SqlBuilder sqlBuilder = sqlBuilder();
+        fillIndexSchemaNameAndTableName(oldTable.getIndexes(), oldTable.getSchemaName(), oldTable.getName());
+        fillIndexSchemaNameAndTableName(newTable.getIndexes(), newTable.getSchemaName(), newTable.getName());
+        sqlBuilder.append(indexEditor.generateUpdateObjectListDDL(oldTable.getIndexes(), newTable.getIndexes()));
+        return sqlBuilder.toString();
     }
 
     @Override
@@ -102,6 +111,15 @@ public abstract class DBMViewEditor implements DBObjectEditor<DBMaterializedView
         }
         sqlBuilder.identifier(table.getName());
         return sqlBuilder.toString();
+    }
+
+    private void fillIndexSchemaNameAndTableName(List<DBTableIndex> indexes, String schemaName, String tableName) {
+        if (CollectionUtils.isNotEmpty(indexes)) {
+            indexes.forEach(index -> {
+                index.setSchemaName(schemaName);
+                index.setTableName(tableName);
+            });
+        }
     }
 
 }
