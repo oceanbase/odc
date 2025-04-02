@@ -217,8 +217,7 @@ public class PartitionPlanService {
         Map<String, DBTable> name2Table =
                 jdbc.execute((ConnectionCallback<List<DBTable>>) con -> extensionPoint.listAllPartitionedTables(con,
                         ConnectionSessionUtil.getTenantName(connectionSession),
-                        schema, tableNames)).stream()
-                        .collect(Collectors.toMap(DBTable::getName, dbTable -> dbTable));
+                        schema, tableNames)).stream().collect(Collectors.toMap(DBTable::getName, dbTable -> dbTable));
         if (Boolean.TRUE.equals(onlyForPartitionName)) {
             return tableConfigs.stream().map(i -> jdbc.execute((ConnectionCallback<PartitionPlanPreViewResp>) con -> {
                 try {
