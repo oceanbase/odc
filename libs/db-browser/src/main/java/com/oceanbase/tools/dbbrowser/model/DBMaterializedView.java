@@ -88,16 +88,4 @@ public class DBMaterializedView implements DBObject {
         return dbView;
     }
 
-    public DBTable generateDBTable() {
-        DBTable dbTable = new DBTable();
-        dbTable.setName(name);
-        dbTable.setSchemaName(schemaName);
-        dbTable.setColumns(columns);
-        dbTable.setIndexes(indexes);
-        dbTable.setConstraints(constraints);
-        dbTable.setPartition(partition);
-        dbTable.setTableOptions(new DBTable.DBTableOptions());
-        return dbTable;
-    }
-
 }
