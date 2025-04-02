@@ -1183,21 +1183,21 @@ public class ScheduleService {
             return Collections.emptyList();
         }
         List<ScheduleEntity> scheduleEntities = filterSchedules(
-            scheduleRepository.findByOrganizationIdAndProjectIdInAndTypeIn(
-                authenticationFacade.currentOrganizationId(),
-                joinedProjectIds, scheduleTypes));
+                scheduleRepository.findByOrganizationIdAndProjectIdInAndTypeIn(
+                        authenticationFacade.currentOrganizationId(),
+                        joinedProjectIds, scheduleTypes));
         if (CollectionUtils.isEmpty(scheduleEntities)) {
             return Collections.emptyList();
         }
         Set<Long> sqlPlanScheduleIds = scheduleEntities.stream()
-            .filter(s -> s.getType() == ScheduleType.SQL_PLAN)
-            .map(ScheduleEntity::getId).collect(Collectors.toSet());
+                .filter(s -> s.getType() == ScheduleType.SQL_PLAN)
+                .map(ScheduleEntity::getId).collect(Collectors.toSet());
 
         InnerQueryFlowInstanceParams innerQueryFlowInstanceParams = new InnerQueryFlowInstanceParams()
-            .setParentInstanceIds(sqlPlanScheduleIds)
-            .setTaskTypes(Sets.newHashSet(TaskType.ASYNC, TaskType.PARTITION_PLAN))
-            .setStartTime(params.getStartTime())
-            .setEndTime(params.getEndTime());
+                .setParentInstanceIds(sqlPlanScheduleIds)
+                .setTaskTypes(Sets.newHashSet(TaskType.ASYNC, TaskType.PARTITION_PLAN))
+                .setStartTime(params.getStartTime())
+                .setEndTime(params.getEndTime());
         List<FlowInstanceState> flowInstanceStates = flowInstanceService.listSubTaskStates(
                 innerQueryFlowInstanceParams);
         if (CollectionUtils.isEmpty(flowInstanceStates)) {

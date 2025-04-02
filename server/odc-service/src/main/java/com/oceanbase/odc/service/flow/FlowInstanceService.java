@@ -1349,23 +1349,23 @@ public class FlowInstanceService {
     private List<FlowInstanceState> listPartitionPlanSubTaskStates(@NonNull InnerQueryFlowInstanceParams params) {
         Set<Long> joinedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
         if (CollectionUtils.isEmpty(joinedProjectIds) || CollectionUtils.isEmpty(params.getTaskTypes())
-            || !params.getTaskTypes().contains(TaskType.PARTITION_PLAN)) {
+                || !params.getTaskTypes().contains(TaskType.PARTITION_PLAN)) {
             return Collections.emptyList();
         }
         Set<Long> parentFlowInstanceIds = innerListDistinctServiceTaskInstances(new InnerQueryFlowInstanceParams()
-            .setTaskTypes(Collections.singleton(TaskType.PARTITION_PLAN)))
-            .stream().map(ServiceTaskInstanceEntity::getFlowInstanceId).collect(Collectors.toSet());
+                .setTaskTypes(Collections.singleton(TaskType.PARTITION_PLAN)))
+                        .stream().map(ServiceTaskInstanceEntity::getFlowInstanceId).collect(Collectors.toSet());
         if (CollectionUtils.isEmpty(parentFlowInstanceIds)) {
             return Collections.emptyList();
         }
         Specification<FlowInstanceEntity> spec = FlowInstanceSpecs.createTimeLate(params.getStartTime())
-            .and(FlowInstanceSpecs.createTimeBefore(params.getEndTime()))
-            .and(FlowInstanceSpecs.parentInstanceIdIn(parentFlowInstanceIds))
-            .and(FlowInstanceSpecs.projectIdIn(joinedProjectIds));
+                .and(FlowInstanceSpecs.createTimeBefore(params.getEndTime()))
+                .and(FlowInstanceSpecs.parentInstanceIdIn(parentFlowInstanceIds))
+                .and(FlowInstanceSpecs.projectIdIn(joinedProjectIds));
         final List<FlowInstanceState> partitionPlanFlowInstanceStates = new ArrayList<>();
         flowInstanceRepository.findAll(spec).forEach(flowInstance -> {
             partitionPlanFlowInstanceStates
-                .add(new FlowInstanceState(TaskType.PARTITION_PLAN, flowInstance.getStatus()));
+                    .add(new FlowInstanceState(TaskType.PARTITION_PLAN, flowInstance.getStatus()));
         });
         return partitionPlanFlowInstanceStates;
     }
@@ -1375,19 +1375,19 @@ public class FlowInstanceService {
             return Collections.emptyList();
         }
         InnerQueryFlowInstanceParams copiedParams = ObjectUtil.deepCopy(params,
-            InnerQueryFlowInstanceParams.class);
+                InnerQueryFlowInstanceParams.class);
         copiedParams.getTaskTypes().retainAll(Collections.singleton(TaskType.ASYNC));
         Map<Long, FlowStatus> flowInstanceId2Status = flowInstanceRepository.findProjectionByParentInstanceIdIn(
                 copiedParams.getParentInstanceIds()).stream()
-            .collect(Collectors.toMap(FlowInstanceProjection::getId, FlowInstanceProjection::getStatus,
-                (exist, replace) -> exist));
+                .collect(Collectors.toMap(FlowInstanceProjection::getId, FlowInstanceProjection::getStatus,
+                        (exist, replace) -> exist));
         if (CollectionUtils.isEmpty(flowInstanceId2Status.keySet())) {
             return Collections.emptyList();
         }
         copiedParams.setFlowInstanceIds(flowInstanceId2Status.keySet());
         Map<Long, TaskType> flowInstanceId2SubTaskType = innerListDistinctServiceTaskInstances(copiedParams)
-            .stream().collect(Collectors.toMap(ServiceTaskInstanceEntity::getFlowInstanceId,
-                ServiceTaskInstanceEntity::getTaskType, (exist, replace) -> exist));
+                .stream().collect(Collectors.toMap(ServiceTaskInstanceEntity::getFlowInstanceId,
+                        ServiceTaskInstanceEntity::getTaskType, (exist, replace) -> exist));
         final List<FlowInstanceState> flowInstanceStates = new ArrayList<>();
         flowInstanceId2Status.forEach((id, flowStatus) -> {
             if (flowStatus != null && flowInstanceId2SubTaskType.containsKey(id)) {
@@ -1398,7 +1398,7 @@ public class FlowInstanceService {
     }
 
     public List<FlowInstanceState> listSubTaskStates(
-        @NonNull InnerQueryFlowInstanceParams params) {
+            @NonNull InnerQueryFlowInstanceParams params) {
         Set<Long> joinedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
         if (CollectionUtils.isEmpty(joinedProjectIds)) {
             return Collections.emptyList();

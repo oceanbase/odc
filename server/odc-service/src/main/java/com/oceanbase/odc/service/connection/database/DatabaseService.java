@@ -943,9 +943,9 @@ public class DatabaseService {
 
         // Ensure that the databases tracked down remain in relative order according to databaseIds
         List<DatabaseEntity> dbs =
-            databaseIds.stream().map(dbId2Database::get).filter(Objects::nonNull).collect(Collectors.toList());
+                databaseIds.stream().map(dbId2Database::get).filter(Objects::nonNull).collect(Collectors.toList());
         return entitiesToModels(new PageImpl<>(dbs),
-            includesPermittedAction).getContent();
+                includesPermittedAction).getContent();
     }
 
     @SkipAuthorize("odc internal usage")
