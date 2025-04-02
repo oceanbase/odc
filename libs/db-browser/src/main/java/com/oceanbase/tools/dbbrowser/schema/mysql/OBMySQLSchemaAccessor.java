@@ -78,6 +78,11 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
         ESCAPE_SCHEMA_SET.add("__public");
     }
 
+    public OBMySQLSchemaAccessor(JdbcOperations jdbcOperations) {
+        super(jdbcOperations);
+        this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.OBMYSQL_432x);
+    }
+
     @Override
     public List<DBObjectIdentity> listMViews(String schemaName) {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
@@ -172,11 +177,6 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     public List<String> showDatabases() {
         return super.showDatabases().stream().filter(database -> !ESCAPE_SCHEMA_SET.contains(database))
                 .collect(Collectors.toList());
-    }
-
-    public OBMySQLSchemaAccessor(JdbcOperations jdbcOperations) {
-        super(jdbcOperations);
-        this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.OBMYSQL_432x);
     }
 
     @Override
@@ -553,6 +553,20 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     @Override
     public List<DBTableColumn> listBasicExternalTableColumns(String schemaName, String externalTableName) {
         String sql = sqlMapper.getSql(Statements.LIST_BASIC_EXTERNAL_TABLE_COLUMNS);
+        return jdbcOperations.query(sql, new Object[] {schemaName, externalTableName}, listBasicTableColumnRowMapper());
+    }
+
+
+    @Override
+    public Map<String, List<DBTableColumn>> listBasicMViewColumns(String schemaName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_MATERIALIZED_VIEW_COLUMNS);
+        List<DBTableColumn> tableColumns = jdbcOperations.query(sql, new Object[] {schemaName, schemaName},
+                listBasicTableColumnRowMapper());
+        return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
+    }
+
+    public List<DBTableColumn> listBasicMViewColumns(String schemaName, String externalTableName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_MATERIALIZED_VIEW_COLUMNS);
         return jdbcOperations.query(sql, new Object[] {schemaName, externalTableName}, listBasicTableColumnRowMapper());
     }
 

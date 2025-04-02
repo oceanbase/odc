@@ -282,7 +282,8 @@ public class DBResourcePermissionHelper {
         });
         Set<Long> dbIds = resource2Types.keySet().stream().map(DBResource::getDatabaseId).collect(Collectors.toSet());
         List<DBObjectEntity> tbEntities = dbObjectRepository.findByDatabaseIdInAndTypeIn(dbIds,
-                Arrays.asList(DBObjectType.TABLE, DBObjectType.VIEW, DBObjectType.EXTERNAL_TABLE));
+                Arrays.asList(DBObjectType.TABLE, DBObjectType.VIEW, DBObjectType.EXTERNAL_TABLE,
+                        DBObjectType.MATERIALIZED_VIEW));
         Map<Long, DBObjectEntity> tbId2Entity =
                 tbEntities.stream().collect(Collectors.toMap(DBObjectEntity::getId, e -> e));
         Map<Long, Map<String, DBObjectEntity>> dbId2tbName2tbEntity = new HashMap<>();

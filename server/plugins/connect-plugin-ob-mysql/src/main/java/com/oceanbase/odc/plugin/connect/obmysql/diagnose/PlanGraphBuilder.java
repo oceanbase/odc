@@ -85,17 +85,23 @@ public class PlanGraphBuilder {
         graph.insertVertex(operator);
         id2Operator.put(operator.getGraphId(), operator);
         if (!"-1".equals(parentId)) {
-            int rows = NumberUtils.isDigits(jsonMap.get("EST.ROWS").toString()) ? (int) jsonMap.get("EST.ROWS") : 0;
+            long rows = jsonMap.containsKey("EST.ROWS") && NumberUtils.isDigits(jsonMap.get("EST.ROWS").toString())
+                    ? Long.parseLong(jsonMap.get("EST.ROWS").toString())
+                    : 0;
             graph.insertEdge(id2Operator.get(parentId), operator, rows);
         }
         operator.setStatus(QueryStatus.PREPARING);
-        String name = (String) jsonMap.get("NAME");
-        if (StringUtils.isNotEmpty(name)) {
-            operator.setTitle(name);
-            operator.setAttribute("Object name", singletonList(name));
+        if (jsonMap.containsKey("NAME")) {
+            String name = (String) jsonMap.get("NAME");
+            if (StringUtils.isNotEmpty(name)) {
+                operator.setTitle(name);
+                operator.setAttribute("Object name", singletonList(name));
+            }
         }
         String durationKey = jsonMap.containsKey("EST.TIME(us)") ? "EST.TIME(us)" : "COST";
-        long dbTime = (int) jsonMap.get(durationKey);
+        long dbTime = jsonMap.containsKey(durationKey) && NumberUtils.isDigits(jsonMap.get(durationKey).toString())
+                ? Long.parseLong(jsonMap.get(durationKey).toString())
+                : 0;
         operator.setDuration(dbTime);
         operator.getOverview().put(durationKey, dbTime + "");
         Map<String, List<String>> special = parsePredicates(outputFilter.get(id), new HashMap<>());

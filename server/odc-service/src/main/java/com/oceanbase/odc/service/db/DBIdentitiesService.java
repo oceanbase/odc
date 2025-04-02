@@ -50,6 +50,9 @@ public class DBIdentitiesService {
         if (types.contains(DBObjectType.EXTERNAL_TABLE)) {
             listExternalTables(schemaAccessor, all);
         }
+        if (types.contains(DBObjectType.MATERIALIZED_VIEW)) {
+            listMViews(schemaAccessor, all);
+        }
         schemaAccessor.showDatabases().forEach(db -> all.computeIfAbsent(db, SchemaIdentities::of));
         return new ArrayList<>(all.values());
     }
@@ -68,6 +71,11 @@ public class DBIdentitiesService {
 
     void listExternalTables(DBSchemaAccessor schemaAccessor, Map<String, SchemaIdentities> all) {
         schemaAccessor.listExternalTables(null, null)
+                .forEach(i -> all.computeIfAbsent(i.getSchemaName(), SchemaIdentities::of).add(i));
+    }
+
+    void listMViews(DBSchemaAccessor schemaAccessor, Map<String, SchemaIdentities> all) {
+        schemaAccessor.listAllMViewsLike("")
                 .forEach(i -> all.computeIfAbsent(i.getSchemaName(), SchemaIdentities::of).add(i));
     }
 
