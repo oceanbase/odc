@@ -17,9 +17,11 @@ package com.oceanbase.tools.dbbrowser.editor;
 
 import com.oceanbase.tools.dbbrowser.AbstractDBBrowserFactory;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLNoLessThan5700IndexEditor;
+import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLDBMViewIndexEditor;
 import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLIndexEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OBOracleIndexEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleIndexEditor;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -27,6 +29,8 @@ import lombok.experimental.Accessors;
 @Setter
 @Accessors(chain = true)
 public class DBTableIndexEditorFactory extends AbstractDBBrowserFactory<DBTableIndexEditor> {
+
+    private DBObjectType dbObjectType;
 
     @Override
     public DBTableIndexEditor buildForDoris() {
@@ -40,6 +44,9 @@ public class DBTableIndexEditorFactory extends AbstractDBBrowserFactory<DBTableI
 
     @Override
     public DBTableIndexEditor buildForOBMySQL() {
+        if (dbObjectType == DBObjectType.MATERIALIZED_VIEW) {
+            return new OBMySQLDBMViewIndexEditor();
+        }
         return new OBMySQLIndexEditor();
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,24 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.tools.dbbrowser.editor;
 
+import java.util.Collection;
 
-import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
-import com.oceanbase.tools.dbbrowser.model.DBTable;
-import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
-import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
-import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
-import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
-import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
-import lombok.Getter;
-import lombok.Setter;
+import javax.validation.constraints.NotNull;
+
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.validation.constraints.NotNull;
-import java.util.Collection;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
+import com.oceanbase.tools.dbbrowser.model.DBTable;
+import com.oceanbase.tools.dbbrowser.template.BaseMViewTemplate;
+import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
+
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * @description:
@@ -38,32 +37,71 @@ import java.util.Collection;
  * @date: 2025/4/1 21:45
  * @since: 4.3.4
  */
-public abstract class DBMViewEditor implements DBObjectEditor<DBMaterializedView>{
+public abstract class DBMViewEditor implements DBObjectEditor<DBMaterializedView> {
     @Getter
     @Setter
-    protected DBObjectEditor<DBTableIndex> indexEditor;
+    protected DBObjectEditor<DBTable> tableEditor;
 
-    public DBMViewEditor(DBObjectEditor<DBTableIndex> indexEditor) {
-        this.indexEditor = indexEditor;
+    public DBMViewEditor(DBObjectEditor<DBTable> tableEditor) {
+        this.tableEditor = tableEditor;
     }
 
+    /**
+     * {@link DBObjectType#MATERIALIZED_VIEW} cannot directly generate a complete creation statement,
+     * but can only generate a template to be perfected by the user. For details about how to generate
+     * templates, see {@link BaseMViewTemplate#generateCreateObjectTemplate(DBMaterializedView)}
+     *
+     * @param materializedView {@link DBMaterializedView}
+     * @return
+     */
+    @Override
+    public String generateCreateObjectDDL(@NotNull DBMaterializedView materializedView) {
+        throw new UnsupportedOperationException("not supported");
+    }
 
     @Override
-    public String generateUpdateObjectDDL(@NotNull DBMaterializedView oldMView,
-                                          @NotNull DBMaterializedView newMView) {
+    public String generateCreateDefinitionDDL(@NotNull DBMaterializedView table) {
+        throw new UnsupportedOperationException("not supported");
+    }
+
+    @Override
+    public String generateDropObjectDDL(@NotNull DBMaterializedView table) {
         SqlBuilder sqlBuilder = sqlBuilder();
-        if (!StringUtils.equals(oldMView.getName(), newMView.getName())) {
-            sqlBuilder.append(generateRenameObjectDDL(oldMView, newMView));
-            sqlBuilder.append(";\n");
-        }
-        sqlBuilder.append(indexEditor.generateUpdateObjectListDDL(oldMView.getIndexes(), newMView.getIndexes()));
+        sqlBuilder.append("DROP MATERIALIZED VIEW ").append(getFullyQualifiedTableName(table));
         return sqlBuilder.toString();
     }
 
     @Override
-    public String generateUpdateObjectListDDL(Collection<DBTable> oldTables,
-                                              Collection<DBTable> newTables) {
+    public String generateUpdateObjectDDL(@NotNull DBMaterializedView oldTable,
+            @NotNull DBMaterializedView newTable) {
+        return this.tableEditor.generateUpdateObjectDDL(oldTable.generateDBTable(), newTable.generateDBTable());
+    }
+
+    @Override
+    public boolean editable() {
+        return true;
+    }
+
+    @Override
+    public String generateUpdateObjectListDDL(Collection<DBMaterializedView> oldObjects,
+            Collection<DBMaterializedView> newObjects) {
         throw new NotImplementedException();
+    }
+
+    @Override
+    public String generateRenameObjectDDL(DBMaterializedView oldObject, DBMaterializedView newObject) {
+        throw new UnsupportedOperationException("not supported");
+    }
+
+    protected abstract SqlBuilder sqlBuilder();
+
+    protected String getFullyQualifiedTableName(@NotNull DBMaterializedView table) {
+        SqlBuilder sqlBuilder = sqlBuilder();
+        if (StringUtils.isNotEmpty(table.getSchemaName())) {
+            sqlBuilder.identifier(table.getSchemaName()).append(".");
+        }
+        sqlBuilder.identifier(table.getName());
+        return sqlBuilder.toString();
     }
 
 }

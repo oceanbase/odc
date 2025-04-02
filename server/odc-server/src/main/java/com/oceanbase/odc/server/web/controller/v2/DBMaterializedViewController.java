@@ -41,6 +41,8 @@ import com.oceanbase.odc.service.connection.table.model.QueryTableParams;
 import com.oceanbase.odc.service.connection.table.model.Table;
 import com.oceanbase.odc.service.db.DBMaterializedViewService;
 import com.oceanbase.odc.service.db.model.AllMVBaseTables;
+import com.oceanbase.odc.service.db.model.GenerateTableDDLResp;
+import com.oceanbase.odc.service.db.model.GenerateUpdateMViewDDLReq;
 import com.oceanbase.odc.service.db.model.MViewRefreshReq;
 import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.odc.service.state.model.StateName;
@@ -49,6 +51,7 @@ import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecord;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
+import com.oceanbase.tools.dbbrowser.model.DBSchema;
 
 import io.swagger.annotations.ApiOperation;
 
@@ -120,6 +123,20 @@ public class DBMaterializedViewController {
         ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
         return Responses.success(dbMaterializedViewService.getCreateSql(
                 session, materializedView));
+    }
+
+    @PostMapping(value = {"/{sessionId}/databases/{databaseName}/materializedViews/generateUpdateMViewDDL",
+            "/{sessionId}/currentDatabase/materializedViews/generateUpdateMViewDDL"})
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
+    public SuccessResponse<GenerateTableDDLResp> generateUpdateMViewDDL(@PathVariable String sessionId,
+            @PathVariable(required = false) String databaseName, @RequestBody GenerateUpdateMViewDDLReq req) {
+        DBSchema schema = DBSchema.of(databaseName);
+        req.getPrevious().setSchema(schema);
+        req.getPrevious().setSchemaName(databaseName);
+        req.getCurrent().setSchema(schema);
+        req.getCurrent().setSchemaName(databaseName);
+        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
+        return Responses.success(dbMaterializedViewService.generateUpdateDDL(session, req));
     }
 
     @ApiOperation(value = "refresh", notes = "refresh data of the materialized view.")

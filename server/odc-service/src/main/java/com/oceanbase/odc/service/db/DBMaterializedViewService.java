@@ -38,6 +38,7 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
+import com.oceanbase.odc.core.shared.model.TableIdentity;
 import com.oceanbase.odc.plugin.schema.api.MViewExtensionPoint;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
@@ -49,6 +50,8 @@ import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.db.model.AllMVBaseTables;
 import com.oceanbase.odc.service.db.model.DatabaseAndMVs;
 import com.oceanbase.odc.service.db.model.DatabaseAndTables;
+import com.oceanbase.odc.service.db.model.GenerateTableDDLResp;
+import com.oceanbase.odc.service.db.model.GenerateUpdateMViewDDLReq;
 import com.oceanbase.odc.service.db.model.MViewRefreshReq;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
@@ -72,6 +75,8 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @SkipAuthorize("inside connect session")
 public class DBMaterializedViewService {
+    @Autowired
+    private DBTableService dbTableService;
 
     @Autowired
     private TableService tableService;
@@ -133,6 +138,22 @@ public class DBMaterializedViewService {
                 ConnectionSessionConstants.BACKEND_DS_KEY)
                 .execute((ConnectionCallback<String>) con -> getDBMViewExtensionPoint(session)
                         .generateCreateTemplate(resource));
+    }
+
+    public GenerateTableDDLResp generateUpdateDDL(@NotNull ConnectionSession session,
+            @NotNull GenerateUpdateMViewDDLReq req) {
+
+        String ddl = session.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<String>) con -> getDBMViewExtensionPoint(session).generateUpdateDDL(con,
+                        req.getPrevious(), req.getCurrent()));
+
+        return GenerateTableDDLResp.builder()
+                .sql(ddl)
+                .currentIdentity(TableIdentity.of(req.getCurrent().getSchemaName(), req.getCurrent().getName()))
+                .previousIdentity(TableIdentity.of(req.getPrevious().getSchemaName(), req.getPrevious().getName()))
+                .tip(dbTableService.checkUpdateDDL(session.getDialectType(), ddl))
+                .build();
     }
 
     public DBMaterializedView detail(@NonNull ConnectionSession connectionSession, @NotEmpty String schemaName,

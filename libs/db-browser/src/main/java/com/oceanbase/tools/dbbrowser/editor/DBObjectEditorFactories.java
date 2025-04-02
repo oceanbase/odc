@@ -21,6 +21,10 @@ public class DBObjectEditorFactories {
         return new DBTableEditorFactory();
     }
 
+    public DBMViewEditorFactory mViewEditor() {
+        return new DBMViewEditorFactory();
+    }
+
     public DBTableIndexEditorFactory tableIndexEditor() {
         return new DBTableIndexEditorFactory();
     }

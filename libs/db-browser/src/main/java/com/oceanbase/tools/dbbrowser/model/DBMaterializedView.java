@@ -21,8 +21,11 @@ import java.util.List;
 
 import javax.validation.constraints.NotEmpty;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 /**
  * @description:
@@ -33,6 +36,12 @@ import lombok.Setter;
 @Setter
 @Getter
 public class DBMaterializedView implements DBObject {
+    /**
+     * 所属 schema，API 层面不可见
+     */
+    @JsonIgnore
+    @ToString.Exclude
+    private DBSchema schema;
     @NotEmpty
     private String name;
     // if null, use defaultSchemaName in current connection
@@ -81,4 +90,16 @@ public class DBMaterializedView implements DBObject {
         dbView.setOperations(operations);
         return dbView;
     }
+
+    public DBTable generateDBTable() {
+        DBTable dbTable = new DBTable();
+        dbTable.setName(name);
+        dbTable.setSchemaName(schemaName);
+        dbTable.setColumns(columns);
+        dbTable.setIndexes(indexes);
+        dbTable.setConstraints(constraints);
+        dbTable.setPartition(partition);
+        return dbTable;
+    }
+
 }

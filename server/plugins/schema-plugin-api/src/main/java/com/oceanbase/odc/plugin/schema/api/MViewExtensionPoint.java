@@ -41,6 +41,8 @@ public interface MViewExtensionPoint extends ExtensionPoint {
 
     String generateCreateTemplate(DBMaterializedView mView);
 
+    String generateUpdateDDL(Connection connection, DBMaterializedView oldMView, DBMaterializedView newMView);
+
     Boolean refresh(Connection connection, DBMViewRefreshParameter parameter);
 
     List<DBMViewRefreshRecord> listRefreshRecords(Connection connection, DBMViewRefreshRecordParam param);
