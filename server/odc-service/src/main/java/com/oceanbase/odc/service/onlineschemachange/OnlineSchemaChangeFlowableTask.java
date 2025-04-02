@@ -125,6 +125,9 @@ public class OnlineSchemaChangeFlowableTask extends BaseODCFlowTaskDelegate<Void
                         param.setUid(uid);
                         param.setRateLimitConfig(parameter.getRateLimitConfig());
                         param.setState(OscStates.YIELD_CONTEXT.getState());
+                        // assign when create task
+                        param.setUseODCMigrateTool(onlineSchemaChangeProperties.isUseOdcMigrateTool());
+                        param.setOdcCommandURl(onlineSchemaChangeProperties.getOdcMigrateUrl());
                         return createScheduleTaskEntity(schedule.getId(), param);
                     }).collect(Collectors.toList());
 

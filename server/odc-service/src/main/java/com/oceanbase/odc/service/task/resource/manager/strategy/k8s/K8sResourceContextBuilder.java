@@ -17,20 +17,21 @@ package com.oceanbase.odc.service.task.resource.manager.strategy.k8s;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.lang3.tuple.Pair;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.resource.ResourceLocation;
-import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
-import com.oceanbase.odc.service.task.resource.AbstractK8sResourceOperatorBuilder;
 import com.oceanbase.odc.service.task.resource.K8sResourceContext;
 import com.oceanbase.odc.service.task.resource.PodConfig;
-import com.oceanbase.odc.service.task.schedule.provider.JobImageNameProvider;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 /**
@@ -40,11 +41,20 @@ import com.oceanbase.odc.service.task.util.JobUtils;
 public class K8sResourceContextBuilder {
     private static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS");
     protected final K8sProperties k8sProperties;
-    protected final Integer supervisorListenPort;
+    // port mapper to host machine, null or 0 means no mapper needed
+    protected final List<Pair<Integer, Integer>> portMapper = new ArrayList<>();
+    protected final String k8sImplType;
+    protected final String imageName;
 
-    public K8sResourceContextBuilder(K8sProperties k8sProperties, Integer supervisorListenPort) {
+    public K8sResourceContextBuilder(K8sProperties k8sProperties, List<Pair<Integer, Integer>> portMapper,
+            String k8sImplType,
+            String imageName) {
         this.k8sProperties = k8sProperties;
-        this.supervisorListenPort = supervisorListenPort;
+        if (null != portMapper) {
+            this.portMapper.addAll(portMapper);
+        }
+        this.k8sImplType = k8sImplType;
+        this.imageName = imageName;
     }
 
     public K8sResourceContext buildK8sResourceContext(Long taskID, ResourceLocation resourceLocation) {
@@ -52,7 +62,7 @@ public class K8sResourceContextBuilder {
         PodConfig podConfig = createDefaultPodConfig(k8sProperties);
         return new K8sResourceContext(podConfig, jobName, resourceLocation.getRegion(),
                 resourceLocation.getGroup(),
-                AbstractK8sResourceOperatorBuilder.CLOUD_K8S_POD_TYPE, null);
+                k8sImplType, null);
     }
 
     private PodConfig createDefaultPodConfig(K8sProperties k8sProperties) {
@@ -60,9 +70,7 @@ public class K8sResourceContextBuilder {
         if (StringUtils.isNotBlank(k8sProperties.getNamespace())) {
             podConfig.setNamespace(k8sProperties.getNamespace());
         }
-        JobImageNameProvider jobImageNameProvider = JobConfigurationHolder.getJobConfiguration()
-                .getJobImageNameProvider();
-        podConfig.setImage(jobImageNameProvider.provide());
+        podConfig.setImage(imageName);
         podConfig.setRegion(StringUtils.isNotBlank(k8sProperties.getRegion()) ? k8sProperties.getRegion()
                 : SystemUtils.getEnvOrProperty(JobEnvKeyConstants.OB_ARN_PARTITION));
 
@@ -78,18 +86,20 @@ public class K8sResourceContextBuilder {
         podConfig.setNodeCpu(k8sProperties.getNodeCpu());
         podConfig.setNodeMemInMB(k8sProperties.getNodeMemInMB());
         podConfig.setPodPendingTimeoutSeconds(k8sProperties.getPodPendingTimeoutSeconds());
-        podConfig.setEnvironments(buildEnv());
+        podConfig.setEnvironments(buildEnv(k8sProperties));
+        podConfig.setPortsMapper(portMapper);
         return podConfig;
     }
+
 
     public String generateK8sPodName(long jobID) {
         return JobConstants.TEMPLATE_JOB_NAME_PREFIX + "supervisor-" + jobID + "-" + LocalDateTime.now().format(DTF);
     }
 
-    public Map<String, String> buildEnv() {
+    public Map<String, String> buildEnv(K8sProperties k8sProperties) {
         Map<String, String> env = new HashMap<>();
         env.put(JobEnvKeyConstants.ODC_SUPERVISOR_LISTEN_PORT,
-                String.valueOf(supervisorListenPort));
+                String.valueOf(k8sProperties.getSupervisorListenPort()));
         env.put(JobEnvKeyConstants.ODC_LOG_DIRECTORY, JobUtils.getLogBasePath(k8sProperties.getMountPath()));
         return env;
     }

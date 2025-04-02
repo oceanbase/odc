@@ -20,7 +20,7 @@ import java.util.Map;
 
 import com.oceanbase.odc.common.json.NormalDialectTypeOutput;
 import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsStepName;
+import com.oceanbase.odc.service.onlineschemachange.oms.enums.OscStepName;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -121,7 +121,10 @@ public class OnlineSchemaChangeScheduleTaskResult {
      */
     private boolean manualSwapTableStarted;
 
-    private Map<OmsStepName, Long> checkFailedTime = new HashMap<>();
+    private Map<OscStepName, Long> checkFailedTime = new HashMap<>();
+
+    // last check failed time, it maybe not ready yet
+    private Long lastCheckFailedTimeSecond;
 
     public OnlineSchemaChangeScheduleTaskResult(OnlineSchemaChangeScheduleTaskParameters taskParam) {
         this.originTableName = taskParam.getOriginTableName();

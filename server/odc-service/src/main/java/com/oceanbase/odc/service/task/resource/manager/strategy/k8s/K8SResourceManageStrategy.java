@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.alarm.AlarmEventNames;
@@ -33,16 +34,15 @@ import com.oceanbase.odc.metadb.resource.ResourceEntity;
 import com.oceanbase.odc.metadb.task.ResourceAllocateInfoEntity;
 import com.oceanbase.odc.metadb.task.SupervisorEndpointEntity;
 import com.oceanbase.odc.metadb.task.SupervisorEndpointRepository;
-import com.oceanbase.odc.service.resource.Resource;
 import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.resource.ResourceManager;
 import com.oceanbase.odc.service.resource.ResourceWithID;
+import com.oceanbase.odc.service.resource.k8s.K8sResourceUtil;
 import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.resource.Constants;
 import com.oceanbase.odc.service.task.resource.K8sPodResource;
-import com.oceanbase.odc.service.task.resource.K8sResourceContext;
 import com.oceanbase.odc.service.task.resource.manager.ResourceManageStrategy;
 import com.oceanbase.odc.service.task.resource.manager.SupervisorEndpointRepositoryWrap;
 import com.oceanbase.odc.service.task.supervisor.SupervisorEndpointState;
@@ -63,13 +63,20 @@ public class K8SResourceManageStrategy implements ResourceManageStrategy {
     protected final K8sProperties k8sProperties;
     protected final Supplier<Integer> supervisorListenPortProvider;
     protected final SupervisorEndpointRepositoryWrap supervisorEndpointRepositoryWrap;
+    protected final String k8sImplType;
+    protected final String imageName;
+    protected final boolean enableK8sPortMapper;
 
     public K8SResourceManageStrategy(K8sProperties k8sProperties, ResourceManager resourceManager,
-            SupervisorEndpointRepository supervisorEndpointRepository, Supplier<Integer> supervisorListenPortProvider) {
+            SupervisorEndpointRepository supervisorEndpointRepository, Supplier<Integer> supervisorListenPortProvider,
+            String k8sImplType, String imageName, boolean enableK8sPortMapper) {
         this.resourceManager = resourceManager;
         this.k8sProperties = k8sProperties;
         this.supervisorListenPortProvider = supervisorListenPortProvider;
         this.supervisorEndpointRepositoryWrap = new SupervisorEndpointRepositoryWrap(supervisorEndpointRepository);
+        this.k8sImplType = k8sImplType;
+        this.imageName = imageName;
+        this.enableK8sPortMapper = enableK8sPortMapper;
     }
 
     /**
@@ -85,26 +92,29 @@ public class K8SResourceManageStrategy implements ResourceManageStrategy {
         ResourceLocation resourceLocation = new ResourceLocation(resourceAllocateInfoEntity.getResourceRegion(),
                 resourceAllocateInfoEntity.getResourceGroup());
         int supervisorListenPort = supervisorListenPortProvider.get();
-        K8sResourceContextBuilder contextBuilder = new K8sResourceContextBuilder(k8sProperties, supervisorListenPort);
-        K8sResourceContext k8sResourceContext =
-                contextBuilder.buildK8sResourceContext(resourceAllocateInfoEntity.getTaskId(), resourceLocation);
         ResourceWithID<K8sPodResource> k8sPodResource = null;
         // allocate resource failed, send alarm event and throws exception
         try {
-            k8sPodResource = resourceManager.create(resourceLocation,
-                    k8sResourceContext);
+            List<Pair<Integer, Integer>> portMapper = new ArrayList<>();
+            if (enableK8sPortMapper) {
+                portMapper = K8sResourceUtil.buildRandomPortMapper(supervisorListenPort,
+                    k8sProperties.getExecutorListenPort());
+            }
+            k8sPodResource = K8sResourceUtil.createK8sPodResource(resourceManager, resourceLocation, k8sImplType,
+                    imageName, k8sProperties,
+                    resourceAllocateInfoEntity.getTaskId(), portMapper,
+                    supervisorListenPort);
         } catch (Throwable e) {
             alarmResourceFailed(resourceAllocateInfoEntity, e);
             throw new JobException("create resource failed for " + resourceAllocateInfoEntity, e);
         }
-        log.info("create k8s pod = {} for allocate entity = {}", k8sPodResource, resourceAllocateInfoEntity);
+        K8sPodResource podResource = k8sPodResource.getResource();
+        // correct it to RESOURCE_NULL_HOST to avoid null check
+        if (StringUtils.isEmpty(podResource.getPodIpAddress())) {
+            podResource.setPodIpAddress(Constants.RESOURCE_NULL_HOST);
+        }
         // save to db failed, try release resource
         try {
-            K8sPodResource podResource = k8sPodResource.getResource();
-            podResource.setServicePort(String.valueOf(supervisorListenPort));
-            if (StringUtils.isEmpty(podResource.getPodIpAddress())) {
-                podResource.setPodIpAddress(Constants.RESOURCE_NULL_HOST);
-            }
             // create with load 1 to let resource not released
             return supervisorEndpointRepositoryWrap.save(podResource, k8sPodResource.getId(), 0);
         } catch (Throwable e) {
@@ -147,14 +157,13 @@ public class K8SResourceManageStrategy implements ResourceManageStrategy {
     @Override
     public void refreshSupervisorEndpoint(SupervisorEndpointEntity endpoint) {
         try {
-            ResourceWithID<Resource> resourceWithID = resourceManager.query(endpoint.getResourceID())
-                    .orElseThrow(() -> new RuntimeException("resource not found, id = " + endpoint.getResourceID()));
-            K8sPodResource podResource = (K8sPodResource) resourceWithID.getResource();
-            if (podResource.getPodIpAddress() != null) {
-                endpoint.setHost(podResource.getPodIpAddress());
+            String podIpAndAddress =
+                    K8sResourceUtil.queryIpAndAddress(resourceManager, endpoint.getResourceID()).getPodIpAddress();
+            if (podIpAndAddress != null) {
+                endpoint.setHost(podIpAndAddress);
                 supervisorEndpointRepositoryWrap.updateEndpointHost(endpoint);
                 log.info("refresh pod ip address success, id = {}, host =z {}", endpoint.getResourceID(),
-                        podResource.getPodIpAddress());
+                        podIpAndAddress);
             }
         } catch (Exception e) {
             log.warn("get pod ip address failed, resource id={}", endpoint.getResourceID(), e);

@@ -24,8 +24,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsStepName;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsStepStatus;
+import com.oceanbase.odc.service.onlineschemachange.oms.enums.OscStepName;
 import com.oceanbase.odc.service.onlineschemachange.oms.jackson.CustomEnumDeserializer;
 
 import lombok.Data;
@@ -49,7 +49,7 @@ public class OmsProjectStepVO {
      * 步骤名
      */
     @JsonDeserialize(using = CustomEnumDeserializer.OmsStepNameDeserializer.class)
-    private OmsStepName name;
+    private OscStepName name;
 
     /**
      * 步骤描述（预检查/结构迁移/结构同步/全量迁移/全量同步/全量校验/索引迁移/增量日志拉取/增量同步/增量校验/正向切换）

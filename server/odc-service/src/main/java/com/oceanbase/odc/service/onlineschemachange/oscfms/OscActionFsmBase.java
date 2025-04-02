@@ -35,6 +35,7 @@ import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
+import com.oceanbase.odc.service.config.SystemConfigService;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.flow.BeanInjectedClassDelegate;
@@ -49,6 +50,7 @@ import com.oceanbase.odc.service.onlineschemachange.oms.openapi.DataSourceOpenAp
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenApiService;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.action.ConnectionProvider;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OscStates;
+import com.oceanbase.odc.service.resource.ResourceManager;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
@@ -87,6 +89,10 @@ public abstract class OscActionFsmBase extends ActionFsm<OscActionContext, OscAc
     // ugly impl, try impl only in scheduler or flow
     @Autowired
     protected FlowInstanceService flowInstanceService;
+    @Autowired
+    protected ResourceManager resourceManager;
+    @Autowired
+    protected SystemConfigService systemConfigService;
     // default is 432000 = 5*24*3600
     @Value("${osc-task-expired-after-seconds:432000}")
     protected long oscTaskExpiredAfterSeconds;

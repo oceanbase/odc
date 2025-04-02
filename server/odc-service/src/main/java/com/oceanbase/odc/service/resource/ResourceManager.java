@@ -249,6 +249,9 @@ public class ResourceManager {
         Optional<ResourceEntity> optional = this.resourceRepository.findById(id);
         if (!optional.isPresent()) {
             throw new IllegalStateException("Resource not found by id " + id);
+        } else if (optional.get().getStatus() == ResourceState.DESTROYING) {
+            log.warn("Resource is already in destroying state, resourceID={}", id);
+            return null;
         }
         return doDestroy(new ResourceID(optional.get()));
     }

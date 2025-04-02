@@ -16,9 +16,7 @@
 package com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms;
 
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
-import java.util.UUID;
 
 import javax.validation.constraints.NotNull;
 
@@ -27,17 +25,13 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
 import com.oceanbase.odc.service.onlineschemachange.exception.OmsException;
 import com.oceanbase.odc.service.onlineschemachange.fsm.Action;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
-import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsOceanBaseType;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.DataSourceOpenApiService;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenApiService;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.CommonTransferConfig;
@@ -110,8 +104,8 @@ public class OmsCreateDataTaskAction implements Action<OscActionContext, OscActi
             CreateOceanBaseDataSourceRequest dataSourceRequest = null;
             try {
                 connectionSession = context.getConnectionProvider().createConnectionSession();
-                dataSourceRequest = getCreateDataSourceRequest(connectionConfig, connectionSession,
-                        context.getTaskParameter());
+                dataSourceRequest = OmsRequestUtil.getCreateDataSourceRequest(connectionConfig, connectionSession,
+                        context.getTaskParameter(), oscProperties);
                 omsDsId = dataSourceOpenApiService.createOceanBaseDataSource(dataSourceRequest);
                 log.info("OSC create oms data source, omsDSId {}, request {}", omsDsId, dataSourceRequest);
             } catch (OmsException ex) {
@@ -207,73 +201,10 @@ public class OmsCreateDataTaskAction implements Action<OscActionContext, OscActi
     protected void fillCreateProjectRequest(String omsDsId, Long scheduleId,
             OnlineSchemaChangeScheduleTaskParameters oscScheduleTaskParameters, CreateOmsProjectRequest request) {}
 
-    private CreateOceanBaseDataSourceRequest getCreateDataSourceRequest(ConnectionConfig config,
-            ConnectionSession connectionSession, OnlineSchemaChangeScheduleTaskParameters oscScheduleTaskParameters) {
-
-        CreateOceanBaseDataSourceRequest request = new CreateOceanBaseDataSourceRequest();
-        request.setName(UUID.randomUUID().toString().replace("-", ""));
-        request.setType(OmsOceanBaseType.from(config.getType()).name());
-        request.setTenant(config.getTenantName());
-        request.setCluster(config.getClusterName());
-        request.setUserName(config.getUsername());
-        if (config.getPassword() != null) {
-            request.setPassword(Base64.getEncoder().encodeToString(config.getPassword().getBytes()));
-        }
-        fillCreateDataSourceRequest(config, connectionSession, oscScheduleTaskParameters, request);
-        return request;
-    }
-
-    /**
-     * fill remain variables if needed
-     */
-    protected void fillCreateDataSourceRequest(ConnectionConfig config, ConnectionSession connectionSession,
-            OnlineSchemaChangeScheduleTaskParameters oscScheduleTaskParameters,
-            CreateOceanBaseDataSourceRequest request) {
-        request.setIp(config.getHost());
-        request.setPort(config.getPort());
-        request.setRegion(oscProperties.getOms().getRegion());
-        request.setOcpName(null);
-        String configUrl = getConfigUrl(connectionSession);
-        request.setConfigUrl(configUrl);
-        request.setDrcUserName(config.getSysTenantUsername());
-        if (config.getSysTenantPassword() != null) {
-            request.setDrcPassword(Base64.getEncoder().encodeToString(config.getSysTenantPassword().getBytes()));
-        }
-        if (config.getDialectType() == DialectType.OB_MYSQL && isObCE(connectionSession)) {
-            request.setType(OmsOceanBaseType.OB_MYSQL_CE.name());
-        }
-    }
-
     protected String reCreateDataSourceRequestAfterThrowsException(
             OnlineSchemaChangeScheduleTaskParameters oscScheduleTaskParameters,
             CreateOceanBaseDataSourceRequest request, OmsException ex) {
         return null;
     }
 
-
-    private String getConfigUrl(ConnectionSession connectionSession) {
-
-        SyncJdbcExecutor syncJdbcExecutor = connectionSession.getSyncJdbcExecutor(
-                ConnectionSessionConstants.CONSOLE_DS_KEY);
-        String queryClusterUrlSql = "show parameters like 'obconfig_url'";
-        return syncJdbcExecutor.query(queryClusterUrlSql, rs -> {
-            if (!rs.next()) {
-                throw new IllegalArgumentException("Get ob config_url is empty");
-            }
-            return rs.getString("value");
-        });
-    }
-
-    private boolean isObCE(ConnectionSession connectionSession) {
-        SyncJdbcExecutor syncJdbcExecutor = connectionSession.getSyncJdbcExecutor(
-                ConnectionSessionConstants.CONSOLE_DS_KEY);
-        String queryVersionSql = "show variables like 'version_comment'";
-        String versionString = syncJdbcExecutor.query(queryVersionSql, rs -> {
-            if (!rs.next()) {
-                throw new IllegalArgumentException("Get ob version is empty");
-            }
-            return rs.getString("value");
-        });
-        return versionString != null && versionString.startsWith("OceanBase_CE");
-    }
 }

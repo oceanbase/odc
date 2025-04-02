@@ -18,7 +18,7 @@ package com.oceanbase.odc.service.task.resource;
 import java.io.IOException;
 import java.util.Optional;
 
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.metadb.resource.ResourceEntity;
@@ -106,8 +106,8 @@ public abstract class AbstractK8sResourceOperatorBuilder
 
     @Override
     public K8sPodResource toResource(ResourceEntity resourceEntity, Optional<K8sPodResource> runtimeResource) {
-        Pair<String, String> ipAndPort = runtimeResource
-                .map(r -> Pair.of(r.getPodIpAddress(), r.getServicePort()))
+        Triple<String, String, String> ipAndPort = runtimeResource
+                .map(r -> Triple.of(r.getPodIpAddress(), r.getHostIpAddress(), r.getServicePort()))
                 .orElse(K8sPodResource.parseIPAndPort(resourceEntity.getEndpoint()));
         return new K8sPodResource(
                 resourceEntity.getRegion(),
@@ -117,6 +117,7 @@ public abstract class AbstractK8sResourceOperatorBuilder
                 resourceEntity.getResourceName(),
                 resourceEntity.getStatus(),
                 ipAndPort.getLeft(),
+                ipAndPort.getMiddle(),
                 ipAndPort.getRight(),
                 resourceEntity.getCreateTime());
     }

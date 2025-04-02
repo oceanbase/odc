@@ -28,15 +28,24 @@ import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionResult;
  */
 public class ActionDelegate implements Action<OscActionContext, OscActionResult> {
     // use delegate
-    protected Action<OscActionContext, OscActionResult> action;
+    protected Action<OscActionContext, OscActionResult> omsAction;
+    protected Action<OscActionContext, OscActionResult> odcAction;
 
     @Override
     public OscActionResult execute(OscActionContext context) throws Exception {
-        return action.execute(context);
+        return chooseAction(context).execute(context);
     }
 
     @Override
     public void rollback(OscActionContext context) {
-        action.rollback(context);
+        chooseAction(context).rollback(context);
+    }
+
+    protected Action<OscActionContext, OscActionResult> chooseAction(OscActionContext context) {
+        if (context.getTaskParameter().isUseODCMigrateTool()) {
+            return odcAction;
+        } else {
+            return omsAction;
+        }
     }
 }
