@@ -192,27 +192,23 @@ public class PartitionPlanService {
 
     public List<PartitionPlanPreViewResp> generatePartitionDdl(@NonNull String sessionId,
             @NonNull List<PartitionPlanTableConfig> tableConfigs, Boolean onlyForPartitionName) {
-        return generatePartitionDdl(sessionService.nullSafeGet(sessionId, true), tableConfigs, onlyForPartitionName,
-                false);
+        return generatePartitionDdl(sessionService.nullSafeGet(sessionId, true), tableConfigs, onlyForPartitionName);
     }
 
     public List<PartitionPlanPreViewResp> generatePartitionDdl(@NonNull ConnectionSession connectionSession,
-            @NonNull List<PartitionPlanTableConfig> tableConfigs, Boolean onlyForPartitionName,
-            Boolean isTaskExecuting) {
+            @NonNull List<PartitionPlanTableConfig> tableConfigs, Boolean onlyForPartitionName) {
         DialectType dialectType = connectionSession.getDialectType();
         AutoPartitionExtensionPoint extensionPoint = TaskPluginUtil.getAutoPartitionExtensionPoint(dialectType);
         String schema = ConnectionSessionUtil.getCurrentSchema(connectionSession);
         JdbcOperations jdbc = getJdbcOpt(connectionSession);
-        if (isTaskExecuting) {
-            // filter the tableConfigs that is not existed in the current session
-            List<String> currentTableName = jdbc.execute(
-                    (ConnectionCallback<List<DBTable>>) con -> extensionPoint.listAllPartitionedTables(con,
-                            ConnectionSessionUtil.getTenantName(connectionSession),
-                            schema, null))
-                    .stream().map(DBTable::getName).collect(Collectors.toList());
-            tableConfigs = tableConfigs.stream().filter(i -> currentTableName.contains(i.getTableName()))
-                    .collect(Collectors.toList());
-        }
+        // filter the tableConfigs that is not existed in the current session
+        List<String> currentTableName = jdbc.execute(
+                (ConnectionCallback<List<DBTable>>) con -> extensionPoint.listAllPartitionedTables(con,
+                        ConnectionSessionUtil.getTenantName(connectionSession),
+                        schema, null))
+                .stream().map(DBTable::getName).collect(Collectors.toList());
+        tableConfigs = tableConfigs.stream().filter(i -> currentTableName.contains(i.getTableName()))
+                .collect(Collectors.toList());
         if (extensionPoint == null) {
             throw new UnsupportedOperationException("Unsupported dialect " + dialectType);
         }

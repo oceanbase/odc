@@ -133,7 +133,7 @@ public class PartitionPlanJob implements OdcJob {
             conn.setDefaultSchema(database.getName());
             connectionSession = new DefaultConnectSessionFactory(conn).generateSession();
             List<PartitionPlanPreViewResp> resps = this.partitionPlanService.generatePartitionDdl(
-                    connectionSession, tableConfigs, false, true);
+                    connectionSession, tableConfigs, false);
             submitSubDatabaseChangeTask(paramemters.getFlowInstanceId(), target.getDatabaseId(),
                     resps.stream().flatMap(i -> i.getSqls().stream()).collect(Collectors.toList()),
                     paramemters.getTimeoutMillis(), paramemters.getErrorStrategy());
