@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.lang3.StringUtils;
@@ -78,7 +79,7 @@ public class DBMaterializedViewService {
     @Autowired
     private DatabaseService databaseService;
 
-    public List<Table> list(ConnectionSession connectionSession, QueryTableParams params)
+    public List<Table> list(@NonNull ConnectionSession connectionSession, @NonNull QueryTableParams params)
             throws SQLException, InterruptedException {
         Database database = databaseService.detail(params.getDatabaseId());
         List<Table> tables = new ArrayList<>();
@@ -94,8 +95,8 @@ public class DBMaterializedViewService {
         return tables;
     }
 
-    public AllMVBaseTables listAllBases(ConnectionSession connectionSession,
-            String tableNameLike) {
+    public AllMVBaseTables listAllBases(@NonNull ConnectionSession connectionSession,
+            @NonNull String tableNameLike) {
         AllMVBaseTables allResult = new AllMVBaseTables();
         DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
         List<String> databases = accessor.showDatabases();
@@ -134,7 +135,8 @@ public class DBMaterializedViewService {
                         .generateCreateTemplate(resource));
     }
 
-    public DBMaterializedView detail(ConnectionSession connectionSession, String schemaName, String mViewName) {
+    public DBMaterializedView detail(@NonNull ConnectionSession connectionSession, @NotEmpty String schemaName,
+            @NotEmpty String mViewName) {
         return connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.BACKEND_DS_KEY)
                 .execute((ConnectionCallback<DBMaterializedView>) con -> getDBMViewExtensionPoint(connectionSession)

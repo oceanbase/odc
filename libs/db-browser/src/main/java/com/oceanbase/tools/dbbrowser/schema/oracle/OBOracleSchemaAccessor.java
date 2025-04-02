@@ -1200,7 +1200,8 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     @Override
     public DBMaterializedView getMView(String schemaName, String mViewName) {
         OracleSqlBuilder getOptions = new OracleSqlBuilder();
-        getOptions.append("SELECT REFRESH_METHOD,REWRITE_ENABLED,ON_QUERY_COMPUTATION,REFRESH_DOP FROM ")
+        getOptions.append(
+                "SELECT REFRESH_METHOD,REWRITE_ENABLED,ON_QUERY_COMPUTATION,REFRESH_DOP,LAST_REFRESH_TYPE,LAST_REFRESH_DATE,LAST_REFRESH_END_TIME FROM ")
                 .append(dataDictTableNames.MVIEWS())
                 .append(" WHERE OWNER = ")
                 .value(schemaName).append(" AND MVIEW_NAME = ").value(mViewName);
@@ -1213,14 +1214,18 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
             mView.setEnableQueryRewrite(rs.getBoolean("REWRITE_ENABLED"));
             mView.setEnableQueryComputation(rs.getBoolean("ON_QUERY_COMPUTATION"));
             mView.setParallelismDegree(rs.getLong("REFRESH_DOP"));
+            mView.setLastRefreshType(
+                    DBMaterializedViewRefreshMethod.getEnumByShowName(rs.getString("LAST_REFRESH_TYPE")));
+            mView.setLastRefreshStartTime(rs.getTimestamp("LAST_REFRESH_DATE"));
+            mView.setLastRefreshEndTime(rs.getTimestamp("LAST_REFRESH_END_TIME"));
         });
-        OracleSqlBuilder getDDL = new OracleSqlBuilder();
-        getDDL.append("show create table ").identifier(schemaName).append(".").identifier(mViewName);
-        jdbcOperations.query(getDDL.toString(), (rs) -> {
-            mView.setDdl(rs.getString(2));
-        });
-        DBView dbView = fillColumnInfoByDesc(mView.generateDBView());
-        mView.setColumns(dbView.getColumns());
+        // OracleSqlBuilder getDDL = new OracleSqlBuilder();
+        // getDDL.append("show create table ").identifier(schemaName).append(".").identifier(mViewName);
+        // jdbcOperations.query(getDDL.toString(), (rs) -> {
+        // mView.setDdl(rs.getString(2));
+        // });
+        // DBView dbView = fillColumnInfoByDesc(mView.generateDBView());
+        // mView.setColumns(dbView.getColumns());
         return mView;
     }
 
