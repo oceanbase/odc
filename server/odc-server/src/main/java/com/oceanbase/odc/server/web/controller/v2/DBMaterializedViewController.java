@@ -125,8 +125,7 @@ public class DBMaterializedViewController {
                 session, materializedView));
     }
 
-    @PostMapping(value = {"/{sessionId}/databases/{databaseName}/materializedViews/generateUpdateMViewDDL",
-            "/{sessionId}/currentDatabase/materializedViews/generateUpdateMViewDDL"})
+    @PostMapping(value = "/{sessionId}/databases/{databaseName}/materializedViews/generateUpdateMViewDDL")
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public SuccessResponse<GenerateTableDDLResp> generateUpdateMViewDDL(@PathVariable String sessionId,
             @PathVariable(required = false) String databaseName, @RequestBody GenerateUpdateMViewDDLReq req) {

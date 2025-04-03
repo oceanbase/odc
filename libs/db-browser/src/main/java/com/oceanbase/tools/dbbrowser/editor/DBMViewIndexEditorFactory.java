@@ -16,7 +16,7 @@
 package com.oceanbase.tools.dbbrowser.editor;
 
 import com.oceanbase.tools.dbbrowser.AbstractDBBrowserFactory;
-import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLMViewIndexEditor;
+import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLSpecialDropIndexEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OBOracleIndexEditor;
 
 /**
@@ -28,17 +28,17 @@ import com.oceanbase.tools.dbbrowser.editor.oracle.OBOracleIndexEditor;
 public class DBMViewIndexEditorFactory extends AbstractDBBrowserFactory<DBTableIndexEditor> {
     @Override
     public DBTableIndexEditor buildForDoris() {
-        throw new UnsupportedOperationException("not support");
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public DBTableIndexEditor buildForMySQL() {
-        throw new UnsupportedOperationException("not support");
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public DBTableIndexEditor buildForOBMySQL() {
-        return new OBMySQLMViewIndexEditor();
+        return new OBMySQLSpecialDropIndexEditor();
     }
 
     @Override
@@ -48,16 +48,16 @@ public class DBMViewIndexEditorFactory extends AbstractDBBrowserFactory<DBTableI
 
     @Override
     public DBTableIndexEditor buildForOracle() {
-        throw new UnsupportedOperationException("not support");
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public DBTableIndexEditor buildForOdpSharding() {
-        throw new UnsupportedOperationException("not support");
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public DBTableIndexEditor buildForPostgres() {
-        throw new UnsupportedOperationException("not support");
+        throw new UnsupportedOperationException("Not supported yet");
     }
 }

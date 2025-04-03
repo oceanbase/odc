@@ -28,6 +28,7 @@ import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
  * @since: 4.3.4
  */
 public class OBMySQLMViewEditor extends DBMViewEditor {
+
     public OBMySQLMViewEditor(DBObjectEditor<DBTableIndex> indexEditor) {
         super(indexEditor);
     }

@@ -37,4 +37,5 @@ public class OBOracleMViewEditor extends DBMViewEditor {
     protected SqlBuilder sqlBuilder() {
         return new OracleSqlBuilder();
     }
+
 }

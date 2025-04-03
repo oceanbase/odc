@@ -15,8 +15,6 @@
  */
 package com.oceanbase.tools.dbbrowser.editor;
 
-import org.apache.commons.lang3.Validate;
-
 import com.oceanbase.tools.dbbrowser.AbstractDBBrowserFactory;
 import com.oceanbase.tools.dbbrowser.editor.mysql.OBMySQLMViewEditor;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OBOracleMViewEditor;
@@ -39,12 +37,12 @@ public class DBMViewEditorFactory extends AbstractDBBrowserFactory<DBMViewEditor
 
     @Override
     public DBMViewEditor buildForDoris() {
-        throw new UnsupportedOperationException("not support yet");
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public DBMViewEditor buildForMySQL() {
-        throw new UnsupportedOperationException("not support yet");
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
@@ -59,17 +57,17 @@ public class DBMViewEditorFactory extends AbstractDBBrowserFactory<DBMViewEditor
 
     @Override
     public DBMViewEditor buildForOracle() {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public DBMViewEditor buildForOdpSharding() {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
     public DBMViewEditor buildForPostgres() {
-        return null;
+        throw new UnsupportedOperationException("Not supported yet");
     }
 
     private DBTableIndexEditor getMViewIndexEditor() {
@@ -78,25 +76,4 @@ public class DBMViewEditorFactory extends AbstractDBBrowserFactory<DBMViewEditor
         return indexFactory.create();
     }
 
-    private DBTableColumnEditor getTableColumnEditor() {
-        DBTableColumnEditorFactory columnFactory = new DBTableColumnEditorFactory();
-        columnFactory.setType(this.type);
-        return columnFactory.create();
-    }
-
-    private DBTablePartitionEditor getTablePartitionEditor() {
-        Validate.notNull(this.dbVersion, "DBVersion can not be null");
-        DBTablePartitionEditorFactory partitionFactory = new DBTablePartitionEditorFactory();
-        partitionFactory.setType(this.type);
-        partitionFactory.setDbVersion(this.dbVersion);
-        return partitionFactory.create();
-    }
-
-    private DBTableConstraintEditor getTableConstraintEditor() {
-        Validate.notNull(this.dbVersion, "DBVersion can not be null");
-        DBTableConstraintEditorFactory constraintFactory = new DBTableConstraintEditorFactory();
-        constraintFactory.setType(this.type);
-        constraintFactory.setDbVersion(this.dbVersion);
-        return constraintFactory.create();
-    }
 }
