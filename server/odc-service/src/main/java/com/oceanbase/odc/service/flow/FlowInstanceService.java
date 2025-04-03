@@ -376,7 +376,7 @@ public class FlowInstanceService {
         RiskLevel defultHighestRiskLevel = null;
         for (Entry<RiskLevelDescriber, Long> entry : riskLevelDescribers2DbId.entrySet()) {
             defultHighestRiskLevel =
-                    cn.hutool.core.util.ObjectUtil.defaultIfNull(defultHighestRiskLevel,
+                    ObjectUtil.defaultIfNull(defultHighestRiskLevel,
                             riskLevelService.findHighestRiskLevel());
             RiskLevel riskLevel = describer2MaxRiskLevel.getOrDefault(entry.getKey(), defultHighestRiskLevel);
             dbId2RiskLevel.put(entry.getValue(), riskLevel);
