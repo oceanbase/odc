@@ -23,9 +23,9 @@ import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 
 /**
  * @description: {@link OBMySQLSpecialDropIndexEditor#generateDropObjectDDL(DBTableIndex)} is used
- *               to generate the 'DROP INDEX `indexName` ON `databaseName`.`tableName`' statement.
+ *               to generate the "DROP INDEX `indexName` ON `databaseName`.`tableName`" statement.
  *               The existing {@link OBMySQLIndexEditor#generateDropObjectDDL(DBTableIndex)} is used
- *               to generate 'ALTER `databaseName`.`tableName` DROP `indexName`' statements,which
+ *               to generate "ALTER `databaseName`.`tableName` DROP `indexName`" statement, which
  *               does not support {@link DBObjectType#MATERIALIZED_VIEW} in ob mysql tenant. So add
  *               the {@link OBMySQLSpecialDropIndexEditor} to solve that problem.
  * @author: zijia.cj
