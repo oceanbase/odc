@@ -81,8 +81,8 @@ public class OdcCreateDataTaskActionTest {
                 kubeConfigUrls);
         List<Configuration> oscConfigUrls =
                 Arrays.asList(new Configuration("odc.osc.k8s-properties.pod-pending-timeout-seconds", "600"),
-                    new Configuration("odc.osc.k8s-properties.namespace", "namespace"),
-                    new Configuration("odc.osc.k8s-properties.pod-image-name", "imageName"));
+                        new Configuration("odc.osc.k8s-properties.namespace", "namespace"),
+                        new Configuration("odc.osc.k8s-properties.pod-image-name", "imageName"));
         Mockito.when(systemConfigService.queryByKeyPrefix("odc.osc.k8s-properties.")).thenReturn(
                 oscConfigUrls);
 
