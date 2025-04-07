@@ -23,6 +23,7 @@ import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.connect.obmysql.OBMySQLInformationExtension;
 import com.oceanbase.tools.dbbrowser.DBBrowser;
+import com.oceanbase.tools.dbbrowser.editor.DBMViewEditor;
 import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorFactory;
@@ -64,6 +65,12 @@ public class DBAccessorUtil {
 
     public static DBTableEditor getTableEditor(Connection connection) {
         return DBBrowser.objectEditor().tableEditor()
+                .setDbVersion(getDbVersion(connection))
+                .setType(DialectType.OB_MYSQL.getDBBrowserDialectTypeName()).create();
+    }
+
+    public static DBMViewEditor getMViewEditor(Connection connection) {
+        return DBBrowser.objectEditor().mViewEditor()
                 .setDbVersion(getDbVersion(connection))
                 .setType(DialectType.OB_MYSQL.getDBBrowserDialectTypeName()).create();
     }

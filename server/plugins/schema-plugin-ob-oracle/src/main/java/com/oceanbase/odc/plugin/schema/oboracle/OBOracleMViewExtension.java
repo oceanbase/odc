@@ -26,6 +26,7 @@ import com.oceanbase.odc.plugin.schema.obmysql.parser.BaseOBGetDBTableByParser;
 import com.oceanbase.odc.plugin.schema.oboracle.parser.OBOracleGetDBTableByParser;
 import com.oceanbase.odc.plugin.schema.oboracle.utils.DBAccessorUtil;
 import com.oceanbase.tools.dbbrowser.DBBrowser;
+import com.oceanbase.tools.dbbrowser.editor.DBMViewEditor;
 import com.oceanbase.tools.dbbrowser.editor.DBObjectOperator;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleObjectOperator;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
@@ -72,4 +73,7 @@ public class OBOracleMViewExtension extends OBMySQLMViewExtension {
         return new OBOracleGetDBTableByParser();
     }
 
+    protected DBMViewEditor getMViewEditor(Connection connection) {
+        return DBAccessorUtil.getMViewEditor(connection);
+    }
 }

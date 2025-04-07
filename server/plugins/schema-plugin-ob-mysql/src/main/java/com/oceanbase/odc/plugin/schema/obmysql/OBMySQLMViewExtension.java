@@ -28,6 +28,7 @@ import com.oceanbase.odc.plugin.schema.obmysql.parser.BaseOBGetDBTableByParser;
 import com.oceanbase.odc.plugin.schema.obmysql.parser.OBMySQLGetDBTableByParser;
 import com.oceanbase.odc.plugin.schema.obmysql.utils.DBAccessorUtil;
 import com.oceanbase.tools.dbbrowser.DBBrowser;
+import com.oceanbase.tools.dbbrowser.editor.DBMViewEditor;
 import com.oceanbase.tools.dbbrowser.editor.DBObjectOperator;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLObjectOperator;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
@@ -43,6 +44,7 @@ import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.createmview.CreateMaterializedView;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -109,6 +111,12 @@ public class OBMySQLMViewExtension implements MViewExtensionPoint {
     }
 
     @Override
+    public String generateUpdateDDL(@NonNull Connection connection, @NonNull DBMaterializedView oldMView,
+            @NonNull DBMaterializedView newMView) {
+        return getMViewEditor(connection).generateUpdateObjectDDL(oldMView, newMView);
+    }
+
+    @Override
     public Boolean refresh(Connection connection, DBMViewRefreshParameter parameter) {
         return getSchemaAccessor(connection).refreshMVData(parameter);
     }
@@ -150,6 +158,10 @@ public class OBMySQLMViewExtension implements MViewExtensionPoint {
 
     protected BaseOBGetDBTableByParser getParser() {
         return new OBMySQLGetDBTableByParser();
+    }
+
+    protected DBMViewEditor getMViewEditor(Connection connection) {
+        return DBAccessorUtil.getMViewEditor(connection);
     }
 
 }

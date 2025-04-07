@@ -16,12 +16,16 @@
 package com.oceanbase.tools.dbbrowser.model;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import javax.validation.constraints.NotEmpty;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString.Exclude;
 
 /**
  * @description:
@@ -32,6 +36,9 @@ import lombok.Setter;
 @Setter
 @Getter
 public class DBMaterializedView implements DBObject {
+    @JsonIgnore
+    @Exclude
+    private DBSchema schema;
     @NotEmpty
     private String name;
     // if null, use defaultSchemaName in current connection
@@ -42,6 +49,9 @@ public class DBMaterializedView implements DBObject {
     private DBMaterializedViewRefreshSchedule refreshSchedule;
     private Boolean enableQueryRewrite;
     private Boolean enableQueryComputation;
+    private DBMaterializedViewRefreshMethod lastRefreshType;
+    private Date lastRefreshStartTime;
+    private Date lastRefreshEndTime;
     /**
      * reuse properties in {@link DBView} to construct query statements
      */
@@ -77,4 +87,5 @@ public class DBMaterializedView implements DBObject {
         dbView.setOperations(operations);
         return dbView;
     }
+
 }
