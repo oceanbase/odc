@@ -19,6 +19,7 @@ import javax.validation.constraints.NotNull;
 
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenApiService;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.action.odc.OdcMonitorDataTaskAction;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.action.odc.OdcSwapTableAction;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms.OmsSwapTableAction;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
@@ -35,7 +36,8 @@ public class SwapTableAction extends ActionDelegate {
         SwapTableAction ret = new SwapTableAction();
         ret.omsAction =
                 new OmsSwapTableAction(dbSessionManageFacade, projectOpenApiService, onlineSchemaChangeProperties);
-        ret.odcAction = new OdcSwapTableAction(dbSessionManageFacade, onlineSchemaChangeProperties);
+        ret.odcAction = new OdcSwapTableAction(dbSessionManageFacade, onlineSchemaChangeProperties,
+                new OdcMonitorDataTaskAction(onlineSchemaChangeProperties));
         return ret;
     }
 }

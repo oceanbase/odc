@@ -98,7 +98,7 @@ public class OdcCreateDataTaskAction implements Action<OscActionContext, OscActi
         return new OscActionResult(OscStates.CREATE_DATA_TASK.name(), null, OscStates.MONITOR_DATA_TASK.name());
     }
 
-    public void startTask(OscActionContext context, OnlineSchemaChangeScheduleTaskParameters parameters)
+    protected void startTask(OscActionContext context, OnlineSchemaChangeScheduleTaskParameters parameters)
             throws Exception {
         log.info("ODCCreateDataTaskAction: start migrate for taskID={}", context.getScheduleTask().getId());
         Map<String, String> startConfigs = new LinkedHashMap<>();
@@ -123,7 +123,7 @@ public class OdcCreateDataTaskAction implements Action<OscActionContext, OscActi
         configs.put("sourceTableName", parameters.getOriginTableName());
         configs.put("targetTableName", parameters.getNewTableName());
         // add col mapper
-        List<String> columns = getValidColumns(context, connectionConfig);
+        List<String> columns = getValidColumns(context);
         Map<String, String> targetToSrcColumnMapper = new LinkedHashMap<>();
         for (String c : columns) {
             targetToSrcColumnMapper.put(c, c);
@@ -135,7 +135,7 @@ public class OdcCreateDataTaskAction implements Action<OscActionContext, OscActi
         }
     }
 
-    protected List<String> getValidColumns(OscActionContext context, ConnectionConfig connectionConfig) {
+    protected List<String> getValidColumns(OscActionContext context) {
         OnlineSchemaChangeScheduleTaskParameters taskParam = context.getTaskParameter();
         // target missed columns, use target columns
         if (CollectionUtils.isNotEmpty(taskParam.getFilterColumns())) {
@@ -263,7 +263,7 @@ public class OdcCreateDataTaskAction implements Action<OscActionContext, OscActi
         String hostIp = resource.getHostIpAddress();
         candidateUrl = buildUrlPrefix(hostIp, mapperPort);
         if (StringUtils.isNotEmpty(hostIp) && !StringUtils.equalsIgnoreCase(hostIp, Constants.RESOURCE_NULL_HOST)
-                && mapperPort > 0 && OscCommandUtil.isOSCMigrateSupervisorAlive(candidateUrl)) {
+                && null != mapperPort && mapperPort > 0 && OscCommandUtil.isOSCMigrateSupervisorAlive(candidateUrl)) {
             log.info("ODCCreateDataTaskAction: k8s ready, hostIP reached, candidateUrl = {} returned", candidateUrl);
             return candidateUrl;
         }
@@ -281,7 +281,7 @@ public class OdcCreateDataTaskAction implements Action<OscActionContext, OscActi
 
     protected boolean getK8sEnablePortMapper() {
         List<Configuration> enablePortMapperConfig =
-            systemConfigService.queryByKeyPrefix("odc.task-framework.enable-k8s-port-mapper");
+                systemConfigService.queryByKeyPrefix("odc.task-framework.enable-k8s-port-mapper");
         if (CollectionUtils.isEmpty(enablePortMapperConfig)) {
             return false;
         }

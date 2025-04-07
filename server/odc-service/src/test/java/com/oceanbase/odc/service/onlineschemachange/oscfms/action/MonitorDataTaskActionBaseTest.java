@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenAp
 import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionContext;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionResult;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.OscTestUtil;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.action.ProjectStepResult;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms.OmsMonitorDataTaskAction;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OscStates;
 
@@ -43,7 +42,7 @@ import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OscStates;
  * @date 2024/7/30 14:31
  * @since 4.3.1
  */
-public class OmsMonitorDataTaskActionTest {
+public class MonitorDataTaskActionBaseTest {
     private OmsProjectOpenApiService projectOpenApiService;
     private OnlineSchemaChangeProperties onlineSchemaChangeProperties;
     private OscActionContext context;

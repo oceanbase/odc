@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,8 +49,6 @@ import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionResult;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.OscTestUtil;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.action.ConnectionProvider;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.action.ProjectStepResult;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms.OmsRequestUtil;
-import com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms.OmsSwapTableAction;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OscStates;
 import com.oceanbase.odc.service.onlineschemachange.rename.DefaultRenameTableInvoker;
 import com.oceanbase.odc.service.onlineschemachange.rename.LockTableSupportDecider;
@@ -178,7 +176,8 @@ public class OmsSwapTableActionTest {
             OmsSwapTableAction swapTableAction = new OmsSwapTableAction(dbSessionManageFacade, omsProjectOpenApiService,
                     onlineSchemaChangeProperties);
             Assert.assertTrue(
-                    swapTableAction.isIncrementDataAppliedDone(onlineSchemaChangeProperties, onlineSchemaChangeScheduleTaskParameters, Collections.emptyMap(), 1000));
+                    swapTableAction.isIncrementDataAppliedDone(onlineSchemaChangeProperties,
+                            onlineSchemaChangeScheduleTaskParameters, Collections.emptyMap(), 1000));
         }
     }
 
@@ -198,7 +197,8 @@ public class OmsSwapTableActionTest {
                     onlineSchemaChangeProperties);
             long currentTimeMS = System.currentTimeMillis();
             Assert.assertFalse(
-                    swapTableAction.isIncrementDataAppliedDone(onlineSchemaChangeProperties, onlineSchemaChangeScheduleTaskParameters, Collections.emptyMap(), 3000));
+                    swapTableAction.isIncrementDataAppliedDone(onlineSchemaChangeProperties,
+                            onlineSchemaChangeScheduleTaskParameters, Collections.emptyMap(), 3000));
             long endTimeMS = System.currentTimeMillis();
             // test retry
             Assert.assertTrue(endTimeMS - currentTimeMS > 2000);

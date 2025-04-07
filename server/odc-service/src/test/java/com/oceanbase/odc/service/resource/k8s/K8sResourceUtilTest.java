@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.resource.k8s;
 
 import java.util.ArrayList;
@@ -25,14 +24,12 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Assert;
 import org.junit.Test;
 
-import io.swagger.models.auth.In;
-
 /**
  * @author longpeng.zlp
  * @date 2025/4/2 16:47
  */
 public class K8sResourceUtilTest {
-    @Test(expected =  RuntimeException.class)
+    @Test(expected = RuntimeException.class)
     public void testAllocateIPFailed() {
         List<Integer> ports = new ArrayList<>();
         for (int i = 0; i < 10240; ++i) {

@@ -98,7 +98,7 @@ public class K8SResourceManageStrategy implements ResourceManageStrategy {
             List<Pair<Integer, Integer>> portMapper = new ArrayList<>();
             if (enableK8sPortMapper) {
                 portMapper = K8sResourceUtil.buildRandomPortMapper(supervisorListenPort,
-                    k8sProperties.getExecutorListenPort());
+                        k8sProperties.getExecutorListenPort());
             }
             k8sPodResource = K8sResourceUtil.createK8sPodResource(resourceManager, resourceLocation, k8sImplType,
                     imageName, k8sProperties,

@@ -44,15 +44,17 @@ public class OdcSwapTableAction extends SwapTableActionBase {
     private final OdcMonitorDataTaskAction odcMonitorDataTaskAction;
 
     public OdcSwapTableAction(@NotNull DBSessionManageFacade dbSessionManageFacade,
-            @NotNull OnlineSchemaChangeProperties onlineSchemaChangeProperties) {
+            @NotNull OnlineSchemaChangeProperties onlineSchemaChangeProperties,
+            @NotNull OdcMonitorDataTaskAction odcMonitorDataTaskAction) {
         super(dbSessionManageFacade, onlineSchemaChangeProperties);
-        this.odcMonitorDataTaskAction = new OdcMonitorDataTaskAction(onlineSchemaChangeProperties);
+        this.odcMonitorDataTaskAction = odcMonitorDataTaskAction;
     }
 
     protected boolean checkOSCProjectReady(OscActionContext context) {
         OnlineSchemaChangeScheduleTaskParameters taskParameter = context.getTaskParameter();
         // get oms step result
-        ProjectStepResult projectStepResult = odcMonitorDataTaskAction.getProjectStepResultInner(taskParameter);
+        ProjectStepResult projectStepResult =
+                odcMonitorDataTaskAction.getProjectStepResultInner(taskParameter.getOdcCommandURl());
         if (null == projectStepResult) {
             return false;
         }
@@ -71,7 +73,8 @@ public class OdcSwapTableAction extends SwapTableActionBase {
         // max check 25s
         long checkTimeoutMs = System.currentTimeMillis() + timeOutMS;
         while (true) {
-            ProjectStepResult projectStepResult = odcMonitorDataTaskAction.getProjectStepResultInner(parameters);
+            ProjectStepResult projectStepResult =
+                    odcMonitorDataTaskAction.getProjectStepResultInner(parameters.getOdcCommandURl());
             log.info("Osc check increment checkpoint, expect greater than {}, current = {}",
                     safeDataCheckpoint, projectStepResult.getIncrementCheckpoint());
             if (odcMonitorDataTaskAction.isMigrateTaskReady(projectStepResult)

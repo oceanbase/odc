@@ -56,12 +56,12 @@ public class OdcMonitorDataTaskAction extends MonitorDataTaskActionBase {
      */
     protected ProjectStepResult getProjectStepResult(OnlineSchemaChangeScheduleTaskParameters taskParameter,
             OnlineSchemaChangeScheduleTaskResult lastResult) {
-        return getProjectStepResultInner(taskParameter);
+        return getProjectStepResultInner(taskParameter.getOdcCommandURl());
     }
 
-    protected ProjectStepResult getProjectStepResultInner(OnlineSchemaChangeScheduleTaskParameters taskParameter) {
+    protected ProjectStepResult getProjectStepResultInner(String commandURL) {
         ProjectStepResult projectStepResult = new ProjectStepResult();
-        SupervisorResponse supervisorResponse = OscCommandUtil.monitorTask(taskParameter.getOdcCommandURl());
+        SupervisorResponse supervisorResponse = OscCommandUtil.monitorTask(commandURL);
         if (null == supervisorResponse || !supervisorResponse.isSuccess()) {
             log.info("OdcMonitorDataTaskAction: supervisor response failed, response = {}", supervisorResponse);
             return null;
@@ -91,16 +91,15 @@ public class OdcMonitorDataTaskAction extends MonitorDataTaskActionBase {
         projectStepResult.setPreCheckResult(PrecheckResult.FINISHED);
         projectStepResult.setTaskStatus(TaskStatus.RUNNING);
         projectStepResult.setFullVerificationResult(FullVerificationResult.UNCHECK);
+        projectStepResult.setFullVerificationResultDescription("unchecked");
+        projectStepResult.setFullVerificationProgressPercentage(0.0);
         // adapt steps
         try {
-            projectStepResult.setFullTransferEstimatedCount(getAndCheckValue(dataMap, "tableTotalRows", Long::valueOf));
+            projectStepResult.setFullTransferFinishedCount(getAndCheckValue(dataMap, "tableTotalRows", Long::valueOf));
             projectStepResult
-                    .setFullTransferFinishedCount(getAndCheckValue(dataMap, "estimateMigrateRows", Long::valueOf));
+                    .setFullTransferEstimatedCount(getAndCheckValue(dataMap, "estimateMigrateRows", Long::valueOf));
             projectStepResult.setFullTransferProgressPercentage(
                     getAndCheckValue(dataMap, "fullMigratorProgress", Double::valueOf));
-            projectStepResult.setFullVerificationResult(FullVerificationResult.UNCHECK);
-            projectStepResult.setFullVerificationResultDescription("unchecked");
-            projectStepResult.setFullVerificationProgressPercentage(0.0);
             boolean fullMigrateDone = getAndCheckValue(dataMap, "fullMigratorDone", Boolean::valueOf);
             if (fullMigrateDone) {
                 projectStepResult.setCurrentStep(OscStepName.TRANSFER_APP_SWITCH.name());
