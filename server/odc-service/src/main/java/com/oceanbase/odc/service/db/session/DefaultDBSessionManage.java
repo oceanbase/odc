@@ -251,7 +251,7 @@ public class DefaultDBSessionManage implements DBSessionManageFacade {
         Map<String, ServerAddress> sessionId2SvrAddr =
                 getSessionList(connectionSession, s -> s.getSvrIp() != null)
                         .stream().collect(Collectors.toMap(OdcDBSession::getSessionId,
-                                s -> HostUtils.extractServerAddress(MoreObjects.firstNonNull(s.getSvrIp(), ""))));
+                                s -> HostUtils.extractServerAddress(MoreObjects.firstNonNull(s.getSvrIp(), "")), (existing, replacement) -> existing));
         Map<String, String> sqlId2SessionId = sqlTupleSessionIds.stream().collect(
                 Collectors.toMap(s -> s.getSqlTuple().getSqlId(), SqlTupleSessionId::getSessionId));
 
