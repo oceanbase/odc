@@ -5,3 +5,4 @@ org.springframework.cloud.bootstrap.BootstrapConfiguration=org.springframework.b
   org.springframework.boot.autoconfigure.sql.init.DataSourceInitializationConfiguration
 org.springframework.boot.actuate.autoconfigure.web.ManagementContextConfiguration=com.oceanbase.odc.service.monitor.ManagementConfiguration
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.oceanbase.odc.service.monitor.MonitorAutoConfiguration
+org.springframework.boot.logging.LoggingSystemFactory=com.oceanbase.odc.common.log4j.CustomLoggingSystemFactory

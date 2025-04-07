@@ -278,7 +278,7 @@ public abstract class SystemUtils {
     private static String innerGetHostName() {
         String hostName = null;
         try {
-            hostName = InetAddress.getLocalHost().getHostName();
+            hostName = LocalHostLoader.INSTANCE.getLocalHost().getHostName();
         } catch (UnknownHostException e) {
             log.warn("get hostname from InetAddress failed", e);
         }
@@ -305,7 +305,7 @@ public abstract class SystemUtils {
     private static InetAddress innerGetLocalAddress() {
         InetAddress localAddress = null;
         try {
-            localAddress = InetAddress.getLocalHost();
+            localAddress = LocalHostLoader.INSTANCE.getLocalHost();
             if (isValidAddress(localAddress)) {
                 return localAddress;
             }
