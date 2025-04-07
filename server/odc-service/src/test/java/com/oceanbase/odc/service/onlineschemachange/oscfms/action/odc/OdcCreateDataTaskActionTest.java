@@ -80,11 +80,13 @@ public class OdcCreateDataTaskActionTest {
         Mockito.when(systemConfigService.queryByKeyPrefix("odc.task-framework.k8s-properties.")).thenReturn(
                 kubeConfigUrls);
         List<Configuration> oscConfigUrls =
-                Arrays.asList(new Configuration("odc.osc.k8s-properties.pod-pending-timeout-seconds", "600"));
+                Arrays.asList(new Configuration("odc.osc.k8s-properties.pod-pending-timeout-seconds", "600"),
+                    new Configuration("odc.osc.k8s-properties.namespace", "namespace"),
+                    new Configuration("odc.osc.k8s-properties.pod-image-name", "imageName"));
         Mockito.when(systemConfigService.queryByKeyPrefix("odc.osc.k8s-properties.")).thenReturn(
                 oscConfigUrls);
 
-        Mockito.when(systemConfigService.queryByKeyPrefix("odc.osc.k8s-properties.")).thenReturn(
+        Mockito.when(systemConfigService.queryByKeyPrefix("odc.task-framework.k8s-properties.")).thenReturn(
                 kubeConfigUrls);
         resourceManager = Mockito.mock(ResourceManager.class);
         createDataTaskAction =
@@ -163,6 +165,8 @@ public class OdcCreateDataTaskActionTest {
     public void testBuildK8sProperties() {
         K8sProperties k8sProperties = createDataTaskAction.buildK8sProperties(connectionConfig);
         Assert.assertEquals(k8sProperties.getKubeConfig(), "xxx");
+        Assert.assertEquals(k8sProperties.getNamespace(), "namespace");
+        Assert.assertEquals(k8sProperties.getPodImageName(), "imageName");
         Assert.assertEquals(k8sProperties.getPodPendingTimeoutSeconds().longValue(), 600L);
         Assert.assertNull(k8sProperties.getExecutorListenPort());
         Assert.assertEquals(k8sProperties.getSupervisorListenPort().intValue(), 18001);
