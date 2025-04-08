@@ -55,7 +55,7 @@ public class OrganizationConfigUtils {
             parameters.setQueryLimit(getDefaultQueryLimit());
         }
         Verify.notGreaterThan(parameters.getQueryLimit(), getDefaultMaxQueryLimit(),
-            "query limit value");
+                "query limit value");
     }
 
     public Integer getDefaultMaxQueryLimit() {
