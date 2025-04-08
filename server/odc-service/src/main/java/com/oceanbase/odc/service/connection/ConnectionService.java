@@ -794,6 +794,21 @@ public class ConnectionService {
         return connection;
     }
 
+    @SkipAuthorize("internal usage")
+    public ConnectionConfig getDecryptedConfig(@NotNull ConnectionConfig encryptedConfig) {
+        return connectionEncryption.decryptPasswords(encryptedConfig);
+    }
+
+    @SkipAuthorize("internal usage")
+    public ConnectionConfig getEncryptedConfig(@NotNull ConnectionConfig decryptedConfig, String customKey) {
+        return connectionEncryption.encryptPasswordsByCustomKey(decryptedConfig, customKey);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("internal usage")
+    public void batchUpdateConnectionConfig(List<ConnectionEntity> connections) {
+        repository.saveAll(connections);
+    }
 
     @SkipAuthorize("internal usage")
     public List<ConnectionConfig> listForConnectionSkipPermissionCheck(@NotNull Collection<Long> ids) {
