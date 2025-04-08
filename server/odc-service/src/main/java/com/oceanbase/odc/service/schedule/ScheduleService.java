@@ -1064,9 +1064,15 @@ public class ScheduleService {
                 listTaskStat(params).stream()
                         .collect(Collectors.toMap(ScheduleTaskStat::getType, Function.identity(), (e, r) -> e));
 
-        Map<ScheduleType, List<ScheduleEntity>> scheduleType2ScheduleEntities =
-                listEnabledCronSchedules(params).stream().collect(Collectors.groupingBy(ScheduleEntity::getType));
-        return listScheduleStats(params, scheduleTaskType2TaskStats, scheduleType2ScheduleEntities);
+        Map<ScheduleType, Integer> scheduleType2EnabledScheduleCount =
+                listEnabledCronSchedules(params).stream().collect(Collectors.groupingBy(
+                        ScheduleEntity::getType,
+                        Collectors.summingInt(e -> 1)));
+        scheduleType2EnabledScheduleCount.computeIfAbsent(ScheduleType.PARTITION_PLAN,
+                k -> flowInstanceService.getEnabledPartitionPlanCount(new InnerQueryFlowInstanceParams()
+                        .setStartTime(params.getStartTime())
+                        .setEndTime(params.getEndTime())));
+        return listScheduleStats(scheduleTaskType2TaskStats, scheduleType2EnabledScheduleCount);
     }
 
     private List<ScheduleEntity> listEnabledCronSchedules(@NonNull QueryScheduleStatParams params) {
@@ -1090,11 +1096,11 @@ public class ScheduleService {
         return filterSchedules(scheduleRepository.findAll(scheduleSpec));
     }
 
-    private List<ScheduleStat> listScheduleStats(@NonNull QueryScheduleStatParams params,
+    private List<ScheduleStat> listScheduleStats(
             @NonNull Map<ScheduleTaskType, ScheduleTaskStat> scheduleTaskType2TaskStats,
-            @NonNull Map<ScheduleType, List<ScheduleEntity>> scheduleType2ScheduleEntities) {
+            @NonNull Map<ScheduleType, Integer> scheduleType2EnabledScheduleCount) {
         final Map<ScheduleType, ScheduleStat> scheduleType2Stat = new HashMap<>();
-        scheduleType2ScheduleEntities.forEach((type, scheduleList) -> {
+        scheduleType2EnabledScheduleCount.forEach((type, scheduleCount) -> {
             Set<ScheduleTaskType> subTaskTypes = ScheduleTaskType.from(type);
             if (CollectionUtils.isNotEmpty(subTaskTypes)) {
                 ScheduleStat scheduleStat = ScheduleStat.init(type);
@@ -1102,7 +1108,7 @@ public class ScheduleService {
                         subTaskTypes.stream()
                                 .map(t -> scheduleTaskType2TaskStats.getOrDefault(t, ScheduleTaskStat.init(t)))
                                 .collect(Collectors.toSet());
-                scheduleStat.setSuccessEnabledCount(scheduleList.size());
+                scheduleStat.setSuccessEnabledCount(scheduleCount);
                 scheduleStat.merge(scheduleSubTaskStats);
                 scheduleType2Stat.put(scheduleStat.getType(), scheduleStat);
                 MapUtil.removeAny(scheduleTaskType2TaskStats, subTaskTypes.toArray(new ScheduleTaskType[0]));
@@ -1111,13 +1117,6 @@ public class ScheduleService {
         for (ScheduleTaskStat remainSubTaskStat : scheduleTaskType2TaskStats.values()) {
             ScheduleType scheduleType = ScheduleTaskType.from(remainSubTaskStat.getType());
             ScheduleStat stat = scheduleType2Stat.computeIfAbsent(scheduleType, k -> ScheduleStat.init(scheduleType));
-            if (stat.getType() == ScheduleType.PARTITION_PLAN) {
-                InnerQueryFlowInstanceParams innerQueryPartitionPlanParams = new InnerQueryFlowInstanceParams()
-                        .setStartTime(params.getStartTime())
-                        .setEndTime(params.getEndTime());
-                stat.setSuccessEnabledCount(
-                        flowInstanceService.getEnabledPartitionPlanCount(innerQueryPartitionPlanParams));
-            }
             stat.merge(Collections.singleton(remainSubTaskStat));
         }
         return new ArrayList<>(scheduleType2Stat.values());
