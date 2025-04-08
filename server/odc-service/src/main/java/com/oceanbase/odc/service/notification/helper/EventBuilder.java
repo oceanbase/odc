@@ -260,8 +260,7 @@ public class EventBuilder {
             MultipleDatabaseChangeParameters parameter =
                     JsonUtils.fromJson(task.getParametersJson(), MultipleDatabaseChangeParameters.class);
             projectId = parameter.getProjectId();
-            Set<Long> databaseIds = parameter.getDatabases().stream().map(e -> Long.valueOf(e.getDatabaseId()))
-                    .collect(Collectors.toSet());
+            Set<Long> databaseIds = parameter.getDatabases().stream().map(e -> e.getId()).collect(Collectors.toSet());
             Map<Long, String> dbId2DatabaseRemark =
                     nullSafeGetDbIdMappingRemark(databaseService.listBasicSkipPermissionCheckByIds(databaseIds));
             labels.putIfNonNull(DATABASE_NAME, parameter.getDatabases().stream()
