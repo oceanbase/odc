@@ -28,6 +28,6 @@ public class OrganizationConfigKeys {
             "odc.task.default.importTaskStructureReplacementEnabled";
 
     public static final String DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY =
-        "odc.security.default.customDataSourceEncryptionKey";
+            "odc.security.default.customDataSourceEncryptionKey";
 
 }

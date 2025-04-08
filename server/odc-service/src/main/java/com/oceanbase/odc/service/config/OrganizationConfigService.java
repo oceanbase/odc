@@ -15,9 +15,9 @@
  */
 package com.oceanbase.odc.service.config;
 
+import static com.oceanbase.odc.service.config.OrganizationConfigKeys.DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY;
 import static com.oceanbase.odc.service.config.OrganizationConfigKeys.DEFAULT_MAX_QUERY_LIMIT;
 import static com.oceanbase.odc.service.config.OrganizationConfigKeys.DEFAULT_QUERY_LIMIT;
-import static com.oceanbase.odc.service.config.OrganizationConfigKeys.DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY;
 
 import java.util.ArrayList;
 import java.util.Base64;
@@ -46,7 +46,6 @@ import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.metadb.config.OrganizationConfigDAO;
 import com.oceanbase.odc.metadb.config.OrganizationConfigEntity;
-import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
 import com.oceanbase.odc.metadb.connection.ConnectionEntity;
 import com.oceanbase.odc.metadb.iam.OrganizationEntity;
 import com.oceanbase.odc.metadb.iam.OrganizationRepository;
@@ -76,13 +75,13 @@ public class OrganizationConfigService {
     @Autowired
     private SessionProperties sessionProperties;
     @Autowired
-    private OrganizationRepository     organizationRepo;
+    private OrganizationRepository organizationRepo;
     @Autowired
     private ConnectionService connectionService;
 
-    private           List<Configuration>            defaultConfigurations;
-    private final ConnectionMapper               mapper = ConnectionMapper.INSTANCE;
-    private           Map<String, ConfigurationMeta> configKeyToConfigMeta;
+    private List<Configuration> defaultConfigurations;
+    private final ConnectionMapper mapper = ConnectionMapper.INSTANCE;
+    private Map<String, ConfigurationMeta> configKeyToConfigMeta;
     private final LoadingCache<Long, Map<String, Configuration>> orgIdToConfigurationsCache = Caffeine.newBuilder()
             .maximumSize(300).expireAfterWrite(60, TimeUnit.SECONDS)
             .build(this::internalQuery);
@@ -192,14 +191,14 @@ public class OrganizationConfigService {
         }
         if (customDataSourceKey.length() != 32) {
             throw new IllegalArgumentException(
-                String.format("Value is not allowed for key '%s', value length must be 32",
-                    DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY));
+                    String.format("Value is not allowed for key '%s', value length must be 32",
+                            DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY));
         }
         String regex = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])[A-Za-z0-9]{32}$";
         if (!customDataSourceKey.matches(regex)) {
             throw new IllegalArgumentException(
-                String.format("Value must contain letters (uppercase and lowercase) and numbers for key '%s'",
-                    DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY));
+                    String.format("Value must contain letters (uppercase and lowercase) and numbers for key '%s'",
+                            DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY));
         }
     }
 
@@ -228,7 +227,7 @@ public class OrganizationConfigService {
             return;
         }
         OrganizationConfigEntity customKeyInDB = organizationConfigDAO.queryByOrganizationIdAndKey(
-            organizationId, DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY);
+                organizationId, DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY);
         // The key is not configured for the first time
         if (customKeyInDB != null) {
             return;
@@ -236,27 +235,28 @@ public class OrganizationConfigService {
         log.info("Start migrate existed datasource password, organizationId={}", organizationId);
         List<ConnectionConfig> connectionList = connectionService.listByOrganizationId(organizationId);
         List<ConnectionEntity> reEncryptedList = connectionList.stream()
-            .map(encryptedConfig -> {
-                ConnectionConfig decryptedConfig = connectionService.getDecryptedConfig(encryptedConfig);
-                ConnectionConfig reEncryptedConfig = connectionService.getEncryptedConfig(decryptedConfig, customKey);
-                return mapper.modelToEntity(reEncryptedConfig);
-            })
-            .collect(Collectors.toList());
+                .map(encryptedConfig -> {
+                    ConnectionConfig decryptedConfig = connectionService.getDecryptedConfig(encryptedConfig);
+                    ConnectionConfig reEncryptedConfig =
+                            connectionService.getEncryptedConfig(decryptedConfig, customKey);
+                    return mapper.modelToEntity(reEncryptedConfig);
+                })
+                .collect(Collectors.toList());
         connectionService.batchUpdateConnectionConfig(reEncryptedList);
         log.info("Success migrate existed datasource password, organizationId={}", organizationId);
     }
 
     private void updateOrganizationSecret(Long organizationId, String customKey) {
         String secret = customKey.isEmpty() ? PasswordUtils.random(32)
-            : Base64.getEncoder().encodeToString(customKey.getBytes());
+                : Base64.getEncoder().encodeToString(customKey.getBytes());
         int updateRows = organizationRepo.updateOrganizationSecretById(organizationId, secret);
         log.info("Update organization secret, organization={}, affectRows={}", organizationId, updateRows);
     }
 
     private String getCustomDataSourceKey(List<Configuration> configurations) {
         Optional<Configuration> customDataSourceKey = configurations.stream()
-            .filter(config -> Objects.equals(DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY, config.getKey()))
-            .findFirst();
+                .filter(config -> Objects.equals(DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY, config.getKey()))
+                .findFirst();
         if (customDataSourceKey.isPresent()) {
             return customDataSourceKey.get().getValue();
         }
