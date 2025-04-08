@@ -68,6 +68,7 @@ public class DataTransferConfig implements TaskParameters, Serializable {
     private boolean mergeSchemaFiles;
     private String querySql;
     private String fileType;
+    private Long maxRows;
     /**
      * only for ob-loader-dumper
      */

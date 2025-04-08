@@ -77,6 +77,7 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
         setFileConfig(parameter, workingDir);
         if (StringUtils.isNotEmpty(transferConfig.getQuerySql())) {
             parameter.setQuerySql(transferConfig.getQuerySql());
+            parameter.setMaxRows(transferConfig.getMaxRows());
         }
         parameter.setSkipCheckDir(true);
         if (transferConfig.getMaxDumpSizeBytes() != null) {

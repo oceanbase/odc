@@ -138,7 +138,9 @@ public class DumperResultSetExportTaskManager implements ResultSetExportTaskMana
             }
             Verify.notGreaterThan(parameter.getMaxRows(), organizationConfigUtils.getDefaultQueryLimit().longValue(),
                     "query limit value");
-            parameter.setSql(SqlRewriteUtil.addQueryLimit(parameter.getSql(), session, parameter.getMaxRows()));
+            if (!connectionConfig.getDialectType().isOceanbase()) {
+                parameter.setSql(SqlRewriteUtil.addQueryLimit(parameter.getSql(), session, parameter.getMaxRows()));
+            }
 
             ResultSetExportTask task = new ResultSetExportTask(workingDir, logDir, parameter, session,
                     cloudObjectStorageService, dataTransferProperties, dataTransferAdapter.getMaxDumpSizeBytes());

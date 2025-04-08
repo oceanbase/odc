@@ -219,6 +219,7 @@ public class ResultSetExportTask implements Callable<ResultSetExportResult> {
         config.setUsePrepStmts(dataTransferProperties.isUseServerPrepStmts());
 
         config.setExecutionTimeoutSeconds(parameter.getExecutionTimeoutSeconds());
+        config.setMaxRows(parameter.getMaxRows());
 
         return config;
     }
