@@ -26,4 +26,8 @@ public class OrganizationConfigKeys {
 
     public static final String DEFAULT_IMPORT_TASK_STRUCTURE_REPLACEMENT_ENABLED =
             "odc.task.default.importTaskStructureReplacementEnabled";
+
+    public static final String DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY =
+        "odc.security.default.customDataSourceEncryptionKey";
+
 }

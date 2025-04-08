@@ -81,3 +81,13 @@
   default_value: 'false'
   nullable: false
   description: 'Automatically generate a rollback plan for database changes for individual organization.'
+- id: 9
+  category: 'teamOrganization'
+  key: 'odc.security.default.customDataSourceEncryptionKey'
+  type: 'string'
+  max_value:
+  min_value:
+  allowed_values: ~
+  default_value: ''
+  nullable: true
+  description: 'Team organization datasource encryption key.'
