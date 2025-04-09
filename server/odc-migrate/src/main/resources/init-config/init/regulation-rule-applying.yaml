@@ -522,6 +522,8 @@
   appliedDialectTypes:
     - 'OB_MYSQL'
     - 'MYSQL'
+    - 'OB_ORACLE'
+    - 'ORACLE'
   propertiesJson: '{}'
 - enabled: 1
   level: 0
@@ -1087,6 +1089,8 @@
   appliedDialectTypes:
     - 'OB_MYSQL'
     - 'MYSQL'
+    - 'OB_ORACLE'
+    - 'ORACLE'
   propertiesJson: '{}'
 - enabled: 1
   level: 0
@@ -1652,6 +1656,8 @@
   appliedDialectTypes:
     - 'OB_MYSQL'
     - 'MYSQL'
+    - 'OB_ORACLE'
+    - 'ORACLE'
   propertiesJson: '{}'
 - enabled: 1
   level: 1
@@ -2206,6 +2212,8 @@
   appliedDialectTypes:
     - 'OB_MYSQL'
     - 'MYSQL'
+    - 'OB_ORACLE'
+    - 'ORACLE'
   propertiesJson: '{}'
 - enabled: 1
   level: 1
