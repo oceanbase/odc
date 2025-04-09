@@ -22,7 +22,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.config.model.Configuration;
+import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +48,14 @@ public class OrganizationConfigUtils {
             throw new IllegalStateException("organization configuration not found: " + key);
         }
         return configuration.getValue();
+    }
+
+    public void checkQueryLimitValidity(DatabaseChangeParameters parameters) {
+        if (parameters.getQueryLimit() == null) {
+            parameters.setQueryLimit(getDefaultQueryLimit());
+        }
+        Verify.notGreaterThan(parameters.getQueryLimit(), getDefaultMaxQueryLimit(),
+                "query limit value");
     }
 
     public Integer getDefaultMaxQueryLimit() {

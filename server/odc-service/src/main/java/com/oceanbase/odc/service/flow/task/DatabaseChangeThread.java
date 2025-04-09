@@ -157,8 +157,7 @@ public class DatabaseChangeThread extends Thread {
                 try {
                     List<SqlTuple> sqlTuples = Collections.singletonList(SqlTuple.newTuple(sql));
                     OrganizationConfigUtils configUtils = SpringContextUtil.getBean(OrganizationConfigUtils.class);
-                    Verify.notGreaterThan(parameters.getQueryLimit(), configUtils.getDefaultMaxQueryLimit(),
-                            "query limit value");
+                    configUtils.checkQueryLimitValidity(parameters);
                     OdcStatementCallBack statementCallback =
                             new OdcStatementCallBack(sqlTuples, connectionSession, true, parameters.getQueryLimit());
                     statementCallback.setMaxCachedLines(0);
