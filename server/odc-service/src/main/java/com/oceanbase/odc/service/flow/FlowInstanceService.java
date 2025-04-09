@@ -1541,6 +1541,28 @@ public class FlowInstanceService {
                 new BeanPropertyRowMapper<>(ServiceTaskInstanceEntity.class));
     }
 
+    public int getEnabledPartitionPlanCount(@NotNull InnerQueryFlowInstanceParams params) {
+        Set<Long> joinedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
+        if (CollectionUtils.isEmpty(joinedProjectIds)) {
+            return 0;
+        }
+        Set<Long> partitionPlanFlowInstanceIds =
+                innerListDistinctServiceTaskInstances(new InnerQueryFlowInstanceParams()
+                        .setTaskTypes(Collections.singleton(TaskType.PARTITION_PLAN))
+                        .setStartTime(params.getStartTime())
+                        .setEndTime(params.getEndTime()))
+                                .stream().map(ServiceTaskInstanceEntity::getFlowInstanceId).collect(Collectors.toSet());
+        if (CollectionUtils.isNotEmpty(partitionPlanFlowInstanceIds)) {
+            Specification<FlowInstanceEntity> spec = FlowInstanceSpecs
+                    .organizationIdEquals(authenticationFacade.currentOrganizationId())
+                    .and(FlowInstanceSpecs.idIn(partitionPlanFlowInstanceIds))
+                    .and(FlowInstanceSpecs.projectIdIn(joinedProjectIds))
+                    .and(FlowInstanceSpecs.statusIn(Collections.singleton(FlowStatus.EXECUTION_SUCCEEDED)));
+            return flowInstanceRepository.findAll(spec).size();
+        }
+        return 0;
+    }
+
     /**
      * This is a temporary method that only uses ODC 4.3.4
      * 
