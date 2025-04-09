@@ -47,6 +47,6 @@ public class OrganizationConfigMetaServiceTest {
     @Test
     public void getAllList_KeyExists_NotNull() {
         List<ConfigurationMeta> configMetaList = organizationConfigMetaService.listAllConfigMetas();
-        Assert.assertEquals(5, configMetaList.size());
+        Assert.assertEquals(6, configMetaList.size());
     }
 }
