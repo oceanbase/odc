@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.notification;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -110,4 +111,10 @@ public class Broker {
             }
         }
     }
+
+    public void dequeueSendingTimeoutNotification(long timeout, TimeUnit timeUnit) {
+        notificationQueue.failSendingTimeoutMessages(timeout, timeUnit);
+    }
+
+
 }

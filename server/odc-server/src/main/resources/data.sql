@@ -577,7 +577,9 @@ VALUES ('odc.notification.dequeue-created-notification-fixed-delay-millis', '200
 insert into `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
 VALUES ('odc.notification.dequeue-failed-notification-fixed-delay-millis', '60000', 'odc', 'default', 'master', '处理 SENT_FAILED 消息的定时任务周期，默认 60000 MS') ON DUPLICATE KEY update `id`=`id`;
 insert into `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
-VALUES ('odc.notification.dequeue-sending-notification-fixed-delay-millis', '120000', 'odc', 'default', 'master', '处理 SENDING 消息的最长时间，超过此时间未响应则重新发送，默认 120000 MS') ON DUPLICATE KEY update `id`=`id`;
+VALUES ('odc.notification.dequeue-sending-notification-fixed-delay-millis', '120000', 'odc', 'default', 'master', '处理 SENDING 消息的定时任务周期，默认 120000 MS') ON DUPLICATE KEY update `id`=`id`;
+insert into `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
+VALUES ('odc.notification.sending-notification-expire-time-millis', '600000', 'odc', 'default', 'master', '处理 SENDING 消息的最长时间，超过此时间未响应则置为发送失败，默认 10 MIN') ON DUPLICATE KEY update `id`=`id`;
 insert into `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
 VALUES ('odc.notification.max-resend-times', '3', 'odc', 'default', 'master', '重新处理 SENT_FAILED 消息的最大重试次数，默认 3') ON DUPLICATE KEY
 update `id`=`id`;
