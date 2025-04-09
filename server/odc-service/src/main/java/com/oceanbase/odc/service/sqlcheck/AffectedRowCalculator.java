@@ -17,6 +17,8 @@ package com.oceanbase.odc.service.sqlcheck;
 
 import java.util.Collection;
 
+import org.apache.poi.ddf.EscherSerializationListener;
+
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.service.sqlcheck.rule.BaseAffectedRowsExceedLimit;
@@ -41,14 +43,14 @@ public class AffectedRowCalculator {
     private AffectedRowCalculator() {}
 
     public AffectedRowCalculator(String delimiter, @NonNull DialectType dialectType,
-            @NonNull BaseAffectedRowsExceedLimit affectedRowRule) {
+            BaseAffectedRowsExceedLimit affectedRowRule) {
         this.delimiter = delimiter;
         this.dialectType = dialectType;
         this.affectedRowRule = affectedRowRule;
     }
 
     public AffectedRowCalculator(@NonNull DialectType dialectType,
-            @NonNull BaseAffectedRowsExceedLimit affectedRowRule) {
+            BaseAffectedRowsExceedLimit affectedRowRule) {
         this(null, dialectType, affectedRowRule);
     }
 
@@ -70,6 +72,8 @@ public class AffectedRowCalculator {
                     log.warn("Get affected rows failed", e);
                 }
             }
+        }else {
+            return -1;
         }
         return affectedRows;
     }

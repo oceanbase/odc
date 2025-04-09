@@ -76,6 +76,8 @@ public abstract class BaseAffectedRowsExceedLimit implements SqlCheckRule {
     public long getOBAffectedRows(String originalSql, JdbcOperations jdbcOperations) {
         /**
          * <pre>
+         *    The following is the result set returned by the sql plan for the new version ob, whose version number is 4.3.4
+         *
          *     obclient> explain delete from T1 where 1=1;
          * +-------------------------------------------------------+
          * | Query Plan                                            |
@@ -96,7 +98,36 @@ public abstract class BaseAffectedRowsExceedLimit implements SqlCheckRule {
          * |       range_key([t1.id]), range(MIN ; MAX)always true |
          * +-------------------------------------------------------+
          * 14 rows in set (0.00 sec)
+         *
+         *  The following is the result set returned by the sql plan for the new version ob, whose version number is 3.2.4.6
+         *
+         *  obclient(root@mysql)[zijia]> explain  delete from ids;
+         * +------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+         * | Query Plan                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+         * +------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+         * | ====================================
+         * |ID|OPERATOR   |NAME|EST. ROWS|COST|
+         * ------------------------------------
+         * |0 |DELETE     |    |11       |57  |
+         * |1 | TABLE SCAN|ids |11       |46  |
+         * ====================================
+         *
+         * Outputs & filters:
+         * -------------------------------------
+         *   0 - output(nil), filter(nil), table_columns([{ids: ({ids: (ids.__pk_increment, ids.id)})}])
+         *   1 - output([ids.__pk_increment], [ids.id]), filter(nil),
+         *       access([ids.__pk_increment], [ids.id]), partitions(p0)
+         *  |
+         * +------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+         * 1 row in set (0.002 sec)
+         *
+         * Differences between the two versions of ob mysql are as follows:
+         * 1. The number of rows returned in the result set is different. The new version returns multiple rows, and the old version returns single row.
+         * 2. The name of the estimated number of affected rows are different. The name of new version is “EST.ROWS", and that of the old version is “EST. ROWS”
+         *
          * </pre>
+         *
+         *
          */
         String explainSql = "EXPLAIN " + originalSql;
         List<String> queryResults = jdbcOperations.query(explainSql, (rs, rowNum) -> rs.getString("Query Plan"));
@@ -104,26 +135,20 @@ public abstract class BaseAffectedRowsExceedLimit implements SqlCheckRule {
     }
 
     protected long getOBAndOracleAffectRowsFromResult(List<String> queryResults) {
-        // 如果查询结果只有一行，则按换行符拆分（老版本ob）
         if (queryResults.size() == 1) {
             queryResults = Arrays.asList(queryResults.get(0).split("\\r?\\n"));
         }
-
         long estRowsValue = -1;
         int estRowsIndex = -1;
 
         for (int rowNum = 0; rowNum < queryResults.size(); rowNum++) {
             String resultRow = queryResults.get(rowNum).trim();
-
-            // 先定位到 EST.ROWS 所在行
             if (estRowsIndex == -1 && containsAffectRowsColumnName(resultRow)) {
                 estRowsIndex = getEstRowsIndex(resultRow);
                 continue;
             }
 
-            // 从 EST.ROWS 所在行的下一行开始尝试获取对应位置的值
             if (estRowsIndex != -1) {
-                // 尝试从数据行中获取 EST.ROWS 的值
                 estRowsValue = getEstRowsValue(resultRow, estRowsIndex);
                 if (estRowsValue != -1) {
                     return estRowsValue;
@@ -137,10 +162,10 @@ public abstract class BaseAffectedRowsExceedLimit implements SqlCheckRule {
         String[] columns = headerRow.split("\\|");
         for (int i = 0; i < columns.length; i++) {
             if (isAffectRowsColumnName(columns[i].trim())) {
-                return i; // 返回列索引
+                return i;
             }
         }
-        return -1; // 如果没有找到，返回 -1
+        return -1;
     }
 
     private long getEstRowsValue(String resultRow, int columnIndex) {
@@ -148,49 +173,12 @@ public abstract class BaseAffectedRowsExceedLimit implements SqlCheckRule {
         if (values.length > columnIndex) {
             String value = values[columnIndex].trim();
             long estRowsValue = parseLong(value);
-            if (estRowsValue != -1) {
-                return estRowsValue; // 返回获取到的值
+            if (estRowsValue != 0) {
+                return estRowsValue;
             }
         }
-        return -1; // 如果没有找到有效的值，返回 -1
+        return -1;
     }
-
-    // protected long getOBAndOracleAffectRowsFromResult(List<String> queryResults) {
-    // if(queryResults.size()==1) {
-    // queryResults = Arrays.asList(queryResults.get(0).split("\\r?\\n"));
-    // }
-    // long estRowsValue = -1;
-    // int position = -1;
-    // boolean startGetValue=false;
-    // for (int rowNum = 0; rowNum < queryResults.size(); rowNum++) {
-    // String resultRow = queryResults.get(rowNum);
-    // // 先定位到 EST.ROWS 所在行
-    // if(!startGetValue && containsAffectRowsColumnName(resultRow)){
-    // // 获取 EST.ROWS 所在列的索引位置
-    // String[] columns = resultRow.split("\\|");
-    // for (int i = 0; i < columns.length; i++) {
-    // if (isAffectRowsColumnName(columns[i])) {
-    // position = i;
-    // startGetValue=true;
-    // break;
-    // }
-    // }
-    // continue;
-    // }
-    // // 从EST.ROWS 所在行的下一行开始尝试获取与EST.ROWS对应位置的值
-    // if(startGetValue){
-    // String[] values = resultRow.split("\\|");
-    // if (values.length > position) {
-    // String value = values[position].trim();
-    // estRowsValue = parseLong(value);
-    // if(estRowsValue!=-1){
-    // break;
-    // }
-    // }
-    // }
-    // }
-    // return estRowsValue;
-    // }
 
     protected boolean isAffectRowsColumnName(String column) {
         return column.trim().equals("EST.ROWS") || column.trim().equals("EST. ROWS");

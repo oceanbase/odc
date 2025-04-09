@@ -63,7 +63,7 @@ public class OracleAffectedRowsExceedLimit extends BaseAffectedRowsExceedLimit {
      */
     @Override
     public long getStatementAffectedRows(Statement statement) {
-        long affectedRows = -1;
+        long affectedRows = 0;
         if (statement instanceof Update || statement instanceof Delete || statement instanceof Insert) {
             String originalSql = statement.getText();
             if (this.jdbcOperations == null) {
