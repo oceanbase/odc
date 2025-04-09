@@ -111,7 +111,7 @@ public class EncryptionFacadeImpl implements EncryptionFacade {
                 () -> new NotFoundException(ResourceType.ODC_ORGANIZATION, "organizationId", organizationId));
         String customKey = organizationConfigUtils.getDefaultCustomDataSourceEncryptionKey();
         String secret = customKey.isEmpty() ? organization.getSecret()
-            : new String(Base64.getDecoder().decode(customKey));
+                : new String(Base64.getDecoder().decode(customKey));
         return getEncryptor(secret, salt);
     }
 
