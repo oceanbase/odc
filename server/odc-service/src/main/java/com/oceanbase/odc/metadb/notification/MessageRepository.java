@@ -61,7 +61,7 @@ public interface MessageRepository extends OdcJpaRepository<MessageEntity, Long>
             @Param("limit") Integer limit);
 
     @Query(value = "update notification_message set `status`='SENT_FAILED' where `status`='SENDING' and "
-                   + "`update_time` < DATE_SUB(now(), INTERVAL :timeoutSeconds SECOND)",
+            + "`update_time` < DATE_SUB(now(), INTERVAL :timeoutSeconds SECOND)",
             nativeQuery = true)
     int failSendingTimeoutMessages(@Param("timeoutSeconds") long timeoutSeconds);
 
