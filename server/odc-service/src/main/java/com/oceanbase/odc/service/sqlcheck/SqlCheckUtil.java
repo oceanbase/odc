@@ -27,6 +27,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.annotation.Nullable;
 import javax.sql.DataSource;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -285,11 +286,13 @@ public class SqlCheckUtil {
         return sqls;
     }
 
+    @Nullable
     public static BaseAffectedRowsExceedLimit getAffectedRowsRule(@NonNull Supplier<String> dbVersionSupplier,
             @NonNull DialectType dialectType, @NonNull JdbcOperations jdbc) {
         return getAffectedRowsRule(dbVersionSupplier, dialectType, jdbc, null);
     }
 
+    @Nullable
     public static BaseAffectedRowsExceedLimit getAffectedRowsRule(@NonNull Supplier<String> dbVersionSupplier,
             @NonNull DialectType dialectType, @NonNull JdbcOperations jdbc, Map<String, Object> parameters) {
         SqlCheckRuleContext sqlCheckRuleContext =

@@ -62,7 +62,10 @@ public class AffectedRowCalculator {
             for (OffsetString sql : sqls) {
                 try {
                     Statement statement = SqlCheckUtil.parseSingleSql(dialectType, sql.getStr());
-                    affectedRows += affectedRowRule.getStatementAffectedRows(statement);
+                    long statementAffectedRows = affectedRowRule.getStatementAffectedRows(statement);
+                    if (statementAffectedRows > 0) {
+                        affectedRows += statementAffectedRows;
+                    }
                 } catch (Exception e) {
                     log.warn("Get affected rows failed", e);
                 }

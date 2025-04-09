@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.sqlcheck.rule;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -102,25 +103,101 @@ public abstract class BaseAffectedRowsExceedLimit implements SqlCheckRule {
         return getOBAndOracleAffectRowsFromResult(queryResults);
     }
 
-    public long getOBAndOracleAffectRowsFromResult(List<String> queryResults) {
-        long estRowsValue = 0;
+    protected long getOBAndOracleAffectRowsFromResult(List<String> queryResults) {
+        // 如果查询结果只有一行，则按换行符拆分（老版本ob）
+        if (queryResults.size() == 1) {
+            queryResults = Arrays.asList(queryResults.get(0).split("\\r?\\n"));
+        }
+
+        long estRowsValue = -1;
+        int estRowsIndex = -1;
+
         for (int rowNum = 0; rowNum < queryResults.size(); rowNum++) {
-            String resultRow = queryResults.get(rowNum);
-            estRowsValue = getEstRowsValue(resultRow);
-            if (estRowsValue != 0) {
-                break;
+            String resultRow = queryResults.get(rowNum).trim();
+
+            // 先定位到 EST.ROWS 所在行
+            if (estRowsIndex == -1 && containsAffectRowsColumnName(resultRow)) {
+                estRowsIndex = getEstRowsIndex(resultRow);
+                continue;
+            }
+
+            // 从 EST.ROWS 所在行的下一行开始尝试获取对应位置的值
+            if (estRowsIndex != -1) {
+                // 尝试从数据行中获取 EST.ROWS 的值
+                estRowsValue = getEstRowsValue(resultRow, estRowsIndex);
+                if (estRowsValue != -1) {
+                    return estRowsValue;
+                }
             }
         }
         return estRowsValue;
     }
 
-    private long getEstRowsValue(String singleRow) {
-        String[] parts = singleRow.split("\\|");
-        if (parts.length > 5) {
-            String value = parts[4].trim();
-            return parseLong(value);
+    private int getEstRowsIndex(String headerRow) {
+        String[] columns = headerRow.split("\\|");
+        for (int i = 0; i < columns.length; i++) {
+            if (isAffectRowsColumnName(columns[i].trim())) {
+                return i; // 返回列索引
+            }
         }
-        return 0;
+        return -1; // 如果没有找到，返回 -1
+    }
+
+    private long getEstRowsValue(String resultRow, int columnIndex) {
+        String[] values = resultRow.split("\\|");
+        if (values.length > columnIndex) {
+            String value = values[columnIndex].trim();
+            long estRowsValue = parseLong(value);
+            if (estRowsValue != -1) {
+                return estRowsValue; // 返回获取到的值
+            }
+        }
+        return -1; // 如果没有找到有效的值，返回 -1
+    }
+
+    // protected long getOBAndOracleAffectRowsFromResult(List<String> queryResults) {
+    // if(queryResults.size()==1) {
+    // queryResults = Arrays.asList(queryResults.get(0).split("\\r?\\n"));
+    // }
+    // long estRowsValue = -1;
+    // int position = -1;
+    // boolean startGetValue=false;
+    // for (int rowNum = 0; rowNum < queryResults.size(); rowNum++) {
+    // String resultRow = queryResults.get(rowNum);
+    // // 先定位到 EST.ROWS 所在行
+    // if(!startGetValue && containsAffectRowsColumnName(resultRow)){
+    // // 获取 EST.ROWS 所在列的索引位置
+    // String[] columns = resultRow.split("\\|");
+    // for (int i = 0; i < columns.length; i++) {
+    // if (isAffectRowsColumnName(columns[i])) {
+    // position = i;
+    // startGetValue=true;
+    // break;
+    // }
+    // }
+    // continue;
+    // }
+    // // 从EST.ROWS 所在行的下一行开始尝试获取与EST.ROWS对应位置的值
+    // if(startGetValue){
+    // String[] values = resultRow.split("\\|");
+    // if (values.length > position) {
+    // String value = values[position].trim();
+    // estRowsValue = parseLong(value);
+    // if(estRowsValue!=-1){
+    // break;
+    // }
+    // }
+    // }
+    // }
+    // return estRowsValue;
+    // }
+
+    protected boolean isAffectRowsColumnName(String column) {
+        return column.trim().equals("EST.ROWS") || column.trim().equals("EST. ROWS");
+    }
+
+    protected boolean containsAffectRowsColumnName(String row) {
+        return row.contains("EST.ROWS") || row.contains("EST. ROWS");
     }
 
     /**
@@ -133,7 +210,7 @@ public abstract class BaseAffectedRowsExceedLimit implements SqlCheckRule {
         try {
             return Long.parseLong(value);
         } catch (NumberFormatException e) {
-            return 0;
+            return -1;
         }
     }
 

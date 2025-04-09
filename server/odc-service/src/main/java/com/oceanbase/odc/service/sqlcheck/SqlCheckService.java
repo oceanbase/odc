@@ -25,6 +25,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
@@ -104,12 +105,19 @@ public class SqlCheckService {
         }
         DefaultSqlChecker sqlChecker =
                 new DefaultSqlChecker(session.getDialectType(), req.getDelimiter(), sqlCheckRules);
-        AffectedRowCalculator affectedRowCalculator = new AffectedRowCalculator(req.getDelimiter(),
-                session.getDialectType(), getAffectedRowsRuleBySession(session));
         List<CheckViolation> checkViolations = sqlChecker.check(req.getScriptContent());
         fullFillRiskLevel(rules, checkViolations);
-        return SqlCheckResponse.of(affectedRowCalculator.getAffectedRows(req.getScriptContent()),
-                SqlCheckUtil.buildCheckResults(checkViolations));
+        BaseAffectedRowsExceedLimit affectedRowsRule = getAffectedRowsRuleBySession(session);
+        if (affectedRowsRule != null) {
+            AffectedRowCalculator affectedRowCalculator = new AffectedRowCalculator(req.getDelimiter(),
+                    session.getDialectType(), getAffectedRowsRuleBySession(session));
+            return SqlCheckResponse.of(affectedRowCalculator.getAffectedRows(req.getScriptContent()),
+                    SqlCheckUtil.buildCheckResults(checkViolations));
+        } else {
+            return SqlCheckResponse.of(-1,
+                    SqlCheckUtil.buildCheckResults(checkViolations));
+        }
+
     }
 
     public List<CheckResult> checkForMultipleSql(@NotNull ConnectionSession session,
@@ -174,20 +182,27 @@ public class SqlCheckService {
             List<SqlCheckRule> checkRules = getRules(rules, () -> SqlCheckUtil.getDbVersion(config, dataSource),
                     config.getDialectType(), jdbc);
             DefaultSqlChecker sqlChecker = new DefaultSqlChecker(config.getDialectType(), null, checkRules);
-            BaseAffectedRowsExceedLimit affectedRowsRule = SqlCheckUtil.getAffectedRowsRule(
-                    () -> SqlCheckUtil.getDbVersion(config, dataSource), config.getDialectType(), jdbc);
-            AffectedRowCalculator affectedRowCalculator =
-                    new AffectedRowCalculator(config.getDialectType(), affectedRowsRule);
+
             List<CheckViolation> checkViolations = new ArrayList<>();
             for (OffsetString sql : sqls) {
                 List<CheckViolation> violations = sqlChecker.check(Collections.singletonList(sql), checkContext);
                 fullFillRiskLevel(rules, violations);
                 checkViolations.addAll(violations);
             }
-            return SqlCheckResponse.of(affectedRowCalculator.getAffectedRows(sqls), checkViolations);
+            BaseAffectedRowsExceedLimit affectedRowsRule = SqlCheckUtil.getAffectedRowsRule(
+                    () -> SqlCheckUtil.getDbVersion(config, dataSource), config.getDialectType(), jdbc);
+            if (affectedRowsRule != null) {
+                AffectedRowCalculator affectedRowCalculator =
+                        new AffectedRowCalculator(config.getDialectType(), affectedRowsRule);
+                return SqlCheckResponse.of(affectedRowCalculator.getAffectedRows(sqls), checkViolations);
+            } else {
+                // 如果数据源类型不支持预估影响行数
+                return SqlCheckResponse.of(-1, checkViolations);
+            }
         }
     }
 
+    @Nullable
     public BaseAffectedRowsExceedLimit getAffectedRowsRuleBySession(@NonNull ConnectionSession session) {
         return SqlCheckUtil.getAffectedRowsRule(() -> ConnectionSessionUtil.getVersion(session),
                 session.getDialectType(), session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY));

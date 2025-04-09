@@ -63,7 +63,7 @@ public class OracleAffectedRowsExceedLimit extends BaseAffectedRowsExceedLimit {
      */
     @Override
     public long getStatementAffectedRows(Statement statement) {
-        long affectedRows = 0;
+        long affectedRows = -1;
         if (statement instanceof Update || statement instanceof Delete || statement instanceof Insert) {
             String originalSql = statement.getText();
             if (this.jdbcOperations == null) {
@@ -115,6 +115,16 @@ public class OracleAffectedRowsExceedLimit extends BaseAffectedRowsExceedLimit {
                 "SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY('PLAN_TABLE', '" + ODC_TEMP_EXPLAIN_STATEMENT_ID + "', 'ALL'))";
         List<String> queryResults = jdbcOperations.query(getPlanSql, (rs, rowNum) -> rs.getString("PLAN_TABLE_OUTPUT"));
         return getOBAndOracleAffectRowsFromResult(queryResults);
+    }
+
+    @Override
+    protected boolean isAffectRowsColumnName(String column) {
+        return column.trim().equals("Rows");
+    }
+
+    @Override
+    protected boolean containsAffectRowsColumnName(String row) {
+        return row.contains("Rows");
     }
 
 }
