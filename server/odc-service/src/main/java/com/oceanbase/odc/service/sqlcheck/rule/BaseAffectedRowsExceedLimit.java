@@ -188,12 +188,6 @@ public abstract class BaseAffectedRowsExceedLimit implements SqlCheckRule {
         return row.contains("EST.ROWS") || row.contains("EST. ROWS");
     }
 
-    /**
-     * Safely parse a long value.
-     *
-     * @param value string to parse
-     * @return parsed long or 0 if parsing fails
-     */
     private long parseLong(String value) {
         try {
             return Long.parseLong(value);
