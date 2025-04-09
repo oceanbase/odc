@@ -125,6 +125,7 @@ public class DBMaterializedViewController {
                 session, materializedView));
     }
 
+    @ApiOperation(value = "generateUpdateDDL", notes = "obtain the sql to update the materialized view.")
     @PostMapping(value = "/{sessionId}/databases/{databaseName}/materializedViews/generateUpdateMViewDDL")
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public SuccessResponse<GenerateTableDDLResp> generateUpdateMViewDDL(@PathVariable String sessionId,
