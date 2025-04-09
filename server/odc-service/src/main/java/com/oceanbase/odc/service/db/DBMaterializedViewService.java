@@ -108,7 +108,9 @@ public class DBMaterializedViewService {
         List<DatabaseAndTables> tables = databases.stream().map(schema -> {
             List<String> tablesLike = accessor.showTablesLike(schema, tableNameLike).stream()
                     .filter(name -> !StringUtils.endsWith(name.toUpperCase(),
-                            OdcConstants.VALIDATE_DDL_TABLE_POSTFIX))
+                            OdcConstants.VALIDATE_DDL_TABLE_POSTFIX)
+                            && !StringUtils.startsWithIgnoreCase(name, OdcConstants.CONTAINER_TABLE_PREFIX)
+                            && !StringUtils.startsWithIgnoreCase(name, OdcConstants.MATERIALIZED_VIEW_LOG_PREFIX))
                     .collect(Collectors.toList());
             return tablesLike.size() != 0 ? new DatabaseAndTables(schema, tablesLike)
                     : new DatabaseAndTables();

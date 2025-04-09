@@ -24,7 +24,6 @@ import org.quartz.JobExecutionContext;
 
 import com.alibaba.fastjson.JSON;
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
@@ -148,8 +147,7 @@ public class SqlPlanJob implements OdcJob {
         parameters.setSqlObjectIds(sqlPlanParameters.getSqlObjectIds());
         parameters.setTimeoutMillis(sqlPlanParameters.getTimeoutMillis());
         OrganizationConfigUtils configUtils = SpringContextUtil.getBean(OrganizationConfigUtils.class);
-        Verify.notGreaterThan(sqlPlanParameters.getQueryLimit(), configUtils.getDefaultQueryLimit(),
-                "query limit value");
+        configUtils.checkQueryLimitValidity(sqlPlanParameters);
         parameters.setQueryLimit(sqlPlanParameters.getQueryLimit());
         parameters.setErrorStrategy(sqlPlanParameters.getErrorStrategy());
         parameters.setSessionTimeZone(connectProperties.getDefaultTimeZone());

@@ -15,6 +15,10 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
+import java.util.List;
+
+import org.apache.commons.collections4.CollectionUtils;
+
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
@@ -23,6 +27,7 @@ import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import cn.hutool.core.util.ObjectUtil;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import lombok.experimental.Accessors;
 
@@ -35,23 +40,25 @@ import lombok.experimental.Accessors;
 @Data
 @Builder
 @Accessors(chain = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class ScheduleTaskStat {
-    private ScheduleType type;
+    @EqualsAndHashCode.Include
+    private ScheduleTaskType type;
     private Integer successExecutionCount;
     private Integer failedExecutionCount;
     private Integer waitingExecutionCount;
     private Integer executingCount;
     private Integer otherCount;
 
-    public static ScheduleTaskStat init(@NonNull ScheduleType type) {
+    public static ScheduleTaskStat init(@NonNull ScheduleTaskType type) {
         return empty().setType(type);
     }
 
     public static ScheduleTaskStat init(@NonNull TaskType type) {
         if (type == TaskType.ASYNC) {
-            return empty().setType(ScheduleType.SQL_PLAN);
+            return empty().setType(ScheduleTaskType.SQL_PLAN);
         } else if (type == TaskType.PARTITION_PLAN) {
-            return empty().setType(ScheduleType.PARTITION_PLAN);
+            return empty().setType(ScheduleTaskType.PARTITION_PLAN);
         }
         throw new UnsupportedException("Unsupported sub task type: " + type);
     }
@@ -65,6 +72,13 @@ public class ScheduleTaskStat {
         this.waitingExecutionCount = safeAdd(this.waitingExecutionCount, stat.getWaitingExecutionCount());
         this.executingCount = safeAdd(this.executingCount, stat.getExecutingCount());
         this.otherCount = safeAdd(this.otherCount, stat.getOtherCount());
+    }
+
+    public void merge(List<ScheduleTaskStat> stats) {
+        if (CollectionUtils.isEmpty(stats)) {
+            return;
+        }
+        stats.forEach(this::merge);
     }
 
     public static ScheduleTaskStat empty() {
