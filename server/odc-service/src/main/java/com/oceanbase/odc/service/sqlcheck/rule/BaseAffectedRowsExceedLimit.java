@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.sqlcheck.rule;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
 
 import org.springframework.jdbc.core.JdbcOperations;
 
@@ -131,10 +132,11 @@ public abstract class BaseAffectedRowsExceedLimit implements SqlCheckRule {
          */
         String explainSql = "EXPLAIN " + originalSql;
         List<String> queryResults = jdbcOperations.query(explainSql, (rs, rowNum) -> rs.getString("Query Plan"));
-        return getOBAndOracleAffectRowsFromResult(queryResults);
+        return getOBAndOracleAffectRowsFromResult(queryResults, this::containsAffectRowsColumnForOB, this::isAffectRowsColumnForOB);
     }
 
-    protected long getOBAndOracleAffectRowsFromResult(List<String> queryResults) {
+    protected long getOBAndOracleAffectRowsFromResult(List<String> queryResults, Predicate<String> containsAffectRowsColumn,
+        Predicate<String> isAffectRowsColumn) {
         if (queryResults.size() == 1) {
             queryResults = Arrays.asList(queryResults.get(0).split("\\r?\\n"));
         }
@@ -143,8 +145,8 @@ public abstract class BaseAffectedRowsExceedLimit implements SqlCheckRule {
 
         for (int rowNum = 0; rowNum < queryResults.size(); rowNum++) {
             String resultRow = queryResults.get(rowNum).trim();
-            if (estRowsIndex == -1 && containsAffectRowsColumnName(resultRow)) {
-                estRowsIndex = getEstRowsIndex(resultRow);
+            if (estRowsIndex == -1 &&  containsAffectRowsColumn.test(resultRow)) {
+                estRowsIndex = getEstRowsIndex(resultRow, isAffectRowsColumn);
                 continue;
             }
 
@@ -158,10 +160,10 @@ public abstract class BaseAffectedRowsExceedLimit implements SqlCheckRule {
         return estRowsValue;
     }
 
-    private int getEstRowsIndex(String headerRow) {
+    private int getEstRowsIndex(String headerRow,Predicate<String> isAffectRowsColumn) {
         String[] columns = headerRow.split("\\|");
         for (int i = 0; i < columns.length; i++) {
-            if (isAffectRowsColumnName(columns[i].trim())) {
+            if (isAffectRowsColumn.test(columns[i].trim())) {
                 return i;
             }
         }
@@ -180,12 +182,13 @@ public abstract class BaseAffectedRowsExceedLimit implements SqlCheckRule {
         return -1;
     }
 
-    protected boolean isAffectRowsColumnName(String column) {
-        return column.trim().equals("EST.ROWS") || column.trim().equals("EST. ROWS");
+
+    private boolean containsAffectRowsColumnForOB(String row) {
+        return row.contains("EST.ROWS") || row.contains("EST. ROWS");
     }
 
-    protected boolean containsAffectRowsColumnName(String row) {
-        return row.contains("EST.ROWS") || row.contains("EST. ROWS");
+    private boolean isAffectRowsColumnForOB(String column) {
+        return column.trim().equals("EST.ROWS") || column.trim().equals("EST. ROWS");
     }
 
     private long parseLong(String value) {
