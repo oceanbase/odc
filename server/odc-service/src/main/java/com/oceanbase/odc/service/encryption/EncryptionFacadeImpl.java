@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.encryption;
 
 import java.time.Duration;
+import java.util.Base64;
 import java.util.Objects;
 
 import org.apache.commons.lang3.StringUtils;
@@ -30,6 +31,7 @@ import com.oceanbase.odc.common.crypto.TextEncryptor;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.service.config.OrganizationConfigUtils;
 import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -60,6 +62,8 @@ public class EncryptionFacadeImpl implements EncryptionFacade {
     private UserService userService;
     @Autowired
     private OrganizationService organizationService;
+    @Autowired
+    private OrganizationConfigUtils organizationConfigUtils;
 
     @Override
     public String encryptByCurrentUserPassword(String text, String salt) {
@@ -105,6 +109,11 @@ public class EncryptionFacadeImpl implements EncryptionFacade {
     public TextEncryptor organizationEncryptor(Long organizationId, String salt) {
         Organization organization = organizationService.get(organizationId).orElseThrow(
                 () -> new NotFoundException(ResourceType.ODC_ORGANIZATION, "organizationId", organizationId));
+        String customKey = organizationConfigUtils.getDefaultCustomDataSourceEncryptionKey();
+        if (!customKey.isEmpty()) {
+            return getEncryptor(new String(Base64.getDecoder().decode(customKey)), salt);
+        }
+        // If custom key is not set, compatible with old logic.
         return getEncryptor(organization.getSecret(), salt);
     }
 
