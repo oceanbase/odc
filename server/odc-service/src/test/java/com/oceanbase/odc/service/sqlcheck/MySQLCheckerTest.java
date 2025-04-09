@@ -1579,7 +1579,7 @@ public class MySQLCheckerTest {
     }
 
     @Test
-    public void check_restrictSqlAffectedRowsBySqlPlan_InOldVersionOB() {
+    public void check_restrictSqlAffectedRowsBySqlPlan_inOldVersionOB_passed() {
         String delete = "delete from ids";
         List<String> resultSet = Collections.singletonList (
             "====================================\n"
@@ -1604,6 +1604,35 @@ public class MySQLCheckerTest {
                 new MySQLAffectedRowsExceedLimit(12L, DialectType.OB_MYSQL, jdbcTemplate)));
         List<CheckViolation> actualSelect = selectChecker.check(delete);
         Assert.assertEquals(0, actualSelect.size());
+    }
+
+    @Test
+    public void check_restrictSqlAffectedRowsBySqlPlan_inOldVersionOB_intercepted() {
+        String delete = "delete from ids";
+        List<String> resultSet = Collections.singletonList (
+            "====================================\n"
+            + "|ID|OPERATOR   |NAME|EST. ROWS|COST|\n"
+            + "------------------------------------\n"
+            + "|0 |DELETE     |    |11       |57  |\n"
+            + "|1 | TABLE SCAN|ids |11       |46  |\n"
+            + "====================================\n"
+            + "\n"
+            + "Outputs & filters: \n"
+            + "-------------------------------------\n"
+            + "  0 - output(nil), filter(nil), table_columns([{ids: ({ids: (ids.__pk_increment, ids.id)})}])\n"
+            + "  1 - output([ids.__pk_increment], [ids.id]), filter(nil), \n"
+            + "      access([ids.__pk_increment], [ids.id]), partitions(p0)");
+
+        JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
+
+        Mockito.when(jdbcTemplate.query(Mockito.anyString(), Mockito.any(RowMapper.class)))
+            .thenReturn(resultSet);
+        DefaultSqlChecker selectChecker = new DefaultSqlChecker(DialectType.OB_MYSQL, "$$",
+            Collections.singletonList(
+                new MySQLAffectedRowsExceedLimit(10L, DialectType.OB_MYSQL, jdbcTemplate)));
+        List<CheckViolation> actualSelect = selectChecker.check(delete);
+        Assert.assertEquals(1, actualSelect.size());
+        Assert.assertEquals(SqlCheckRuleType.RESTRICT_SQL_AFFECTED_ROWS, actualSelect.get(0).getType());
     }
 
     @Test
