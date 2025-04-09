@@ -39,7 +39,9 @@ public class AuditEventMetaMapperTest {
 
         AuditEventMeta expected = AuditEventMeta.builder()
                 .action(AuditEventAction.UPDATE_PERSONAL_CONFIGURATION)
+                .actionName(AuditEventAction.UPDATE_PERSONAL_CONFIGURATION.getLocalizedMessage())
                 .type(AuditEventType.PERSONAL_CONFIGURATION)
+                .typeName(AuditEventType.PERSONAL_CONFIGURATION.getLocalizedMessage())
                 .enabled(true)
                 .inConnection(true)
                 .methodSignature("controller")
