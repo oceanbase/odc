@@ -1553,6 +1553,10 @@
       value: OB_MYSQL
     - label: SUPPORTED_DIALECT_TYPE
       value: MYSQL
+    - label: SUPPORTED_DIALECT_TYPE
+      value: OB_ORACLE
+    - label: SUPPORTED_DIALECT_TYPE
+      value: ORACLE
 - id: 61
   name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.create-table-like-exists.name}
   description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.create-table-like-exists.description}
