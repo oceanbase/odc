@@ -1579,6 +1579,57 @@ public class MySQLCheckerTest {
     }
 
     @Test
+    public void check_restrictSqlAffectedRowsBySqlPlan_InOldVersionOB() {
+        String delete = "delete from ids";
+        List<String> resultSet = Collections.singletonList (
+            "====================================\n"
+          + "|ID|OPERATOR   |NAME|EST. ROWS|COST|\n"
+          + "------------------------------------\n"
+          + "|0 |DELETE     |    |11       |57  |\n"
+          + "|1 | TABLE SCAN|ids |11       |46  |\n"
+          + "====================================\n"
+          + "\n"
+          + "Outputs & filters: \n"
+          + "-------------------------------------\n"
+          + "  0 - output(nil), filter(nil), table_columns([{ids: ({ids: (ids.__pk_increment, ids.id)})}])\n"
+          + "  1 - output([ids.__pk_increment], [ids.id]), filter(nil), \n"
+          + "      access([ids.__pk_increment], [ids.id]), partitions(p0)");
+
+        JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
+
+        Mockito.when(jdbcTemplate.query(Mockito.anyString(), Mockito.any(RowMapper.class)))
+            .thenReturn(resultSet);
+        DefaultSqlChecker selectChecker = new DefaultSqlChecker(DialectType.OB_MYSQL, "$$",
+            Collections.singletonList(
+                new MySQLAffectedRowsExceedLimit(12L, DialectType.OB_MYSQL, jdbcTemplate)));
+        List<CheckViolation> actualSelect = selectChecker.check(delete);
+        Assert.assertEquals(0, actualSelect.size());
+    }
+
+    @Test
+    public void check_restrictSqlAffectedRowsBySqlPlan() {
+        String select =
+            "select id, name, age from users where id in ('1', '2')";
+        List<String> resultSet = Arrays.asList(
+            "==================================================",
+            "|ID|OPERATOR          |NAME|EST.ROWS|EST.TIME(us)|",
+            "--------------------------------------------------",
+            "|0 |DISTRIBUTED INSERT|    |4       |20          |",
+            "|1 |└─EXPRESSION      |    |4       |1           |",
+            "==================================================");
+        JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
+
+        Mockito.when(jdbcTemplate.query(Mockito.anyString(), Mockito.any(RowMapper.class)))
+            .thenReturn(resultSet);
+        DefaultSqlChecker selectChecker = new DefaultSqlChecker(DialectType.OB_MYSQL, "$$",
+            Collections.singletonList(
+                new MySQLAffectedRowsExceedLimit(2L, DialectType.OB_MYSQL, jdbcTemplate)));
+        List<CheckViolation> actualSelect = selectChecker.check(select);
+        Assert.assertEquals(0, actualSelect.size());
+    }
+
+
+    @Test
     public void check_restrictSqlAffectedRows4Insert_value() {
         String insert =
                 "insert into users (id, name, age, email) value "
