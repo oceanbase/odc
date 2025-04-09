@@ -240,9 +240,9 @@ public class MergeFlowInstanceTest extends ServiceTestEnv {
         Map<RiskLevelDescriber, RiskLevel> describer2RiskLevel = approvalFlowConfigSelector.batchSelect(describers);
         ArrayList<RiskLevelDescriber> riskLevelDescribers = new ArrayList<>(describer2RiskLevel.keySet());
         RiskLevelDescriber describer = riskLevelDescribers.get(0);
-        Assert.assertEquals(0, (int) describer2RiskLevel.get(describer).getLevel());
-        describer = riskLevelDescribers.get(1);
         Assert.assertEquals(1, (int) describer2RiskLevel.get(describer).getLevel());
+        describer = riskLevelDescribers.get(1);
+        Assert.assertEquals(0, (int) describer2RiskLevel.get(describer).getLevel());
         describer = riskLevelDescribers.get(2);
         Assert.assertEquals(1, (int) describer2RiskLevel.get(describer).getLevel());
     }
