@@ -59,7 +59,7 @@ public class NotificationScheduleConfiguration implements SchedulingConfigurer {
                 getTrigger(() -> Duration
                         .ofMillis(notificationProperties.getDequeueFailedNotificationFixedDelayMillis())));
         taskRegistrar.addTriggerTask(
-                () -> broker.dequeueSendingTimeoutNotification(
+                () -> broker.failSendingTimeoutNotification(
                         notificationProperties.getSendingNotificationExpireTimeMillis(), TimeUnit.MILLISECONDS),
                 getTrigger(() -> Duration
                         .ofMillis(notificationProperties.getDequeueSendingNotificationFixedDelayMillis())));

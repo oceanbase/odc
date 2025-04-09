@@ -112,7 +112,7 @@ public class Broker {
         }
     }
 
-    public void dequeueSendingTimeoutNotification(long timeout, TimeUnit timeUnit) {
+    public void failSendingTimeoutNotification(long timeout, TimeUnit timeUnit) {
         notificationQueue.failSendingTimeoutMessages(timeout, timeUnit);
     }
 
