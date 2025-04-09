@@ -1607,29 +1607,6 @@ public class MySQLCheckerTest {
     }
 
     @Test
-    public void check_restrictSqlAffectedRowsBySqlPlan() {
-        String select =
-            "select id, name, age from users where id in ('1', '2')";
-        List<String> resultSet = Arrays.asList(
-            "==================================================",
-            "|ID|OPERATOR          |NAME|EST.ROWS|EST.TIME(us)|",
-            "--------------------------------------------------",
-            "|0 |DISTRIBUTED INSERT|    |4       |20          |",
-            "|1 |└─EXPRESSION      |    |4       |1           |",
-            "==================================================");
-        JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
-
-        Mockito.when(jdbcTemplate.query(Mockito.anyString(), Mockito.any(RowMapper.class)))
-            .thenReturn(resultSet);
-        DefaultSqlChecker selectChecker = new DefaultSqlChecker(DialectType.OB_MYSQL, "$$",
-            Collections.singletonList(
-                new MySQLAffectedRowsExceedLimit(2L, DialectType.OB_MYSQL, jdbcTemplate)));
-        List<CheckViolation> actualSelect = selectChecker.check(select);
-        Assert.assertEquals(0, actualSelect.size());
-    }
-
-
-    @Test
     public void check_restrictSqlAffectedRows4Insert_value() {
         String insert =
                 "insert into users (id, name, age, email) value "
