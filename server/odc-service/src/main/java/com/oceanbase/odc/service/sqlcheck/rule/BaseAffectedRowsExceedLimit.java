@@ -123,8 +123,8 @@ public abstract class BaseAffectedRowsExceedLimit implements SqlCheckRule {
          * 1 row in set (0.002 sec)
          *
          * Differences between the two versions of ob mysql are as follows:
-         * 1. The number of rows returned in the result set is different. The new version returns multiple rows, and the old version returns single row.
-         * 2. The name of the estimated number of affected rows are different. The name of new version is “EST.ROWS", and that of the old version is “EST. ROWS”
+         * 1. The numbers of rows returned in the result set are different. The new version returns multiple rows, but the old version returns single row.
+         * 2. The names of the estimated affected rows are different. The name of new version is “EST.ROWS", but that of the old version is “EST. ROWS”
          *
          * </pre>
          *
@@ -154,7 +154,7 @@ public abstract class BaseAffectedRowsExceedLimit implements SqlCheckRule {
 
             if (estRowsIndex != -1) {
                 estRowsValue = getEstRowsValue(resultRow, estRowsIndex);
-                if (estRowsValue != -1) {
+                if (estRowsValue != -1 && estRowsValue != 0) {
                     return estRowsValue;
                 }
             }
@@ -175,11 +175,7 @@ public abstract class BaseAffectedRowsExceedLimit implements SqlCheckRule {
     private long getEstRowsValue(String resultRow, int columnIndex) {
         String[] values = resultRow.split("\\|");
         if (values.length > columnIndex) {
-            String value = values[columnIndex].trim();
-            long estRowsValue = parseLong(value);
-            if (estRowsValue != 0) {
-                return estRowsValue;
-            }
+            return parseLong(values[columnIndex].trim());
         }
         return -1;
     }
