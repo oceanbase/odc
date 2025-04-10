@@ -45,12 +45,6 @@ public class SqlAffectedRowsFactory implements SqlCheckRuleFactory {
         return SqlCheckRuleType.RESTRICT_SQL_AFFECTED_ROWS;
     }
 
-    /**
-     * 对于不支持的{@link DialectType}不会生成规则
-     * 
-     * @param sqlCheckRuleContext
-     * @return
-     */
     @Nullable
     @Override
     public SqlCheckRule generate(@NonNull SqlCheckRuleContext sqlCheckRuleContext) {
