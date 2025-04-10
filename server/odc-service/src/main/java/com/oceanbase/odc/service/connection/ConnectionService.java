@@ -576,6 +576,12 @@ public class ConnectionService {
         User user = authenticationFacade.currentUser();
         Long userId = user.getId();
         if (params.getRelatedUserId() != null) {
+            Permission requiredPermission =
+                    securityManager.getPermissionByActions(new DefaultSecurityResource(params.getRelatedUserId() + "",
+                            ResourceType.ODC_USER.code()), Collections.singletonList("read"));
+            if (!securityManager.isPermitted(requiredPermission)) {
+                throw new AccessDeniedException();
+            }
             userId = params.getRelatedUserId();
         }
         connectionIdList = getConnectionIdList(userId, params.getMinPrivilege(), params.getPermittedActions());
