@@ -17,8 +17,6 @@ package com.oceanbase.odc.service.sqlcheck;
 
 import java.util.Collection;
 
-import org.apache.poi.ddf.EscherSerializationListener;
-
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.service.sqlcheck.rule.BaseAffectedRowsExceedLimit;
@@ -72,7 +70,7 @@ public class AffectedRowCalculator {
                     log.warn("Get affected rows failed", e);
                 }
             }
-        }else {
+        } else {
             return -1;
         }
         return affectedRows;

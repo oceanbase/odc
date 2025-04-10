@@ -132,11 +132,13 @@ public abstract class BaseAffectedRowsExceedLimit implements SqlCheckRule {
          */
         String explainSql = "EXPLAIN " + originalSql;
         List<String> queryResults = jdbcOperations.query(explainSql, (rs, rowNum) -> rs.getString("Query Plan"));
-        return getOBAndOracleAffectRowsFromResult(queryResults, this::containsAffectRowsColumnForOB, this::isAffectRowsColumnForOB);
+        return getOBAndOracleAffectRowsFromResult(queryResults, this::containsAffectRowsColumnForOB,
+                this::isAffectRowsColumnForOB);
     }
 
-    protected long getOBAndOracleAffectRowsFromResult(List<String> queryResults, Predicate<String> containsAffectRowsColumn,
-        Predicate<String> isAffectRowsColumn) {
+    protected long getOBAndOracleAffectRowsFromResult(List<String> queryResults,
+            Predicate<String> containsAffectRowsColumn,
+            Predicate<String> isAffectRowsColumn) {
         if (queryResults.size() == 1) {
             queryResults = Arrays.asList(queryResults.get(0).split("\\r?\\n"));
         }
@@ -145,7 +147,7 @@ public abstract class BaseAffectedRowsExceedLimit implements SqlCheckRule {
 
         for (int rowNum = 0; rowNum < queryResults.size(); rowNum++) {
             String resultRow = queryResults.get(rowNum).trim();
-            if (estRowsIndex == -1 &&  containsAffectRowsColumn.test(resultRow)) {
+            if (estRowsIndex == -1 && containsAffectRowsColumn.test(resultRow)) {
                 estRowsIndex = getEstRowsIndex(resultRow, isAffectRowsColumn);
                 continue;
             }
@@ -160,7 +162,7 @@ public abstract class BaseAffectedRowsExceedLimit implements SqlCheckRule {
         return estRowsValue;
     }
 
-    private int getEstRowsIndex(String headerRow,Predicate<String> isAffectRowsColumn) {
+    private int getEstRowsIndex(String headerRow, Predicate<String> isAffectRowsColumn) {
         String[] columns = headerRow.split("\\|");
         for (int i = 0; i < columns.length; i++) {
             if (isAffectRowsColumn.test(columns[i].trim())) {
