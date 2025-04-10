@@ -16,7 +16,7 @@
   key: 'odc.sqlexecute.default.queryLimit'
   type: 'integer'
   max_value:
-  min_value:
+  min_value: 1
   allowed_values: ~
   default_value: '1000'
   nullable: false
