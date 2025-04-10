@@ -514,6 +514,14 @@ public class DatabaseService {
     }
 
     @SkipAuthorize("internal usage")
+    public Set<Database> listExistAndNotPendingDatabasesByOrganizationId(@NonNull Long organizationId) {
+        return databaseRepository
+                .findByOrganizationIdAndExistedAndObjectSyncStatusNot(organizationId, true, DBObjectSyncStatus.PENDING)
+                .stream()
+                .map(databaseMapper::entityToModel).collect(Collectors.toSet());
+    }
+
+    @SkipAuthorize("internal usage")
     public Set<Database> listDatabaseByNames(@NotEmpty Collection<String> names) {
         return databaseRepository.findByNameIn(names).stream().map(databaseMapper::entityToModel)
                 .collect(Collectors.toSet());

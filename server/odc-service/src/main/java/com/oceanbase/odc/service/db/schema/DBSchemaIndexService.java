@@ -202,12 +202,19 @@ public class DBSchemaIndexService {
     public Boolean syncCurrentUserVisibleDatabases() {
         this.databaseService.refreshExpiredPendingDBObjectStatus();
         long userId = authenticationFacade.currentUserId();
-        Set<Long> joinedProjectIds = projectService.getMemberProjectIds(userId);
-        if (CollectionUtils.isEmpty(joinedProjectIds)) {
-            return true;
+        if (authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM) {
+            Set<Long> joinedProjectIds = projectService.getMemberProjectIds(userId);
+            if (CollectionUtils.isEmpty(joinedProjectIds)) {
+                return true;
+            }
+            dbSchemaSyncTaskManager
+                    .submitTaskByDatabases(
+                            databaseService.listExistAndNotPendingDatabasesByProjectIdIn(joinedProjectIds));
+        } else {
+            dbSchemaSyncTaskManager
+                    .submitTaskByDatabases(databaseService.listExistAndNotPendingDatabasesByOrganizationId(
+                            authenticationFacade.currentOrganizationId()));
         }
-        dbSchemaSyncTaskManager
-                .submitTaskByDatabases(databaseService.listExistAndNotPendingDatabasesByProjectIdIn(joinedProjectIds));
         return true;
     }
 
