@@ -74,7 +74,7 @@ public class SessionSettingsService {
         settings.setDelimiter(ConnectionSessionUtil.getSqlCommentProcessor(session).getDelimiter());
         settings.setQueryLimit(ConnectionSessionUtil.getQueryLimit(session));
         Optional<Integer> envMaxQueryLimit = sqlConsoleRuleService.getProperties(
-                ConnectionSessionUtil.getRuleSetId(session), SqlConsoleRules.MAX_RETURN_ROWS,
+                ConnectionSessionUtil.getRuleSetId(session), SqlConsoleRules.MAX_QUERY_LIMIT,
                 session.getDialectType(), Integer.class);
         settings.setMaxQueryLimit(envMaxQueryLimit.orElseGet(organizationConfigUtils::getDefaultMaxQueryLimit));
         return settings;
@@ -105,7 +105,7 @@ public class SessionSettingsService {
 
         if (!Objects.equals(wait2UpdateQueryLimit, queryLimit)) {
             Optional<Integer> envMaxQueryLimit = sqlConsoleRuleService.getProperties(
-                    ConnectionSessionUtil.getRuleSetId(session), SqlConsoleRules.MAX_RETURN_ROWS,
+                    ConnectionSessionUtil.getRuleSetId(session), SqlConsoleRules.MAX_QUERY_LIMIT,
                     session.getDialectType(), Integer.class);
             Verify.notGreaterThan(wait2UpdateQueryLimit,
                     envMaxQueryLimit.orElseGet(organizationConfigUtils::getDefaultMaxQueryLimit),

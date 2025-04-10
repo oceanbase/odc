@@ -99,7 +99,7 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
             return true;
         }
 
-        Optional<Integer> queryLimit = sqlConsoleRuleService.getProperties(ruleSetId, SqlConsoleRules.MAX_RETURN_ROWS,
+        Optional<Integer> queryLimit = sqlConsoleRuleService.getProperties(ruleSetId, SqlConsoleRules.MAX_QUERY_LIMIT,
                 session.getDialectType(), Integer.class);
         queryLimit.ifPresent(limit -> request.setQueryLimit(
                 Objects.isNull(request.getQueryLimit()) ? organizationConfigUtils.getDefaultQueryLimit()

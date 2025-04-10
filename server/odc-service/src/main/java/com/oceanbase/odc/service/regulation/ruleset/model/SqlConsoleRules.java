@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.service.regulation.ruleset.model;
 
-import static com.oceanbase.odc.common.i18n.Translatable.I18N_KEY_PREFIX;
-
 import org.springframework.context.i18n.LocaleContextHolder;
 
 import com.oceanbase.odc.common.i18n.I18n;
@@ -36,7 +34,7 @@ public enum SqlConsoleRules implements Translatable {
     NOT_ALLOWED_EDIT_RESULTSET("not-allowed-edit-resultset"),
     NOT_ALLOWED_EXPORT_RESULTSET("not-allowed-export-resultset"),
     MAX_EXECUTE_SQLS("max-execute-sqls"),
-    MAX_RETURN_ROWS("max-return-rows"),
+    MAX_QUERY_LIMIT("max-query-limit"),
     EXTERNAL_SQL_INTERCEPTOR("external-sql-interceptor");
 
     private String name;
