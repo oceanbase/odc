@@ -49,6 +49,8 @@ public class NotificationProperties {
 
     private int dequeueSendingNotificationFixedDelayMillis;
 
+    private int sendingNotificationExpireTimeMillis;
+
     private List<String> hostBlackList;
 
     private long sendTimeoutMillis;
