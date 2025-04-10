@@ -156,9 +156,6 @@ public class OrganizationConfigService {
         String maxQueryLimit = configMap.get(DEFAULT_MAX_QUERY_LIMIT).getValue();
         String queryLimit = configMap.get(DEFAULT_QUERY_LIMIT).getValue();
 
-        if (Integer.parseInt(queryLimit) < 0 || Integer.parseInt(maxQueryLimit) < 0) {
-            throw new IllegalArgumentException("Query limit value must be non-negative");
-        }
         if (Integer.parseInt(queryLimit) > Integer.parseInt(maxQueryLimit)) {
             throw new IllegalArgumentException(
                     "Query limit exceeds the max value: " + queryLimit + " > " + maxQueryLimit);
