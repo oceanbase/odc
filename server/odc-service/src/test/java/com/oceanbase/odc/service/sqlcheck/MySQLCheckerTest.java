@@ -1579,7 +1579,7 @@ public class MySQLCheckerTest {
     }
 
     @Test
-    public void check_restrictSqlAffectedRowsBySqlPlan_inOldVersionOB_passed() {
+    public void check_restrictSqlAffectedRowsBySqlPlan_OBVersionIs324_passed() {
         String delete = "delete from ids";
         List<String> resultSet = Collections.singletonList (
             "====================================\n"
@@ -1607,7 +1607,7 @@ public class MySQLCheckerTest {
     }
 
     @Test
-    public void check_restrictSqlAffectedRowsBySqlPlan_inOldVersionOB_intercepted() {
+    public void check_restrictSqlAffectedRowsBySqlPlan_OBVersionIs324_intercepted() {
         String delete = "delete from ids";
         List<String> resultSet = Collections.singletonList (
             "====================================\n"
