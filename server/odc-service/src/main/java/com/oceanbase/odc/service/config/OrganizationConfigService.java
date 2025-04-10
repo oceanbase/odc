@@ -45,15 +45,15 @@ import com.oceanbase.odc.common.security.PasswordUtils;
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.constant.OrganizationType;
+import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.config.OrganizationConfigDAO;
 import com.oceanbase.odc.metadb.config.OrganizationConfigEntity;
-import com.oceanbase.odc.metadb.connection.ConnectionEntity;
 import com.oceanbase.odc.metadb.iam.OrganizationEntity;
 import com.oceanbase.odc.metadb.iam.OrganizationRepository;
 import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.config.model.ConfigurationMeta;
 import com.oceanbase.odc.service.connection.ConnectionService;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
 import com.oceanbase.odc.service.session.SessionProperties;
 
@@ -143,18 +143,13 @@ public class OrganizationConfigService {
     @PreAuthenticate(actions = "update", resourceType = "ODC_ORGANIZATION_CONFIG", isForAll = true)
     public List<Configuration> batchUpdate(@NotNull Long organizationId, @NotNull Long userId,
             @NotEmpty List<Configuration> configurations) {
-        validateConfiguration(configurations);
-        String customDataSourceKey = getCustomDataSourceKey(configurations);
-        migrateExistedDataSourcePassword(organizationId, customDataSourceKey);
-        updateOrganizationSecret(organizationId, customDataSourceKey);
+
+        OrganizationEntity organization = getOrganization(organizationId);
+        validateConfiguration(organization.getType(), configurations);
+        encryptionKeyProcess(organization, configurations);
 
         List<OrganizationConfigEntity> organizationConfigEntities = configurations.stream()
-                .map(record -> {
-                    if (Objects.equals(record.getKey(), DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY)) {
-                        record.setValue(Base64.getEncoder().encodeToString(record.getValue().getBytes()));
-                    }
-                    return record.convert2DO(organizationId, userId);
-                })
+                .map(record -> record.convert2DO(organizationId, userId))
                 .collect(Collectors.toList());
         int affectRows = organizationConfigDAO.batchUpsert(organizationConfigEntities);
         log.info("Update organization configurations, organizationId={}, affectRows={}, configurations={}",
@@ -168,7 +163,7 @@ public class OrganizationConfigService {
         return orgIdToConfigurationsCache.get(organizationId);
     }
 
-    private void validateConfiguration(List<Configuration> configurations) {
+    private void validateConfiguration(OrganizationType type, List<Configuration> configurations) {
         configurations.forEach(config -> {
             ConfigurationMeta meta = configKeyToConfigMeta.get(config.getKey());
             if (Objects.isNull(meta)) {
@@ -186,7 +181,10 @@ public class OrganizationConfigService {
             throw new IllegalArgumentException(
                     "Query limit exceeds the max value: " + queryLimit + " > " + maxQueryLimit);
         }
-        // custom datasource key format validation
+        if (Objects.equals(type, OrganizationType.INDIVIDUAL)) {
+            return;
+        }
+        // Team organization: custom datasource key format validation
         String customDataSourceKey = configMap.get(DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY).getValue();
         if (customDataSourceKey.isEmpty()) {
             return;
@@ -218,33 +216,31 @@ public class OrganizationConfigService {
                 .collect(Collectors.toMap(Configuration::getKey, c -> c));
     }
 
-    private void migrateExistedDataSourcePassword(Long organizationId, String customKey) {
-        Optional<OrganizationEntity> organizationEntity = organizationRepo.findById(organizationId);
+    private void encryptionKeyProcess(OrganizationEntity organization, List<Configuration> configurations) {
+        Optional<Configuration> customDataSourceKey = configurations.stream()
+                .filter(config -> Objects.equals(DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY, config.getKey()))
+                .findFirst();
+        if (!customDataSourceKey.isPresent()) {
+            throw new IllegalArgumentException("Custom data source key is not configured");
+        }
 
-        if (!organizationEntity.isPresent()) {
+        String customKey = customDataSourceKey.get().getValue();
+        migrateExistedDataSourcePassword(organization, customKey);
+        updateOrganizationSecret(organization.getId(), customKey);
+    }
+
+    private void migrateExistedDataSourcePassword(OrganizationEntity organization, String customKey) {
+        // If current space is individual space, no need to migrate
+        if (Objects.equals(organization.getType(), OrganizationType.INDIVIDUAL)) {
             return;
         }
         // The key is equal to the old secret
-        if (Objects.equals(customKey, organizationEntity.get().getSecret())) {
+        if (Objects.equals(customKey, organization.getSecret())) {
             return;
         }
-        OrganizationConfigEntity customKeyInDB = organizationConfigDAO.queryByOrganizationIdAndKey(
-                organizationId, DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY);
-        // The key is not configured for the first time
-        if (customKeyInDB != null) {
-            return;
-        }
+        Long organizationId = organization.getId();
         log.info("Start migrate existed datasource password, organizationId={}", organizationId);
-        List<ConnectionConfig> connectionList = connectionService.listByOrganizationId(organizationId);
-        List<ConnectionEntity> reEncryptedList = connectionList.stream()
-                .map(encryptedConfig -> {
-                    ConnectionConfig decryptedConfig = connectionService.getDecryptedConfig(encryptedConfig);
-                    ConnectionConfig reEncryptedConfig =
-                            connectionService.getEncryptedConfig(decryptedConfig, customKey);
-                    return mapper.modelToEntity(reEncryptedConfig);
-                })
-                .collect(Collectors.toList());
-        connectionService.batchUpdateConnectionConfig(reEncryptedList);
+        connectionService.updatePasswordEncrypted(organizationId, customKey);
         log.info("Success migrate existed datasource password, organizationId={}", organizationId);
     }
 
@@ -255,14 +251,12 @@ public class OrganizationConfigService {
         log.info("Update organization secret, organization={}, affectRows={}", organizationId, updateRows);
     }
 
-    private String getCustomDataSourceKey(List<Configuration> configurations) {
-        Optional<Configuration> customDataSourceKey = configurations.stream()
-                .filter(config -> Objects.equals(DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY, config.getKey()))
-                .findFirst();
-        if (customDataSourceKey.isPresent()) {
-            return customDataSourceKey.get().getValue();
+    private OrganizationEntity getOrganization(Long organizationId) {
+        Optional<OrganizationEntity> organizationEntity = organizationRepo.findById(organizationId);
+        if (!organizationEntity.isPresent()) {
+            throw new UnexpectedException("Organization not found");
         }
-        throw new IllegalArgumentException("Custom data source key is not configured");
+        return organizationEntity.get();
     }
 
 }

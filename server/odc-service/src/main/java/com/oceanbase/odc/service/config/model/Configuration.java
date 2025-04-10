@@ -15,6 +15,11 @@
  */
 package com.oceanbase.odc.service.config.model;
 
+import static com.oceanbase.odc.service.config.OrganizationConfigKeys.DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY;
+
+import java.util.Base64;
+import java.util.Objects;
+
 import javax.validation.constraints.NotBlank;
 
 import com.oceanbase.odc.metadb.config.OrganizationConfigEntity;
@@ -64,7 +69,9 @@ public class Configuration {
         entity.setLastModifierId(userId);
         entity.setCreatorId(userId);
         entity.setKey(this.key);
-        entity.setValue(this.value);
+        entity.setValue(Objects.equals(entity.getKey(), DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY)
+                ? Base64.getEncoder().encodeToString(this.value.getBytes())
+                : this.value);
         return entity;
     }
 }

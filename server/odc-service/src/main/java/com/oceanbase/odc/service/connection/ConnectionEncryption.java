@@ -41,7 +41,7 @@ public class ConnectionEncryption {
     private EncryptionFacade encryptionFacade;
 
     public ConnectionConfig encryptPasswords(ConnectionConfig connection) {
-        checkCipherAndSalt(connection);
+        fillCipherAndSaltIfNull(connection);
         TextEncryptor encryptor = getEncryptor(connection);
         setPasswordsEncrypted(connection, encryptor);
 
@@ -49,7 +49,7 @@ public class ConnectionEncryption {
     }
 
     public ConnectionConfig encryptPasswordsByCustomKey(ConnectionConfig connection, String customKey) {
-        checkCipherAndSalt(connection);
+        fillCipherAndSaltIfNull(connection);
         TextEncryptor encryptor = encryptionFacade.passwordEncryptor(customKey, connection.getSalt());
         setPasswordsEncrypted(connection, encryptor);
 
@@ -73,7 +73,7 @@ public class ConnectionEncryption {
         return encryptionFacade.organizationEncryptor(connection.getOrganizationId(), connection.getSalt());
     }
 
-    private void checkCipherAndSalt(ConnectionConfig connection) {
+    private void fillCipherAndSaltIfNull(ConnectionConfig connection) {
         if (Objects.isNull(connection.getCipher())) {
             connection.setCipher(Cipher.AES256SALT);
         }

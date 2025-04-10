@@ -795,6 +795,19 @@ public class ConnectionService {
     }
 
     @SkipAuthorize("internal usage")
+    public void updatePasswordEncrypted(@NotNull Long organizationId, String customKey) {
+        List<ConnectionConfig> connectionList = listByOrganizationId(organizationId);
+        List<ConnectionEntity> reEncryptedList = connectionList.stream()
+                .map(encryptedConfig -> {
+                    ConnectionConfig decryptedConfig = getDecryptedConfig(encryptedConfig);
+                    ConnectionConfig reEncryptedConfig = getEncryptedConfig(decryptedConfig, customKey);
+                    return mapper.modelToEntity(reEncryptedConfig);
+                })
+                .collect(Collectors.toList());
+        batchUpdateConnectionConfig(reEncryptedList);
+    }
+
+    @SkipAuthorize("internal usage")
     public ConnectionConfig getDecryptedConfig(@NotNull ConnectionConfig encryptedConfig) {
         return connectionEncryption.decryptPasswords(encryptedConfig);
     }
