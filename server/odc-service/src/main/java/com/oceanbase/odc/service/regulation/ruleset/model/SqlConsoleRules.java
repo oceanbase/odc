@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.regulation.ruleset.model;
 
+import static com.oceanbase.odc.common.i18n.Translatable.I18N_KEY_PREFIX;
+
 import org.springframework.context.i18n.LocaleContextHolder;
 
 import com.oceanbase.odc.common.i18n.I18n;
