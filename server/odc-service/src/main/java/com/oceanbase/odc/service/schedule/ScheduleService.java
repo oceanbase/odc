@@ -1069,9 +1069,7 @@ public class ScheduleService {
                         ScheduleEntity::getType,
                         Collectors.summingInt(e -> 1)));
         scheduleType2EnabledScheduleCount.computeIfAbsent(ScheduleType.PARTITION_PLAN,
-                k -> flowInstanceService.getEnabledPartitionPlanCount(new InnerQueryFlowInstanceParams()
-                        .setStartTime(params.getStartTime())
-                        .setEndTime(params.getEndTime())));
+                k -> flowInstanceService.getEnabledPartitionPlanCount(new InnerQueryFlowInstanceParams()));
         return listScheduleStats(scheduleTaskType2TaskStats, scheduleType2EnabledScheduleCount);
     }
 
@@ -1088,10 +1086,6 @@ public class ScheduleService {
                 .and(OdcJpaRepository.eq(ScheduleEntity_.status, ScheduleStatus.ENABLED));
         if (CollectionUtils.isNotEmpty(params.getScheduleTypes())) {
             scheduleSpec = scheduleSpec.and(OdcJpaRepository.in(ScheduleEntity_.type, params.getScheduleTypes()));
-        }
-        if (params.getStartTime() != null || params.getEndTime() != null) {
-            scheduleSpec = scheduleSpec.and(
-                    OdcJpaRepository.between(ScheduleEntity_.createTime, params.getStartTime(), params.getEndTime()));
         }
         return filterSchedules(scheduleRepository.findAll(scheduleSpec));
     }
