@@ -365,6 +365,11 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
+    public List<DBTableIndex> listMViewIndexes(String schemaName, String tableName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
     public List<DBVariable> showVariables() {
         String sql = "show variables";
 

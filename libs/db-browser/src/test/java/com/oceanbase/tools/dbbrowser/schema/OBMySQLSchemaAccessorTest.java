@@ -255,6 +255,16 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void  listMViewIndexes_Success() {
+        if (isSupportMaterializedView) {
+            List<DBTableIndex> indexList = accessor.listMViewIndexes(getOBMySQLDataBaseName(), "test_mv_all_syntax");
+            Assert.assertEquals(3, indexList.size());
+            Assert.assertTrue(indexList.get(1).getGlobal());
+            Assert.assertFalse(indexList.get(2).getGlobal());
+        }
+    }
+
+    @Test
     public void listUsers_Success() {
         List<DBObjectIdentity> dbUsers = accessor.listUsers();
         Assert.assertFalse(dbUsers.isEmpty());

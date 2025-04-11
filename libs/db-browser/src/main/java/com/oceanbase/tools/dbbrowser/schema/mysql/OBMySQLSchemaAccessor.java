@@ -170,6 +170,66 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     }
 
     @Override
+    public List<DBTableIndex> listMViewIndexes(String schemaName, String tableName) {
+        List<DBTableIndex> indexList = super.listTableIndexes(schemaName, tableName);
+        fillIndexInfoByOceanbaseDicView(indexList,schemaName,tableName);
+//        fillIndexInfo(indexList, schemaName, tableName);
+        for (DBTableIndex index : indexList) {
+            if (index.getAlgorithm() == DBIndexAlgorithm.UNKNOWN) {
+                index.setAlgorithm(DBIndexAlgorithm.BTREE);
+            }
+        }
+        return indexList;
+    }
+
+    private void fillIndexInfoByOceanbaseDicView(List<DBTableIndex> indexList, String schemaName,
+                                                 String tableName) {
+        MySQLSqlBuilder getGlobalIndexes = new MySQLSqlBuilder();
+        getGlobalIndexes.append("SELECT\n" +
+                "    t4.table_name\n" +
+                "FROM\n" +
+                "    oceanbase.__all_table t1,\n" +
+                "    oceanbase.__all_database t2,\n" +
+                "    oceanbase.__all_table t3,\n" +
+                "    oceanbase.__all_table t4\n" +
+                "WHERE\n" +
+                "    t1.table_name = ")
+            .value(tableName)
+            .append("    AND t2.database_name = ")
+            .value(schemaName)
+            .append("    AND t3.table_id = t1.data_table_id\n" +
+                "    AND t4.data_table_id = t3.table_id\n" +
+                "    AND t4.table_type = 5\n" +
+                "    AND t4.index_type IN (3, 4, 11, 17, 18, 19, 7, 8, 12, 20, 21, 22);");
+
+        Set<String> globalIndexes =
+            jdbcOperations.query(getGlobalIndexes.toString(), (rs, num) -> rs.getString(1))
+                .stream().map(globalIndex -> {
+                    // __idx_501536_index6
+                    String[] parts = globalIndex.split("_");
+                    StringBuilder result = new StringBuilder();
+                    result.append(parts[4]);
+                    if(parts.length > 5){
+                        for (int i = 5; i < parts.length; i++) {
+                            result.append("_").append(parts[i]);
+                        }
+                    }
+                    return result.toString();
+                }).collect(Collectors.toSet());
+        for (DBTableIndex dbTableIndex : indexList) {
+            if("PRIMARY".equals(dbTableIndex.getName())){
+                continue;
+            }
+            if(globalIndexes.contains(dbTableIndex.getName())){
+                dbTableIndex.setGlobal(true);
+            }else {
+                dbTableIndex.setGlobal(false);
+            }
+        }
+    }
+
+
+    @Override
     public List<String> showDatabases() {
         return super.showDatabases().stream().filter(database -> !ESCAPE_SCHEMA_SET.contains(database))
                 .collect(Collectors.toList());

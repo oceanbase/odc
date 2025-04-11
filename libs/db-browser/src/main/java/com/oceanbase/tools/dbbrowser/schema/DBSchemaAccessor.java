@@ -164,6 +164,11 @@ public interface DBSchemaAccessor {
     List<DBMViewRefreshRecord> listMViewRefreshRecords(DBMViewRefreshRecordParam param);
 
     /**
+     * Gets all indexes in the specified materialized view
+     */
+    List<DBTableIndex> listMViewIndexes(String schemaName, String tableName);
+
+    /**
      * List all variables
      */
     List<DBVariable> showVariables();
