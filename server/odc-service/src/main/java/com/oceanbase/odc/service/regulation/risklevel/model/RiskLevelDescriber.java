@@ -51,8 +51,6 @@ public class RiskLevelDescriber implements Serializable {
 
     private String sqlCheckResult;
 
-    private Long databaseId;
-
     private String databaseName;
 
     private String taskType;
@@ -79,7 +77,6 @@ public class RiskLevelDescriber implements Serializable {
 
     public static RiskLevelDescriber of(@NonNull Database db, String taskType) {
         RiskLevelDescriber describer = RiskLevelDescriber.builder()
-                .databaseId(db.getId())
                 .databaseName(db.getName())
                 .taskType(taskType)
                 .build();

@@ -62,6 +62,7 @@ import com.oceanbase.odc.service.regulation.risklevel.model.RiskDetectRuleCondit
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskDetectRuleConditionGroup;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
+import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelIdentifier;
 
 /**
  * @Author: ysj
@@ -228,23 +229,24 @@ public class MergeFlowInstanceTest extends ServiceTestEnv {
                         Sets.newHashSet("1:1", "2:2"));
     }
 
-    private List<RiskLevelDescriber> buildRiskLevelDescriber() {
+    private List<RiskLevelIdentifier> buildRiskLevelIdentifier() {
         return databases.stream().map(d -> {
-            return RiskLevelDescriber.of(d, TaskType.APPLY_DATABASE_PERMISSION.name());
+            return RiskLevelIdentifier.of(d.getId(),
+                    RiskLevelDescriber.of(d, TaskType.APPLY_DATABASE_PERMISSION.name()));
         }).collect(Collectors.toList());
     }
 
     @Test
     public void testSelectHeightestRiskLevel() {
-        List<RiskLevelDescriber> describers = buildRiskLevelDescriber();
-        Map<RiskLevelDescriber, RiskLevel> describer2RiskLevel = approvalFlowConfigSelector.batchSelect(describers);
-        ArrayList<RiskLevelDescriber> riskLevelDescribers = new ArrayList<>(describer2RiskLevel.keySet());
-        RiskLevelDescriber describer = riskLevelDescribers.get(0);
-        Assert.assertEquals(1, (int) describer2RiskLevel.get(describer).getLevel());
-        describer = riskLevelDescribers.get(1);
-        Assert.assertEquals(0, (int) describer2RiskLevel.get(describer).getLevel());
-        describer = riskLevelDescribers.get(2);
-        Assert.assertEquals(1, (int) describer2RiskLevel.get(describer).getLevel());
+        List<RiskLevelIdentifier> identifiers = buildRiskLevelIdentifier();
+        Map<RiskLevelIdentifier, RiskLevel> describer2RiskLevel = approvalFlowConfigSelector.batchSelect(identifiers);
+        ArrayList<RiskLevelIdentifier> riskLevelDescribers = new ArrayList<>(describer2RiskLevel.keySet());
+        RiskLevelIdentifier identifier = riskLevelDescribers.get(0);
+        Assert.assertEquals(0, (int) describer2RiskLevel.get(identifier).getLevel());
+        identifier = riskLevelDescribers.get(1);
+        Assert.assertEquals(1, (int) describer2RiskLevel.get(identifier).getLevel());
+        identifier = riskLevelDescribers.get(2);
+        Assert.assertEquals(1, (int) describer2RiskLevel.get(identifier).getLevel());
     }
 
     @Test
