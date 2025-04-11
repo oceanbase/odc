@@ -16,6 +16,8 @@
 package com.oceanbase.odc.service.task.base.dataarchive;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -74,7 +76,9 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
                     JsonUtils.fromJson(
                             jobContext.getJobParameters().get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
                             DLMJobReq.class);
+            log.info("Start to init dlm job,tables={}", parameters.getTables());
             initTableUnit(parameters);
+            Collections.sort(toDoList, Comparator.comparing(DlmTableUnit::getDlmTableUnitId));
         } catch (Exception e) {
             log.warn("Initialization of the DLM job was failed,jobIdentity={}", context.getJobIdentity(), e);
         }
