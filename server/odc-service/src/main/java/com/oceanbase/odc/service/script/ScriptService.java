@@ -341,7 +341,8 @@ public class ScriptService {
                 int count = duplicateNameFileCountMap.compute(objectMetadata.getObjectName(),
                         (k, v) -> v == null ? 1 : v + 1);
                 String fileName =
-                        count > 1 ? objectMetadata.getObjectName() + "(" + count + ")" : objectMetadata.getObjectName();
+                        count > 1 ? addTagAfterFilename(objectMetadata.getObjectName(), " " + count)
+                                : objectMetadata.getObjectName();
                 File file = new File(downloadDir, fileName);
                 FileUtils.copyInputStreamToFile(storageObject.getContent(), file);
             }
@@ -363,5 +364,14 @@ public class ScriptService {
         }
         return WebResponseUtils.getFileAttachmentResponseEntity(
                 new InputStreamResource(new FileInputStream(zipFileStr)), new File(zipFileStr).getName());
+    }
+
+    private String addTagAfterFilename(String fileName, String tag) {
+        int lastDotIndex = fileName.lastIndexOf(".");
+        if (lastDotIndex != -1) {
+            return fileName.substring(0, lastDotIndex) + tag + fileName.substring(lastDotIndex);
+        } else {
+            return fileName + tag;
+        }
     }
 }
