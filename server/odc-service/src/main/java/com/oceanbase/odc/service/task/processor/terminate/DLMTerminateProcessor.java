@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.task.processor.terminate;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -52,13 +53,14 @@ public class DLMTerminateProcessor extends DLMProcessorMatcher implements Termin
 
     public TaskStatus correctTaskStatus(ScheduleTask scheduleTask, TaskStatus currentStatus) {
         // correct sub task status
-        List<DlmTableUnit> dlmTableUnits = dlmService.findByScheduleTaskId(scheduleTask.getId());
-        dlmTableUnits.forEach(dlmTableUnit -> {
-            if (!dlmTableUnit.getStatus().isTerminated()) {
-                dlmTableUnit.setStatus(TaskStatus.CANCELED);
-            }
-        });
-        dlmService.createOrUpdateDlmTableUnits(dlmTableUnits);
+        List<DlmTableUnit> dlmTableUnits = dlmService.findByScheduleTaskId(scheduleTask.getId()).stream()
+                .filter(o -> !o.getStatus().isTerminated()).peek(o -> o.setStatus(TaskStatus.CANCELED)).collect(
+                        Collectors.toList());
+        if (!dlmTableUnits.isEmpty()) {
+            log.info("The DLM job has finished, but {} tables could not be completed and have been marked as CANCELED.",
+                    dlmTableUnits.size());
+            dlmService.createOrUpdateDlmTableUnits(dlmTableUnits);
+        }
         return dlmService.getFinalTaskStatus(scheduleTask.getId());
     }
 

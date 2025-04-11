@@ -17,6 +17,7 @@
 package com.oceanbase.odc.service.task.listener;
 
 import java.util.Collections;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -26,6 +27,7 @@ import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.executor.TaskResult;
+import com.oceanbase.odc.service.task.processor.result.ResultProcessor;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
@@ -44,12 +46,16 @@ public class DefaultJobProcessUpdateListener extends AbstractEventListener<Defau
     private ScheduleTaskService scheduleTaskService;
     @Autowired
     private TaskFrameworkService stdTaskFrameworkService;
+    @Autowired
+    private List<ResultProcessor> resultProcessors;
 
     @Override
     public void onEvent(DefaultJobProcessUpdateEvent event) {
         TaskResult taskResult = event.getTaskResult();
         JobIdentity identity = taskResult.getJobIdentity();
         JobEntity jobEntity = stdTaskFrameworkService.find(identity.getId());
+        // Call the job result processor when the result is updated
+        handleTaskResult(jobEntity.getJobType(), event.getTaskResult());
         scheduleTaskService.findByJobId(jobEntity.getId())
                 .ifPresent(taskEntity -> {
                     if (taskEntity.getStatus() == TaskStatus.PREPARING) {
@@ -66,6 +72,14 @@ public class DefaultJobProcessUpdateListener extends AbstractEventListener<Defau
         } else {
             log.warn("Update scheduleTask status from {} to {} failed, scheduleTaskId={}", previousStatus, status,
                     id);
+        }
+    }
+
+    private void handleTaskResult(String jobType, TaskResult taskResult) {
+        for (ResultProcessor processor : resultProcessors) {
+            if (processor.interested(jobType)) {
+                processor.process(taskResult);
+            }
         }
     }
 

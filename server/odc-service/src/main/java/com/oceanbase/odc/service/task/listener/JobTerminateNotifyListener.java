@@ -38,6 +38,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component("jobTerminateNotifyListener")
+@Deprecated
 public class JobTerminateNotifyListener extends AbstractEventListener<JobTerminateEvent> {
 
     @Autowired
