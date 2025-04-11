@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.task.base.dataarchive;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.LinkedList;
@@ -67,6 +66,19 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
 
     public DataArchiveTask() {}
 
+    public static void main(String[] args) {
+        List<DlmTableUnit> tableUnits = new LinkedList<>();
+        DlmTableUnit dlmTableUnit = new DlmTableUnit();
+        dlmTableUnit.setDlmTableUnitId("DATA_DELETE_1_100_2");
+        DlmTableUnit dlmTableUnit1 = new DlmTableUnit();
+        dlmTableUnit1.setDlmTableUnitId("DATA_DELETE_1_100_1");
+        tableUnits.add(dlmTableUnit);
+        tableUnits.add(dlmTableUnit1);
+        tableUnits.sort(Comparator.comparing(DlmTableUnit::getDlmTableUnitId));
+        System.out.println();
+
+    }
+
     @Override
     protected void doInit(JobContext context) {
         jobStore = new DLMJobStore(JobUtils.getMetaDBConnectionConfig());
@@ -78,7 +90,7 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
                             DLMJobReq.class);
             log.info("Start to init dlm job,tables={}", parameters.getTables());
             initTableUnit(parameters);
-            Collections.sort(toDoList, Comparator.comparing(DlmTableUnit::getDlmTableUnitId));
+            toDoList.sort(Comparator.comparing(DlmTableUnit::getDlmTableUnitId));
         } catch (Exception e) {
             log.warn("Initialization of the DLM job was failed,jobIdentity={}", context.getJobIdentity(), e);
         }
