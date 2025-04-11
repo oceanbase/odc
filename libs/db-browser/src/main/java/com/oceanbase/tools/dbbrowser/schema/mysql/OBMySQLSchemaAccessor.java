@@ -15,6 +15,8 @@
  */
 package com.oceanbase.tools.dbbrowser.schema.mysql;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -25,6 +27,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.oceanbase.tools.dbbrowser.model.DBIndexRangeType;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcOperations;
@@ -59,6 +62,7 @@ import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.jdbc.core.RowMapper;
 
 /**
  * applicable to OB [4.3.5.1, ~)
@@ -172,8 +176,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     @Override
     public List<DBTableIndex> listMViewIndexes(String schemaName, String tableName) {
         List<DBTableIndex> indexList = super.listTableIndexes(schemaName, tableName);
-        fillIndexInfoByOceanbaseDicView(indexList,schemaName,tableName);
-//        fillIndexInfo(indexList, schemaName, tableName);
+        fillIndexInfoByOceanBaseDicView(indexList,schemaName,tableName);
         for (DBTableIndex index : indexList) {
             if (index.getAlgorithm() == DBIndexAlgorithm.UNKNOWN) {
                 index.setAlgorithm(DBIndexAlgorithm.BTREE);
@@ -182,48 +185,61 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
         return indexList;
     }
 
-    private void fillIndexInfoByOceanbaseDicView(List<DBTableIndex> indexList, String schemaName,
+    private void fillIndexInfoByOceanBaseDicView(List<DBTableIndex> indexList, String schemaName,
                                                  String tableName) {
         MySQLSqlBuilder getGlobalIndexes = new MySQLSqlBuilder();
-        getGlobalIndexes.append("SELECT\n" +
-                "    t4.table_name\n" +
-                "FROM\n" +
-                "    oceanbase.__all_table t1,\n" +
-                "    oceanbase.__all_database t2,\n" +
-                "    oceanbase.__all_table t3,\n" +
-                "    oceanbase.__all_table t4\n" +
-                "WHERE\n" +
-                "    t1.table_name = ")
+        getGlobalIndexes.append("SELECT SUBSTR(SUBSTR(t4.table_name, 7), INSTR(SUBSTR(t4.table_name, 7), '_') + 1)  AS index_name,\n" +
+            "    CASE WHEN t4.index_type IN (3, 4, 11, 17, 18, 19, 7, 8, 12, 20, 21, 22) THEN 'GLOBAL' ELSE 'LOCAL' END AS index_type\n" +
+            "FROM\n" +
+            "    oceanbase.__all_table t1,\n" +
+            "    oceanbase.__all_database t2,\n" +
+            "    oceanbase.__all_table t3,\n" +
+            "    oceanbase.__all_table t4\n" +
+            "WHERE\n" +
+            "    t1.table_name = ")
             .value(tableName)
-            .append("    AND t2.database_name = ")
+            .append(
+            "    AND t1.database_id = t2.database_id\n" +
+            "    AND t2.database_name = ")
             .value(schemaName)
-            .append("    AND t3.table_id = t1.data_table_id\n" +
-                "    AND t4.data_table_id = t3.table_id\n" +
-                "    AND t4.table_type = 5\n" +
-                "    AND t4.index_type IN (3, 4, 11, 17, 18, 19, 7, 8, 12, 20, 21, 22);");
+            .append(
+            "    AND t3.table_id = t1.data_table_id\n" +
+            "    AND t4.data_table_id = t3.table_id\n" +
+            "    AND t4.table_type = 5;");
+        Map<String, String> resultMap = new HashMap<>();
+        jdbcOperations.query(getGlobalIndexes.toString(), new RowMapper<Void>() {
+            @Override
+            public Void mapRow(ResultSet rs, int rowNum) throws SQLException {
 
-        Set<String> globalIndexes =
-            jdbcOperations.query(getGlobalIndexes.toString(), (rs, num) -> rs.getString(1))
-                .stream().map(globalIndex -> {
-                    // __idx_501536_index6
-                    String[] parts = globalIndex.split("_");
-                    StringBuilder result = new StringBuilder();
-                    result.append(parts[4]);
-                    if(parts.length > 5){
-                        for (int i = 5; i < parts.length; i++) {
-                            result.append("_").append(parts[i]);
-                        }
-                    }
-                    return result.toString();
-                }).collect(Collectors.toSet());
-        for (DBTableIndex dbTableIndex : indexList) {
-            if("PRIMARY".equals(dbTableIndex.getName())){
-                continue;
+                resultMap.put(rs.getString(1), rs.getString(2));
+                return null;
             }
-            if(globalIndexes.contains(dbTableIndex.getName())){
-                dbTableIndex.setGlobal(true);
-            }else {
-                dbTableIndex.setGlobal(false);
+        });
+
+
+
+
+//        Set<String> globalIndexes =
+//            jdbcOperations.query(getGlobalIndexes.toString(), (rs, num) -> rs.getString(1))
+//                .stream().map(globalIndex -> {
+//                    // __idx_501536_index6
+//                    String[] parts = globalIndex.split("_");
+//                    StringBuilder result = new StringBuilder();
+//                    result.append(parts[4]);
+//                    if(parts.length > 5){
+//                        for (int i = 5; i < parts.length; i++) {
+//                            result.append("_").append(parts[i]);
+//                        }
+//                    }
+//                    return result.toString();
+//                }).collect(Collectors.toSet());
+        for (DBTableIndex dbTableIndex : indexList) {
+            if(resultMap.get(dbTableIndex.getName())!=null){
+                if(DBIndexRangeType.GLOBAL.name().equals(resultMap.get(dbTableIndex.getName()))) {
+                    dbTableIndex.setGlobal(true);
+                }else {
+                    dbTableIndex.setGlobal(false);
+                }
             }
         }
     }

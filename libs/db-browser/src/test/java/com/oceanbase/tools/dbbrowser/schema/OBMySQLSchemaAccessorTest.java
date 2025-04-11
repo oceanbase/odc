@@ -258,8 +258,13 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     public void  listMViewIndexes_Success() {
         if (isSupportMaterializedView) {
             List<DBTableIndex> indexList = accessor.listMViewIndexes(getOBMySQLDataBaseName(), "test_mv_all_syntax");
-            Assert.assertEquals(3, indexList.size());
+
+            Assert.assertEquals("test_global_idx",indexList.get(1).getName());
+            Assert.assertEquals(getOBMySQLDataBaseName(), indexList.get(1).getSchemaName());
             Assert.assertTrue(indexList.get(1).getGlobal());
+
+            Assert.assertEquals("test_local_idx",indexList.get(2).getName());
+            Assert.assertEquals(getOBMySQLDataBaseName(), indexList.get(2).getSchemaName());
             Assert.assertFalse(indexList.get(2).getGlobal());
         }
     }

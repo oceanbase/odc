@@ -1165,7 +1165,7 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
                 List<String> columnNames = new ArrayList<>();
                 columnNames.add(rs.getString(MySQLConstants.IDX_COLUMN_NAME));
                 index.setColumnNames(columnNames);
-//                index.setGlobal(true);
+                index.setGlobal(true);
                 handleIndexAvailability(index, rs.getString(MySQLConstants.IDX_COL_COMMENT));
                 indexName2Index.put(indexName, index);
             } else {
