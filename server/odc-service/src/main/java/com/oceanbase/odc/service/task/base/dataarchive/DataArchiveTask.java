@@ -66,19 +66,6 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
 
     public DataArchiveTask() {}
 
-    public static void main(String[] args) {
-        List<DlmTableUnit> tableUnits = new LinkedList<>();
-        DlmTableUnit dlmTableUnit = new DlmTableUnit();
-        dlmTableUnit.setDlmTableUnitId("DATA_DELETE_1_100_2");
-        DlmTableUnit dlmTableUnit1 = new DlmTableUnit();
-        dlmTableUnit1.setDlmTableUnitId("DATA_DELETE_1_100_1");
-        tableUnits.add(dlmTableUnit);
-        tableUnits.add(dlmTableUnit1);
-        tableUnits.sort(Comparator.comparing(DlmTableUnit::getDlmTableUnitId));
-        System.out.println();
-
-    }
-
     @Override
     protected void doInit(JobContext context) {
         jobStore = new DLMJobStore(JobUtils.getMetaDBConnectionConfig());
