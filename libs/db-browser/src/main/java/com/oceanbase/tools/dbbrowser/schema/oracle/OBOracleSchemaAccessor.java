@@ -1261,11 +1261,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     public List<DBTableIndex> listMViewIndexes(String schemaName, String tableName) {
         List<DBTableIndex> indexList = super.listTableIndexes(schemaName, tableName);
         fillIndexInfoByOceanBaseDicView(indexList,schemaName,tableName);
-        for (DBTableIndex index : indexList) {
-            if (index.getAlgorithm() == DBIndexAlgorithm.UNKNOWN) {
-                index.setAlgorithm(DBIndexAlgorithm.BTREE);
-            }
-        }
+        fillIndexTypeAndAlgorithm(indexList);
         return indexList;
     }
 
@@ -1273,23 +1269,23 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
                                                  String tableName) {
         OracleSqlBuilder oracleSqlBuilder = new OracleSqlBuilder();
         oracleSqlBuilder.append("SELECT SUBSTR(SUBSTR(t4.table_name, 7), INSTR(SUBSTR(t4.table_name, 7), '_') + 1)  AS index_name,\n" +
-                "    CASE WHEN t4.index_type IN (3, 4, 11, 17, 18, 19, 7, 8, 12, 20, 21, 22) THEN 'GLOBAL' ELSE 'LOCAL' END AS index_type\n" +
-                "FROM\n" +
-                "    oceanbase.__all_table t1,\n" +
-                "    oceanbase.__all_database t2,\n" +
-                "    oceanbase.__all_table t3,\n" +
-                "    oceanbase.__all_table t4\n" +
-                "WHERE\n" +
-                "    t1.table_name = ")
+            "    CASE WHEN t4.index_type IN (3, 4, 11, 17, 18, 19, 7, 8, 12, 20, 21, 22) THEN 'GLOBAL' ELSE 'LOCAL' END AS index_type\n" +
+            "FROM\n" +
+            "    SYS.ALL_VIRTUAL_TABLE_REAL_AGENT t1,\n" +
+            "    SYS.ALL_VIRTUAL_DATABASE_REAL_AGENT t2,\n" +
+            "    SYS.ALL_VIRTUAL_TABLE_REAL_AGENT t3,\n" +
+            "    SYS.ALL_VIRTUAL_TABLE_REAL_AGENT t4\n" +
+            "WHERE\n" +
+            "    t1.table_name = ")
             .value(tableName)
             .append(
-                "    AND t1.database_id = t2.database_id\n" +
-                    "    AND t2.database_name = ")
+            "    AND t1.database_id = t2.database_id\n" +
+            "    AND t2.database_name = ")
             .value(schemaName)
             .append(
-                "    AND t3.table_id = t1.data_table_id\n" +
-                    "    AND t4.data_table_id = t3.table_id\n" +
-                    "    AND t4.table_type = 5;");
+            "    AND t3.table_id = t1.data_table_id\n" +
+            "    AND t4.data_table_id = t3.table_id\n" +
+            "    AND t4.table_type = 5;");
         Map<String, String> resultMap = new HashMap<>();
         jdbcOperations.query(oracleSqlBuilder.toString(), (RowMapper<Void>) (rs, rowNum) -> {
             resultMap.put(rs.getString(1), rs.getString(2));
