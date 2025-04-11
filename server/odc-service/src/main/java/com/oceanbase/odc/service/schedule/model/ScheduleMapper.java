@@ -28,6 +28,7 @@ import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.loaddata.model.LoadDataParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
+import com.oceanbase.odc.service.schedule.export.model.ScheduleExportListView;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
 
 /**
@@ -46,6 +47,8 @@ public interface ScheduleMapper {
     Schedule entityToModel(ScheduleEntity entity);
 
     ScheduleEntity modelToEntity(Schedule model);
+
+    ScheduleExportListView toScheduleExportListView(ScheduleEntity entity);
 
     @Named("entityToParameters")
     default ScheduleTaskParameters entityToParameters(ScheduleEntity entity) {

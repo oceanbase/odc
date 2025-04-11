@@ -17,38 +17,46 @@ package com.oceanbase.odc.service.schedule.export;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
-import com.oceanbase.odc.common.security.PasswordUtils;
+import com.oceanbase.odc.common.task.RouteLogCallable;
 import com.oceanbase.odc.core.shared.OrganizationIsolated;
-import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
+import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
-import com.oceanbase.odc.service.common.util.OdcFileUtil;
-import com.oceanbase.odc.service.exporter.model.ExportProperties;
-import com.oceanbase.odc.service.exporter.model.ExportedFile;
+import com.oceanbase.odc.metadb.task.TaskEntity;
+import com.oceanbase.odc.service.common.FutureCache;
+import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
+import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
-import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.export.model.FileExportResponse;
+import com.oceanbase.odc.service.schedule.export.model.ScheduleExportListView;
 import com.oceanbase.odc.service.schedule.export.model.ScheduleTaskExportRequest;
 import com.oceanbase.odc.service.schedule.model.Schedule;
 import com.oceanbase.odc.service.schedule.model.ScheduleMapper;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
+import com.oceanbase.odc.service.state.StatefulUuidStateIdGenerator;
+import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -77,33 +85,104 @@ public class ScheduleExportService {
     private ScheduleService scheduleService;
 
     @Autowired
+    private UserService userService;
+
+    @Autowired
     private HorizontalDataPermissionValidator horizontalDataPermissionValidator;
 
     @Autowired
     private ScheduleRepository scheduleRepository;
 
-    private static String getPersonalBucketName(String userIdStr) {
-        PreConditions.notEmpty(userIdStr, "userIdStr");
-        return ASYNC_TASK_BASE_BUCKET.concat(File.separator).concat(userIdStr);
+    @Autowired
+    private StatefulUuidStateIdGenerator statefulUuidStateIdGenerator;
+
+    @Autowired
+    private ThreadPoolTaskExecutor scheduleImportExecutor;
+
+    @Autowired
+    private DatabaseService databaseService;
+
+    @Autowired
+    private FutureCache futureCache;
+
+    @Value("${odc.log.directory:./log}")
+    private String logPath;
+
+    private String getPersonalBucketName() {
+        return ASYNC_TASK_BASE_BUCKET.concat(File.separator).concat(authenticationFacade.currentUserIdStr());
     }
 
-    public FileExportResponse export(ScheduleTaskExportRequest request) {
+    public String startExport(ScheduleTaskExportRequest request) {
         checkRequestIdsPermission(request);
-
-        ExportProperties properties = scheduleTaskExporter.generateExportProperties();
-        String encryptKey = new BCryptPasswordEncoder().encode(PasswordUtils.random());
-
-        ExportedFile exportedFile = null;
-        if (request.getScheduleType().equals(ScheduleType.PARTITION_PLAN)) {
-            exportedFile = scheduleTaskExporter.exportPartitionPlan(encryptKey, properties,
-                    request.getIds());
-        } else {
-            exportedFile = scheduleTaskExporter.exportSchedule(request.getScheduleType(), encryptKey,
-                    properties, request.getIds());
-        }
-        return mapToFileExportResponse(exportedFile);
+        String previewId = statefulUuidStateIdGenerator.generateCurrentUserIdStateId("scheduleExport");
+        User user = authenticationFacade.currentUser();
+        Future<FileExportResponse> future = scheduleImportExecutor.submit(
+                new ScheduleTaskExportCallable(previewId, request, user, scheduleTaskExporter,
+                        getPersonalBucketName(), objectStorageFacade));
+        futureCache.put(previewId, future);
+        return previewId;
     }
 
+    public List<ScheduleExportListView> getExportListView(ScheduleTaskExportRequest request) {
+        checkRequestIdsPermission(request);
+        if (request.getScheduleType().equals(ScheduleType.PARTITION_PLAN)) {
+            return getPartitionPlanView(request);
+        }
+        List<ScheduleEntity> scheduleEntities = scheduleRepository.findByIdIn(request.getIds());
+        List<ScheduleExportListView> view = scheduleEntities.stream().map(
+                ScheduleMapper.INSTANCE::toScheduleExportListView).collect(Collectors.toList());
+        databaseService.assignDatabaseById(view, ScheduleExportListView::getDatabaseId,
+                ScheduleExportListView::setDatabase);
+        return view;
+    }
+
+    private List<ScheduleExportListView> getPartitionPlanView(ScheduleTaskExportRequest request) {
+        Map<Long, TaskEntity> flowIn2TaskMap = flowInstanceService.getTaskByFlowInstanceIds(
+                request.getIds());
+        List<FlowInstanceEntity> flowInstanceEntities = flowInstanceService.listByIds(request.getIds());
+        List<ScheduleExportListView> views = flowInstanceEntities.stream().map(f -> {
+            TaskEntity taskEntity = flowIn2TaskMap.get(f.getId());
+            ScheduleExportListView scheduleExportListView = new ScheduleExportListView();
+            scheduleExportListView.setScheduleType(ScheduleType.PARTITION_PLAN);
+            scheduleExportListView.setId(f.getId());
+            scheduleExportListView.setCreatorId(f.getCreatorId());
+            scheduleExportListView.setDatabaseId(taskEntity.getDatabaseId());
+            scheduleExportListView.setCreateTime(f.getCreateTime());
+            scheduleExportListView.setDescription(f.getDescription());
+            return scheduleExportListView;
+        }).collect(Collectors.toList());
+        databaseService.assignDatabaseById(views, ScheduleExportListView::getDatabaseId,
+                ScheduleExportListView::setDatabase);
+        userService.assignInnerUserByCreatorId(views, ScheduleExportListView::getCreatorId,
+                ScheduleExportListView::setCreator);
+        return views;
+    }
+
+    public FileExportResponse getExportResult(String exportId) {
+        statefulUuidStateIdGenerator.checkCurrentUserId(exportId);
+        Future<?> future = futureCache.get(exportId);
+        if (future == null) {
+            return null;
+        }
+        if (!future.isDone()) {
+            return FileExportResponse.exporting();
+        }
+        try {
+            futureCache.invalid(exportId);
+            return (FileExportResponse) future.get();
+        } catch (ExecutionException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public String getExportLog(String exportId) {
+        statefulUuidStateIdGenerator.checkCurrentUserId(exportId);
+        String filePath = String.format(RouteLogCallable.LOG_PATH_PATTERN, logPath,
+                ScheduleTaskExportCallable.WORK_SPACE, exportId,
+                ScheduleTaskExportCallable.LOG_NAME);
+        File logFile = new File(filePath);
+        return LogUtils.getLatestLogContent(logFile, 10000L, 1048576L);
+    }
 
     private void checkRequestIdsPermission(ScheduleTaskExportRequest request) {
         Set<Long> projectIds;
@@ -127,21 +206,6 @@ public class ScheduleExportService {
         }
     }
 
-
-    private FileExportResponse mapToFileExportResponse(ExportedFile exportedFile) {
-        FileExportResponse fileExportResponse = new FileExportResponse();
-        fileExportResponse.setSecret(exportedFile.getSecret());
-        try {
-            String bucketName = getPersonalBucketName(authenticationFacade.currentUserIdStr());
-            objectStorageFacade.createBucketIfNotExists(bucketName);
-            ObjectMetadata metadata = objectStorageFacade.putTempObject(bucketName, exportedFile.getFile());
-            String downloadUrl = objectStorageFacade.getDownloadUrl(metadata.getBucketName(), metadata.getObjectId());
-            fileExportResponse.setDownloadUrl(downloadUrl);
-        } finally {
-            OdcFileUtil.deleteFiles(exportedFile.getFile());
-        }
-        return fileExportResponse;
-    }
 
     @Data
     @AllArgsConstructor

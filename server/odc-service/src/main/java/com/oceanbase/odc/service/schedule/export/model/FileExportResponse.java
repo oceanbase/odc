@@ -21,8 +21,29 @@ import lombok.ToString.Exclude;
 @Data
 public class FileExportResponse {
 
+    private String taskId;
+
+    private FileExportStatus status;
+
+    private String fileName;
+
     private String downloadUrl;
 
     @Exclude
     private String secret;
+
+    private String failedReason;
+
+    public static FileExportResponse exporting() {
+        FileExportResponse fileExportResponse = new FileExportResponse();
+        fileExportResponse.setStatus(FileExportStatus.EXPORTING);
+        return fileExportResponse;
+    }
+
+    public static FileExportResponse failed(String failedReason) {
+        FileExportResponse fileExportResponse = new FileExportResponse();
+        fileExportResponse.setStatus(FileExportStatus.FAILED);
+        fileExportResponse.setFailedReason(failedReason);
+        return fileExportResponse;
+    }
 }
