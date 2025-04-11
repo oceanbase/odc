@@ -215,24 +215,6 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
                 return null;
             }
         });
-
-
-
-
-//        Set<String> globalIndexes =
-//            jdbcOperations.query(getGlobalIndexes.toString(), (rs, num) -> rs.getString(1))
-//                .stream().map(globalIndex -> {
-//                    // __idx_501536_index6
-//                    String[] parts = globalIndex.split("_");
-//                    StringBuilder result = new StringBuilder();
-//                    result.append(parts[4]);
-//                    if(parts.length > 5){
-//                        for (int i = 5; i < parts.length; i++) {
-//                            result.append("_").append(parts[i]);
-//                        }
-//                    }
-//                    return result.toString();
-//                }).collect(Collectors.toSet());
         for (DBTableIndex dbTableIndex : indexList) {
             if(resultMap.get(dbTableIndex.getName())!=null){
                 if(DBIndexRangeType.GLOBAL.name().equals(resultMap.get(dbTableIndex.getName()))) {

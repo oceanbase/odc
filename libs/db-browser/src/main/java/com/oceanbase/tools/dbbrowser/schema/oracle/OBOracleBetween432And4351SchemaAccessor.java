@@ -17,6 +17,7 @@ package com.oceanbase.tools.dbbrowser.schema.oracle;
 
 import java.util.List;
 
+import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
@@ -63,4 +64,10 @@ public class OBOracleBetween432And4351SchemaAccessor extends OBOracleSchemaAcces
     public List<DBMViewRefreshRecord> listMViewRefreshRecords(DBMViewRefreshRecordParam param) {
         throw new UnsupportedOperationException("not support yet");
     }
+
+    @Override
+    public List<DBTableIndex> listMViewIndexes(String schemaName, String tableName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
 }

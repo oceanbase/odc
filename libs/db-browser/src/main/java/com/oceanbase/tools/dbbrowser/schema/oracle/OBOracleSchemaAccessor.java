@@ -15,7 +15,9 @@
  */
 package com.oceanbase.tools.dbbrowser.schema.oracle;
 
+import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,6 +31,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import com.oceanbase.tools.dbbrowser.model.DBIndexRangeType;
+import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
@@ -1251,6 +1255,55 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
                 .append(param.getQueryLimit())
                 .append(" ROWS ONLY");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBMViewRefreshRecord.class));
+    }
+
+    @Override
+    public List<DBTableIndex> listMViewIndexes(String schemaName, String tableName) {
+        List<DBTableIndex> indexList = super.listTableIndexes(schemaName, tableName);
+        fillIndexInfoByOceanBaseDicView(indexList,schemaName,tableName);
+        for (DBTableIndex index : indexList) {
+            if (index.getAlgorithm() == DBIndexAlgorithm.UNKNOWN) {
+                index.setAlgorithm(DBIndexAlgorithm.BTREE);
+            }
+        }
+        return indexList;
+    }
+
+    private void fillIndexInfoByOceanBaseDicView(List<DBTableIndex> indexList, String schemaName,
+                                                 String tableName) {
+        OracleSqlBuilder oracleSqlBuilder = new OracleSqlBuilder();
+        oracleSqlBuilder.append("SELECT SUBSTR(SUBSTR(t4.table_name, 7), INSTR(SUBSTR(t4.table_name, 7), '_') + 1)  AS index_name,\n" +
+                "    CASE WHEN t4.index_type IN (3, 4, 11, 17, 18, 19, 7, 8, 12, 20, 21, 22) THEN 'GLOBAL' ELSE 'LOCAL' END AS index_type\n" +
+                "FROM\n" +
+                "    oceanbase.__all_table t1,\n" +
+                "    oceanbase.__all_database t2,\n" +
+                "    oceanbase.__all_table t3,\n" +
+                "    oceanbase.__all_table t4\n" +
+                "WHERE\n" +
+                "    t1.table_name = ")
+            .value(tableName)
+            .append(
+                "    AND t1.database_id = t2.database_id\n" +
+                    "    AND t2.database_name = ")
+            .value(schemaName)
+            .append(
+                "    AND t3.table_id = t1.data_table_id\n" +
+                    "    AND t4.data_table_id = t3.table_id\n" +
+                    "    AND t4.table_type = 5;");
+        Map<String, String> resultMap = new HashMap<>();
+        jdbcOperations.query(oracleSqlBuilder.toString(), (RowMapper<Void>) (rs, rowNum) -> {
+            resultMap.put(rs.getString(1), rs.getString(2));
+            return null;
+        });
+        for (DBTableIndex dbTableIndex : indexList) {
+            if(resultMap.get(dbTableIndex.getName())!=null){
+                if(DBIndexRangeType.GLOBAL.name().equals(resultMap.get(dbTableIndex.getName()))) {
+                    dbTableIndex.setGlobal(true);
+                }else {
+                    dbTableIndex.setGlobal(false);
+                }
+            }
+        }
     }
 
     @Override
