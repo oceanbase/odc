@@ -51,7 +51,7 @@ import com.oceanbase.odc.service.regulation.risklevel.model.QueryRiskDetectRuleP
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskDetectRule;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
-import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelIdentifier;
+import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriberIdentifier;
 
 import cn.hutool.core.util.ObjectUtil;
 import lombok.NonNull;
@@ -109,14 +109,14 @@ public class RiskDetectService {
     }
 
     @SkipAuthorize("internal usage")
-    public Map<RiskLevelIdentifier, RiskLevel> batchDetectHighestRiskLevel(List<RiskDetectRule> rules,
-            @NonNull Collection<RiskLevelIdentifier> identifiers) {
+    public Map<RiskLevelDescriberIdentifier, RiskLevel> batchDetectHighestRiskLevel(List<RiskDetectRule> rules,
+            @NonNull Collection<RiskLevelDescriberIdentifier> identifiers) {
         if (CollectionUtils.isEmpty(identifiers)) {
             return Collections.emptyMap();
         }
         RiskLevel defaultRiskLevel = null;
-        Map<RiskLevelIdentifier, RiskLevel> identifiers2HighestRiskLevels = new HashMap<>();
-        for (RiskLevelIdentifier identifier : identifiers) {
+        Map<RiskLevelDescriberIdentifier, RiskLevel> identifiers2HighestRiskLevels = new HashMap<>();
+        for (RiskLevelDescriberIdentifier identifier : identifiers) {
             if (CollectionUtils.isEmpty(rules)) {
                 defaultRiskLevel = ObjectUtil.defaultIfNull(defaultRiskLevel, riskLevelService.findDefaultRiskLevel());
                 identifiers2HighestRiskLevels.put(identifier, defaultRiskLevel);

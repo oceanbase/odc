@@ -29,13 +29,13 @@ import lombok.experimental.Accessors;
 @Data
 @Accessors(chain = true)
 @EqualsAndHashCode
-public class RiskLevelIdentifier {
+public class RiskLevelDescriberIdentifier {
 
     private Long databaseId;
     private RiskLevelDescriber describer;
 
-    public static RiskLevelIdentifier of(@NonNull Long databaseId, @NonNull RiskLevelDescriber describer) {
-        return new RiskLevelIdentifier()
+    public static RiskLevelDescriberIdentifier of(@NonNull Long databaseId, @NonNull RiskLevelDescriber describer) {
+        return new RiskLevelDescriberIdentifier()
                 .setDatabaseId(databaseId)
                 .setDescriber(describer);
     }
