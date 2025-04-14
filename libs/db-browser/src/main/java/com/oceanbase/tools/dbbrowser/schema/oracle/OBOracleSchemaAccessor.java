@@ -561,11 +561,16 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         procedure.setProName(procedureName);
         jdbcOperations.query(sb.toString(), (rs) -> {
             procedure.setDefiner(rs.getString("OWNER"));
-            procedure.setDdl(String.format("create or replace %s;", rs.getClob("TEXT").toString()));
+            procedure.setDdl(String.format("create or replace %s", rs.getClob("TEXT").toString()));
             procedure.setStatus(rs.getString("STATUS"));
             procedure.setCreateTime(rs.getTimestamp("CREATED"));
             procedure.setModifyTime(rs.getTimestamp("LAST_DDL_TIME"));
         });
+
+        String ddl = procedure.getDdl();
+        if (ddl != null && !ddl.endsWith(";")) {
+            procedure.setDdl(ddl + ";");
+        }
 
         if (StringUtils.containsIgnoreCase(procedure.getStatus(), PLConstants.PL_OBJECT_STATUS_INVALID)) {
             procedure.setErrorMessage(PLObjectErrMsgUtils.getOraclePLObjErrMsg(jdbcOperations,
