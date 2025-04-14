@@ -38,4 +38,8 @@ public class ScheduleTerminateResult {
     public static ScheduleTerminateResult ofSuccess(ScheduleType scheduleType, Long id) {
         return new ScheduleTerminateResult(true, scheduleType, id, null);
     }
+
+    public static ScheduleTerminateResult ofFailed(ScheduleType scheduleType, Long id, String failReason) {
+        return new ScheduleTerminateResult(false, scheduleType, id, failReason);
+    }
 }
