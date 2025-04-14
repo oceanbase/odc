@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.migrate.jdbc.common;
 
+import java.util.Base64;
+
 import javax.sql.DataSource;
 
 import org.junit.After;
@@ -49,7 +51,8 @@ public class V42013OAuth2ConfigMetaMigrateTest extends ServiceTestEnv {
                 + "`id`,`unique_identifier`,`secret`,`name`,`creator_id`,`is_builtin`,`description`,`type`) "
                 + "values(2,'a','%s','CompanyA',1,0,'D','TEAM')";
         String secret = PasswordUtils.random(32);
-        jdbcTemplate.update(String.format(addOrg, secret));
+        String finalSecret = Base64.getEncoder().encodeToString(secret.getBytes());
+        jdbcTemplate.update(String.format(addOrg, finalSecret));
     }
 
     @After
