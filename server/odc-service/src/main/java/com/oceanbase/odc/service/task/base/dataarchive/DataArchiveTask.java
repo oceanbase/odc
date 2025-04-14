@@ -81,7 +81,7 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             log.info("Start to init dlm job,tables={}", parameters.getTables());
             initTableUnit(parameters);
             currentIndex = -1;
-            buildToDoTableInfo();
+            log.info(buildToDoTableInfo());
         } catch (Exception e) {
             log.warn("Initialization of the DLM job was failed,jobIdentity={}", context.getJobIdentity(), e);
         }
@@ -205,7 +205,8 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             dlmTableUnit.setSourceDatasourceInfo(req.getSourceDs());
             dlmTableUnit.setTargetDatasourceInfo(req.getTargetDs());
             dlmTableUnit.setFireTime(req.getFireTime());
-            dlmTableUnit.setStatus(TaskStatus.PREPARING);
+            dlmTableUnit.setStatus(
+                    table.getLastProcessedStatus() == null ? TaskStatus.PREPARING : table.getLastProcessedStatus());
             dlmTableUnit.setType(req.getJobType());
             dlmTableUnit.setStatistic(new DlmTableUnitStatistic());
             dlmTableUnit.setSyncTableStructure(req.getSyncTableStructure());

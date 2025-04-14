@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 
 import lombok.Data;
 
@@ -50,6 +51,8 @@ public class DataArchiveTableConfig {
     private Map<String, String> partName2MinKey = new HashMap<>();
 
     private Map<String, String> partName2MaxKey = new HashMap<>();
+
+    private TaskStatus lastProcessedStatus;
 
     public String getTargetTableName() {
         return StringUtils.isEmpty(targetTableName) ? tableName : targetTableName;

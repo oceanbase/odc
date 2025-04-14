@@ -47,35 +47,39 @@ public class DataDeleteJob extends AbstractDlmJob {
         DataDeleteParameters dataDeleteParameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
                 DataDeleteParameters.class);
         DLMJobReq parameters = new DLMJobReq();
-        parameters.setJobName(taskEntity.getJobName());
-        parameters.setScheduleTaskId(taskEntity.getId());
-        JobType jobType = dataDeleteParameters.getNeedCheckBeforeDelete() ? JobType.DELETE : JobType.QUICK_DELETE;
-        parameters.setJobType(dataDeleteParameters.getDeleteByUniqueKey() ? jobType : JobType.DEIRECT_DELETE);
-        parameters.setTables(dataDeleteParameters.getTables());
-        for (DataArchiveTableConfig tableConfig : parameters.getTables()) {
-            tableConfig.setConditionExpression(StringUtils.isNotEmpty(tableConfig.getConditionExpression())
-                    ? DataArchiveConditionUtil.parseCondition(tableConfig.getConditionExpression(),
-                            dataDeleteParameters.getVariables(),
-                            context.getFireTime())
-                    : "");
+        if (taskEntity.getJobId() != null) {
+            parameters = getDLMJobReqWhenRetry(taskEntity.getJobId());
+        } else {
+            parameters.setJobName(taskEntity.getJobName());
+            parameters.setScheduleTaskId(taskEntity.getId());
+            JobType jobType = dataDeleteParameters.getNeedCheckBeforeDelete() ? JobType.DELETE : JobType.QUICK_DELETE;
+            parameters.setJobType(dataDeleteParameters.getDeleteByUniqueKey() ? jobType : JobType.DEIRECT_DELETE);
+            parameters.setTables(dataDeleteParameters.getTables());
+            for (DataArchiveTableConfig tableConfig : parameters.getTables()) {
+                tableConfig.setConditionExpression(StringUtils.isNotEmpty(tableConfig.getConditionExpression())
+                        ? DataArchiveConditionUtil.parseCondition(tableConfig.getConditionExpression(),
+                                dataDeleteParameters.getVariables(),
+                                context.getFireTime())
+                        : "");
+            }
+            parameters.setNeedPrintSqlTrace(dataDeleteParameters.isNeedPrintSqlTrace());
+            parameters.setWriteThreadCount(dataDeleteParameters.getWriteThreadCount());
+            parameters.setReadThreadCount(dataDeleteParameters.getReadThreadCount());
+            parameters.setScanBatchSize(dataDeleteParameters.getScanBatchSize());
+            parameters.setSourceDs(getDataSourceInfo(dataDeleteParameters.getDatabaseId()));
+            parameters.setTargetDs(getDataSourceInfo(dataDeleteParameters.getTargetDatabaseId() == null
+                    ? dataDeleteParameters.getDatabaseId()
+                    : dataDeleteParameters.getTargetDatabaseId()));
+            parameters.getSourceDs().setQueryTimeout(dataDeleteParameters.getQueryTimeout());
+            parameters.getTargetDs().setQueryTimeout(dataDeleteParameters.getQueryTimeout());
+            parameters.setShardingStrategy(dataDeleteParameters.getShardingStrategy());
+            parameters.setDirtyRowAction(dataDeleteParameters.getDirtyRowAction());
+            parameters.setMaxAllowedDirtyRowCount(dataDeleteParameters.getMaxAllowedDirtyRowCount());
+            parameters.setFireTime(context.getFireTime());
+
         }
-        parameters.setNeedPrintSqlTrace(dataDeleteParameters.isNeedPrintSqlTrace());
         parameters
                 .setRateLimit(limiterService.getByOrderIdOrElseDefaultConfig(Long.parseLong(taskEntity.getJobName())));
-        parameters.setWriteThreadCount(dataDeleteParameters.getWriteThreadCount());
-        parameters.setReadThreadCount(dataDeleteParameters.getReadThreadCount());
-        parameters.setScanBatchSize(dataDeleteParameters.getScanBatchSize());
-        parameters.setSourceDs(getDataSourceInfo(dataDeleteParameters.getDatabaseId()));
-        parameters.setTargetDs(getDataSourceInfo(dataDeleteParameters.getTargetDatabaseId() == null
-                ? dataDeleteParameters.getDatabaseId()
-                : dataDeleteParameters.getTargetDatabaseId()));
-        parameters.getSourceDs().setQueryTimeout(dataDeleteParameters.getQueryTimeout());
-        parameters.getTargetDs().setQueryTimeout(dataDeleteParameters.getQueryTimeout());
-        parameters.setShardingStrategy(dataDeleteParameters.getShardingStrategy());
-        parameters.setDirtyRowAction(dataDeleteParameters.getDirtyRowAction());
-        parameters.setMaxAllowedDirtyRowCount(dataDeleteParameters.getMaxAllowedDirtyRowCount());
-        parameters.setFireTime(context.getFireTime());
-
         Long jobId =
                 publishJob(parameters, dataDeleteParameters.getTimeoutMillis(), dataDeleteParameters.getDatabaseId());
         scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);

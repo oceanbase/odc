@@ -15,18 +15,14 @@
  */
 package com.oceanbase.odc.service.schedule.job;
 
-import java.util.Map;
-
 import org.quartz.JobExecutionContext;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
-import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 
 import lombok.extern.slf4j.Slf4j;
@@ -50,11 +46,7 @@ public class DataArchiveJob extends AbstractDlmJob {
         DLMJobReq parameters;
         // rerun
         if (taskEntity.getJobId() != null) {
-            parameters = JsonUtils.fromJson(JsonUtils.fromJson(
-                    taskFrameworkService.find(taskEntity.getJobId()).getJobParametersJson(),
-                    new TypeReference<Map<String, String>>() {})
-                    .get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
-                    DLMJobReq.class);
+            parameters = getDLMJobReqWhenRetry(taskEntity.getJobId());
         } else {
             parameters = new DLMJobReq();
             parameters.setJobName(taskEntity.getJobName());
