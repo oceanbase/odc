@@ -39,11 +39,13 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
 import com.oceanbase.odc.service.objectstorage.cloud.client.AlibabaCloudClient;
 import com.oceanbase.odc.service.objectstorage.cloud.client.AmazonCloudClient;
 import com.oceanbase.odc.service.objectstorage.cloud.client.CloudClient;
+import com.oceanbase.odc.service.objectstorage.cloud.client.GoogleCloudClient;
 import com.oceanbase.odc.service.objectstorage.cloud.client.NullCloudClient;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudEnvConfigurations;
 import com.oceanbase.odc.service.objectstorage.cloud.model.CloudObjectStorageProperties;
@@ -105,8 +107,9 @@ public class CloudResourceConfigurations {
                 case AWS:
                 case TENCENT_CLOUD:
                 case HUAWEI_CLOUD:
-                case GOOGLE_CLOUD:
                     return createAmazonCloudClient(configuration);
+                case GOOGLE_CLOUD:
+                    return createGoogleCloudClient(configuration);
                 default:
                     return new NullCloudClient();
             }
@@ -166,6 +169,33 @@ public class CloudResourceConfigurations {
         String roleSessionName = configuration.getRoleSessionName();
         String roleArn = configuration.getRoleArn();
         return new AmazonCloudClient(s3, sts, roleSessionName, roleArn);
+    }
+    
+    static GoogleCloudClient createGoogleCloudClient(ObjectStorageConfiguration configuration) {
+        String accessKeyId = configuration.getAccessKeyId();
+        String accessKeySecret = configuration.getAccessKeySecret();
+        AWSStaticCredentialsProvider credentialsProvider = new AWSStaticCredentialsProvider(
+                new BasicAWSCredentials(accessKeyId, accessKeySecret));
+        ClientConfiguration clientConfiguration = new ClientConfiguration().withProtocol(Protocol.HTTPS);
+
+        AmazonS3ClientBuilder s3Builder = AmazonS3ClientBuilder.standard()
+                .withCredentials(credentialsProvider)
+                .withClientConfiguration(clientConfiguration)
+                .disableChunkedEncoding();
+
+        String endpoint = StringUtils.isBlank(configuration.getPublicEndpoint()) ? "storage.googleapis.com"
+                : configuration.getPublicEndpoint();
+        s3Builder.withEndpointConfiguration(new EndpointConfiguration(endpoint, "EMPTY"));
+
+        AmazonS3 s3 = s3Builder.build();
+
+        AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.standard()
+                .withCredentials(credentialsProvider)
+                .withRegion("EMPTY")
+                .build();
+        String roleSessionName = configuration.getRoleSessionName();
+        String roleArn = configuration.getRoleArn();
+        return new GoogleCloudClient(s3, sts, roleSessionName, roleArn);
     }
 
     private static OSS getInternalOss(ObjectStorageConfiguration objectStorageConfiguration) {
