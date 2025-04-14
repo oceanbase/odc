@@ -259,13 +259,13 @@ public class FlowInstanceController {
         return Responses.single(flowInstanceService.startBatchCancelFlowInstance(flowInstanceIds));
     }
 
-    @ApiOperation(value = "cancelFlowInstance", notes = "获取批量终止结果")
+    @ApiOperation(value = "getBatchCancelResult", notes = "获取批量终止结果")
     @RequestMapping(value = "/getBatchCancelResult", method = RequestMethod.GET)
     public SuccessResponse<List<BatchTerminateFlowResult>> getBatchCancelResult(String terminateId) {
         return Responses.single(flowInstanceService.getBatchCancelResult(terminateId));
     }
 
-    @ApiOperation(value = "cancelFlowInstance", notes = "获取批量终止结果")
+    @ApiOperation(value = "getBatchCancelLog", notes = "获取批量终止结果")
     @RequestMapping(value = "/getBatchCancelLog", method = RequestMethod.GET)
     public SuccessResponse<String> getBatchCancelLog(String terminateId) {
         return Responses.single(flowInstanceService.getBatchCancelLog(terminateId));
