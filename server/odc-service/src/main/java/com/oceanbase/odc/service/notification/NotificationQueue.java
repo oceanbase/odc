@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.notification;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import com.oceanbase.odc.service.notification.model.Message;
 import com.oceanbase.odc.service.notification.model.MessageSendingStatus;
@@ -24,6 +25,8 @@ public interface NotificationQueue {
     boolean offer(List<Message> notifications);
 
     List<Message> peek(int batchSize, MessageSendingStatus status);
+
+    void failSendingTimeoutMessages(long timeout, TimeUnit timeUnit);
 
     int size();
 }

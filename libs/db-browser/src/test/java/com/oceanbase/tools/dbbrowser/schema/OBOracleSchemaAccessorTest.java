@@ -171,11 +171,14 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
         if (isSupportMaterializedView) {
             DBMaterializedView test_mv_allSyntax = accessor.getMView(getOBOracleSchema(), "TEST_MV_ALLSYNTAX");
             Assert.assertEquals("TEST_MV_ALLSYNTAX", test_mv_allSyntax.getName());
-            Assert.assertEquals(4, test_mv_allSyntax.getColumns().size());
             Assert.assertEquals(DBMaterializedViewRefreshMethod.REFRESH_COMPLETE,
                     test_mv_allSyntax.getRefreshMethod());
             Assert.assertFalse(test_mv_allSyntax.getEnableQueryRewrite());
             Assert.assertFalse(test_mv_allSyntax.getEnableQueryComputation());
+            Assert.assertEquals(DBMaterializedViewRefreshMethod.REFRESH_COMPLETE,
+                    test_mv_allSyntax.getLastRefreshType());
+            Assert.assertNotNull(test_mv_allSyntax.getLastRefreshStartTime());
+            Assert.assertNotNull(test_mv_allSyntax.getLastRefreshEndTime());
 
             DBMaterializedView test_mv_computation = accessor.getMView(getOBOracleSchema(), "TEST_MV_COMPUTATION");
             Assert.assertTrue(test_mv_computation.getEnableQueryComputation());

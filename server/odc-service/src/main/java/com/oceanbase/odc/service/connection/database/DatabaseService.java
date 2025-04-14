@@ -43,7 +43,6 @@ import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 import javax.validation.Valid;
-import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -940,10 +939,10 @@ public class DatabaseService {
         }
         final Map<Long, DatabaseEntity> dbId2Database = databaseRepository.findByIdIn(databaseIds).stream().collect(
                 Collectors.toMap(DatabaseEntity::getId, Function.identity()));
-        Verify.equals(databaseIds.size(), dbId2Database.size(), "Database");
 
         // Ensure that the databases tracked down remain in relative order according to databaseIds
-        List<DatabaseEntity> dbs = databaseIds.stream().map(dbId2Database::get).collect(Collectors.toList());
+        List<DatabaseEntity> dbs =
+                databaseIds.stream().map(dbId2Database::get).filter(Objects::nonNull).collect(Collectors.toList());
         return entitiesToModels(new PageImpl<>(dbs),
                 includesPermittedAction).getContent();
     }
@@ -1019,7 +1018,7 @@ public class DatabaseService {
     @SkipAuthorize("internal authorized")
     @Transactional(rollbackFor = Exception.class)
     public boolean modifyDatabaseRemark(@NotEmpty Collection<Long> databaseIds,
-            @NotBlank @Size(min = 1, max = 100) String remark) {
+            @NotNull @Size(min = 0, max = 100) String remark) {
         Set<Long> ids = new HashSet<>(databaseIds);
         List<Database> databases = listDatabasesByIds(ids);
         Verify.equals(ids.size(), databases.size(), "Missing databases may exist");

@@ -45,6 +45,7 @@ import com.oceanbase.odc.service.sqlcheck.rule.NoSpecificColumnExists;
 import com.oceanbase.odc.service.sqlcheck.rule.NoValidWhereClause;
 import com.oceanbase.odc.service.sqlcheck.rule.NoWhereClauseExists;
 import com.oceanbase.odc.service.sqlcheck.rule.NotNullColumnWithoutDefaultValue;
+import com.oceanbase.odc.service.sqlcheck.rule.OracleAffectedRowsExceedLimit;
 import com.oceanbase.odc.service.sqlcheck.rule.OracleColumnCalculation;
 import com.oceanbase.odc.service.sqlcheck.rule.OracleLeftFuzzyMatch;
 import com.oceanbase.odc.service.sqlcheck.rule.OracleMissingRequiredColumns;
@@ -76,6 +77,7 @@ import com.oceanbase.odc.service.sqlcheck.rule.TooManyInExpression;
 import com.oceanbase.odc.service.sqlcheck.rule.TooManyOutOfLineIndex;
 import com.oceanbase.odc.service.sqlcheck.rule.TooManyTableJoin;
 import com.oceanbase.odc.service.sqlcheck.rule.TruncateTableExists;
+import com.oceanbase.odc.service.sqlcheck.rule.Unable2JudgeAffectedRows;
 
 /**
  * {@link OracleSqlCheckerTest}
@@ -1278,6 +1280,50 @@ public class OracleSqlCheckerTest {
         CheckResult r2 = new CheckResult("2", Collections.singletonList(c2));
         List<CheckResult> expect = Arrays.asList(r1, r2);
         Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void check_unable2JudgeAffectedRows_OBOracle_enabled() {
+        String insert =
+                "insert into users (id, name, age, email) \n"
+                        + "values \n"
+                        + "('2', 'b-bot', 3, 'o'), \n"
+                        + "('3', 'c-bot', 3, 'o'), \n"
+                        + "('4', 'd-bot', 3, '(o)')";
+        OracleAffectedRowsExceedLimit oracleAffectedRowsExceedLimit = Mockito.mock(OracleAffectedRowsExceedLimit.class);
+        Mockito.when(oracleAffectedRowsExceedLimit.getSupportsDialectTypes())
+                .thenReturn(Arrays.asList(DialectType.OB_ORACLE, DialectType.ORACLE));
+        Mockito.when(oracleAffectedRowsExceedLimit.getStatementAffectedRows(Mockito.any()))
+                .thenThrow(RuntimeException.class);
+
+        DefaultSqlChecker insertChecker = new DefaultSqlChecker(DialectType.OB_ORACLE, "$$",
+                Collections.singletonList(
+                        new Unable2JudgeAffectedRows(oracleAffectedRowsExceedLimit)));
+        List<CheckViolation> actualInsert = insertChecker.check(insert);
+        Assert.assertEquals(1, actualInsert.size());
+        Assert.assertEquals(SqlCheckRuleType.ESTIMATE_SQL_AFFECTED_ROWS_FAILED, actualInsert.get(0).getType());
+    }
+
+    @Test
+    public void check_unable2JudgeAffectedRows_Oracle_enabled() {
+        String insert =
+                "insert into users (id, name, age, email) \n"
+                        + "values \n"
+                        + "('2', 'b-bot', 3, 'o'), \n"
+                        + "('3', 'c-bot', 3, 'o'), \n"
+                        + "('4', 'd-bot', 3, '(o)')";
+        OracleAffectedRowsExceedLimit oracleAffectedRowsExceedLimit = Mockito.mock(OracleAffectedRowsExceedLimit.class);
+        Mockito.when(oracleAffectedRowsExceedLimit.getSupportsDialectTypes())
+                .thenReturn(Arrays.asList(DialectType.OB_ORACLE, DialectType.ORACLE));
+        Mockito.when(oracleAffectedRowsExceedLimit.getStatementAffectedRows(Mockito.any()))
+                .thenThrow(RuntimeException.class);
+
+        DefaultSqlChecker insertChecker = new DefaultSqlChecker(DialectType.ORACLE, "$$",
+                Collections.singletonList(
+                        new Unable2JudgeAffectedRows(oracleAffectedRowsExceedLimit)));
+        List<CheckViolation> actualInsert = insertChecker.check(insert);
+        Assert.assertEquals(1, actualInsert.size());
+        Assert.assertEquals(SqlCheckRuleType.ESTIMATE_SQL_AFFECTED_ROWS_FAILED, actualInsert.get(0).getType());
     }
 
     private String joinAndAppend(String[] sqls, String delimiter) {

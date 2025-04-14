@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.lang3.StringUtils;
@@ -37,6 +38,7 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
+import com.oceanbase.odc.core.shared.model.TableIdentity;
 import com.oceanbase.odc.plugin.schema.api.MViewExtensionPoint;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
@@ -48,6 +50,8 @@ import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.db.model.AllMVBaseTables;
 import com.oceanbase.odc.service.db.model.DatabaseAndMVs;
 import com.oceanbase.odc.service.db.model.DatabaseAndTables;
+import com.oceanbase.odc.service.db.model.GenerateTableDDLResp;
+import com.oceanbase.odc.service.db.model.GenerateUpdateMViewDDLReq;
 import com.oceanbase.odc.service.db.model.MViewRefreshReq;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
@@ -71,6 +75,8 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @SkipAuthorize("inside connect session")
 public class DBMaterializedViewService {
+    @Autowired
+    private DBTableService dbTableService;
 
     @Autowired
     private TableService tableService;
@@ -78,7 +84,7 @@ public class DBMaterializedViewService {
     @Autowired
     private DatabaseService databaseService;
 
-    public List<Table> list(ConnectionSession connectionSession, QueryTableParams params)
+    public List<Table> list(@NonNull ConnectionSession connectionSession, @NonNull QueryTableParams params)
             throws SQLException, InterruptedException {
         Database database = databaseService.detail(params.getDatabaseId());
         List<Table> tables = new ArrayList<>();
@@ -94,15 +100,17 @@ public class DBMaterializedViewService {
         return tables;
     }
 
-    public AllMVBaseTables listAllBases(ConnectionSession connectionSession,
-            String tableNameLike) {
+    public AllMVBaseTables listAllBases(@NonNull ConnectionSession connectionSession,
+            @NonNull String tableNameLike) {
         AllMVBaseTables allResult = new AllMVBaseTables();
         DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
         List<String> databases = accessor.showDatabases();
         List<DatabaseAndTables> tables = databases.stream().map(schema -> {
             List<String> tablesLike = accessor.showTablesLike(schema, tableNameLike).stream()
                     .filter(name -> !StringUtils.endsWith(name.toUpperCase(),
-                            OdcConstants.VALIDATE_DDL_TABLE_POSTFIX))
+                            OdcConstants.VALIDATE_DDL_TABLE_POSTFIX)
+                            && !StringUtils.startsWithIgnoreCase(name, OdcConstants.CONTAINER_TABLE_PREFIX)
+                            && !StringUtils.startsWithIgnoreCase(name, OdcConstants.MATERIALIZED_VIEW_LOG_PREFIX))
                     .collect(Collectors.toList());
             return tablesLike.size() != 0 ? new DatabaseAndTables(schema, tablesLike)
                     : new DatabaseAndTables();
@@ -134,7 +142,24 @@ public class DBMaterializedViewService {
                         .generateCreateTemplate(resource));
     }
 
-    public DBMaterializedView detail(ConnectionSession connectionSession, String schemaName, String mViewName) {
+    public GenerateTableDDLResp generateUpdateDDL(@NotNull ConnectionSession session,
+            @NotNull GenerateUpdateMViewDDLReq req) {
+
+        String ddl = session.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<String>) con -> getDBMViewExtensionPoint(session).generateUpdateDDL(con,
+                        req.getPrevious(), req.getCurrent()));
+
+        return GenerateTableDDLResp.builder()
+                .sql(ddl)
+                .currentIdentity(TableIdentity.of(req.getCurrent().getSchemaName(), req.getCurrent().getName()))
+                .previousIdentity(TableIdentity.of(req.getPrevious().getSchemaName(), req.getPrevious().getName()))
+                .tip(dbTableService.checkUpdateDDL(session.getDialectType(), ddl))
+                .build();
+    }
+
+    public DBMaterializedView detail(@NonNull ConnectionSession connectionSession, @NotEmpty String schemaName,
+            @NotEmpty String mViewName) {
         return connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.BACKEND_DS_KEY)
                 .execute((ConnectionCallback<DBMaterializedView>) con -> getDBMViewExtensionPoint(connectionSession)

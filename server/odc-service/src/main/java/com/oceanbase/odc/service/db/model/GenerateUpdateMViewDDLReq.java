@@ -13,30 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.flow.model;
+package com.oceanbase.odc.service.db.model;
 
-import java.util.Date;
-import java.util.Set;
+import javax.validation.constraints.NotNull;
 
-import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
-import lombok.experimental.Accessors;
+import lombok.NoArgsConstructor;
 
 /**
- * @Author: ysj
- * @Date: 2025/2/25 16:45
- * @Since: 4.3.4
- * @Description:
+ * @description:
+ * @author: zijia.cj
+ * @date: 2025/4/2 13:53
+ * @since: 4.3.4
  */
 @Data
-@Accessors(chain = true)
-public class InnerQueryFlowInstanceParams {
-
-    private Set<Long> flowInstanceIds;
-    private Set<Long> parentInstanceIds;
-    private Set<TaskType> taskTypes;
-    private Date startTime;
-    private Date endTime;
-
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class GenerateUpdateMViewDDLReq {
+    @NotNull
+    private DBMaterializedView previous;
+    @NotNull
+    private DBMaterializedView current;
 }

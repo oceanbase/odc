@@ -93,6 +93,7 @@ import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleTask;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -223,8 +224,7 @@ public class EventBuilder {
                     JsonUtils.fromJson(task.getParametersJson(), ApplyDatabaseParameter.class);
             Set<Long> databaseIds = parameter.getDatabases().stream().map(e -> e.getId()).collect(Collectors.toSet());
             Map<Long, String> dbId2DatabaseRemark =
-                    databaseService.listBasicSkipPermissionCheckByIds(databaseIds).stream()
-                            .collect(Collectors.toMap(Database::getId, Database::getRemark));
+                    nullSafeGetDbIdMappingRemark(databaseService.listBasicSkipPermissionCheckByIds(databaseIds));
             String dbNames = parameter.getDatabases().stream().map(d -> {
                 String dbName = d.getName();
                 String dbRemark = decorateDatabaseRemark(dbId2DatabaseRemark.get(d.getId()));
@@ -239,8 +239,7 @@ public class EventBuilder {
             Set<Long> databaseIds =
                     parameter.getTables().stream().map(ApplyTable::getDatabaseId).collect(Collectors.toSet());
             Map<Long, String> dbId2DatabaseRemark =
-                    databaseService.listBasicSkipPermissionCheckByIds(databaseIds).stream()
-                            .collect(Collectors.toMap(Database::getId, Database::getRemark));
+                    nullSafeGetDbIdMappingRemark(databaseService.listBasicSkipPermissionCheckByIds(databaseIds));
             String dbNames = parameter.getTables().stream().map(d -> {
                 String dbName = d.getDatabaseName();
                 String dbRemark = decorateDatabaseRemark(dbId2DatabaseRemark.get(d.getDatabaseId()));
@@ -261,11 +260,9 @@ public class EventBuilder {
             MultipleDatabaseChangeParameters parameter =
                     JsonUtils.fromJson(task.getParametersJson(), MultipleDatabaseChangeParameters.class);
             projectId = parameter.getProjectId();
-            Set<Long> databaseIds = parameter.getDatabases().stream().map(e -> Long.valueOf(e.getDatabaseId()))
-                    .collect(Collectors.toSet());
+            Set<Long> databaseIds = parameter.getDatabases().stream().map(e -> e.getId()).collect(Collectors.toSet());
             Map<Long, String> dbId2DatabaseRemark =
-                    databaseService.listBasicSkipPermissionCheckByIds(databaseIds).stream()
-                            .collect(Collectors.toMap(Database::getId, Database::getRemark));
+                    nullSafeGetDbIdMappingRemark(databaseService.listBasicSkipPermissionCheckByIds(databaseIds));
             labels.putIfNonNull(DATABASE_NAME, parameter.getDatabases().stream()
                     .map(database -> {
                         String dbName = String.format("【%s】%s", database.getEnvironment() == null ? ""
@@ -478,5 +475,10 @@ public class EventBuilder {
             return StringUtils.EMPTY;
         }
         return "（" + databaseRemark + "）";
+    }
+
+    private Map<Long, String> nullSafeGetDbIdMappingRemark(@NonNull List<Database> databases) {
+        return databases.stream().collect(Collectors.toMap(Database::getId,
+                d -> StringUtils.defaultString(d.getRemark(), StringUtils.EMPTY), (e, r) -> e));
     }
 }
