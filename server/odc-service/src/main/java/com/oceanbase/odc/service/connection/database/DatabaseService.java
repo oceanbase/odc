@@ -24,6 +24,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -37,11 +38,11 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 import javax.validation.Valid;
-import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -51,15 +52,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.common.event.LocalEventPublisher;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.permission.Permission;
@@ -78,6 +83,8 @@ import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.ConflictException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
+import com.oceanbase.odc.metadb.connection.DatabaseAccessHistoryEntity;
+import com.oceanbase.odc.metadb.connection.DatabaseAccessHistoryRepository;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.metadb.connection.DatabaseSpecs;
@@ -99,6 +106,7 @@ import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.ConnectionSyncHistoryService;
 import com.oceanbase.odc.service.connection.database.model.CreateDatabaseReq;
+import com.oceanbase.odc.service.connection.database.model.DBAccessHistoryReq;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncStatus;
 import com.oceanbase.odc.service.connection.database.model.DatabaseType;
@@ -229,6 +237,12 @@ public class DatabaseService {
 
     @Autowired
     private ConnectionSyncHistoryService connectionSyncHistoryService;
+
+    @Autowired
+    private DatabaseAccessHistoryRepository databaseAccessHistoryRepository;
+
+    @Autowired
+    private TransactionTemplate transactionTemplate;
 
     @Value("${odc.integration.bastion.enabled:false}")
     private boolean bastionEnabled;
@@ -494,6 +508,14 @@ public class DatabaseService {
         }
         return databaseRepository
                 .findByProjectIdInAndExistedAndObjectSyncStatusNot(projectIds, true, DBObjectSyncStatus.PENDING)
+                .stream()
+                .map(databaseMapper::entityToModel).collect(Collectors.toSet());
+    }
+
+    @SkipAuthorize("internal usage")
+    public Set<Database> listExistAndNotPendingDatabasesByOrganizationId(@NonNull Long organizationId) {
+        return databaseRepository
+                .findByOrganizationIdAndExistedAndObjectSyncStatusNot(organizationId, true, DBObjectSyncStatus.PENDING)
                 .stream()
                 .map(databaseMapper::entityToModel).collect(Collectors.toSet());
     }
@@ -916,10 +938,95 @@ public class DatabaseService {
         log.info("Refresh outdated pending objects status, syncDate={}, affectRows={}", syncDate, affectRows);
     }
 
+    @SkipAuthorize("internal usage")
+    public List<Database> listSkipPermissionCheck(@NonNull Collection<Long> ids, boolean includesPermittedAction) {
+        Set<Long> databaseIds =
+                ids.stream().filter(Objects::nonNull).collect(Collectors.toCollection(LinkedHashSet::new));
+        if (CollectionUtils.isEmpty(databaseIds)) {
+            return Collections.emptyList();
+        }
+        final Map<Long, DatabaseEntity> dbId2Database = databaseRepository.findByIdIn(databaseIds).stream().collect(
+                Collectors.toMap(DatabaseEntity::getId, Function.identity()));
+
+        // Ensure that the databases tracked down remain in relative order according to databaseIds
+        List<DatabaseEntity> dbs =
+                databaseIds.stream().map(dbId2Database::get).filter(Objects::nonNull).collect(Collectors.toList());
+        return entitiesToModels(new PageImpl<>(dbs),
+                includesPermittedAction).getContent();
+    }
+
+    @SkipAuthorize("odc internal usage")
+    public boolean recordDatabaseAccessHistory(@NonNull Collection<Long> databaseIds) {
+        databaseIds.removeIf(Objects::isNull);
+        if (CollectionUtils.isEmpty(databaseIds)) {
+            return true;
+        }
+        final Date now = new Date();
+        final long userId = authenticationFacade.currentUserId();
+
+        Set<Long> joinedProjectIds = projectService.getMemberProjectIds(userId);
+        if (CollectionUtils.isEmpty(joinedProjectIds)) {
+            log.warn("No member project found for user, can't record database history, dbIds={}",
+                    JsonUtils.toJson(databaseIds));
+            return false;
+        }
+        List<Database> dbs = entitiesToModels(
+                new PageImpl<>(databaseRepository.findByIdInAndProjectIdIn(databaseIds, joinedProjectIds)),
+                false).getContent();
+
+        Verify.equals(databaseIds.size(), dbs.size(), "Database");
+
+        final List<DatabaseAccessHistoryEntity> toUpsertHistories =
+                dbs.stream().map(e -> {
+                    DatabaseAccessHistoryEntity databaseAccessHistoryEntity = new DatabaseAccessHistoryEntity();
+                    databaseAccessHistoryEntity.setLastAccessTime(now);
+                    databaseAccessHistoryEntity.setDatabaseId(e.getId());
+                    // If dataSource is null, may logical database
+                    if (e.getDataSource() != null) {
+                        databaseAccessHistoryEntity.setConnectionId(e.getDataSource().getId());
+                    }
+                    databaseAccessHistoryEntity.setUserId(userId);
+                    return databaseAccessHistoryEntity;
+                }).collect(Collectors.toList());
+
+        int affectRows = databaseAccessHistoryRepository.upsert(toUpsertHistories);
+        log.info("Record database access histories, expected total is {}, actual is {}",
+                dbs.size(), affectRows);
+        return Objects.equals(affectRows, dbs.size());
+    }
+
+    @SkipAuthorize("odc internal usage")
+    public List<Database> listDatabaseAccessHistory(@NonNull @Valid DBAccessHistoryReq dbAccessHistoryReq) {
+        final long userId = authenticationFacade.currentUserId();
+        if (dbAccessHistoryReq.getHistoryCount() == null) {
+            return Collections.emptyList();
+        }
+        Pageable page = PageRequest.of(0, dbAccessHistoryReq.getHistoryCount())
+                .withSort(Sort.by(DatabaseAccessHistoryEntity.LAST_ACCESS_TIME_NAME).descending());
+        List<DatabaseAccessHistoryEntity> dbHistoryEntities =
+                databaseAccessHistoryRepository.findByUserId(userId, page).getContent();
+        Set<Long> dbIds =
+                dbHistoryEntities.stream().map(DatabaseAccessHistoryEntity::getDatabaseId)
+                        .collect(Collectors.toCollection(LinkedHashSet::new));
+        List<Database> databases = listSkipPermissionCheck(dbIds, true);
+        if (CollectionUtils.isNotEmpty(databases)) {
+            Map<Long, Set<ResourceRoleName>> projectId2ResourceRoleNames =
+                    projectService.getProjectId2ResourceRoleNames();
+            databases.forEach(d -> {
+                Project project = d.getProject();
+                if (project != null) {
+                    project.setCurrentUserResourceRoles(
+                            projectId2ResourceRoleNames.getOrDefault(project.getId(), Collections.emptySet()));
+                }
+            });
+        }
+        return databases;
+    }
+
     @SkipAuthorize("internal authorized")
     @Transactional(rollbackFor = Exception.class)
     public boolean modifyDatabaseRemark(@NotEmpty Collection<Long> databaseIds,
-            @NotBlank @Size(min = 1, max = 100) String remark) {
+            @NotNull @Size(min = 0, max = 100) String remark) {
         Set<Long> ids = new HashSet<>(databaseIds);
         List<Database> databases = listDatabasesByIds(ids);
         Verify.equals(ids.size(), databases.size(), "Missing databases may exist");
@@ -1013,7 +1120,7 @@ public class DatabaseService {
         if (CollectionUtils.isEmpty(entities.getContent())) {
             return Page.empty();
         }
-        Map<Long, List<Project>> projectId2Projects = projectService.mapByIdIn(entities.stream()
+        Map<Long, Project> projectId2Project = projectService.mapByIdIn(entities.stream()
                 .map(DatabaseEntity::getProjectId).collect(Collectors.toSet()));
         Map<Long, List<ConnectionConfig>> connectionId2Connections = connectionService.mapByIdIn(entities.stream()
                 .map(DatabaseEntity::getConnectionId).collect(Collectors.toSet()));
@@ -1042,10 +1149,10 @@ public class DatabaseService {
         Map<Long, User> finalUserId2User = userId2User;
         return entities.map(entity -> {
             Database database = databaseMapper.entityToModel(entity);
-            List<Project> projects = projectId2Projects.getOrDefault(entity.getProjectId(), new ArrayList<>());
+            Project project = projectId2Project.get(entity.getProjectId());
             List<ConnectionConfig> connections =
                     connectionId2Connections.getOrDefault(entity.getConnectionId(), new ArrayList<>());
-            database.setProject(CollectionUtils.isEmpty(projects) ? null : projects.get(0));
+            database.setProject(project);
             database.setEnvironment(id2Environments.getOrDefault(entity.getEnvironmentId(), null));
             database.setDataSource(CollectionUtils.isEmpty(connections) ? null : connections.get(0));
             if (includesPermittedAction) {

@@ -17,6 +17,8 @@ package com.oceanbase.odc.service.sqlcheck.factory;
 
 import java.util.Map;
 
+import javax.annotation.Nullable;
+
 import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -43,6 +45,7 @@ public class SqlAffectedRowsFactory implements SqlCheckRuleFactory {
         return SqlCheckRuleType.RESTRICT_SQL_AFFECTED_ROWS;
     }
 
+    @Nullable
     @Override
     public SqlCheckRule generate(@NonNull SqlCheckRuleContext sqlCheckRuleContext) {
         DialectType dialectType = sqlCheckRuleContext.getDialectType();
@@ -62,7 +65,7 @@ public class SqlAffectedRowsFactory implements SqlCheckRuleFactory {
                 return new MySQLAffectedRowsExceedLimit(maxSqlAffectedRows, dialectType,
                         jdbc);
             default:
-                throw new IllegalArgumentException("Unsupported dialect type: " + dialectType);
+                return null;
         }
     }
 }

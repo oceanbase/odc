@@ -27,6 +27,7 @@ import com.oceanbase.odc.service.task.listener.JobCallerEvent;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.odc.service.task.supervisor.endpoint.ExecutorEndpoint;
+import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -52,7 +53,8 @@ public class DefaultJobEventListener implements JobEventHandler {
         JobConfiguration jobConfiguration = JobConfigurationHolder.getJobConfiguration();
         TaskFrameworkService taskFrameworkService = jobConfiguration.getTaskFrameworkService();
         int rows = taskFrameworkService.startSuccess(jobContext.getJobIdentity().getId(),
-                executorIdentifier.getIdentifier(), jobContext);
+                executorIdentifier.getExecutorPort(),
+                JobUtils.getCorrectedExecutorIdentifier(executorIdentifier, jobConfiguration).toString(), jobContext);
         if (rows <= 0) {
             throw new JobException("Update job status to RUNNING failed, jobId={0}.",
                     jobContext.getJobIdentity().getId());

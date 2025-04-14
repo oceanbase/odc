@@ -45,12 +45,14 @@ import com.oceanbase.odc.service.schedule.model.ChangeScheduleResp;
 import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
 import com.oceanbase.odc.service.schedule.model.OperationType;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleParams;
+import com.oceanbase.odc.service.schedule.model.QueryScheduleStatParams;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleTaskParams;
 import com.oceanbase.odc.service.schedule.model.Schedule;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeLog;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleDetailResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleOverview;
+import com.oceanbase.odc.service.schedule.model.ScheduleStat;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskListOverview;
@@ -282,5 +284,18 @@ public class ScheduleController {
     public SuccessResponse<RateLimitConfiguration> updateLimiterConfig(@PathVariable Long id,
             @RequestBody RateLimitConfiguration limiterConfig) {
         return Responses.single(scheduleService.updateDlmRateLimit(id, limiterConfig));
+    }
+
+    @RequestMapping(value = "/schedules/stats", method = RequestMethod.GET)
+    public ListResponse<ScheduleStat> getScheduleStats(
+            @RequestParam(required = false, name = "types") Set<ScheduleType> types,
+            @RequestParam(required = false, name = "startTime") Date startTime,
+            @RequestParam(required = false, name = "endTime") Date endTime) {
+        QueryScheduleStatParams req = QueryScheduleStatParams.builder()
+                .scheduleTypes(types)
+                .startTime(startTime)
+                .endTime(endTime)
+                .build();
+        return Responses.list(scheduleService.listScheduleStat(req));
     }
 }

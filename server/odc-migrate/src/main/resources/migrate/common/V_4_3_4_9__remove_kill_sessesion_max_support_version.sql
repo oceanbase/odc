@@ -1,0 +1,1 @@
+update `config_system_configuration` set `value` = '0' where `key` = 'odc.session.kill-query-or-session.max-supported-ob-version';

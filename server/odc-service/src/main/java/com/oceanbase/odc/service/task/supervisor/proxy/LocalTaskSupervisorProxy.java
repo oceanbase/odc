@@ -41,11 +41,13 @@ public class LocalTaskSupervisorProxy implements TaskSupervisorProxy {
     private final SupervisorEndpoint localEndPoint;
 
     public LocalTaskSupervisorProxy(SupervisorEndpoint supervisorEndpoint,
+            Integer supervisorOwnerPort,
             String mainClassName) {
         this.localEndPoint = supervisorEndpoint;
-        log.info("LocalTaskSupervisorProxy start with endpoint={}", supervisorEndpoint);
+        log.info("LocalTaskSupervisorProxy start with endpoint={}, ownerPort = {}", supervisorEndpoint,
+                supervisorOwnerPort);
         remoteTaskSupervisorProxy = new RemoteTaskSupervisorProxy(new TaskNetClient());
-        taskSupervisor = new TaskSupervisor(supervisorEndpoint, mainClassName);
+        taskSupervisor = new TaskSupervisor(supervisorEndpoint, supervisorOwnerPort, mainClassName);
     }
 
     @Override

@@ -202,7 +202,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     public Page<JobEntity> findTerminalJob(int page, int size) {
         Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
                 .and(SpecificationUtil.columnIn(JobEntityColumn.STATUS,
-                        Lists.newArrayList(JobStatus.CANCELED, JobStatus.DONE, JobStatus.FAILED)))
+                        Lists.newArrayList(JobStatus.EXEC_TIMEOUT, JobStatus.CANCELED, JobStatus.DONE,
+                                JobStatus.FAILED)))
                 .and(SpecificationUtil.columnIsNull(JobEntityColumn.EXECUTOR_DESTROYED_TIME))
                 .and(getExecutorSpec());
         return page(condition, page, size);
@@ -318,7 +319,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     }
 
     @Override
-    public int startSuccess(Long id, ResourceID resourceID, String executorIdentifier, JobContext jobContext) {
+    public int startSuccess(Long id, ResourceID resourceID, int executorListenPort, String executorIdentifier,
+            JobContext jobContext) {
         JobEntity jobEntity = find(id);
         Map<String, String> jobProperties = jobEntity.getJobProperties();
         // resource id null will not correct jobProperties
@@ -351,15 +353,15 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             if (!StringUtils.startsWith(host, "http")) {
                 host = "http://" + host;
             }
-            String port = String.valueOf(identifier.getPort());
+            String port = String.valueOf(executorListenPort);
             return jobRepository.updateExecutorEndpointAndExecutorIdentifierById(jobEntity.getId(), host + ":" + port,
                     executorIdentifier);
         }
     }
 
     @Override
-    public int startSuccess(Long id, String executorIdentifier, JobContext jobContext) {
-        return startSuccess(id, null, executorIdentifier, jobContext);
+    public int startSuccess(Long id, int executorListenPort, String executorIdentifier, JobContext jobContext) {
+        return startSuccess(id, null, executorListenPort, executorIdentifier, jobContext);
     }
 
     @Override
@@ -594,6 +596,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
         return jobRepository.updateReportResult(jse, currentJob.getId(), currentJob.getStatus());
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public void saveOrUpdateLogMetadata(TaskResult taskResult, Long jobId, JobStatus currentStatus) {
         if (taskResult.getLogMetadata() != null) {
             log.info("Save or update log metadata, jobId={}, currentStatus={}, taskResult={}",

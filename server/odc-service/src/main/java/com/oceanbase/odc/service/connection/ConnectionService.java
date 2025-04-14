@@ -576,6 +576,12 @@ public class ConnectionService {
         User user = authenticationFacade.currentUser();
         Long userId = user.getId();
         if (params.getRelatedUserId() != null) {
+            Permission requiredPermission =
+                    securityManager.getPermissionByActions(new DefaultSecurityResource(params.getRelatedUserId() + "",
+                            ResourceType.ODC_USER.code()), Collections.singletonList("read"));
+            if (!securityManager.isPermitted(requiredPermission)) {
+                throw new AccessDeniedException();
+            }
             userId = params.getRelatedUserId();
         }
         connectionIdList = getConnectionIdList(userId, params.getMinPrivilege(), params.getPermittedActions());
@@ -739,9 +745,10 @@ public class ConnectionService {
         if (org.springframework.util.CollectionUtils.isEmpty(ids)) {
             return Collections.emptyMap();
         }
-        return entitiesToModels(repository.findAllById(ids), authenticationFacade.currentOrganizationId(), true, true)
-                .stream()
-                .collect(Collectors.groupingBy(ConnectionConfig::getId));
+        List<ConnectionConfig> connectionConfigs = entitiesToModels(repository.findAllById(ids),
+                authenticationFacade.currentOrganizationId(), true, true);
+        fullFillAttributes(connectionConfigs);
+        return connectionConfigs.stream().collect(Collectors.groupingBy(ConnectionConfig::getId));
     }
 
     @SkipAuthorize("odc internal usages")

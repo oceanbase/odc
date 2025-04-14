@@ -15,9 +15,12 @@
  */
 package com.oceanbase.odc.service.regulation.risklevel;
 
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -49,6 +52,7 @@ import com.oceanbase.odc.service.regulation.risklevel.model.RiskDetectRule;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
 
+import cn.hutool.core.util.ObjectUtil;
 import lombok.NonNull;
 
 /**
@@ -101,6 +105,25 @@ public class RiskDetectService {
             }
         }
         return matched;
+    }
+
+    @SkipAuthorize("internal usage")
+    public Map<RiskLevelDescriber, RiskLevel> batchDetectHighestRiskLevel(List<RiskDetectRule> rules,
+            @NonNull Collection<RiskLevelDescriber> describers) {
+        if (CollectionUtils.isEmpty(describers)) {
+            return Collections.emptyMap();
+        }
+        RiskLevel defaultRiskLevel = null;
+        Map<RiskLevelDescriber, RiskLevel> describer2HighestRiskLevels = new HashMap<>();
+        for (RiskLevelDescriber describer : describers) {
+            if (CollectionUtils.isEmpty(rules)) {
+                defaultRiskLevel = ObjectUtil.defaultIfNull(defaultRiskLevel, riskLevelService.findDefaultRiskLevel());
+                describer2HighestRiskLevels.put(describer, defaultRiskLevel);
+                continue;
+            }
+            describer2HighestRiskLevels.put(describer, riskLevelService.findHighestRiskLevel(detect(rules, describer)));
+        }
+        return describer2HighestRiskLevels;
     }
 
     @SkipAuthorize("internal authenticated")
@@ -166,7 +189,7 @@ public class RiskDetectService {
             return Collections.emptyList();
         }
         return ruleEntities.stream()
-                .map(ruleEntity -> entityToModel(ruleEntity))
+                .map(this::entityToModel)
                 .collect(Collectors.toList());
     }
 

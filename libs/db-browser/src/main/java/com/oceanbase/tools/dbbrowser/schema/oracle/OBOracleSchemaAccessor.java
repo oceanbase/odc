@@ -41,6 +41,11 @@ import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
 import com.oceanbase.tools.dbbrowser.model.DBIndexType;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecord;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewRefreshMethod;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
@@ -80,13 +85,14 @@ import com.oceanbase.tools.dbbrowser.util.PLObjectErrMsgUtils;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
 import com.oceanbase.tools.sqlparser.statement.Statement;
+import com.oceanbase.tools.sqlparser.statement.createmview.CreateMaterializedView;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 适用于的 DB 版本：[4.3.2, ~)
+ * applicable to OB [4.3.5.1, ~)
  * 
  * @author jingtian
  */
@@ -396,7 +402,8 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
 
         jdbcOperations.query(sb.toString(), (rs) -> {
             function.setDefiner(rs.getString(1));
-            function.setDdl(String.format("CREATE OR REPLACE %s;", rs.getClob(5).toString()));
+            String body = rs.getClob(5).toString();
+            function.setDdl(String.format("CREATE OR REPLACE %s", body.endsWith(";") ? body : body + ";"));
             function.setStatus(rs.getString(9));
             function.setCreateTime(Timestamp.valueOf(rs.getString(7)));
             function.setModifyTime(Timestamp.valueOf(rs.getString(8)));
@@ -448,6 +455,12 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         Statement statement = SqlParser.parseOracleStatement(ddl);
         if (statement instanceof CreateTable) {
             CreateTable stmt = (CreateTable) statement;
+            return stmt.getColumnGroupElements() == null ? Collections.emptyList()
+                    : stmt.getColumnGroupElements().stream()
+                            .map(DBColumnGroupElement::ofColumnGroupElement).collect(Collectors.toList());
+        }
+        if (statement instanceof CreateMaterializedView) {
+            CreateMaterializedView stmt = (CreateMaterializedView) statement;
             return stmt.getColumnGroupElements() == null ? Collections.emptyList()
                     : stmt.getColumnGroupElements().stream()
                             .map(DBColumnGroupElement::ofColumnGroupElement).collect(Collectors.toList());
@@ -561,7 +574,8 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         procedure.setProName(procedureName);
         jdbcOperations.query(sb.toString(), (rs) -> {
             procedure.setDefiner(rs.getString("OWNER"));
-            procedure.setDdl(String.format("create or replace %s;", rs.getClob("TEXT").toString()));
+            String body = rs.getClob("TEXT").toString();
+            procedure.setDdl(String.format("CREATE OR REPLACE %s", body.endsWith(";") ? body : body + ";"));
             procedure.setStatus(rs.getString("STATUS"));
             procedure.setCreateTime(rs.getTimestamp("CREATED"));
             procedure.setModifyTime(rs.getTimestamp("LAST_DDL_TIME"));
@@ -1145,4 +1159,111 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         sb.append(" ORDER BY TABLE_NAME ASC");
         return jdbcOperations.queryForList(sb.toString(), String.class);
     }
+
+    @Override
+    public List<DBObjectIdentity> listMViews(String schemaName) {
+        OracleSqlBuilder sb = new OracleSqlBuilder();
+        sb.append("select MVIEW_NAME FROM ")
+                .append(dataDictTableNames.MVIEWS())
+                .append(" WHERE OWNER = ").value(schemaName);
+        return jdbcOperations.query(sb.toString(),
+                (rs, rowNum) -> DBObjectIdentity.of(schemaName, DBObjectType.MATERIALIZED_VIEW, rs.getString(1)));
+    }
+
+    @Override
+    public List<DBObjectIdentity> listAllMViewsLike(String viewNameLike) {
+        OracleSqlBuilder sb = new OracleSqlBuilder();
+        sb.append("select OWNER AS schema_name, MVIEW_NAME AS name,'MATERIALIZED_VIEW' AS type FROM ")
+                .append(dataDictTableNames.MVIEWS())
+                .append(" WHERE MVIEW_NAME LIKE ")
+                .value('%' + viewNameLike + '%')
+                .append(" ORDER BY name ASC;");
+        return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
+    }
+
+    @Override
+    public Boolean refreshMVData(DBMViewRefreshParameter parameter) {
+        OracleSqlBuilder sb = new OracleSqlBuilder();
+        sb.append("call DBMS_MVIEW.REFRESH('").append(parameter.getDatabaseName()).append(".")
+                .append(parameter.getMvName()).append("'");
+        if (Objects.nonNull(parameter.getRefreshMethod())) {
+            sb.append(",").value(parameter.getRefreshMethod().getValue());
+        }
+        if (Objects.nonNull(parameter.getParallelismDegree())) {
+            sb.append(",").append("refresh_parallel => ").append(parameter.getParallelismDegree() + "");
+        }
+        sb.append(");");
+        jdbcOperations.execute(sb.toString());
+        return Boolean.TRUE;
+    }
+
+    @Override
+    public DBMaterializedView getMView(String schemaName, String mViewName) {
+        OracleSqlBuilder getOptions = new OracleSqlBuilder();
+        getOptions.append(
+                "SELECT REFRESH_METHOD,REWRITE_ENABLED,ON_QUERY_COMPUTATION,REFRESH_DOP,LAST_REFRESH_TYPE,LAST_REFRESH_DATE,LAST_REFRESH_END_TIME FROM ")
+                .append(dataDictTableNames.MVIEWS())
+                .append(" WHERE OWNER = ")
+                .value(schemaName).append(" AND MVIEW_NAME = ").value(mViewName);
+
+        DBMaterializedView mView = new DBMaterializedView();
+        mView.setName(mViewName);
+        mView.setSchemaName(schemaName);
+        jdbcOperations.query(getOptions.toString(), (rs) -> {
+            mView.setRefreshMethod(DBMaterializedViewRefreshMethod.getEnumByShowName(rs.getString("REFRESH_METHOD")));
+            mView.setEnableQueryRewrite(rs.getBoolean("REWRITE_ENABLED"));
+            mView.setEnableQueryComputation(rs.getBoolean("ON_QUERY_COMPUTATION"));
+            mView.setParallelismDegree(rs.getLong("REFRESH_DOP"));
+            mView.setLastRefreshType(
+                    DBMaterializedViewRefreshMethod.getEnumByShowName(rs.getString("LAST_REFRESH_TYPE")));
+            mView.setLastRefreshStartTime(rs.getTimestamp("LAST_REFRESH_DATE"));
+            mView.setLastRefreshEndTime(rs.getTimestamp("LAST_REFRESH_END_TIME"));
+        });
+        return mView;
+    }
+
+    @Override
+    public List<DBTableConstraint> listMViewConstraints(String schemaName, String mViewName) {
+        OracleSqlBuilder sb = new OracleSqlBuilder();
+        sb.append("select table_name from ")
+                .append("SYS.ALL_VIRTUAL_TABLE_REAL_AGENT where table_id = (select data_table_id from SYS.ALL_VIRTUAL_TABLE_REAL_AGENT a, SYS.ALL_VIRTUAL_DATABASE_REAL_AGENT b where a.database_id = b.database_id and b. database_name = ")
+                .value(schemaName)
+                .append(" and a.table_name = ")
+                .value(mViewName)
+                .append(")");
+        String containerName = jdbcOperations.queryForObject(sb.toString(), String.class);
+        return listTableConstraints(schemaName, containerName);
+    }
+
+    @Override
+    public List<DBMViewRefreshRecord> listMViewRefreshRecords(DBMViewRefreshRecordParam param) {
+        OracleSqlBuilder sb = new OracleSqlBuilder();
+        sb.append("SELECT ")
+                .value(param.getSchemaName())
+                .append(" AS mv_owner, ")
+                .value(param.getMvName())
+                .append(" AS mv_name,REFRESH_ID AS refresh_id,REFRESH_METHOD AS refresh_method,REFRESH_OPTIMIZATIONS AS refresh_optimizations,ADDITIONAL_EXECUTIONS AS additional_executions,START_TIME AS start_time, END_TIME AS end_time,ELAPSED_TIME AS elapsed_time,LOG_SETUP_TIME AS log_setup_time,LOG_PURGE_TIME AS log_purge_time,INITIAL_NUM_ROWS AS initial_num_rows,FINAL_NUM_ROWS AS final_num_rows FROM SYS.DBA_MVREF_STATS where MV_OWNER =")
+                .value(param.getSchemaName())
+                .append(" AND MV_NAME = ")
+                .value(param.getMvName())
+                .append(" ORDER BY REFRESH_ID DESC")
+                .append(" FETCH FIRST ")
+                .append(param.getQueryLimit())
+                .append(" ROWS ONLY");
+        return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBMViewRefreshRecord.class));
+    }
+
+    @Override
+    public Map<String, List<DBTableColumn>> listBasicMViewColumns(String schemaName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_MATERIALIZED_VIEW_COLUMNS);
+        List<DBTableColumn> tableColumns = jdbcOperations.query(sql, new Object[] {schemaName, schemaName},
+                listBasicColumnsRowMapper());
+        return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
+    }
+
+    public List<DBTableColumn> listBasicMViewColumns(String schemaName, String externalTableName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_MATERIALIZED_VIEW_COLUMNS);
+        return jdbcOperations.query(sql, new Object[] {schemaName, externalTableName}, listBasicColumnsRowMapper());
+    }
+
 }

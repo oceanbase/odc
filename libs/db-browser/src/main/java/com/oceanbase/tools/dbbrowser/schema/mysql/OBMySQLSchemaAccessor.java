@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -31,6 +32,11 @@ import org.springframework.jdbc.core.JdbcOperations;
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecord;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewRefreshMethod;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBObjectWarningDescriptor;
@@ -48,13 +54,14 @@ import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
 import com.oceanbase.tools.sqlparser.statement.Statement;
+import com.oceanbase.tools.sqlparser.statement.createmview.CreateMaterializedView;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 适用 OB 版本：[4.3.2, ~)
+ * applicable to OB [4.3.5.1, ~)
  *
  * @author jingtian
  */
@@ -70,15 +77,102 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
         ESCAPE_SCHEMA_SET.add("__public");
     }
 
+    public OBMySQLSchemaAccessor(JdbcOperations jdbcOperations) {
+        super(jdbcOperations);
+        this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.OBMYSQL_432x);
+    }
+
+    @Override
+    public List<DBObjectIdentity> listMViews(String schemaName) {
+        MySQLSqlBuilder sb = new MySQLSqlBuilder();
+        sb.append("select MVIEW_NAME FROM OCEANBASE.DBA_MVIEWS WHERE OWNER = ").value(schemaName);
+        return jdbcOperations.query(sb.toString(),
+                (rs, rowNum) -> DBObjectIdentity.of(schemaName, DBObjectType.MATERIALIZED_VIEW, rs.getString(1)));
+    }
+
+    @Override
+    public List<DBObjectIdentity> listAllMViewsLike(String viewNameLike) {
+        MySQLSqlBuilder sb = new MySQLSqlBuilder();
+        sb.append(
+                "select OWNER AS schema_name, MVIEW_NAME AS name,'MATERIALIZED_VIEW' AS type FROM OCEANBASE.DBA_MVIEWS WHERE MVIEW_NAME LIKE ")
+                .value('%' + viewNameLike + '%')
+                .append(" ORDER BY name ASC;");
+        return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
+    }
+
+    @Override
+    public Boolean refreshMVData(DBMViewRefreshParameter parameter) {
+        MySQLSqlBuilder sb = new MySQLSqlBuilder();
+        sb.append("call DBMS_MVIEW.REFRESH('").append(parameter.getDatabaseName()).append(".")
+                .append(parameter.getMvName()).append("'");
+        if (Objects.nonNull(parameter.getRefreshMethod())) {
+            sb.append(",").value(parameter.getRefreshMethod().getValue());
+        }
+        if (Objects.nonNull(parameter.getParallelismDegree())) {
+            sb.append(",").append("refresh_parallel => ").append(parameter.getParallelismDegree() + "");
+        }
+        sb.append(");");
+        jdbcOperations.execute(sb.toString());
+        return Boolean.TRUE;
+    }
+
+    @Override
+    public List<DBMViewRefreshRecord> listMViewRefreshRecords(DBMViewRefreshRecordParam param) {
+        MySQLSqlBuilder sb = new MySQLSqlBuilder();
+        sb.append("SELECT ")
+                .value(param.getSchemaName())
+                .append(" as mv_owner, ")
+                .value(param.getMvName())
+                .append(" as mv_name,REFRESH_ID as refresh_id,REFRESH_METHOD as refresh_method,REFRESH_OPTIMIZATIONS as refresh_optimizations,ADDITIONAL_EXECUTIONS as additional_executions,START_TIME as start_time, END_TIME as end_time,ELAPSED_TIME as elapsed_time,LOG_SETUP_TIME as log_setup_time,LOG_PURGE_TIME as log_purge_time,INITIAL_NUM_ROWS as initial_num_rows,FINAL_NUM_ROWS as final_num_rows FROM oceanbase.DBA_MVREF_STATS where MV_OWNER =")
+                .value(param.getSchemaName())
+                .append(" AND MV_NAME = ")
+                .value(param.getMvName())
+                .append(" ORDER BY REFRESH_ID DESC")
+                .append(" LIMIT ")
+                .append(param.getQueryLimit());
+        return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBMViewRefreshRecord.class));
+    }
+
+    @Override
+    public DBMaterializedView getMView(String schemaName, String mViewName) {
+        MySQLSqlBuilder getOptions = new MySQLSqlBuilder();
+        getOptions.append(
+                "SELECT REFRESH_METHOD,REWRITE_ENABLED,ON_QUERY_COMPUTATION,REFRESH_DOP,LAST_REFRESH_TYPE,LAST_REFRESH_DATE,LAST_REFRESH_END_TIME FROM OCEANBASE.DBA_MVIEWS WHERE OWNER = ")
+                .value(schemaName).append(" AND MVIEW_NAME = ").value(mViewName);
+
+        DBMaterializedView mView = new DBMaterializedView();
+        mView.setName(mViewName);
+        mView.setSchemaName(schemaName);
+        jdbcOperations.query(getOptions.toString(), (rs) -> {
+            mView.setRefreshMethod(DBMaterializedViewRefreshMethod.getEnumByShowName(rs.getString("REFRESH_METHOD")));
+            mView.setEnableQueryRewrite(rs.getBoolean("REWRITE_ENABLED"));
+            mView.setEnableQueryComputation(rs.getBoolean("ON_QUERY_COMPUTATION"));
+            mView.setParallelismDegree(rs.getLong("REFRESH_DOP"));
+            mView.setLastRefreshType(
+                    DBMaterializedViewRefreshMethod.getEnumByShowName(rs.getString("LAST_REFRESH_TYPE")));
+            mView.setLastRefreshStartTime(rs.getTimestamp("LAST_REFRESH_DATE"));
+            mView.setLastRefreshEndTime(rs.getTimestamp("LAST_REFRESH_END_TIME"));
+        });
+        return mView;
+    }
+
+    @Override
+    public List<DBTableConstraint> listMViewConstraints(String schemaName, String mViewName) {
+        MySQLSqlBuilder sb = new MySQLSqlBuilder();
+        sb.append(
+                "select table_name from oceanbase.__all_table where table_id = (select data_table_id from oceanbase.__all_table a, oceanbase.__all_database b where a.database_id = b.database_id and b. database_name = ")
+                .value(schemaName)
+                .append(" and a.table_name = ")
+                .value(mViewName)
+                .append(")");
+        String containerName = jdbcOperations.queryForObject(sb.toString(), String.class);
+        return listTableConstraints(schemaName, containerName);
+    }
+
     @Override
     public List<String> showDatabases() {
         return super.showDatabases().stream().filter(database -> !ESCAPE_SCHEMA_SET.contains(database))
                 .collect(Collectors.toList());
-    }
-
-    public OBMySQLSchemaAccessor(JdbcOperations jdbcOperations) {
-        super(jdbcOperations);
-        this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.OBMYSQL_432x);
     }
 
     @Override
@@ -248,6 +342,12 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
         Statement statement = SqlParser.parseMysqlStatement(ddl);
         if (statement instanceof CreateTable) {
             CreateTable stmt = (CreateTable) statement;
+            return stmt.getColumnGroupElements() == null ? Collections.emptyList()
+                    : stmt.getColumnGroupElements().stream()
+                            .map(DBColumnGroupElement::ofColumnGroupElement).collect(Collectors.toList());
+        }
+        if (statement instanceof CreateMaterializedView) {
+            CreateMaterializedView stmt = (CreateMaterializedView) statement;
             return stmt.getColumnGroupElements() == null ? Collections.emptyList()
                     : stmt.getColumnGroupElements().stream()
                             .map(DBColumnGroupElement::ofColumnGroupElement).collect(Collectors.toList());
@@ -449,6 +549,20 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     @Override
     public List<DBTableColumn> listBasicExternalTableColumns(String schemaName, String externalTableName) {
         String sql = sqlMapper.getSql(Statements.LIST_BASIC_EXTERNAL_TABLE_COLUMNS);
+        return jdbcOperations.query(sql, new Object[] {schemaName, externalTableName}, listBasicTableColumnRowMapper());
+    }
+
+
+    @Override
+    public Map<String, List<DBTableColumn>> listBasicMViewColumns(String schemaName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_SCHEMA_MATERIALIZED_VIEW_COLUMNS);
+        List<DBTableColumn> tableColumns = jdbcOperations.query(sql, new Object[] {schemaName, schemaName},
+                listBasicTableColumnRowMapper());
+        return tableColumns.stream().collect(Collectors.groupingBy(DBTableColumn::getTableName));
+    }
+
+    public List<DBTableColumn> listBasicMViewColumns(String schemaName, String externalTableName) {
+        String sql = sqlMapper.getSql(Statements.LIST_BASIC_MATERIALIZED_VIEW_COLUMNS);
         return jdbcOperations.query(sql, new Object[] {schemaName, externalTableName}, listBasicTableColumnRowMapper());
     }
 

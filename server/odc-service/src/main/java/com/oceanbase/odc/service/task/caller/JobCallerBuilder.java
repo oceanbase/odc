@@ -19,6 +19,7 @@ import java.util.Date;
 import java.util.Map;
 
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.resource.ResourceManager;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
@@ -29,6 +30,8 @@ import com.oceanbase.odc.service.task.enums.TaskMonitorMode;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
 import com.oceanbase.odc.service.task.resource.PodConfig;
+import com.oceanbase.odc.service.task.supervisor.TaskSupervisor;
+import com.oceanbase.odc.service.task.supervisor.endpoint.SupervisorEndpoint;
 import com.oceanbase.odc.service.task.util.JobPropertiesUtils;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
@@ -63,7 +66,9 @@ public class JobCallerBuilder {
         String mainClassName = StringUtils.isBlank(taskFrameworkProperties.getProcessMainClassName())
                 ? JobConstants.ODC_AGENT_CLASS_NAME
                 : taskFrameworkProperties.getProcessMainClassName();
-        return new ProcessJobCaller(config, mainClassName);
+        TaskSupervisor taskSupervisor = new TaskSupervisor(new SupervisorEndpoint(SystemUtils.getLocalIpAddress(),
+                DefaultExecutorIdentifier.DEFAULT_PORT), JobUtils.getODCServerPort(configuration), mainClassName);
+        return new ProcessJobCaller(config, taskSupervisor);
     }
 
     /**

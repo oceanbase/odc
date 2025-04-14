@@ -195,7 +195,7 @@ public class DBTableService {
                         .syncExternalTableFiles(con, schemaName, externalTableName));
     }
 
-    private String checkUpdateDDL(DialectType dialectType, String ddl) {
+    public String checkUpdateDDL(DialectType dialectType, String ddl) {
         boolean createIndex = false;
         boolean dropIndex = false;
         for (String s : SqlUtils.split(dialectType, ddl, ";")) {

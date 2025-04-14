@@ -57,13 +57,16 @@ public class TaskSupervisor {
     @Getter
     private final SupervisorEndpoint supervisorEndpoint;
 
+    private final Integer supervisorOwnerPort;
+
     private final String mainClassName;
 
     @Setter
     private BiConsumer<JobContext, ProcessConfig> jobInfoSerializer = TaskSupervisor::writeJobContextToFile;
 
-    public TaskSupervisor(SupervisorEndpoint supervisorEndpoint, String mainClassName) {
+    public TaskSupervisor(SupervisorEndpoint supervisorEndpoint, Integer supervisorOwnerPort, String mainClassName) {
         this.supervisorEndpoint = supervisorEndpoint;
+        this.supervisorOwnerPort = supervisorOwnerPort;
         this.mainClassName = mainClassName;
     }
 
@@ -116,6 +119,7 @@ public class TaskSupervisor {
                 .namespace(pid + "")
                 .executorName(executorName).build();
         return new ExecutorEndpoint(COMMAND_PROTOCOL_NAME, supervisorEndpoint.getHost(), supervisorEndpoint.getPort(),
+                supervisorOwnerPort,
                 port, executorIdentifier.toString());
     }
 

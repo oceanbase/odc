@@ -111,6 +111,7 @@ import com.oceanbase.odc.service.regulation.risklevel.RiskLevelService;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckService;
+import com.oceanbase.odc.service.sqlcheck.model.SqlCheckResponse;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.test.tool.TestRandom;
 
@@ -201,7 +202,7 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
         Database database = TestRandom.nextObject(Database.class);
         connectionConfig.setVisibleScope(ConnectionVisibleScope.ORGANIZATION);
         when(sqlCheckService.check(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
-                .thenReturn(Collections.emptyList());
+                .thenReturn(SqlCheckResponse.empty());
         when(connectionService.getForConnectionSkipPermissionCheck(Mockito.anyLong())).thenReturn(connectionConfig);
         when(databaseService.findDataSourceForConnectById(Mockito.anyLong())).thenReturn(connectionConfig);
         when(databaseService.detail(Mockito.anyLong())).thenReturn(database);

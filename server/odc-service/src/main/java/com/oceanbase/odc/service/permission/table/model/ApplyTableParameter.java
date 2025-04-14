@@ -23,6 +23,7 @@ import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.permission.project.ApplyProjectParameter.ApplyProject;
 import com.oceanbase.odc.service.permission.table.ApplyTablePermissionPreprocessor;
+import com.oceanbase.odc.service.task.base.precheck.PreCheckRiskLevel;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
 import lombok.Data;
@@ -58,6 +59,11 @@ public class ApplyTableParameter implements Serializable, TaskParameters {
      * Reason for application, required
      */
     private String applyReason;
+
+    /**
+     * Risk level info, required
+     */
+    private PreCheckRiskLevel riskLevel;
 
     @Data
     public static class ApplyTable implements Serializable {

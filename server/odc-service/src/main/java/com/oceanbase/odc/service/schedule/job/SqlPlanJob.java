@@ -32,6 +32,7 @@ import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
+import com.oceanbase.odc.service.config.OrganizationConfigUtils;
 import com.oceanbase.odc.service.config.SystemConfigService;
 import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.connection.ConnectionService;
@@ -145,6 +146,8 @@ public class SqlPlanJob implements OdcJob {
         parameters.setDelimiter(sqlPlanParameters.getDelimiter());
         parameters.setSqlObjectIds(sqlPlanParameters.getSqlObjectIds());
         parameters.setTimeoutMillis(sqlPlanParameters.getTimeoutMillis());
+        OrganizationConfigUtils configUtils = SpringContextUtil.getBean(OrganizationConfigUtils.class);
+        configUtils.checkQueryLimitValidity(sqlPlanParameters);
         parameters.setQueryLimit(sqlPlanParameters.getQueryLimit());
         parameters.setErrorStrategy(sqlPlanParameters.getErrorStrategy());
         parameters.setSessionTimeZone(connectProperties.getDefaultTimeZone());
