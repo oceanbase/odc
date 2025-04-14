@@ -81,7 +81,6 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             log.info("Start to init dlm job,tables={}", parameters.getTables());
             initTableUnit(parameters);
             currentIndex = -1;
-            toDoList.sort(Comparator.comparing(DlmTableUnit::getDlmTableUnitId));
             buildToDoTableInfo();
         } catch (Exception e) {
             log.warn("Initialization of the DLM job was failed,jobIdentity={}", context.getJobIdentity(), e);
@@ -225,6 +224,7 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             }
             dlmTableUnits.add(dlmTableUnit);
         });
+        dlmTableUnits.sort(Comparator.comparing(DlmTableUnit::getDlmTableUnitId));
         toDoList = Collections.unmodifiableList(dlmTableUnits);
     }
 
