@@ -109,7 +109,10 @@ public class EncryptionFacadeImpl implements EncryptionFacade {
     public TextEncryptor organizationEncryptor(Long organizationId, String salt) {
         Organization organization = organizationService.get(organizationId).orElseThrow(
                 () -> new NotFoundException(ResourceType.ODC_ORGANIZATION, "organizationId", organizationId));
-        String secret = new String(Base64.getDecoder().decode(organization.getSecret()));
+        String customKey = organizationConfigUtils.getDefaultCustomDataSourceEncryptionKey();
+        // while customKey is empty, use default secret
+        String secret = customKey.isEmpty() ? organization.getSecret()
+                : new String(Base64.getDecoder().decode(organization.getSecret()));
         return getEncryptor(secret, salt);
     }
 
