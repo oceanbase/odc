@@ -17,6 +17,7 @@ package com.oceanbase.odc.migrate.jdbc.common;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -198,7 +199,8 @@ public class V42013OAuth2ConfigMetaMigrate implements JdbcMigratable {
                     boolean enabled = org.getName().equals(enabledOrgName);
 
                     String salt = CryptoUtils.generateSalt();
-                    TextEncryptor textEncryptor = Encryptors.aesBase64(org.getSecret(), salt);
+                    TextEncryptor textEncryptor = Encryptors.aesBase64(
+                            new String(Base64.getDecoder().decode(org.getSecret())), salt);
                     jdbcTemplate.update(insertIntegration, IntegrationType.SSO.name(), defaultName, 0L,
                             org.getId(),
                             enabled, false, now, now,
@@ -309,7 +311,8 @@ public class V42013OAuth2ConfigMetaMigrate implements JdbcMigratable {
                     LocalDateTime now = LocalDateTime.now();
                     boolean enabled = org.getName().equals(enabledOrgName);
                     String salt = CryptoUtils.generateSalt();
-                    TextEncryptor textEncryptor = Encryptors.aesBase64(org.getSecret(), salt);
+                    TextEncryptor textEncryptor = Encryptors.aesBase64(
+                            new String(Base64.getDecoder().decode(org.getSecret())), salt);
                     String encrypt = textEncryptor.encrypt(decryptSecret);
                     jdbcTemplate.update(insertIntegration, IntegrationType.SSO.name(), defaultName, 0L,
                             org.getId(),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.migrate.jdbc.common;
 
 import java.util.Base64;
@@ -35,8 +34,7 @@ import com.oceanbase.odc.metadb.iam.OrganizationEntity;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-//@Migratable(version = "4.3.4.9", description =
-//    "migrate the organization secret to this stored in confusion")
+@Migratable(version = "4.3.4.9", description = "migrate the organization secret to this stored in confusion")
 public class V4349OrganizationSecretMigrate implements JdbcMigratable {
 
     private JdbcTemplate jdbcTemplate;
@@ -58,8 +56,7 @@ public class V4349OrganizationSecretMigrate implements JdbcMigratable {
             log.info("previous organization secret, organization secret={}", organization.getSecret());
             organization.setSecret(Base64.getEncoder().encodeToString(organization.getSecret().getBytes()));
             log.info("new organization secret, organization secret={}", organization.getSecret());
-            log.info("organization secret decode, organization secret decode={}",
-                new String(Base64.getDecoder().decode(organization.getSecret())));
+
             total += migrateForOrganization(organization);
         }
         log.info("organization secret migrated, organizationCount={}, total={}", organizationList.size(), total);
@@ -76,10 +73,10 @@ public class V4349OrganizationSecretMigrate implements JdbcMigratable {
         transactionTemplate.execute(status -> {
             try {
                 row.set(jdbcTemplate.update(sql, organization.getSecret(),
-                    organization.getId()));
+                        organization.getId()));
             } catch (Exception e) {
                 log.error("organization secret migrate failed, organizationId={}, error={}", organization.getId(),
-                    e.getMessage());
+                        e.getMessage());
                 status.setRollbackOnly();
             }
             return row;
