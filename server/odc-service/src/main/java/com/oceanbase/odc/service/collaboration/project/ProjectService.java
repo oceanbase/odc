@@ -498,7 +498,9 @@ public class ProjectService {
         ProjectEntity project = repository.findByIdAndOrganizationId(projectId, organizationId)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_PROJECT, "id", projectId));
         Map<Long, List<UserResourceRole>> userId2ResourceRoles =
-                resourceRoleService.listByResourceTypeAndResourceId(ResourceType.ODC_PROJECT, project.getId()).stream()
+                resourceRoleService
+                        .listByResourceTypeAndResourceId(ResourceType.ODC_PROJECT, project.getId(), organizationId)
+                        .stream()
                         .collect(Collectors.groupingBy(UserResourceRole::getUserId));
         if (CollectionUtils.isEmpty(userId2ResourceRoles.keySet())) {
             return false;
