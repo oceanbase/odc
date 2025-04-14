@@ -268,16 +268,16 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
-    public void  listMViewIndexes_Success() {
+    public void listMViewIndexes_Success() {
         if (isSupportMaterializedView) {
             List<DBTableIndex> indexList = accessor.listMViewIndexes(getOBOracleSchema(), "TEST_MV_AUTOREFRESH");
 
-            Assert.assertEquals("TEST_MV_GLOBAL_IDX",indexList.get(0).getName());
+            Assert.assertEquals("TEST_MV_GLOBAL_IDX", indexList.get(0).getName());
             Assert.assertEquals(getOBOracleSchema(), indexList.get(0).getSchemaName());
             Assert.assertEquals("TEST_MV_AUTOREFRESH", indexList.get(0).getTableName());
             Assert.assertTrue(indexList.get(0).getGlobal());
 
-            Assert.assertEquals("TEST_MV_LOCAL_IDX",indexList.get(1).getName());
+            Assert.assertEquals("TEST_MV_LOCAL_IDX", indexList.get(1).getName());
             Assert.assertEquals(getOBOracleSchema(), indexList.get(1).getSchemaName());
             Assert.assertEquals("TEST_MV_AUTOREFRESH", indexList.get(1).getTableName());
             Assert.assertFalse(indexList.get(1).getGlobal());

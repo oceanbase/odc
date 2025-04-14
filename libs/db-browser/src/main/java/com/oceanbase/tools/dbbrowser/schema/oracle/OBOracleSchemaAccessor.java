@@ -15,9 +15,7 @@
  */
 package com.oceanbase.tools.dbbrowser.schema.oracle;
 
-import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,8 +29,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import com.oceanbase.tools.dbbrowser.model.DBIndexRangeType;
-import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;

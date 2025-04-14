@@ -255,24 +255,24 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
-    public void  listMViewIndexes_Success() {
+    public void listMViewIndexes_Success() {
         if (isSupportMaterializedView) {
             List<DBTableIndex> indexList = accessor.listMViewIndexes(getOBMySQLDataBaseName(), "test_mv_auto_refresh");
 
-            Assert.assertEquals("test_global_idx",indexList.get(0).getName());
+            Assert.assertEquals("test_global_idx", indexList.get(0).getName());
             Assert.assertEquals(getOBMySQLDataBaseName(), indexList.get(0).getSchemaName());
             Assert.assertTrue(indexList.get(0).getGlobal());
 
-            Assert.assertEquals("test_local_idx",indexList.get(1).getName());
+            Assert.assertEquals("test_local_idx", indexList.get(1).getName());
             Assert.assertEquals(getOBMySQLDataBaseName(), indexList.get(1).getSchemaName());
             Assert.assertFalse(indexList.get(1).getGlobal());
 
-            Assert.assertEquals("test_eachcolumn_idx",indexList.get(2).getName());
+            Assert.assertEquals("test_eachcolumn_idx", indexList.get(2).getName());
             Assert.assertEquals(getOBMySQLDataBaseName(), indexList.get(2).getSchemaName());
             Assert.assertTrue(indexList.get(2).getColumnGroups().get(0).isEachColumn());
             Assert.assertFalse(indexList.get(2).getColumnGroups().get(0).isAllColumns());
 
-            Assert.assertEquals("test_allcolumn_idx",indexList.get(3).getName());
+            Assert.assertEquals("test_allcolumn_idx", indexList.get(3).getName());
             Assert.assertEquals(getOBMySQLDataBaseName(), indexList.get(3).getSchemaName());
             Assert.assertFalse(indexList.get(3).getColumnGroups().get(0).isEachColumn());
             Assert.assertTrue(indexList.get(3).getColumnGroups().get(0).isAllColumns());

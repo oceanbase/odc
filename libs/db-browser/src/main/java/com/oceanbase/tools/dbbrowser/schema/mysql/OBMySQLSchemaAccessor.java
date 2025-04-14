@@ -15,8 +15,6 @@
  */
 package com.oceanbase.tools.dbbrowser.schema.mysql;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,7 +25,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.oceanbase.tools.dbbrowser.model.DBIndexRangeType;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcOperations;
@@ -62,7 +59,6 @@ import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.jdbc.core.RowMapper;
 
 /**
  * applicable to OB [4.3.5.1, ~)
@@ -581,10 +577,10 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
         sb.append(
                 "select table_name from oceanbase.__all_table where table_id = (select data_table_id from oceanbase.__all_table a, oceanbase.__all_database b where a.database_id = b.database_id and b. database_name = ")
-            .value(schemaName)
-            .append(" and a.table_name = ")
-            .value(tableName)
-            .append(")");
+                .value(schemaName)
+                .append(" and a.table_name = ")
+                .value(tableName)
+                .append(")");
         String containerName = jdbcOperations.queryForObject(sb.toString(), String.class);
         return containerName;
     }

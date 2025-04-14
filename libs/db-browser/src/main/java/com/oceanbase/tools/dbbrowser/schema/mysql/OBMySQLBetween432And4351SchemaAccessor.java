@@ -18,7 +18,6 @@ package com.oceanbase.tools.dbbrowser.schema.mysql;
 import java.util.List;
 import java.util.Map;
 
-import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
@@ -28,6 +27,7 @@ import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
+import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 
 /**
  * @description: applicable to OB [4.3.2,4.3.5.1)
