@@ -367,7 +367,7 @@ public class ScriptService {
     }
 
     private String addTagAfterFilename(String fileName, String tag) {
-        int lastDotIndex = fileName.lastIndexOf(".");
+        int lastDotIndex = fileName.indexOf(".");
         if (lastDotIndex != -1) {
             return fileName.substring(0, lastDotIndex) + tag + fileName.substring(lastDotIndex);
         } else {
