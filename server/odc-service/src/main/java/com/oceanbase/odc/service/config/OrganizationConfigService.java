@@ -213,13 +213,17 @@ public class OrganizationConfigService {
     }
 
     private void migrateExistedDataSourcePassword(Long organizationId, String customKey) {
-        String customKeyInDB = organizationConfigDAO
-                .queryByOrganizationIdAndKey(organizationId, DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY).getValue();
-        // The key is equal to the old one, no need to migrate
-        if (Objects.equals(customKey, customKeyInDB)) {
+        OrganizationConfigEntity customKeyInDB = organizationConfigDAO
+                .queryByOrganizationIdAndKey(organizationId, DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY);
+        // The key is not set in db, no need to migrate
+        if (Objects.isNull(customKeyInDB)) {
             return;
         }
-        // use odc default key, if not set
+        // The key is equal to the old one, no need to migrate
+        if (Objects.equals(customKey, customKeyInDB.getValue())) {
+            return;
+        }
+        // Use odc default key, if not set
         if (customKey.isEmpty()) {
             customKey = PasswordUtils.random(32);
         }
