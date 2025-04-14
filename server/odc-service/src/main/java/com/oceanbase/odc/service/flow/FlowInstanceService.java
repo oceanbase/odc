@@ -183,6 +183,7 @@ import com.oceanbase.odc.service.regulation.approval.model.ApprovalNodeConfig;
 import com.oceanbase.odc.service.regulation.risklevel.RiskLevelService;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
+import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriberIdentifier;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.task.TaskService;
@@ -365,21 +366,22 @@ public class FlowInstanceService {
         if (CollectionUtils.isEmpty(dbIds)) {
             throw new IllegalStateException("databaseIds is not supposed to be empty");
         }
-        Map<RiskLevelDescriber, Long> riskLevelDescribers2DbId = databaseService.listDatabasesDetailsByIds(dbIds)
-                .stream()
-                .collect(Collectors.toMap(d -> RiskLevelDescriber.of(d, createReq.getTaskType().name()),
-                        Database::getId));
-        Map<RiskLevelDescriber, RiskLevel> describer2MaxRiskLevel =
-                approvalFlowConfigSelector.batchSelect(riskLevelDescribers2DbId.keySet());
+        Set<RiskLevelDescriberIdentifier> RiskLevelDescriberIdentifiers = databaseService
+                .listDatabasesDetailsByIds(dbIds).stream().map(
+                        d -> RiskLevelDescriberIdentifier.of(d.getId(),
+                                RiskLevelDescriber.of(d, createReq.getTaskType().name())))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        Map<RiskLevelDescriberIdentifier, RiskLevel> RiskLevelDescriberIdentifier2MaxRiskLevel =
+                approvalFlowConfigSelector.batchSelect(RiskLevelDescriberIdentifiers);
 
         Map<Long, RiskLevel> dbId2RiskLevel = new HashMap<>();
         RiskLevel defultHighestRiskLevel = null;
-        for (Entry<RiskLevelDescriber, Long> entry : riskLevelDescribers2DbId.entrySet()) {
+        for (Entry<RiskLevelDescriberIdentifier, RiskLevel> entry : RiskLevelDescriberIdentifier2MaxRiskLevel
+                .entrySet()) {
             defultHighestRiskLevel =
                     ObjectUtil.defaultIfNull(defultHighestRiskLevel,
                             riskLevelService.findHighestRiskLevel());
-            RiskLevel riskLevel = describer2MaxRiskLevel.getOrDefault(entry.getKey(), defultHighestRiskLevel);
-            dbId2RiskLevel.put(entry.getValue(), riskLevel);
+            dbId2RiskLevel.put(entry.getKey().getDatabaseId(), entry.getValue());
         }
         return dbId2RiskLevel;
     }
