@@ -230,9 +230,9 @@ public class ScheduleService {
     @Autowired
     private StatefulUuidStateIdGenerator statefulUuidStateIdGenerator;
     @Autowired
-    private ThreadPoolTaskExecutor       commonAsyncTaskExecutor;
+    private ThreadPoolTaskExecutor commonAsyncTaskExecutor;
     @Autowired
-    private FutureCache                  futureCache;
+    private FutureCache futureCache;
 
     @Autowired
     private BatchSchedulePermissionValidator batchSchedulePermissionValidator;

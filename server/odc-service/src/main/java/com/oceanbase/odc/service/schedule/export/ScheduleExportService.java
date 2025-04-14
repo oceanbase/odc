@@ -104,7 +104,7 @@ public class ScheduleExportService {
     }
 
     public String startExport(ScheduleTaskExportRequest request) {
-        batchSchedulePermissionValidator.checkScheduleIdsPermission(request.getScheduleType(),request.getIds());
+        batchSchedulePermissionValidator.checkScheduleIdsPermission(request.getScheduleType(), request.getIds());
         String previewId = statefulUuidStateIdGenerator.generateCurrentUserIdStateId("scheduleExport");
         User user = authenticationFacade.currentUser();
         Future<FileExportResponse> future = commonAsyncTaskExecutor.submit(
@@ -115,7 +115,7 @@ public class ScheduleExportService {
     }
 
     public List<ScheduleExportListView> getExportListView(ScheduleTaskExportRequest request) {
-        batchSchedulePermissionValidator.checkScheduleIdsPermission(request.getScheduleType(),request.getIds());
+        batchSchedulePermissionValidator.checkScheduleIdsPermission(request.getScheduleType(), request.getIds());
         if (request.getScheduleType().equals(ScheduleType.PARTITION_PLAN)) {
             return getPartitionPlanView(request);
         }
