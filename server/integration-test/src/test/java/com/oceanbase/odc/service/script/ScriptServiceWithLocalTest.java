@@ -122,7 +122,7 @@ public class ScriptServiceWithLocalTest extends ServiceTestEnv {
             ZipEntry entry;
             while ((entry = zipInputStream.getNextEntry()) != null) {
                 String name = entry.getName();
-                if (name.equals(file1Name) || name.equals(file1Name + "(2)")) {
+                if (name.equals(file1Name) || name.equals("test (1).txt")) {
                     fileNamesInZip.add(name);
                     assertEquals(file1Content, IOUtils.toString(zipInputStream, StandardCharsets.UTF_8));
                 } else if (name.equals(file2Name)) {
@@ -131,7 +131,7 @@ public class ScriptServiceWithLocalTest extends ServiceTestEnv {
                 }
             }
         }
-        assertEquals(new HashSet<>(Arrays.asList(file1Name, file1Name + "(2)", file2Name)), fileNamesInZip);
+        assertEquals(new HashSet<>(Arrays.asList(file1Name, "test (1).txt", file2Name)), fileNamesInZip);
     }
 
     private MultipartFile createMultipartFile(String fileName, String content) throws IOException {
