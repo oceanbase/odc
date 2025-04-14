@@ -270,17 +270,17 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
     @Test
     public void  listMViewIndexes_Success() {
         if (isSupportMaterializedView) {
-            List<DBTableIndex> indexList = accessor.listMViewIndexes(getOBOracleSchema(), "TEST_MV_ALLSYNTAX");
+            List<DBTableIndex> indexList = accessor.listMViewIndexes(getOBOracleSchema(), "TEST_MV_AUTOREFRESH");
 
-            Assert.assertEquals("TEST_MV_GLOBAL_IDX",indexList.get(1).getName());
-            Assert.assertEquals(getOBMySQLDataBaseName(), indexList.get(1).getSchemaName());
-            Assert.assertEquals("TEST_MV_ALLSYNTAX", indexList.get(1).getTableName());
-            Assert.assertTrue(indexList.get(1).getGlobal());
+            Assert.assertEquals("TEST_MV_GLOBAL_IDX",indexList.get(0).getName());
+            Assert.assertEquals(getOBOracleSchema(), indexList.get(0).getSchemaName());
+            Assert.assertEquals("TEST_MV_AUTOREFRESH", indexList.get(0).getTableName());
+            Assert.assertTrue(indexList.get(0).getGlobal());
 
-            Assert.assertEquals("TEST_MV_LOCAL_IDX",indexList.get(2).getName());
-            Assert.assertEquals(getOBMySQLDataBaseName(), indexList.get(2).getSchemaName());
-            Assert.assertEquals("TEST_MV_ALLSYNTAX", indexList.get(2).getTableName());
-            Assert.assertFalse(indexList.get(2).getGlobal());
+            Assert.assertEquals("TEST_MV_LOCAL_IDX",indexList.get(1).getName());
+            Assert.assertEquals(getOBOracleSchema(), indexList.get(1).getSchemaName());
+            Assert.assertEquals("TEST_MV_AUTOREFRESH", indexList.get(1).getTableName());
+            Assert.assertFalse(indexList.get(1).getGlobal());
         }
     }
 

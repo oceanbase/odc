@@ -1259,10 +1259,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
 
     @Override
     public List<DBTableIndex> listMViewIndexes(String schemaName, String tableName) {
-        List<DBTableIndex> indexList = super.listTableIndexes(schemaName, tableName);
-        fillIndexInfoByOceanBaseDicView(indexList,schemaName,tableName);
-        fillIndexTypeAndAlgorithm(indexList);
-        return indexList;
+        return listTableIndexes(schemaName, tableName);
     }
 
     private void fillIndexInfoByOceanBaseDicView(List<DBTableIndex> indexList, String schemaName,
