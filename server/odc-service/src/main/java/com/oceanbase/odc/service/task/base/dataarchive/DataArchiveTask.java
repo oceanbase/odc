@@ -78,6 +78,13 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             log.info("Start to init dlm job,tables={}", parameters.getTables());
             initTableUnit(parameters);
             toDoList.sort(Comparator.comparing(DlmTableUnit::getDlmTableUnitId));
+            // init current index and skip tables where the state is not "PREPARING"
+            for (currentIndex = 0; currentIndex < toDoList.size(); currentIndex++) {
+                if (toDoList.get(currentIndex).getStatus() == TaskStatus.PREPARING) {
+                    break;
+                }
+            }
+            log.info("Current table index = {}", currentIndex);
         } catch (Exception e) {
             log.warn("Initialization of the DLM job was failed,jobIdentity={}", context.getJobIdentity(), e);
         }
