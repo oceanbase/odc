@@ -48,6 +48,8 @@ public interface ScheduleMapper {
 
     ScheduleEntity modelToEntity(Schedule model);
 
+    @Mapping(target = "scheduleStatus",source = "entity.status")
+    @Mapping(target = "scheduleStatus",source = "entity.type")
     ScheduleExportListView toScheduleExportListView(ScheduleEntity entity);
 
     @Named("entityToParameters")
