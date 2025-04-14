@@ -230,9 +230,9 @@ public class ScheduleService {
     @Autowired
     private StatefulUuidStateIdGenerator statefulUuidStateIdGenerator;
     @Autowired
-    private ThreadPoolTaskExecutor scheduleImportExecutor;
+    private ThreadPoolTaskExecutor       commonAsyncTaskExecutor;
     @Autowired
-    private FutureCache futureCache;
+    private FutureCache                  futureCache;
 
     @Autowired
     private BatchSchedulePermissionValidator batchSchedulePermissionValidator;
@@ -715,9 +715,9 @@ public class ScheduleService {
     }
 
     public String startTerminateScheduleAndTask(ScheduleTerminateCmd cmd) {
-        batchSchedulePermissionValidator.checkRequestIdsPermission(cmd.getScheduleType(), cmd.getIds());
+        batchSchedulePermissionValidator.checkScheduleIdsPermission(cmd.getScheduleType(), cmd.getIds());
         String terminateId = statefulUuidStateIdGenerator.generateCurrentUserIdStateId("ScheduleTerminate");
-        Future<List<ScheduleTerminateResult>> future = scheduleImportExecutor.submit(
+        Future<List<ScheduleTerminateResult>> future = commonAsyncTaskExecutor.submit(
                 new RouteLogCallable<List<ScheduleTerminateResult>>("ScheduleTerminate", terminateId, "terminate") {
                     @Override
                     public List<ScheduleTerminateResult> doCall() {
