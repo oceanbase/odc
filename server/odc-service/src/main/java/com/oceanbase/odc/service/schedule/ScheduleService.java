@@ -107,6 +107,7 @@ import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.Organization;
 import com.oceanbase.odc.service.iam.model.User;
+import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanScheduleService;
 import com.oceanbase.odc.service.quartz.QuartzJobServiceProxy;
@@ -716,11 +717,13 @@ public class ScheduleService {
 
     public String startTerminateScheduleAndTask(ScheduleTerminateCmd cmd) {
         batchSchedulePermissionValidator.checkScheduleIdsPermission(cmd.getScheduleType(), cmd.getIds());
+        User user = authenticationFacade.currentUser();
         String terminateId = statefulUuidStateIdGenerator.generateCurrentUserIdStateId("ScheduleTerminate");
         Future<List<ScheduleTerminateResult>> future = commonAsyncTaskExecutor.submit(
                 new RouteLogCallable<List<ScheduleTerminateResult>>("ScheduleTerminate", terminateId, "terminate") {
                     @Override
                     public List<ScheduleTerminateResult> doCall() {
+                        SecurityContextUtils.setCurrentUser(user);
                         return syncTerminateScheduleAndTask(cmd);
                     }
                 });

@@ -154,6 +154,7 @@ import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.model.UserResourceRole;
+import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 import com.oceanbase.odc.service.integration.IntegrationService;
 import com.oceanbase.odc.service.integration.client.ApprovalClient;
 import com.oceanbase.odc.service.integration.model.ApprovalProperties;
@@ -579,10 +580,12 @@ public class FlowInstanceService {
 
     public String startBatchCancelFlowInstance(Collection<Long> flowInstanceIds) {
         String terminateId = statefulUuidStateIdGenerator.generateCurrentUserIdStateId("BatchFlowTerminate");
+        User user = authenticationFacade.currentUser();
         Future<List<BatchTerminateFlowResult>> future = commonAsyncTaskExecutor.submit(
                 new RouteLogCallable<List<BatchTerminateFlowResult>>("BatchFlowTerminate", terminateId, "terminate") {
                     @Override
                     public List<BatchTerminateFlowResult> doCall() {
+                        SecurityContextUtils.setCurrentUser(user);
                         List<BatchTerminateFlowResult> results = new ArrayList<>();
                         for (Long id : flowInstanceIds) {
                             try {
