@@ -31,7 +31,6 @@ import com.oceanbase.odc.common.crypto.TextEncryptor;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
-import com.oceanbase.odc.service.config.OrganizationConfigUtils;
 import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -62,8 +61,6 @@ public class EncryptionFacadeImpl implements EncryptionFacade {
     private UserService userService;
     @Autowired
     private OrganizationService organizationService;
-    @Autowired
-    private OrganizationConfigUtils organizationConfigUtils;
 
     @Override
     public String encryptByCurrentUserPassword(String text, String salt) {
@@ -109,10 +106,7 @@ public class EncryptionFacadeImpl implements EncryptionFacade {
     public TextEncryptor organizationEncryptor(Long organizationId, String salt) {
         Organization organization = organizationService.get(organizationId).orElseThrow(
                 () -> new NotFoundException(ResourceType.ODC_ORGANIZATION, "organizationId", organizationId));
-        String customKey = organizationConfigUtils.getDefaultCustomDataSourceEncryptionKey();
-        // when customKey is set, use default secret
-        String secret = customKey.isEmpty() ? organization.getSecret()
-                : new String(Base64.getDecoder().decode(organization.getSecret()));
+        String secret = new String(Base64.getDecoder().decode(organization.getSecret()));
         return getEncryptor(secret, salt);
     }
 
