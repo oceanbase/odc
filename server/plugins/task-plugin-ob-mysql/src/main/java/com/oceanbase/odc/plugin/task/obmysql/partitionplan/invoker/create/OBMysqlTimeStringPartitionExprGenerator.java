@@ -78,7 +78,8 @@ public class OBMysqlTimeStringPartitionExprGenerator implements TimeStringIncrea
             for (int i = existPartitionValues.size() - 1; i >= 0; i--) {
                 String existPartitionValue = existPartitionValues.get(i);
                 try {
-                    Date lastValue = sdf.parse(unquoteValue(existPartitionValue));
+                    Date lastValue =
+                            sdf.parse(unquoteValue(existPartitionValue).substring(0, config.getTimeFormat().length()));
                     if (baseTime.compareTo(lastValue) > 0) {
                         break;
                     }

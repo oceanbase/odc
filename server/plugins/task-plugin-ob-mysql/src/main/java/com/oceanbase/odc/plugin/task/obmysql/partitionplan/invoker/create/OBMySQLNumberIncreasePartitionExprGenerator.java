@@ -76,9 +76,14 @@ public class OBMySQLNumberIncreasePartitionExprGenerator implements NumberIncrea
             intervals.add(numberInterval);
             candidates.add(calculator.calculate(expr));
         }
+        boolean isQuoted = lastPartiValue.contains("'");
         return candidates.stream().map(sqlExprResult -> {
             DataType type = sqlExprResult.getDataType();
-            return getCellDataProcessor(type).convertToSqlLiteral(sqlExprResult.getValue(), type);
+            String value = getCellDataProcessor(type).convertToSqlLiteral(sqlExprResult.getValue(), type);
+            if (isQuoted) {
+                return "'" + value + "'";
+            }
+            return value;
         }).collect(Collectors.toList());
     }
 
