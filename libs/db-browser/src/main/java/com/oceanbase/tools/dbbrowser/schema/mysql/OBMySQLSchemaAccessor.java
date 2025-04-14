@@ -162,21 +162,13 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
 
     @Override
     public List<DBTableConstraint> listMViewConstraints(String schemaName, String mViewName) {
-        MySQLSqlBuilder sb = new MySQLSqlBuilder();
-        sb.append(
-                "select table_name from oceanbase.__all_table where table_id = (select data_table_id from oceanbase.__all_table a, oceanbase.__all_database b where a.database_id = b.database_id and b. database_name = ")
-                .value(schemaName)
-                .append(" and a.table_name = ")
-                .value(mViewName)
-                .append(")");
-        String containerName = jdbcOperations.queryForObject(sb.toString(), String.class);
-        return listTableConstraints(schemaName, containerName);
+        return listTableConstraints(schemaName, getContainerTable(schemaName, mViewName));
     }
 
     @Override
     public List<DBTableIndex> listMViewIndexes(String schemaName, String tableName) {
         List<DBTableIndex> indexList = super.listTableIndexes(schemaName, tableName);
-        fillIndexInfoByOceanBaseDicView(indexList,schemaName,tableName);
+        fillIndexInfo(indexList, schemaName, getContainerTable(schemaName, tableName));
         for (DBTableIndex index : indexList) {
             if (index.getAlgorithm() == DBIndexAlgorithm.UNKNOWN) {
                 index.setAlgorithm(DBIndexAlgorithm.BTREE);
@@ -184,48 +176,6 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
         }
         return indexList;
     }
-
-    private void fillIndexInfoByOceanBaseDicView(List<DBTableIndex> indexList, String schemaName,
-                                                 String tableName) {
-        MySQLSqlBuilder getGlobalIndexes = new MySQLSqlBuilder();
-        getGlobalIndexes.append("SELECT SUBSTR(SUBSTR(t4.table_name, 7), INSTR(SUBSTR(t4.table_name, 7), '_') + 1)  AS index_name,\n" +
-            "    CASE WHEN t4.index_type IN (3, 4, 11, 17, 18, 19, 7, 8, 12, 20, 21, 22) THEN 'GLOBAL' ELSE 'LOCAL' END AS index_type\n" +
-            "FROM\n" +
-            "    oceanbase.__all_table t1,\n" +
-            "    oceanbase.__all_database t2,\n" +
-            "    oceanbase.__all_table t3,\n" +
-            "    oceanbase.__all_table t4\n" +
-            "WHERE\n" +
-            "    t1.table_name = ")
-            .value(tableName)
-            .append(
-            "    AND t1.database_id = t2.database_id\n" +
-            "    AND t2.database_name = ")
-            .value(schemaName)
-            .append(
-            "    AND t3.table_id = t1.data_table_id\n" +
-            "    AND t4.data_table_id = t3.table_id\n" +
-            "    AND t4.table_type = 5;");
-        Map<String, String> resultMap = new HashMap<>();
-        jdbcOperations.query(getGlobalIndexes.toString(), new RowMapper<Void>() {
-            @Override
-            public Void mapRow(ResultSet rs, int rowNum) throws SQLException {
-
-                resultMap.put(rs.getString(1), rs.getString(2));
-                return null;
-            }
-        });
-        for (DBTableIndex dbTableIndex : indexList) {
-            if(resultMap.get(dbTableIndex.getName())!=null){
-                if(DBIndexRangeType.GLOBAL.name().equals(resultMap.get(dbTableIndex.getName()))) {
-                    dbTableIndex.setGlobal(true);
-                }else {
-                    dbTableIndex.setGlobal(false);
-                }
-            }
-        }
-    }
-
 
     @Override
     public List<String> showDatabases() {
@@ -626,4 +576,17 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
 
     @Override
     protected void correctColumnPrecisionIfNeed(List<DBTableColumn> tableColumns) {}
+
+    private String getContainerTable(String schemaName, String tableName) {
+        MySQLSqlBuilder sb = new MySQLSqlBuilder();
+        sb.append(
+                "select table_name from oceanbase.__all_table where table_id = (select data_table_id from oceanbase.__all_table a, oceanbase.__all_database b where a.database_id = b.database_id and b. database_name = ")
+            .value(schemaName)
+            .append(" and a.table_name = ")
+            .value(tableName)
+            .append(")");
+        String containerName = jdbcOperations.queryForObject(sb.toString(), String.class);
+        return containerName;
+    }
+
 }

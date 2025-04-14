@@ -56,3 +56,5 @@ CREATE MATERIALIZED VIEW `test_mv_auto_refresh`
 
 CREATE INDEX test_global_idx on test_mv_all_syntax(col2) GLOBAL;
 CREATE INDEX test_local_idx on test_mv_all_syntax(col3) LOCAL;
+CREATE INDEX test_eachcolumn_idx on test_mv_all_syntax(col2) LOCAL WITH COLUMN GROUP(each column);
+CREATE INDEX test_allcolumn_idx on test_mv_all_syntax(col2) LOCAL WITH COLUMN GROUP(all columns);
