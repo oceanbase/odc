@@ -170,7 +170,7 @@ public class CloudResourceConfigurations {
         String roleArn = configuration.getRoleArn();
         return new AmazonCloudClient(s3, sts, roleSessionName, roleArn);
     }
-    
+
     static GoogleCloudClient createGoogleCloudClient(ObjectStorageConfiguration configuration) {
         String accessKeyId = configuration.getAccessKeyId();
         String accessKeySecret = configuration.getAccessKeySecret();
