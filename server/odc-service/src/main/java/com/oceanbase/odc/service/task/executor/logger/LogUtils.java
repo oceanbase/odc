@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.service.task.executor.logger;
 
+import static com.oceanbase.odc.common.task.RouteLogCallable.LOG_PATH_PATTERN;
+
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
@@ -95,6 +97,17 @@ public class LogUtils {
 
     public static String generateScheduleTaskLogFileName(@NonNull Long scheduleId, Long scheduleTaskId) {
         return String.format(SCHEDULE_LOG_FILE_NAME_PATTERN, scheduleId, scheduleTaskId);
+    }
+
+    public static String getRouteTaskLog(String logPath, String workspace, String taskId, String fileName) {
+        File logFile = getLogFileFromCurrentMachine(logPath, workspace, taskId, fileName);
+        return LogUtils.getLatestLogContent(logFile, 10000L, 1048576L);
+    }
+
+    private static File getLogFileFromCurrentMachine(String logPath, String workspace, String taskId, String fileName) {
+        String filePath = String.format(LOG_PATH_PATTERN, logPath, workspace, taskId, fileName);
+        log.info("GetLogFilePath: {}", filePath);
+        return new File(filePath);
     }
 
 }

@@ -20,6 +20,7 @@ import static com.oceanbase.odc.core.alarm.AlarmEventNames.SCHEDULING_IGNORE;
 
 import java.io.File;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -28,6 +29,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
@@ -50,6 +52,7 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -57,10 +60,12 @@ import org.springframework.util.CollectionUtils;
 
 import com.alibaba.fastjson.JSONObject;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.task.RouteLogCallable;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
@@ -79,8 +84,10 @@ import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
+import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
+import com.oceanbase.odc.service.common.FutureCache;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
@@ -91,6 +98,7 @@ import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
+import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.iam.OrganizationService;
@@ -99,11 +107,15 @@ import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.Organization;
 import com.oceanbase.odc.service.iam.model.User;
+import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
+import com.oceanbase.odc.service.partitionplan.PartitionPlanScheduleService;
 import com.oceanbase.odc.service.quartz.QuartzJobServiceProxy;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
 import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigSelector;
+import com.oceanbase.odc.service.schedule.export.model.ScheduleTerminateCmd;
+import com.oceanbase.odc.service.schedule.export.model.ScheduleTerminateResult;
 import com.oceanbase.odc.service.schedule.factory.ScheduleResponseMapperFactory;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 import com.oceanbase.odc.service.schedule.flowtask.ApprovalFlowClient;
@@ -135,10 +147,13 @@ import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
 import com.oceanbase.odc.service.schedule.model.UpdateScheduleReq;
 import com.oceanbase.odc.service.schedule.processor.ScheduleChangePreprocessor;
+import com.oceanbase.odc.service.schedule.util.BatchSchedulePermissionValidator;
 import com.oceanbase.odc.service.schedule.util.ScheduleDescriptionGenerator;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
+import com.oceanbase.odc.service.state.StatefulUuidStateIdGenerator;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.exception.JobException;
+import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 
@@ -156,11 +171,11 @@ import lombok.extern.slf4j.Slf4j;
 @SkipAuthorize
 public class ScheduleService {
 
+    private final ScheduleMapper scheduleMapper = ScheduleMapper.INSTANCE;
     @Value("${odc.task.trigger.minimum-interval:600}")
     private int minInterval;
     @Autowired
     private ScheduleRepository scheduleRepository;
-
     @Autowired
     private ScheduleTaskRepository scheduleTaskRepository;
     @Autowired
@@ -168,71 +183,66 @@ public class ScheduleService {
     @Autowired
     @Qualifier("quartzJobServiceProxy")
     private QuartzJobServiceProxy quartzJobService;
-
     @Autowired
     private ObjectStorageFacade objectStorageFacade;
-
     @Autowired
     private FlowInstanceRepository flowInstanceRepository;
-
+    @Autowired
+    private FlowInstanceService flowInstanceService;
+    @Autowired
+    private PartitionPlanScheduleService partitionPlanScheduleService;
     @Autowired
     private ScheduleTaskService scheduleTaskService;
-
     @Autowired
     private ScheduleResponseMapperFactory scheduleResponseMapperFactory;
-
     @Autowired
     @Lazy
     private ProjectService projectService;
-
     @Autowired
     private ProjectPermissionValidator projectPermissionValidator;
-
     @Autowired
     private ApprovalFlowConfigSelector approvalFlowConfigSelector;
-
     @Autowired
     private DatabaseService databaseService;
-
     @Autowired
     private EnvironmentRepository environmentRepository;
-
     @Autowired
     private ScheduleChangeLogService scheduleChangeLogService;
-
     @Autowired
     private OrganizationService organizationService;
-
     @Autowired
     private ScheduleChangePreprocessor preprocessor;
-
     @Autowired
     private LatestTaskMappingRepository latestTaskMappingRepository;
-
     @Autowired
     private ConnectionService connectionService;
-
     @Autowired
     private DlmLimiterService dlmLimiterService;
-
     @Autowired
     private UserService userService;
-
     @Autowired
     private ScheduledTaskLoggerService scheduledTaskLoggerService;
-
     @Autowired
     private JdbcLockRegistry jdbcLockRegistry;
-
     @Autowired
     private ApprovalFlowClient approvalFlowService;
-
     @Autowired
     private ScheduleDescriptionGenerator descriptionGenerator;
     @Autowired
-    private TransactionTemplate txTemplate;
+    private StatefulUuidStateIdGenerator statefulUuidStateIdGenerator;
+    @Autowired
+    private ThreadPoolTaskExecutor commonAsyncTaskExecutor;
+    @Autowired
+    private FutureCache futureCache;
 
-    private final ScheduleMapper scheduleMapper = ScheduleMapper.INSTANCE;
+    @Autowired
+    private BatchSchedulePermissionValidator batchSchedulePermissionValidator;
+
+    @Value("${odc.log.directory:./log}")
+    private String logPath;
+
+    @Autowired
+    private TransactionTemplate txTemplate;
 
     @Transactional(rollbackFor = Exception.class)
     public List<FlowInstanceDetailResp> dispatchCreateSchedule(CreateFlowInstanceReq createReq) {
@@ -566,12 +576,20 @@ public class ScheduleService {
         scheduleRepository.updateStatusById(scheduleConfig.getId(), ScheduleStatus.TERMINATED);
     }
 
-    @Transactional(rollbackFor = Exception.class)
     public void innerTerminate(Long scheduleId) throws SchedulerException {
-        ScheduleEntity schedule = nullSafeGetById(scheduleId);
-        JobKey jobKey = QuartzKeyGenerator.generateJobKey(schedule);
-        quartzJobService.deleteJob(jobKey);
-        scheduleRepository.updateStatusById(schedule.getId(), ScheduleStatus.TERMINATED);
+        txTemplate.execute(status -> {
+            try {
+                ScheduleEntity schedule = nullSafeGetById(scheduleId);
+                JobKey jobKey = QuartzKeyGenerator.generateJobKey(schedule);
+                quartzJobService.deleteJob(jobKey);
+                scheduleRepository.updateStatusById(schedule.getId(), ScheduleStatus.TERMINATED);
+                return true;
+            } catch (Exception e) {
+                status.setRollbackOnly();
+                throw new RuntimeException(e);
+            }
+        });
+
     }
 
     /**
@@ -694,6 +712,114 @@ public class ScheduleService {
             throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
         } finally {
             lock.unlock();
+        }
+    }
+
+    public String startTerminateScheduleAndTask(ScheduleTerminateCmd cmd) {
+        batchSchedulePermissionValidator.checkScheduleIdsPermission(cmd.getScheduleType(), cmd.getIds());
+        User user = authenticationFacade.currentUser();
+        String terminateId = statefulUuidStateIdGenerator.generateCurrentUserIdStateId("ScheduleTerminate");
+        Future<List<ScheduleTerminateResult>> future = commonAsyncTaskExecutor.submit(
+                new RouteLogCallable<List<ScheduleTerminateResult>>("ScheduleTerminate", terminateId, "terminate") {
+                    @Override
+                    public List<ScheduleTerminateResult> doCall() {
+                        SecurityContextUtils.setCurrentUser(user);
+                        return syncTerminateScheduleAndTask(cmd);
+                    }
+                });
+        futureCache.put(terminateId, future);
+        return terminateId;
+    }
+
+    public List<ScheduleTerminateResult> getTerminateScheduleResult(String terminateId) {
+        statefulUuidStateIdGenerator.checkCurrentUserId(terminateId);
+        Future<?> future = futureCache.get(terminateId);
+        if (!future.isDone()) {
+            return Collections.emptyList();
+        }
+        try {
+            futureCache.invalid(terminateId);
+            return (List<ScheduleTerminateResult>) future.get();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public String getTerminateLog(String terminateId) {
+        statefulUuidStateIdGenerator.checkCurrentUserId(terminateId);
+        return LogUtils.getRouteTaskLog(logPath, "ScheduleTerminate", terminateId, "terminate");
+    }
+
+    public List<ScheduleTerminateResult> syncTerminateScheduleAndTask(ScheduleTerminateCmd cmd) {
+        log.info("Start to terminate schedule, type={}, scheduleIds={}", cmd.getScheduleType(),cmd.getIds());
+        List<ScheduleTerminateResult> results = new ArrayList<>();
+        if (ScheduleType.PARTITION_PLAN.equals(cmd.getScheduleType())) {
+            processTerminatePartitionPlan(cmd, results);
+            return results;
+        }
+        List<ScheduleEntity> scheduleEntities = scheduleRepository.findByIdIn(cmd.getIds());
+        Verify.verify(Objects.equals(scheduleEntities.size(), cmd.getIds().size()), "Invalid schedule Ids");
+        for (ScheduleEntity schedule : scheduleEntities) {
+            try {
+                Optional<ScheduleTaskEntity> latestTaskEntity =
+                        scheduleTaskRepository.getLatestScheduleTaskByJobNameAndJobGroup(
+                                String.valueOf(schedule.getId()),
+                                schedule.getType().name());
+                if (!latestTaskEntity.isPresent() || !latestTaskEntity.get().getStatus().isProcessing()) {
+                    innerTerminate(schedule.getId());
+                    log.info("Schedule task stop success, scheduleId={}", schedule.getId());
+                    results.add(ScheduleTerminateResult.ofSuccess(schedule.getType(), schedule.getId()));
+                    continue;
+                }
+                ScheduleTaskEntity scheduleTaskEntity = latestTaskEntity.get();
+                scheduleTaskService.stop(scheduleTaskEntity.getId());
+                final int maxRetryTimes = 30;
+                int retryTimes = 0;
+                while (retryTimes < maxRetryTimes) {
+                    latestTaskEntity = scheduleTaskRepository.getLatestScheduleTaskByJobNameAndJobGroup(
+                            String.valueOf(schedule.getId()),
+                            schedule.getType().name());
+                    if (latestTaskEntity.get().getStatus().isTerminated()) {
+                        innerTerminate(schedule.getId());
+                        results.add(
+                                ScheduleTerminateResult.ofSuccess(schedule.getType(), schedule.getId()));
+                        log.info("Schedule task stop success, scheduleId={}", schedule.getId());
+                        break;
+                    }
+                    retryTimes++;
+                    Thread.sleep(2000);
+                }
+                log.info(
+                        "Wait task 60s, still not terminate, please try again. Schedule task stop Failed, scheduleId={}",
+                        schedule.getId());
+                results.add(ScheduleTerminateResult.ofFailed(cmd.getScheduleType(), schedule.getId(),
+                        "Wait task 60s, still not terminate, please try again."));
+            } catch (Exception e) {
+                log.error("Terminate schedule task failed,scheduleId={}", schedule.getId(), e);
+                results.add(ScheduleTerminateResult.ofFailed(cmd.getScheduleType(), schedule.getId(),
+                        e.getMessage()));
+            }
+        }
+        return results;
+    }
+
+
+    // The partition plan uses Schedule, but it is created through flow, and the front end also displays
+    // it through flow.
+    // To ensure that the customer see the same id, the flowInstanceId is used
+    private void processTerminatePartitionPlan(ScheduleTerminateCmd cmd, List<ScheduleTerminateResult> results) {
+        Map<Long, TaskEntity> flowInstanceId2TaskEntity = flowInstanceService.getTaskByFlowInstanceIds(cmd.getIds());
+        for (Map.Entry<Long, TaskEntity> entry : flowInstanceId2TaskEntity.entrySet()) {
+            Long flowInstanceId = entry.getKey();
+            TaskEntity taskEntity = entry.getValue();
+            try {
+                partitionPlanScheduleService.disablePartitionPlan(taskEntity.getDatabaseId());
+                results.add(ScheduleTerminateResult.ofSuccess(cmd.getScheduleType(), flowInstanceId));
+                log.info("PartitionPlan task stop success, flowInstanceId={}", flowInstanceId);
+            } catch (Exception e) {
+                results.add(ScheduleTerminateResult.ofFailed(cmd.getScheduleType(), flowInstanceId, e.getMessage()));
+                log.info("PartitionPlan task stop failed, flowInstanceId={}", flowInstanceId, e);
+            }
         }
     }
 
