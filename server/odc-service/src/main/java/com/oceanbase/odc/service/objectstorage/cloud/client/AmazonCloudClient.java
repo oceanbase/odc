@@ -98,7 +98,7 @@ public class AmazonCloudClient implements CloudClient {
 
     @Override
     public boolean doesBucketExist(String bucketName) throws CloudException {
-        return callAmazonMethod("Check bucket exist", () -> s3.doesBucketExistV2(bucketName));
+        return callAmazonMethod("Check bucket exist", () -> s3.doesBucketExist(bucketName));
     }
 
     @Override
