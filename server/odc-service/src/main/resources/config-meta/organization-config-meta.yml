@@ -91,3 +91,13 @@
   default_value: ''
   nullable: true
   description: 'Team organization datasource encryption key.'
+- id: 10
+  category: 'indivOrganization'
+  key: 'odc.security.default.customDataSourceEncryptionKey'
+  type: 'string'
+  max_value:
+  min_value:
+  allowed_values: ~
+  default_value: ''
+  nullable: true
+  description: 'Individual organization datasource encryption key.'
