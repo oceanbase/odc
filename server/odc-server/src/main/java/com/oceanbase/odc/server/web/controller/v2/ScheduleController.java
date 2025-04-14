@@ -41,6 +41,8 @@ import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.WebResponseUtils;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.schedule.ScheduleService;
+import com.oceanbase.odc.service.schedule.export.model.ScheduleTerminateCmd;
+import com.oceanbase.odc.service.schedule.export.model.ScheduleTerminateResult;
 import com.oceanbase.odc.service.schedule.model.ChangeScheduleResp;
 import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
 import com.oceanbase.odc.service.schedule.model.OperationType;
@@ -282,5 +284,20 @@ public class ScheduleController {
     public SuccessResponse<RateLimitConfiguration> updateLimiterConfig(@PathVariable Long id,
             @RequestBody RateLimitConfiguration limiterConfig) {
         return Responses.single(scheduleService.updateDlmRateLimit(id, limiterConfig));
+    }
+
+    @RequestMapping(value = "batchTerminateScheduleAndTask", method = RequestMethod.POST)
+    public SuccessResponse<String> startTerminateScheduleAndTask(@RequestBody ScheduleTerminateCmd cmd) {
+        return Responses.ok(scheduleService.startTerminateScheduleAndTask(cmd));
+    }
+
+    @RequestMapping(value = "getTerminateScheduleResult", method = RequestMethod.POST)
+    public SuccessResponse<List<ScheduleTerminateResult>> getTerminateScheduleResult(String terminateId) {
+        return Responses.ok(scheduleService.getTerminateScheduleResult(terminateId));
+    }
+
+    @RequestMapping(value = "getTerminateScheduleLog", method = RequestMethod.POST)
+    public SuccessResponse<String> getTerminateScheduleLog(String terminateId) {
+        return Responses.ok(scheduleService.getTerminateLog(terminateId));
     }
 }

@@ -16,6 +16,8 @@
 package com.oceanbase.odc.service.schedule.export;
 
 import java.io.File;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -55,6 +57,7 @@ import com.oceanbase.odc.service.schedule.export.model.ScheduleTaskExportRequest
 import com.oceanbase.odc.service.schedule.model.Schedule;
 import com.oceanbase.odc.service.schedule.model.ScheduleMapper;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
+import com.oceanbase.odc.service.schedule.util.BatchSchedulePermissionValidator;
 import com.oceanbase.odc.service.state.StatefulUuidStateIdGenerator;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 
@@ -82,7 +85,7 @@ public class ScheduleExportService {
     private FlowInstanceService flowInstanceService;
 
     @Autowired
-    private ScheduleService scheduleService;
+    private BatchSchedulePermissionValidator batchSchedulePermissionValidator;
 
     @Autowired
     private UserService userService;
@@ -113,7 +116,7 @@ public class ScheduleExportService {
     }
 
     public String startExport(ScheduleTaskExportRequest request) {
-        checkRequestIdsPermission(request);
+        batchSchedulePermissionValidator.checkRequestIdsPermission(request.getScheduleType(),request.getIds());
         String previewId = statefulUuidStateIdGenerator.generateCurrentUserIdStateId("scheduleExport");
         User user = authenticationFacade.currentUser();
         Future<FileExportResponse> future = scheduleImportExecutor.submit(
@@ -124,7 +127,7 @@ public class ScheduleExportService {
     }
 
     public List<ScheduleExportListView> getExportListView(ScheduleTaskExportRequest request) {
-        checkRequestIdsPermission(request);
+        batchSchedulePermissionValidator.checkRequestIdsPermission(request.getScheduleType(),request.getIds());
         if (request.getScheduleType().equals(ScheduleType.PARTITION_PLAN)) {
             return getPartitionPlanView(request);
         }
@@ -182,51 +185,5 @@ public class ScheduleExportService {
                 ScheduleTaskExportCallable.LOG_NAME);
         File logFile = new File(filePath);
         return LogUtils.getLatestLogContent(logFile, 10000L, 1048576L);
-    }
-
-    private void checkRequestIdsPermission(ScheduleTaskExportRequest request) {
-        Set<Long> projectIds;
-        if (request.getScheduleType().equals(ScheduleType.PARTITION_PLAN)) {
-            List<FlowInstanceEntity> flowInstanceEntities = flowInstanceService.listByIds(request.getIds());
-            projectIds =
-                    flowInstanceEntities.stream().map(FlowInstanceEntity::getProjectId).collect(Collectors.toSet());
-            List<FlowOrganizationIsolated> flowOrganizationIsolateds = flowInstanceEntities.stream().map(
-                    f -> new FlowOrganizationIsolated(f.getOrganizationId(), f.getId())).collect(
-                            Collectors.toList());
-            horizontalDataPermissionValidator.checkCurrentOrganization(flowOrganizationIsolateds);
-        } else {
-            List<Schedule> scheduleEntities = scheduleRepository.findByIdIn(request.getIds()).stream()
-                    .map(ScheduleMapper.INSTANCE::entityToModel).collect(
-                            Collectors.toList());
-            horizontalDataPermissionValidator.checkCurrentOrganization(scheduleEntities);
-            projectIds = scheduleEntities.stream().map(Schedule::getProjectId).collect(Collectors.toSet());
-        }
-        if (authenticationFacade.currentOrganization().getType().equals(OrganizationType.TEAM)) {
-            projectPermissionValidator.checkProjectRole(projectIds, ResourceRoleName.all());
-        }
-    }
-
-
-    @Data
-    @AllArgsConstructor
-    private final static class FlowOrganizationIsolated implements OrganizationIsolated {
-
-        private Long organizationId;
-        private Long id;
-
-        @Override
-        public String resourceType() {
-            return ResourceType.ODC_FLOW_INSTANCE.name();
-        }
-
-        @Override
-        public Long organizationId() {
-            return organizationId;
-        }
-
-        @Override
-        public Long id() {
-            return id;
-        }
     }
 }

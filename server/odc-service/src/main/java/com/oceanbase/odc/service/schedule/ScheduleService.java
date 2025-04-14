@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
@@ -51,6 +52,7 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -58,6 +60,7 @@ import org.springframework.util.CollectionUtils;
 
 import com.alibaba.fastjson.JSONObject;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.task.RouteLogCallable;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -84,6 +87,7 @@ import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
+import com.oceanbase.odc.service.common.FutureCache;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
@@ -142,10 +146,13 @@ import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
 import com.oceanbase.odc.service.schedule.model.UpdateScheduleReq;
 import com.oceanbase.odc.service.schedule.processor.ScheduleChangePreprocessor;
+import com.oceanbase.odc.service.schedule.util.BatchSchedulePermissionValidator;
 import com.oceanbase.odc.service.schedule.util.ScheduleDescriptionGenerator;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
+import com.oceanbase.odc.service.state.StatefulUuidStateIdGenerator;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.exception.JobException;
+import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 
@@ -220,6 +227,19 @@ public class ScheduleService {
     private ApprovalFlowClient approvalFlowService;
     @Autowired
     private ScheduleDescriptionGenerator descriptionGenerator;
+    @Autowired
+    private StatefulUuidStateIdGenerator statefulUuidStateIdGenerator;
+    @Autowired
+    private ThreadPoolTaskExecutor scheduleImportExecutor;
+    @Autowired
+    private FutureCache futureCache;
+
+    @Autowired
+    private BatchSchedulePermissionValidator batchSchedulePermissionValidator;
+
+    @Value("${odc.log.directory:./log}")
+    private String logPath;
+
     @Autowired
     private TransactionTemplate txTemplate;
 
@@ -694,7 +714,40 @@ public class ScheduleService {
         }
     }
 
-    public List<ScheduleTerminateResult> syncTerminateScheduleAndTasks(ScheduleTerminateCmd cmd) {
+    public String startTerminateScheduleAndTask(ScheduleTerminateCmd cmd) {
+        batchSchedulePermissionValidator.checkRequestIdsPermission(cmd.getScheduleType(), cmd.getIds());
+        String terminateId = statefulUuidStateIdGenerator.generateCurrentUserIdStateId("ScheduleTerminate");
+        Future<List<ScheduleTerminateResult>> future = scheduleImportExecutor.submit(
+                new RouteLogCallable<List<ScheduleTerminateResult>>("ScheduleTerminate", terminateId, "terminate") {
+                    @Override
+                    public List<ScheduleTerminateResult> doCall() {
+                        return syncTerminateScheduleAndTask(cmd);
+                    }
+                });
+        futureCache.put(terminateId, future);
+        return terminateId;
+    }
+
+    public List<ScheduleTerminateResult> getTerminateScheduleResult(String terminateId) {
+        statefulUuidStateIdGenerator.checkCurrentUserId(terminateId);
+        Future<?> future = futureCache.get(terminateId);
+        if (!future.isDone()) {
+            return Collections.emptyList();
+        }
+        try {
+            futureCache.invalid(terminateId);
+            return (List<ScheduleTerminateResult>) future.get();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public String getTerminateLog(String terminateId) {
+        statefulUuidStateIdGenerator.checkCurrentUserId(terminateId);
+        return LogUtils.getRouteTaskLog(logPath, "ScheduleTerminate", terminateId, "terminate");
+    }
+
+    public List<ScheduleTerminateResult> syncTerminateScheduleAndTask(ScheduleTerminateCmd cmd) {
         List<ScheduleTerminateResult> results = new ArrayList<>();
         if (ScheduleType.PARTITION_PLAN.equals(cmd.getScheduleType())) {
             processTerminatePartitionPlan(cmd, results);
