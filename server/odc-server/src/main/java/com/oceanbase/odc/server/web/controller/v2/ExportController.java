@@ -39,7 +39,7 @@ public class ExportController {
     @Autowired
     private ScheduleExportService scheduleExportService;
 
-    @RequestMapping(value = "getExportListView", method = RequestMethod.GET)
+    @RequestMapping(value = "getExportListView", method = RequestMethod.POST)
     public SuccessResponse<List<ScheduleExportListView>> getExportListView(
             @RequestBody ScheduleTaskExportRequest request) {
         return Responses.success(scheduleExportService.getExportListView(request));
