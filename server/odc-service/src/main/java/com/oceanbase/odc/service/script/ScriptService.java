@@ -339,9 +339,9 @@ public class ScriptService {
                 StorageObject storageObject =
                         objectStorageFacade.loadObject(objectMetadata.getBucketName(), objectMetadata.getObjectId());
                 int count = duplicateNameFileCountMap.compute(objectMetadata.getObjectName(),
-                        (k, v) -> v == null ? 1 : v + 1);
+                        (k, v) -> v == null ? 0 : v + 1);
                 String fileName =
-                        count > 1 ? addTagAfterFilename(objectMetadata.getObjectName(), " " + count)
+                        count > 0 ? addTagAfterFilename(objectMetadata.getObjectName(), " (" + count + ")")
                                 : objectMetadata.getObjectName();
                 File file = new File(downloadDir, fileName);
                 FileUtils.copyInputStreamToFile(storageObject.getContent(), file);
