@@ -58,7 +58,7 @@ public class OrganizationConfigDAO {
                 + " FROM config_organization_configuration WHERE organization_id = ? AND `key` = ?";
         try {
             return jdbcTemplate.queryForObject(sql,
-                new BeanPropertyRowMapper<>(OrganizationConfigEntity.class), organizationId, key);
+                    new BeanPropertyRowMapper<>(OrganizationConfigEntity.class), organizationId, key);
         } catch (Exception e) {
             return null;
         }
