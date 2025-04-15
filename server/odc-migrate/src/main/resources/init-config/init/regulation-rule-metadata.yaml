@@ -41,8 +41,8 @@
       - label: SUPPORTED_DIALECT_TYPE
         value: ORACLE
 - id: 3
-  name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-return-rows.name}
-  description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-return-rows.description}
+  name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-query-limit.name}
+  description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-query-limit.description}
   type: SQL_CONSOLE
   builtIn: 1
   labels:
@@ -61,8 +61,8 @@
       - label: SUPPORTED_DIALECT_TYPE
         value: ORACLE
   propertyMetadatas:
-      - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-return-rows.metadata.name}
-        description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-return-rows.metadata.description}
+      - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-query-limit.metadata.name}
+        description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-query-limit.metadata.description}
         type: INTEGER
         componentType: INPUT_NUMBER
         defaultValues:

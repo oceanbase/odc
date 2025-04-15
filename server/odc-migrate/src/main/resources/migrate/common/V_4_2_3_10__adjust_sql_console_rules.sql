@@ -25,11 +25,11 @@ where
       rr.name = '${com.oceanbase.odc.builtin-resource.regulation.ruleset.default-dev-ruleset.name}'
   );
 
--- update the rule 'max-return-rows'
+-- update the rule 'max-query-limit'
 update
   regulation_rule_applying rra
 set
-  rra.properties_json = '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-return-rows.metadata.name}":100000}'
+  rra.properties_json = '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-query-limit.metadata.name}":100000}'
 where
   rra.create_time = rra.update_time
   and rra.rule_metadata_id = (
@@ -39,7 +39,7 @@ where
       regulation_rule_metadata rrm
     where
       rrm.type = 'SQL_CONSOLE'
-      and rrm.name = '${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-return-rows.name}'
+      and rrm.name = '${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-query-limit.name}'
   )
   and rra.ruleset_id in (
     select
@@ -51,11 +51,11 @@ where
   );
 
 -- sit environment
--- update the rule 'max-return-rows'
+-- update the rule 'max-query-limit'
 update
   regulation_rule_applying rra
 set
-  rra.properties_json = '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-return-rows.metadata.name}":100000}'
+  rra.properties_json = '{"${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-query-limit.metadata.name}":100000}'
 where
   rra.create_time = rra.update_time
   and rra.rule_metadata_id = (
@@ -65,7 +65,7 @@ where
       regulation_rule_metadata rrm
     where
       rrm.type = 'SQL_CONSOLE'
-      and rrm.name = '${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-return-rows.name}'
+      and rrm.name = '${com.oceanbase.odc.builtin-resource.regulation.rule.sql-console.max-query-limit.name}'
   )
   and rra.ruleset_id in (
     select
