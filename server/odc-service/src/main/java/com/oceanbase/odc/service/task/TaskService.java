@@ -368,7 +368,7 @@ public class TaskService {
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_TASK, "id", id));
     }
 
-    public List<TaskEntity> nullSafeFindByIds(Collection<Long> ids) {
+    public List<TaskEntity> findByIds(Collection<Long> ids) {
         return taskRepository.findByIdIn(ids);
     }
 

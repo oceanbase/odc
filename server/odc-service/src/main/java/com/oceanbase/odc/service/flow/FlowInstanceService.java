@@ -770,7 +770,7 @@ public class FlowInstanceService {
         Map<Long, Long> flowId2taskIds = serviceTaskInstanceEntities.stream().collect(
                 Collectors.toMap(ServiceTaskInstanceEntity::getFlowInstanceId,
                         ServiceTaskInstanceEntity::getTargetTaskId, (exist, duplicate) -> exist));
-        List<TaskEntity> taskEntities = taskService.nullSafeFindByIds(flowId2taskIds.values());
+        List<TaskEntity> taskEntities = taskService.findByIds(flowId2taskIds.values());
         Map<Long, TaskEntity> idTaskEntityMap =
                 taskEntities.stream().collect(Collectors.toMap(TaskEntity::getId, t -> t));
         return flowId2taskIds.entrySet().stream()
