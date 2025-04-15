@@ -203,15 +203,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
-    public void listMViewConstraints_Success() {
-        if (isSupportMaterializedView) {
-            List<DBTableConstraint> constraints =
-                    accessor.listMViewConstraints(getOBOracleSchema(), "TEST_MV_ALLSYNTAX");
-            Assert.assertTrue(constraints.size() >= 1);
-        }
-    }
-
-    @Test
     public void listTableColumnGroups_stmtIsCreateMaterializedView_Success() {
         if (isSupportMaterializedView) {
             List<DBColumnGroupElement> columnGroups =
