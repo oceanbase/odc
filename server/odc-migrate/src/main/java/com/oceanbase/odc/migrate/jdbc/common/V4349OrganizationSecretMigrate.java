@@ -52,11 +52,7 @@ public class V4349OrganizationSecretMigrate implements JdbcMigratable {
         log.info("organization secret migrate started, organizationCount={}", organizationList.size());
         int total = 0;
         for (OrganizationEntity organization : organizationList) {
-
-            log.info("previous organization secret, organization secret={}", organization.getSecret());
             organization.setSecret(Base64.getEncoder().encodeToString(organization.getSecret().getBytes()));
-            log.info("new organization secret, organization secret={}", organization.getSecret());
-
             total += migrateForOrganization(organization);
         }
         log.info("organization secret migrated, organizationCount={}, total={}", organizationList.size(), total);
