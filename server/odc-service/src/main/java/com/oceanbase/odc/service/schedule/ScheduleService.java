@@ -751,6 +751,7 @@ public class ScheduleService {
     }
 
     public List<ScheduleTerminateResult> syncTerminateScheduleAndTask(ScheduleTerminateCmd cmd) {
+        log.info("Start to terminate schedule, type={}, scheduleIds={}", cmd.getScheduleType(),cmd.getIds());
         List<ScheduleTerminateResult> results = new ArrayList<>();
         if (ScheduleType.PARTITION_PLAN.equals(cmd.getScheduleType())) {
             processTerminatePartitionPlan(cmd, results);
@@ -766,6 +767,7 @@ public class ScheduleService {
                                 schedule.getType().name());
                 if (!latestTaskEntity.isPresent() || !latestTaskEntity.get().getStatus().isProcessing()) {
                     innerTerminate(schedule.getId());
+                    log.info("Schedule task stop success, scheduleId={}", schedule.getId());
                     results.add(ScheduleTerminateResult.ofSuccess(schedule.getType(), schedule.getId()));
                     continue;
                 }
