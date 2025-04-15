@@ -159,10 +159,10 @@ public abstract class BaseOceanBaseTransferJob<T extends BaseParameter> implemen
             if (SystemUtils.isOnWindows()) {
                 checkHadoopPath();
             }
-            String fileSuffix = parameter.getFileSuffix();
+            List<String> fileSuffixes = parameter.getFileSuffixes();
             if (transferSchema) {
                 LOGGER.info("Begin transferring schema");
-                parameter.setFileSuffix(DataFormat.SQL.getDefaultFileSuffix());
+                parameter.setFileSuffixes(DataFormat.SQL.getFileSuffixes());
                 schemaContext = startTransferSchema();
                 if (schemaContext == null) {
                     throw new NullPointerException("Data task context is null");
@@ -172,7 +172,7 @@ public abstract class BaseOceanBaseTransferJob<T extends BaseParameter> implemen
 
             if (transferData) {
                 LOGGER.info("Begin transferring data");
-                parameter.setFileSuffix(fileSuffix);
+                parameter.setFileSuffixes(fileSuffixes);
                 dataContext = startTransferData();
                 if (dataContext == null) {
                     throw new NullPointerException("Data task context is null");
