@@ -61,11 +61,6 @@ public class OBMySQLBetween432And4351SchemaAccessor extends OBMySQLSchemaAccesso
     }
 
     @Override
-    public List<DBTableConstraint> listMViewConstraints(String schemaName, String mViewName) {
-        throw new UnsupportedOperationException("not support yet");
-    }
-
-    @Override
     public List<DBMViewRefreshRecord> listMViewRefreshRecords(DBMViewRefreshRecordParam param) {
         throw new UnsupportedOperationException("not support yet");
     }

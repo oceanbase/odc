@@ -154,11 +154,6 @@ public interface DBSchemaAccessor {
     DBMaterializedView getMView(String schemaName, String mViewName);
 
     /**
-     * Get constraints in the specified materialized view
-     */
-    List<DBTableConstraint> listMViewConstraints(String schemaName, String mViewName);
-
-    /**
      * Gets refresh records for the specified materialized view
      */
     List<DBMViewRefreshRecord> listMViewRefreshRecords(DBMViewRefreshRecordParam param);

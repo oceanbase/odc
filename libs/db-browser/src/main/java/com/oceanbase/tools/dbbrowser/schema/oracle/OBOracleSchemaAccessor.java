@@ -1223,19 +1223,6 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     }
 
     @Override
-    public List<DBTableConstraint> listMViewConstraints(String schemaName, String mViewName) {
-        OracleSqlBuilder sb = new OracleSqlBuilder();
-        sb.append("select table_name from ")
-                .append("SYS.ALL_VIRTUAL_TABLE_REAL_AGENT where table_id = (select data_table_id from SYS.ALL_VIRTUAL_TABLE_REAL_AGENT a, SYS.ALL_VIRTUAL_DATABASE_REAL_AGENT b where a.database_id = b.database_id and b. database_name = ")
-                .value(schemaName)
-                .append(" and a.table_name = ")
-                .value(mViewName)
-                .append(")");
-        String containerName = jdbcOperations.queryForObject(sb.toString(), String.class);
-        return listTableConstraints(schemaName, containerName);
-    }
-
-    @Override
     public List<DBMViewRefreshRecord> listMViewRefreshRecords(DBMViewRefreshRecordParam param) {
         OracleSqlBuilder sb = new OracleSqlBuilder();
         sb.append("SELECT ")

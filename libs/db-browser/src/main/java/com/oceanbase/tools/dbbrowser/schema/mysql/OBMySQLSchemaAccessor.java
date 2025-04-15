@@ -157,19 +157,6 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     }
 
     @Override
-    public List<DBTableConstraint> listMViewConstraints(String schemaName, String mViewName) {
-        MySQLSqlBuilder sb = new MySQLSqlBuilder();
-        sb.append(
-                "select table_name from oceanbase.__all_table where table_id = (select data_table_id from oceanbase.__all_table a, oceanbase.__all_database b where a.database_id = b.database_id and b. database_name = ")
-                .value(schemaName)
-                .append(" and a.table_name = ")
-                .value(mViewName)
-                .append(")");
-        String containerName = jdbcOperations.queryForObject(sb.toString(), String.class);
-        return listTableConstraints(schemaName, containerName);
-    }
-
-    @Override
     public List<String> showDatabases() {
         return super.showDatabases().stream().filter(database -> !ESCAPE_SCHEMA_SET.contains(database))
                 .collect(Collectors.toList());

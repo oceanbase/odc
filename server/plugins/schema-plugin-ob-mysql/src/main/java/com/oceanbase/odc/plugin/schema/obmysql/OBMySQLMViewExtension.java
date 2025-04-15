@@ -89,7 +89,7 @@ public class OBMySQLMViewExtension implements MViewExtensionPoint {
         mView.setSchemaName(schemaName);
         mView.setName(mViewName);
         mView.setColumns(schemaAccessor.listTableColumns(schemaName, mViewName));
-        mView.setConstraints(schemaAccessor.listMViewConstraints(schemaName, mViewName));
+        mView.setConstraints(schemaAccessor.listTableConstraints(schemaName, mViewName));
         mView.setIndexes(schemaAccessor.listTableIndexes(schemaName, mViewName));
         mView.setDdl(ddl);
         try {
