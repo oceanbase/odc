@@ -797,6 +797,10 @@ public class ConnectionService {
     @SkipAuthorize("internal usage")
     public void updatePasswordEncrypted(@NotNull Long organizationId, String customKey) {
         List<ConnectionConfig> connectionList = listByOrganizationId(organizationId);
+        // No connection need to be encrypted
+        if (connectionList.isEmpty()) {
+            return;
+        }
         List<ConnectionEntity> reEncryptedList = connectionList.stream()
                 .map(encryptedConfig -> {
                     ConnectionConfig decryptedConfig = getDecryptedConfig(encryptedConfig);

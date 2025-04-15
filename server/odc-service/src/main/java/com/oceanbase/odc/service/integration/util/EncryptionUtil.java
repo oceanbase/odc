@@ -24,6 +24,7 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.Base64;
 import java.util.Date;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -149,5 +150,10 @@ public class EncryptionUtil {
         return CERTIFICATE_KEY_PREFIX + "\n"
                 + base64EncodedCert
                 + "\n" + CERTIFICATE_KEY_SUFFIX;
+    }
+
+    public static String encodeByBase64(String rawString) {
+        byte[] rawByte = rawString.getBytes();
+        return Base64.getEncoder().encodeToString(rawByte);
     }
 }

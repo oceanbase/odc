@@ -20,7 +20,6 @@ import static com.oceanbase.odc.service.config.OrganizationConfigKeys.DEFAULT_MA
 import static com.oceanbase.odc.service.config.OrganizationConfigKeys.DEFAULT_QUERY_LIMIT;
 
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +51,7 @@ import com.oceanbase.odc.metadb.iam.OrganizationRepository;
 import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.config.model.ConfigurationMeta;
 import com.oceanbase.odc.service.connection.ConnectionService;
-import com.oceanbase.odc.service.connection.util.ConnectionMapper;
+import com.oceanbase.odc.service.integration.util.EncryptionUtil;
 import com.oceanbase.odc.service.session.SessionProperties;
 
 import lombok.extern.slf4j.Slf4j;
@@ -82,7 +81,6 @@ public class OrganizationConfigService {
     private TransactionTemplate transactionTemplate;
 
     private List<Configuration> defaultConfigurations;
-    private final ConnectionMapper mapper = ConnectionMapper.INSTANCE;
     private Map<String, ConfigurationMeta> configKeyToConfigMeta;
     private final LoadingCache<Long, Map<String, Configuration>> orgIdToConfigurationsCache = Caffeine.newBuilder()
             .maximumSize(300).expireAfterWrite(60, TimeUnit.SECONDS)
@@ -215,10 +213,6 @@ public class OrganizationConfigService {
     private void migrateExistedDataSourcePassword(Long organizationId, String customKey) {
         OrganizationConfigEntity customKeyInDB = organizationConfigDAO
                 .queryByOrganizationIdAndKey(organizationId, DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY);
-        // The key is not set in db, no need to migrate
-        if (Objects.isNull(customKeyInDB)) {
-            return;
-        }
         // The key is equal to the old one, no need to migrate
         if (Objects.equals(customKey, customKeyInDB.getValue())) {
             return;
@@ -233,7 +227,7 @@ public class OrganizationConfigService {
                 log.info("Start migrate existed datasource password, organizationId={}", organizationId);
                 connectionService.updatePasswordEncrypted(organizationId, finalCustomKey);
                 log.info("Success migrate existed datasource password, organizationId={}", organizationId);
-                String secret = Base64.getEncoder().encodeToString(finalCustomKey.getBytes());
+                String secret = EncryptionUtil.encodeByBase64(finalCustomKey);
                 int updateRows = organizationRepo.updateOrganizationSecretById(organizationId, secret);
                 log.info("Update organization secret, organization={}, affectRows={}", organizationId, updateRows);
             } catch (Exception e) {

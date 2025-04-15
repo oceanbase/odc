@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.migrate.jdbc.common;
 
-import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -30,6 +29,7 @@ import org.springframework.util.CollectionUtils;
 import com.oceanbase.odc.core.migrate.JdbcMigratable;
 import com.oceanbase.odc.core.migrate.Migratable;
 import com.oceanbase.odc.metadb.iam.OrganizationEntity;
+import com.oceanbase.odc.service.integration.util.EncryptionUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -52,7 +52,7 @@ public class V4349OrganizationSecretMigrate implements JdbcMigratable {
         log.info("organization secret migrate started, organizationCount={}", organizationList.size());
         int total = 0;
         for (OrganizationEntity organization : organizationList) {
-            organization.setSecret(Base64.getEncoder().encodeToString(organization.getSecret().getBytes()));
+            organization.setSecret(EncryptionUtil.encodeByBase64(organization.getSecret()));
             total += migrateForOrganization(organization);
         }
         log.info("organization secret migrated, organizationCount={}, total={}", organizationList.size(), total);

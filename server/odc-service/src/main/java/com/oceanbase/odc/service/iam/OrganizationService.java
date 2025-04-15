@@ -42,6 +42,7 @@ import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.Organization;
 import com.oceanbase.odc.service.iam.model.User;
+import com.oceanbase.odc.service.integration.util.EncryptionUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -118,7 +119,7 @@ public class OrganizationService {
             organization.setUniqueIdentifier(uuid);
             log.info("uniqueIdentifier not given, generated uuid, uuid={}", uuid);
         }
-        organization.setSecret(PasswordUtils.random(32));
+        organization.setSecret(EncryptionUtil.encodeByBase64(PasswordUtils.random(32)));
 
         OrganizationEntity entity = organization.toEntity();
         OrganizationEntity saved = organizationRepository.saveAndFlush(entity);
@@ -151,7 +152,7 @@ public class OrganizationService {
         entity.setBuiltIn(true);
         entity.setType(OrganizationType.INDIVIDUAL);
         entity.setUniqueIdentifier(StringUtils.uuid());
-        entity.setSecret(user.getPassword());
+        entity.setSecret(EncryptionUtil.encodeByBase64(user.getPassword()));
         entity.setCreatorId(user.getId());
         OrganizationEntity saved = organizationRepository.saveAndFlush(entity);
 
