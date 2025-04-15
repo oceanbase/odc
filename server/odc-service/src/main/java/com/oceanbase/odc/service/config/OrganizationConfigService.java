@@ -211,11 +211,14 @@ public class OrganizationConfigService {
     }
 
     private void migrateExistedDataSourcePassword(Long organizationId, String customKey) {
-        OrganizationConfigEntity customKeyInDB = organizationConfigDAO
+        OrganizationConfigEntity customKeyConfigInDB = organizationConfigDAO
                 .queryByOrganizationIdAndKey(organizationId, DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY);
+
         // The key is equal to the old one, no need to migrate
-        if (Objects.equals(customKey, customKeyInDB.getValue())) {
-            return;
+        if (Objects.nonNull(customKeyConfigInDB)) {
+            if (Objects.equals(customKey, customKeyConfigInDB.getValue())) {
+                return;
+            }
         }
         // Use odc default key, if not set
         if (customKey.isEmpty()) {

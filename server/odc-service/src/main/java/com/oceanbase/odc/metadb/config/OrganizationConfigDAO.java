@@ -56,8 +56,12 @@ public class OrganizationConfigDAO {
         PreConditions.notBlank(key, "key");
         String sql = "SELECT organization_id, `key`, `value`, create_time, update_time, description"
                 + " FROM config_organization_configuration WHERE organization_id = ? AND `key` = ?";
-        return jdbcTemplate.queryForObject(sql,
+        try {
+            return jdbcTemplate.queryForObject(sql,
                 new BeanPropertyRowMapper<>(OrganizationConfigEntity.class), organizationId, key);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /**
