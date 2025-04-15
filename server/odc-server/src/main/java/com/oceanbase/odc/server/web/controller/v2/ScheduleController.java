@@ -291,12 +291,12 @@ public class ScheduleController {
         return Responses.ok(scheduleService.startTerminateScheduleAndTask(cmd));
     }
 
-    @RequestMapping(value = "getTerminateScheduleResult", method = RequestMethod.POST)
+    @RequestMapping(value = "getTerminateScheduleResult", method = RequestMethod.GET)
     public SuccessResponse<List<ScheduleTerminateResult>> getTerminateScheduleResult(String terminateId) {
         return Responses.ok(scheduleService.getTerminateScheduleResult(terminateId));
     }
 
-    @RequestMapping(value = "getTerminateScheduleLog", method = RequestMethod.POST)
+    @RequestMapping(value = "getTerminateScheduleLog", method = RequestMethod.GET)
     public SuccessResponse<String> getTerminateScheduleLog(String terminateId) {
         return Responses.ok(scheduleService.getTerminateLog(terminateId));
     }
