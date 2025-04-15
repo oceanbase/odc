@@ -35,7 +35,6 @@ import javax.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.validation.annotation.Validated;
 
@@ -137,21 +136,29 @@ public class OrganizationConfigService {
     /**
      * Batch update the organization configuration with the changes and clear the cache.
      */
-    @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(actions = "update", resourceType = "ODC_ORGANIZATION_CONFIG", isForAll = true)
     public List<Configuration> batchUpdate(@NotNull Long organizationId, @NotNull Long userId,
             @NotEmpty List<Configuration> configurations) {
         validateConfiguration(configurations);
         String customDataSourceKey = getCustomDataSourceKey(configurations);
-        migrateExistedDataSourcePassword(organizationId, customDataSourceKey);
+        transactionTemplate.execute(status -> {
+            try {
+                migrateExistedDataSourcePassword(organizationId, customDataSourceKey);
 
-        List<OrganizationConfigEntity> organizationConfigEntities = configurations.stream()
-                .map(record -> record.convert2DO(organizationId, userId))
-                .collect(Collectors.toList());
-        int affectRows = organizationConfigDAO.batchUpsert(organizationConfigEntities);
-        log.info("Update organization configurations, organizationId={}, affectRows={}, configurations={}",
-                organizationId, affectRows, configurations);
-        evictOrgConfigurationsCache(organizationId);
+                List<OrganizationConfigEntity> organizationConfigEntities = configurations.stream()
+                        .map(record -> record.convert2DO(organizationId, userId))
+                        .collect(Collectors.toList());
+                int affectRows = organizationConfigDAO.batchUpsert(organizationConfigEntities);
+                log.info("Update organization configurations, organizationId={}, affectRows={}, configurations={}",
+                        organizationId, affectRows, configurations);
+                evictOrgConfigurationsCache(organizationId);
+            } catch (Exception e) {
+                log.error("Failed to update organization configurations, organizationId={}", organizationId);
+                status.setRollbackOnly();
+                throw new RuntimeException(e);
+            }
+            return null;
+        });
         return queryList(organizationId);
     }
 

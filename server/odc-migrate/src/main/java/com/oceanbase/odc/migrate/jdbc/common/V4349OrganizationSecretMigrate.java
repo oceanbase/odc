@@ -15,8 +15,10 @@
  */
 package com.oceanbase.odc.migrate.jdbc.common;
 
+import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
@@ -26,7 +28,6 @@ import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.CollectionUtils;
 
-import com.oceanbase.odc.common.util.EncodeUtils;
 import com.oceanbase.odc.core.migrate.JdbcMigratable;
 import com.oceanbase.odc.core.migrate.Migratable;
 import com.oceanbase.odc.metadb.iam.OrganizationEntity;
@@ -50,11 +51,7 @@ public class V4349OrganizationSecretMigrate implements JdbcMigratable {
             return;
         }
         log.info("organization secret migrate started, organizationCount={}", organizationList.size());
-        int total = 0;
-        for (OrganizationEntity organization : organizationList) {
-            organization.setSecret(EncodeUtils.base64EncodeToString(organization.getSecret().getBytes()));
-            total += migrateForOrganization(organization);
-        }
+        long total = migrateForOrganization(organizationList);
         log.info("organization secret migrated, organizationCount={}, total={}", organizationList.size(), total);
     }
 
@@ -63,20 +60,26 @@ public class V4349OrganizationSecretMigrate implements JdbcMigratable {
         return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(OrganizationEntity.class));
     }
 
-    private int migrateForOrganization(OrganizationEntity organization) {
+    private long migrateForOrganization(List<OrganizationEntity> organizationList) {
         String sql = "update iam_organization set secret=? where id=?";
-        AtomicInteger row = new AtomicInteger();
-        transactionTemplate.execute(status -> {
+        List<Object[]> parameters = organizationList.stream()
+                .map(organization -> new Object[] {organization.getSecret(), organization.getId()})
+                .collect(Collectors.toList());
+        AtomicReference<Exception> thrown = new AtomicReference<>(null);
+        Long total = transactionTemplate.execute(status -> {
             try {
-                row.set(jdbcTemplate.update(sql, organization.getSecret(),
-                        organization.getId()));
+                int[] updateCount = jdbcTemplate.batchUpdate(sql, parameters);
+                return Arrays.stream(updateCount).count();
             } catch (Exception e) {
-                log.error("organization secret migrate failed, organizationId={}, error={}", organization.getId(),
-                        e.getMessage());
+                log.error("organization secret migrate failed, error={}", e.getMessage());
+                thrown.set(e);
                 status.setRollbackOnly();
             }
-            return row;
+            return 0L;
         });
-        return row.get();
+        if (thrown.get() != null) {
+            throw new RuntimeException("organization secret migrate failed, error=" + thrown.get().getMessage());
+        }
+        return total == null ? 0 : total;
     }
 }
