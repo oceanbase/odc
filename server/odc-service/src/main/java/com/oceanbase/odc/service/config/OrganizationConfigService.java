@@ -42,6 +42,7 @@ import org.springframework.validation.annotation.Validated;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.oceanbase.odc.common.security.PasswordUtils;
+import com.oceanbase.odc.common.util.EncodeUtils;
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -51,7 +52,6 @@ import com.oceanbase.odc.metadb.iam.OrganizationRepository;
 import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.config.model.ConfigurationMeta;
 import com.oceanbase.odc.service.connection.ConnectionService;
-import com.oceanbase.odc.service.integration.util.EncryptionUtil;
 import com.oceanbase.odc.service.session.SessionProperties;
 
 import lombok.extern.slf4j.Slf4j;
@@ -227,7 +227,7 @@ public class OrganizationConfigService {
                 log.info("Start migrate existed datasource password, organizationId={}", organizationId);
                 connectionService.updatePasswordEncrypted(organizationId, finalCustomKey);
                 log.info("Success migrate existed datasource password, organizationId={}", organizationId);
-                String secret = EncryptionUtil.encodeByBase64(finalCustomKey);
+                String secret = EncodeUtils.base64EncodeToString(finalCustomKey.getBytes());
                 int updateRows = organizationRepo.updateOrganizationSecretById(organizationId, secret);
                 log.info("Update organization secret, organization={}, affectRows={}", organizationId, updateRows);
             } catch (Exception e) {

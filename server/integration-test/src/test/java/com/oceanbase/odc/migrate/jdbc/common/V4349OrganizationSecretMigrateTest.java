@@ -29,8 +29,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.oceanbase.odc.ServiceTestEnv;
+import com.oceanbase.odc.common.util.EncodeUtils;
 import com.oceanbase.odc.metadb.iam.OrganizationRepository;
-import com.oceanbase.odc.service.integration.util.EncryptionUtil;
 
 public class V4349OrganizationSecretMigrateTest extends ServiceTestEnv {
 
@@ -87,7 +87,7 @@ public class V4349OrganizationSecretMigrateTest extends ServiceTestEnv {
         V4349OrganizationSecretMigrate migrate = new V4349OrganizationSecretMigrate();
         migrate.migrate(dataSource);
         String migratedSecret = selectSecretFromOrganization(101L);
-        Assert.assertEquals(migratedSecret, EncryptionUtil.encodeByBase64(currSecret));
+        Assert.assertEquals(migratedSecret, EncodeUtils.base64EncodeToString(currSecret.getBytes()));
         String secret = new String(Base64.getDecoder().decode(migratedSecret));
         Assert.assertEquals(currSecret, secret);
     }
@@ -112,7 +112,7 @@ public class V4349OrganizationSecretMigrateTest extends ServiceTestEnv {
         V4349OrganizationSecretMigrate migrate = new V4349OrganizationSecretMigrate();
         migrate.migrate(dataSource);
         String migratedSecret = selectSecretFromOrganization(1001L);
-        Assert.assertEquals(migratedSecret, EncryptionUtil.encodeByBase64(currSecret));
+        Assert.assertEquals(migratedSecret, EncodeUtils.base64EncodeToString(currSecret.getBytes()));
         String secret = new String(Base64.getDecoder().decode(migratedSecret));
         Assert.assertEquals(currSecret, secret);
     }

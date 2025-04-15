@@ -21,9 +21,9 @@ import java.util.Objects;
 
 import javax.validation.constraints.NotBlank;
 
+import com.oceanbase.odc.common.util.EncodeUtils;
 import com.oceanbase.odc.metadb.config.OrganizationConfigEntity;
 import com.oceanbase.odc.metadb.config.UserConfigEntity;
-import com.oceanbase.odc.service.integration.util.EncryptionUtil;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -70,7 +70,7 @@ public class Configuration {
         entity.setCreatorId(userId);
         entity.setKey(this.key);
         entity.setValue(Objects.equals(entity.getKey(), DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY)
-                ? EncryptionUtil.encodeByBase64(this.value)
+                ? EncodeUtils.base64EncodeToString(this.value.getBytes())
                 : this.value);
         return entity;
     }
