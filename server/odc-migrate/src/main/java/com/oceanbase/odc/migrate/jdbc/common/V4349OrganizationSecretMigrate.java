@@ -61,7 +61,7 @@ public class V4349OrganizationSecretMigrate implements JdbcMigratable {
         return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(OrganizationEntity.class));
     }
 
-    private long migrateForOrganization(List<OrganizationEntity> organizationList) {
+    public long migrateForOrganization(List<OrganizationEntity> organizationList) {
         String sql = "update iam_organization set secret=? where id=?";
         List<Object[]> parameters = organizationList.stream()
                 .map(organization -> new Object[] {

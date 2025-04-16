@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.migrate.jdbc.common;
 
+import java.util.List;
+
 import javax.sql.DataSource;
 
 import org.junit.After;
@@ -22,11 +24,13 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.oceanbase.odc.ServiceTestEnv;
+import com.oceanbase.odc.metadb.iam.OrganizationEntity;
 import com.oceanbase.odc.metadb.iam.OrganizationRepository;
 
 import cn.hutool.core.codec.Caesar;
@@ -71,8 +75,11 @@ public class V4349OrganizationSecretMigrateTest extends ServiceTestEnv {
         V4349OrganizationSecretMigrate migrate = new V4349OrganizationSecretMigrate();
         migrate.migrate(dataSource);
         String migratedSecret = selectSecretFromOrganization(100L);
+        Assert.assertEquals(migratedSecret, Caesar.encode("Y75AZG91YuoepqL6VvyacJZ2fUaHVraI", 8));
         String secret = Caesar.decode(migratedSecret, 8);
         Assert.assertEquals("Y75AZG91YuoepqL6VvyacJZ2fUaHVraI", secret);
+        int count = selectAllFromOrganization().size();
+        Assert.assertEquals(2, count);
     }
 
     @Test
@@ -81,14 +88,16 @@ public class V4349OrganizationSecretMigrateTest extends ServiceTestEnv {
                 + "`id`,`unique_identifier`,`secret`,`name`,`creator_id`,`is_builtin`,`description`,`type`) "
                 + "values(101,'aa','%s','OceanBase3',1,0,'D','TEAM')";
         String currSecret = "AAAAZG91YuoepqL6VvyacJZ2fUaHVVVV";
-
         jdbcTemplate.update(String.format(addTeamOrg, currSecret));
+
         V4349OrganizationSecretMigrate migrate = new V4349OrganizationSecretMigrate();
         migrate.migrate(dataSource);
         String migratedSecret = selectSecretFromOrganization(101L);
         Assert.assertEquals(migratedSecret, Caesar.encode(currSecret, 8));
         String secret = Caesar.decode(migratedSecret, 8);
         Assert.assertEquals(currSecret, secret);
+        int count = selectAllFromOrganization().size();
+        Assert.assertEquals(3, count);
     }
 
     @Test
@@ -96,8 +105,11 @@ public class V4349OrganizationSecretMigrateTest extends ServiceTestEnv {
         V4349OrganizationSecretMigrate migrate = new V4349OrganizationSecretMigrate();
         migrate.migrate(dataSource);
         String migratedSecret = selectSecretFromOrganization(1000L);
+        Assert.assertEquals(migratedSecret, Caesar.encode(this.secret2, 8));
         String secret = Caesar.decode(migratedSecret, 8);
-        Assert.assertEquals(secret2, secret);
+        Assert.assertEquals(this.secret2, secret);
+        int count = selectAllFromOrganization().size();
+        Assert.assertEquals(2, count);
     }
 
     @Test
@@ -114,10 +126,17 @@ public class V4349OrganizationSecretMigrateTest extends ServiceTestEnv {
         Assert.assertEquals(migratedSecret, Caesar.encode(currSecret, 8));
         String secret = Caesar.decode(migratedSecret, 8);
         Assert.assertEquals(currSecret, secret);
+        int count = selectAllFromOrganization().size();
+        Assert.assertEquals(3, count);
     }
 
     private String selectSecretFromOrganization(Long id) {
         String sql = "select `secret` from iam_organization where `id` = " + id;
         return jdbcTemplate.queryForObject(sql, String.class);
+    }
+
+    private List<OrganizationEntity> selectAllFromOrganization() {
+        String sql = "select `id`, `secret` from iam_organization";
+        return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(OrganizationEntity.class));
     }
 }
