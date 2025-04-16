@@ -207,7 +207,7 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
         if (isSupportMaterializedView) {
             List<DBTableConstraint> constraints =
                     accessor.listMViewConstraints(getOBOracleSchema(), "TEST_MV_ALLSYNTAX");
-            Assert.assertTrue(constraints.size() >= 1);
+            Assert.assertEquals(Collections.emptyList(), constraints);
         }
     }
 

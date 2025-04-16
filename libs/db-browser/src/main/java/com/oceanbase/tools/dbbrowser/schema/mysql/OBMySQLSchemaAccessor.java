@@ -158,13 +158,12 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
 
     @Override
     public List<DBTableConstraint> listMViewConstraints(String schemaName, String mViewName) {
-        return listTableConstraints(schemaName, getContainerTable(schemaName, mViewName));
+        return Collections.emptyList();
     }
 
     @Override
     public List<DBTableIndex> listMViewIndexes(String schemaName, String tableName) {
         List<DBTableIndex> indexList = super.listTableIndexes(schemaName, tableName);
-        fillIndexInfo(indexList, schemaName, getContainerTable(schemaName, tableName));
         for (DBTableIndex index : indexList) {
             if (index.getAlgorithm() == DBIndexAlgorithm.UNKNOWN) {
                 index.setAlgorithm(DBIndexAlgorithm.BTREE);
@@ -572,17 +571,5 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
 
     @Override
     protected void correctColumnPrecisionIfNeed(List<DBTableColumn> tableColumns) {}
-
-    private String getContainerTable(String schemaName, String tableName) {
-        MySQLSqlBuilder sb = new MySQLSqlBuilder();
-        sb.append(
-                "select table_name from oceanbase.__all_table where table_id = (select data_table_id from oceanbase.__all_table a, oceanbase.__all_database b where a.database_id = b.database_id and b. database_name = ")
-                .value(schemaName)
-                .append(" and a.table_name = ")
-                .value(tableName)
-                .append(")");
-        String containerName = jdbcOperations.queryForObject(sb.toString(), String.class);
-        return containerName;
-    }
 
 }
