@@ -156,6 +156,7 @@ import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
+import com.oceanbase.odc.service.task.service.SpringTransactionManager;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -576,20 +577,12 @@ public class ScheduleService {
         scheduleRepository.updateStatusById(scheduleConfig.getId(), ScheduleStatus.TERMINATED);
     }
 
+    @Transactional(rollbackFor = Exception.class)
     public void innerTerminate(Long scheduleId) throws SchedulerException {
-        txTemplate.execute(status -> {
-            try {
-                ScheduleEntity schedule = nullSafeGetById(scheduleId);
-                JobKey jobKey = QuartzKeyGenerator.generateJobKey(schedule);
-                quartzJobService.deleteJob(jobKey);
-                scheduleRepository.updateStatusById(schedule.getId(), ScheduleStatus.TERMINATED);
-                return true;
-            } catch (Exception e) {
-                status.setRollbackOnly();
-                throw new RuntimeException(e);
-            }
-        });
-
+        ScheduleEntity schedule = nullSafeGetById(scheduleId);
+        JobKey jobKey = QuartzKeyGenerator.generateJobKey(schedule);
+        quartzJobService.deleteJob(jobKey);
+        scheduleRepository.updateStatusById(schedule.getId(), ScheduleStatus.TERMINATED);
     }
 
     /**
@@ -751,7 +744,7 @@ public class ScheduleService {
     }
 
     public List<ScheduleTerminateResult> syncTerminateScheduleAndTask(ScheduleTerminateCmd cmd) {
-        log.info("Start to terminate schedule, type={}, scheduleIds={}", cmd.getScheduleType(),cmd.getIds());
+        log.info("Start to terminate schedule, type={}, scheduleIds={}", cmd.getScheduleType(), cmd.getIds());
         List<ScheduleTerminateResult> results = new ArrayList<>();
         if (ScheduleType.PARTITION_PLAN.equals(cmd.getScheduleType())) {
             processTerminatePartitionPlan(cmd, results);
@@ -766,7 +759,7 @@ public class ScheduleService {
                                 String.valueOf(schedule.getId()),
                                 schedule.getType().name());
                 if (!latestTaskEntity.isPresent() || !latestTaskEntity.get().getStatus().isProcessing()) {
-                    innerTerminate(schedule.getId());
+                    innerTerminateInTx(schedule);
                     log.info("Schedule task stop success, scheduleId={}", schedule.getId());
                     results.add(ScheduleTerminateResult.ofSuccess(schedule.getType(), schedule.getId()));
                     continue;
@@ -780,7 +773,7 @@ public class ScheduleService {
                             String.valueOf(schedule.getId()),
                             schedule.getType().name());
                     if (latestTaskEntity.get().getStatus().isTerminated()) {
-                        innerTerminate(schedule.getId());
+                        innerTerminateInTx(schedule);
                         results.add(
                                 ScheduleTerminateResult.ofSuccess(schedule.getType(), schedule.getId()));
                         log.info("Schedule task stop success, scheduleId={}", schedule.getId());
@@ -803,6 +796,16 @@ public class ScheduleService {
         return results;
     }
 
+    private void innerTerminateInTx(ScheduleEntity schedule) {
+        new SpringTransactionManager(txTemplate)
+                .doInTransactionWithoutResult(() -> {
+                    try {
+                        innerTerminate(schedule.getId());
+                    } catch (SchedulerException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+    }
 
     // The partition plan uses Schedule, but it is created through flow, and the front end also displays
     // it through flow.
