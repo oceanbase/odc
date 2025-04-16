@@ -221,8 +221,8 @@ public class OrganizationConfigService {
         OrganizationConfigEntity customKeyConfigInDB = organizationConfigDAO
                 .queryByOrganizationIdAndKey(organizationId, DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY);
 
-        // The key is equal to the old one, no need to migrate
         if (Objects.nonNull(customKeyConfigInDB)) {
+            // The key is equal to the old one, no need to migrate
             if (Objects.equals(customKey, customKeyConfigInDB.getValue())) {
                 return;
             }
