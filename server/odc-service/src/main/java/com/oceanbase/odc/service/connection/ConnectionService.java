@@ -801,14 +801,22 @@ public class ConnectionService {
         if (connectionList.isEmpty()) {
             return;
         }
-        List<ConnectionEntity> reEncryptedList = connectionList.stream()
-                .map(encryptedConfig -> {
-                    ConnectionConfig decryptedConfig = getDecryptedConfig(encryptedConfig);
-                    ConnectionConfig reEncryptedConfig = getEncryptedConfig(decryptedConfig, customKey);
-                    return mapper.modelToEntity(reEncryptedConfig);
-                })
-                .collect(Collectors.toList());
-        batchUpdateConnectionConfig(reEncryptedList);
+        txTemplate.execute(status -> {
+            try {
+                List<ConnectionEntity> reEncryptedList = connectionList.stream()
+                        .map(encryptedConfig -> {
+                            ConnectionConfig decryptedConfig = getDecryptedConfig(encryptedConfig);
+                            ConnectionConfig reEncryptedConfig = getEncryptedConfig(decryptedConfig, customKey);
+                            return mapper.modelToEntity(reEncryptedConfig);
+                        })
+                        .collect(Collectors.toList());
+                batchUpdateConnectionConfig(reEncryptedList);
+                return null;
+            } catch (Exception e) {
+                status.setRollbackOnly();
+                throw new UnexpectedException("Failed to update connection config", e);
+            }
+        });
     }
 
     @SkipAuthorize("internal usage")
@@ -821,7 +829,6 @@ public class ConnectionService {
         return connectionEncryption.encryptPasswordsByCustomKey(decryptedConfig, customKey);
     }
 
-    @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal usage")
     public void batchUpdateConnectionConfig(List<ConnectionEntity> connections) {
         repository.saveAll(connections);

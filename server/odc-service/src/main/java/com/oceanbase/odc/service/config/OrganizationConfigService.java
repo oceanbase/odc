@@ -152,12 +152,12 @@ public class OrganizationConfigService {
                 log.info("Update organization configurations, organizationId={}, affectRows={}, configurations={}",
                         organizationId, affectRows, configurations);
                 evictOrgConfigurationsCache(organizationId);
+                return null;
             } catch (Exception e) {
                 log.error("Failed to update organization configurations, organizationId={}", organizationId);
                 status.setRollbackOnly();
-                throw new RuntimeException(e);
+                throw new RuntimeException("Failed to update organization configurations", e);
             }
-            return null;
         });
         return queryList(organizationId);
     }
