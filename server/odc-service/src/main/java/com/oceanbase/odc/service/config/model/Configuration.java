@@ -21,10 +21,10 @@ import java.util.Objects;
 
 import javax.validation.constraints.NotBlank;
 
-import com.oceanbase.odc.common.util.EncodeUtils;
 import com.oceanbase.odc.metadb.config.OrganizationConfigEntity;
 import com.oceanbase.odc.metadb.config.UserConfigEntity;
 
+import cn.hutool.core.codec.Caesar;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -70,7 +70,7 @@ public class Configuration {
         entity.setCreatorId(userId);
         entity.setKey(this.key);
         entity.setValue(Objects.equals(entity.getKey(), DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY)
-                ? EncodeUtils.base64EncodeToString(this.value.getBytes())
+                ? Caesar.encode(this.value, 8)
                 : this.value);
         return entity;
     }

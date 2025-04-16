@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.migrate.jdbc.common;
 
-import java.util.Base64;
-
 import javax.sql.DataSource;
 
 import org.junit.After;
@@ -29,8 +27,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.oceanbase.odc.ServiceTestEnv;
-import com.oceanbase.odc.common.util.EncodeUtils;
 import com.oceanbase.odc.metadb.iam.OrganizationRepository;
+
+import cn.hutool.core.codec.Caesar;
 
 public class V4349OrganizationSecretMigrateTest extends ServiceTestEnv {
 
@@ -72,7 +71,7 @@ public class V4349OrganizationSecretMigrateTest extends ServiceTestEnv {
         V4349OrganizationSecretMigrate migrate = new V4349OrganizationSecretMigrate();
         migrate.migrate(dataSource);
         String migratedSecret = selectSecretFromOrganization(100L);
-        String secret = new String(Base64.getDecoder().decode(migratedSecret));
+        String secret = Caesar.decode(migratedSecret, 8);
         Assert.assertEquals("Y75AZG91YuoepqL6VvyacJZ2fUaHVraI", secret);
     }
 
@@ -87,8 +86,8 @@ public class V4349OrganizationSecretMigrateTest extends ServiceTestEnv {
         V4349OrganizationSecretMigrate migrate = new V4349OrganizationSecretMigrate();
         migrate.migrate(dataSource);
         String migratedSecret = selectSecretFromOrganization(101L);
-        Assert.assertEquals(migratedSecret, EncodeUtils.base64EncodeToString(currSecret.getBytes()));
-        String secret = new String(Base64.getDecoder().decode(migratedSecret));
+        Assert.assertEquals(migratedSecret, Caesar.encode(currSecret, 8));
+        String secret = Caesar.decode(migratedSecret, 8);
         Assert.assertEquals(currSecret, secret);
     }
 
@@ -97,7 +96,7 @@ public class V4349OrganizationSecretMigrateTest extends ServiceTestEnv {
         V4349OrganizationSecretMigrate migrate = new V4349OrganizationSecretMigrate();
         migrate.migrate(dataSource);
         String migratedSecret = selectSecretFromOrganization(1000L);
-        String secret = new String(Base64.getDecoder().decode(migratedSecret));
+        String secret = Caesar.decode(migratedSecret, 8);
         Assert.assertEquals(secret2, secret);
     }
 
@@ -112,8 +111,8 @@ public class V4349OrganizationSecretMigrateTest extends ServiceTestEnv {
         V4349OrganizationSecretMigrate migrate = new V4349OrganizationSecretMigrate();
         migrate.migrate(dataSource);
         String migratedSecret = selectSecretFromOrganization(1001L);
-        Assert.assertEquals(migratedSecret, EncodeUtils.base64EncodeToString(currSecret.getBytes()));
-        String secret = new String(Base64.getDecoder().decode(migratedSecret));
+        Assert.assertEquals(migratedSecret, Caesar.encode(currSecret, 8));
+        String secret = Caesar.decode(migratedSecret, 8);
         Assert.assertEquals(currSecret, secret);
     }
 

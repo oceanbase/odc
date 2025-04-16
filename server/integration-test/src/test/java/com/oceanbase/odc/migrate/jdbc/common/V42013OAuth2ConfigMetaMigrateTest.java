@@ -26,11 +26,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.common.security.PasswordUtils;
-import com.oceanbase.odc.common.util.EncodeUtils;
 import com.oceanbase.odc.service.integration.IntegrationService;
 import com.oceanbase.odc.service.integration.model.Oauth2Parameter;
 import com.oceanbase.odc.service.integration.model.SSOIntegrationConfig;
 
+import cn.hutool.core.codec.Caesar;
 import lombok.SneakyThrows;
 
 public class V42013OAuth2ConfigMetaMigrateTest extends ServiceTestEnv {
@@ -50,7 +50,7 @@ public class V42013OAuth2ConfigMetaMigrateTest extends ServiceTestEnv {
                 + "`id`,`unique_identifier`,`secret`,`name`,`creator_id`,`is_builtin`,`description`,`type`) "
                 + "values(2,'a','%s','CompanyA',1,0,'D','TEAM')";
         String secret = PasswordUtils.random(32);
-        String finalSecret = EncodeUtils.base64EncodeToString(secret.getBytes());
+        String finalSecret = Caesar.encode(secret, 8);
         jdbcTemplate.update(String.format(addOrg, finalSecret));
     }
 
