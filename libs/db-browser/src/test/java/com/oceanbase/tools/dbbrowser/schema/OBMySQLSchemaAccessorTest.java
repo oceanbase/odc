@@ -195,7 +195,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
         if (isSupportMaterializedView) {
             List<DBTableConstraint> constraints =
                     accessor.listMViewConstraints(getOBMySQLDataBaseName(), "test_mv_all_syntax");
-            Assert.assertEquals(Collections.emptyList(),constraints);
+            Assert.assertEquals(Collections.emptyList(), constraints);
         }
     }
 
