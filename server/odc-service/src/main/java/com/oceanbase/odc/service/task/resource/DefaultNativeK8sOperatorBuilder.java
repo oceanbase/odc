@@ -17,7 +17,7 @@ package com.oceanbase.odc.service.task.resource;
 
 import java.io.IOException;
 
-import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.metadb.resource.ResourceRepository;
 import com.oceanbase.odc.service.task.config.K8sProperties;
@@ -26,7 +26,6 @@ import com.oceanbase.odc.service.task.dummy.LocalMockK8sJobClient;
 import com.oceanbase.odc.service.task.resource.client.DefaultK8sJobClientSelector;
 import com.oceanbase.odc.service.task.resource.client.K8sJobClientSelector;
 import com.oceanbase.odc.service.task.resource.client.NativeK8sJobClient;
-import com.oceanbase.odc.service.task.resource.client.NullK8sJobClientSelector;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,10 +39,9 @@ import lombok.extern.slf4j.Slf4j;
 public class DefaultNativeK8sOperatorBuilder extends AbstractK8sResourceOperatorBuilder {
     public static final String NATIVE_K8S_POD_TYPE = "nativeK8sPod";
 
-    public DefaultNativeK8sOperatorBuilder(TaskFrameworkProperties taskFrameworkProperties,
-            ResourceRepository resourceRepository) throws IOException {
-        super(taskFrameworkProperties, resourceRepository,
-                taskFrameworkProperties.isEnableK8sLocalDebugMode() ? CLOUD_K8S_POD_TYPE : NATIVE_K8S_POD_TYPE);
+    public DefaultNativeK8sOperatorBuilder(@Autowired TaskFrameworkProperties taskFrameworkProperties,
+            @Autowired ResourceRepository resourceRepository) throws IOException {
+        super(taskFrameworkProperties, resourceRepository, NATIVE_K8S_POD_TYPE);
     }
 
     /**
@@ -57,9 +55,6 @@ public class DefaultNativeK8sOperatorBuilder extends AbstractK8sResourceOperator
             // k8s use in local debug mode
             log.info("local debug k8s cluster enabled.");
             k8sJobClientSelector = new LocalMockK8sJobClient();
-        } else if (StringUtils.isBlank(k8sProperties.getKubeUrl())) {
-            log.info("local task k8s cluster is not enabled.");
-            k8sJobClientSelector = new NullK8sJobClientSelector();
         } else {
             // normal mode
             log.info("build k8sJobClientSelector, kubeUrl={}, namespace={}",

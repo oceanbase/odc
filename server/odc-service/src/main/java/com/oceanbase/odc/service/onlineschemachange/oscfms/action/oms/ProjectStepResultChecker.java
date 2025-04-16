@@ -30,15 +30,15 @@ import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.onlineschemachange.model.FullVerificationResult;
 import com.oceanbase.odc.service.onlineschemachange.model.PrecheckResult;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsProjectStatusEnum;
-import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsStepName;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsStepStatus;
+import com.oceanbase.odc.service.onlineschemachange.oms.enums.OscStepName;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.FullTransferStepInfoVO;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.FullVerifyTableStatisticVO;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectFullVerifyResultResponse;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectProgressResponse;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectStepVO;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.action.ProjectStepResult;
 
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -49,8 +49,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ProjectStepResultChecker {
 
-    private final List<OmsStepName> toCheckSteps;
-    private final Map<OmsStepName, OmsProjectStepVO> currentProjectStepMap;
+    private final List<OscStepName> toCheckSteps;
+    private final Map<OscStepName, OmsProjectStepVO> currentProjectStepMap;
     private final ProjectStepResult checkerResult;
     private Supplier<OmsProjectFullVerifyResultResponse> verifyResultResponseSupplier;
     private Supplier<Void> resumeProjectSupplier;
@@ -58,21 +58,21 @@ public class ProjectStepResultChecker {
 
     private final boolean enableFullVerify;
     private final int checkProjectStepFailedTimeoutSeconds;
-    private final Map<OmsStepName, Long> checkFailedTimes;
+    private final Map<OscStepName, Long> checkFailedTimes;
 
     public ProjectStepResultChecker(OmsProjectProgressResponse progressResponse, List<OmsProjectStepVO> projectSteps,
             boolean enableFullVerify, int checkProjectStepFailedTimeoutSeconds,
-            Map<OmsStepName, Long> checkFailedTimes) {
+            Map<OscStepName, Long> checkFailedTimes) {
         this.progressResponse = progressResponse;
         this.currentProjectStepMap = projectSteps.stream().collect(Collectors.toMap(OmsProjectStepVO::getName, a -> a));
         this.checkerResult = new ProjectStepResult();
         this.enableFullVerify = enableFullVerify;
         this.checkProjectStepFailedTimeoutSeconds = checkProjectStepFailedTimeoutSeconds;
         this.checkFailedTimes = checkFailedTimes;
-        this.toCheckSteps = Lists.newArrayList(OmsStepName.TRANSFER_INCR_LOG_PULL,
-                OmsStepName.FULL_TRANSFER, OmsStepName.INCR_TRANSFER);
+        this.toCheckSteps = Lists.newArrayList(OscStepName.TRANSFER_INCR_LOG_PULL,
+                OscStepName.FULL_TRANSFER, OscStepName.INCR_TRANSFER);
         if (enableFullVerify) {
-            this.toCheckSteps.add(OmsStepName.FULL_VERIFIER);
+            this.toCheckSteps.add(OscStepName.FULL_VERIFIER);
         }
     }
 
@@ -118,7 +118,7 @@ public class ProjectStepResultChecker {
         }
         try {
             OmsProjectStepVO projectStep =
-                    currentProjectStepMap.get(OmsStepName.valueOf(progressResponse.getCurrentStep()));
+                    currentProjectStepMap.get(OscStepName.valueOf(progressResponse.getCurrentStep()));
             if (projectStep != null) {
                 checkerResult.setCurrentStepStatus(projectStep.getStatus().name());
             }
@@ -128,7 +128,7 @@ public class ProjectStepResultChecker {
     }
 
     private void checkPreCheckStepResult() {
-        OmsProjectStepVO precheckStep = currentProjectStepMap.get(OmsStepName.TRANSFER_PRECHECK);
+        OmsProjectStepVO precheckStep = currentProjectStepMap.get(OscStepName.TRANSFER_PRECHECK);
         if (precheckStep.getStatus() == OmsStepStatus.FAILED) {
             checkerResult.setPreCheckResult(PrecheckResult.FAILED);
             checkerResult.setErrorMsg(precheckStep.getExtraInfo().getErrorMsg());
@@ -148,7 +148,7 @@ public class ProjectStepResultChecker {
 
     private boolean checkProjectStepFinished() {
         boolean finished = true;
-        for (OmsStepName stepName : toCheckSteps) {
+        for (OscStepName stepName : toCheckSteps) {
             if (!checkStepFinished(stepName)) {
                 finished = false;
                 break;
@@ -158,7 +158,7 @@ public class ProjectStepResultChecker {
     }
 
     @VisibleForTesting
-    protected boolean checkStepFinished(OmsStepName name) {
+    protected boolean checkStepFinished(OscStepName name) {
         OmsProjectStepVO omsProjectStepVO = currentProjectStepMap.get(name);
         if (null == omsProjectStepVO) {
             return true;
@@ -187,10 +187,10 @@ public class ProjectStepResultChecker {
 
     private boolean isProjectFailed() {
         boolean isProjectFailed = false;
-        for (OmsStepName stepName : toCheckSteps) {
+        for (OscStepName stepName : toCheckSteps) {
             if (currentProjectStepMap.get(stepName) != null
                     && currentProjectStepMap.get(stepName).getStatus() == OmsStepStatus.FAILED) {
-                if (!enableFullVerify && stepName == OmsStepName.FULL_VERIFIER) {
+                if (!enableFullVerify && stepName == OscStepName.FULL_VERIFIER) {
                     continue;
                 }
                 if (currentProjectStepMap.get(stepName).getExtraInfo() != null) {
@@ -198,7 +198,7 @@ public class ProjectStepResultChecker {
                 }
 
                 // record FULL_TRANSFER failed time
-                if (stepName == OmsStepName.FULL_TRANSFER) {
+                if (stepName == OscStepName.FULL_TRANSFER) {
                     long failedBeginTime = checkFailedTimes.computeIfAbsent(stepName, k -> System.currentTimeMillis());
                     long failedAccumulateTime = (System.currentTimeMillis() - failedBeginTime) / 1000;
                     if (failedAccumulateTime > checkProjectStepFailedTimeoutSeconds) {
@@ -271,7 +271,7 @@ public class ProjectStepResultChecker {
     }
 
     private void fillMigrateResult() {
-        OmsProjectStepVO fullTransferStep = currentProjectStepMap.get(OmsStepName.FULL_TRANSFER);
+        OmsProjectStepVO fullTransferStep = currentProjectStepMap.get(OscStepName.FULL_TRANSFER);
         FullTransferStepInfoVO stepInfo = (FullTransferStepInfoVO) fullTransferStep.getStepInfo();
         if (stepInfo != null) {
             checkerResult.setFullTransferEstimatedCount(stepInfo.getCapacity());
@@ -282,67 +282,14 @@ public class ProjectStepResultChecker {
 
         if (enableFullVerify) {
             // Set full verifier process percentage
-            OmsProjectStepVO fullVerifyStep = currentProjectStepMap.get(OmsStepName.FULL_VERIFIER);
+            OmsProjectStepVO fullVerifyStep = currentProjectStepMap.get(OscStepName.FULL_VERIFIER);
             if (fullVerifyStep != null && fullVerifyStep.getProgress() != null) {
                 checkerResult.setFullVerificationProgressPercentage(
                         BigDecimal.valueOf(fullVerifyStep.getProgress()).doubleValue());
             }
         }
         checkerResult.setCheckFailedTime(this.checkFailedTimes);
-
     }
 
-    @Data
-    public static class ProjectStepResult {
-        private PrecheckResult preCheckResult;
-
-        private double precheckProgressPercentage;
-
-        private String errorMsg;
-
-        private String currentStep;
-
-        private String currentStepStatus;
-        private TaskStatus taskStatus;
-
-        /**
-         * full transfer estimated rows count
-         */
-        private Long fullTransferEstimatedCount;
-
-        /**
-         * full transfer finished rows count
-         */
-        private Long fullTransferFinishedCount;
-
-        /**
-         * full transfer percentage
-         */
-        private double fullTransferProgressPercentage;
-
-        /**
-         * full verification result
-         */
-        private FullVerificationResult fullVerificationResult;
-
-        /**
-         * full verification result description
-         */
-        private String fullVerificationResultDescription;
-
-        /**
-         * full verification percentage
-         */
-        private double fullVerificationProgressPercentage;
-
-        /**
-         * task percentage
-         */
-        private double taskPercentage;
-
-        private Map<OmsStepName, Long> checkFailedTime;
-
-        private Long incrementCheckpoint;
-    }
 }
 

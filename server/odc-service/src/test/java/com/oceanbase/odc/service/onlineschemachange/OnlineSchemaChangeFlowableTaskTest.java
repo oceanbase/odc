@@ -34,7 +34,7 @@ import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.flow.task.model.OnlineSchemaChangeTaskResult;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskResult;
-import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsStepName;
+import com.oceanbase.odc.service.onlineschemachange.oms.enums.OscStepName;
 import com.oceanbase.odc.service.task.TaskService;
 
 /**
@@ -109,15 +109,15 @@ public class OnlineSchemaChangeFlowableTaskTest {
     public void testScheduleTasksUpdateHint() {
         MockOSCFlowTask mockOSCFlowTask = new MockOSCFlowTask();
         List<ScheduleTaskEntity> scheduleTaskEntities = Arrays.asList(
-                createScheduleTaskEntity(1, true, OmsStepName.FULL_TRANSFER.name()),
-                createScheduleTaskEntity(2, false, OmsStepName.INCR_TRANSFER.name()),
+                createScheduleTaskEntity(1, true, OscStepName.FULL_TRANSFER.name()),
+                createScheduleTaskEntity(2, false, OscStepName.INCR_TRANSFER.name()),
                 createScheduleTaskEntity(3, false, null));
         OnlineSchemaChangeFlowableTask.ScheduleTasksUpdateHint scheduleTasksUpdateHint =
                 mockOSCFlowTask.getScheduleTasksUpdateHint(scheduleTaskEntities);
         Assert.assertEquals(scheduleTasksUpdateHint.getEnableManualSwapTableFlagCounts(), 1);
         Assert.assertEquals(scheduleTasksUpdateHint.getTaskStepsMap().size(), 2);
-        Assert.assertEquals(scheduleTasksUpdateHint.getTaskStepsMap().get(1L), OmsStepName.FULL_TRANSFER.name());
-        Assert.assertEquals(scheduleTasksUpdateHint.getTaskStepsMap().get(2L), OmsStepName.INCR_TRANSFER.name());
+        Assert.assertEquals(scheduleTasksUpdateHint.getTaskStepsMap().get(1L), OscStepName.FULL_TRANSFER.name());
+        Assert.assertEquals(scheduleTasksUpdateHint.getTaskStepsMap().get(2L), OscStepName.INCR_TRANSFER.name());
         Assert.assertEquals(scheduleTasksUpdateHint.getTaskStatusMap().get(2L), TaskStatus.RUNNING.name());
         Map<Long, String> taskMap = new HashMap() {
             {
@@ -132,9 +132,9 @@ public class OnlineSchemaChangeFlowableTaskTest {
                 scheduleTasksUpdateHint.hasDiff(new OnlineSchemaChangeFlowableTask.ScheduleTasksUpdateHint(0)));
         Assert.assertTrue(scheduleTasksUpdateHint.hasDiff(new OnlineSchemaChangeFlowableTask.ScheduleTasksUpdateHint(1,
 
-                Collections.singletonMap(1L, OmsStepName.FULL_TRANSFER.name()), taskMap)));
+                Collections.singletonMap(1L, OscStepName.FULL_TRANSFER.name()), taskMap)));
         Map<Long, String> muted = new HashMap<>(scheduleTasksUpdateHint.getTaskStepsMap());
-        muted.put(2L, OmsStepName.APP_SWITCH.name());
+        muted.put(2L, OscStepName.APP_SWITCH.name());
         Assert.assertTrue(
                 scheduleTasksUpdateHint
                         .hasDiff(new OnlineSchemaChangeFlowableTask.ScheduleTasksUpdateHint(1, muted, taskMap)));

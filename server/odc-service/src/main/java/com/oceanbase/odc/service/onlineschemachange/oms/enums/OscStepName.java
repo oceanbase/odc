@@ -25,7 +25,7 @@ import lombok.Getter;
  */
 @Getter
 @AllArgsConstructor
-public enum OmsStepName {
+public enum OscStepName {
 
     PRE_CHECK,
     TRANSFER_PRECHECK,

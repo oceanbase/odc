@@ -58,8 +58,8 @@ public class OscActionFsm extends OscActionFsmBase {
 
         // CREATE_DATA_TASK -> CREATE_DATA_TASK | MONITOR_DATA_TASK| COMPLETE(cnacel)
         registerEvent(OscStates.CREATE_DATA_TASK.getState(),
-                CreateDataTaskAction.ofOMSCreateDataTaskAction(dataSourceOpenApiService, omsProjectOpenApiService,
-                        onlineSchemaChangeProperties),
+                CreateDataTaskAction.createDataTaskAction(dataSourceOpenApiService, omsProjectOpenApiService,
+                        onlineSchemaChangeProperties, systemConfigService, resourceManager),
                 statesTransfer,
                 ImmutableSet.of(OscStates.CREATE_DATA_TASK.getState(), OscStates.MONITOR_DATA_TASK.getState(),
                         OscStates.COMPLETE.getState()));
@@ -90,7 +90,7 @@ public class OscActionFsm extends OscActionFsmBase {
 
         // CLEAN_RESOURCE -> YIELD_CONTEXT | CLEAN_RESOURCES | COMPLETE(cancel)
         registerEvent(OscStates.CLEAN_RESOURCE.getState(),
-                CleanResourcesAction.ofOMSCleanResourcesAction(omsProjectOpenApiService), statesTransfer,
+                CleanResourcesAction.ofCleanResourcesAction(omsProjectOpenApiService, resourceManager), statesTransfer,
                 ImmutableSet.of(OscStates.YIELD_CONTEXT.getState(), OscStates.CLEAN_RESOURCE.getState(),
                         OscStates.COMPLETE.getState()));
         // COMPLETE should not be scheduled

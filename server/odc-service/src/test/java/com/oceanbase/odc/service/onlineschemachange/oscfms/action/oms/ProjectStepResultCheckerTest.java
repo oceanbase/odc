@@ -23,8 +23,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsStepName;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsStepStatus;
+import com.oceanbase.odc.service.onlineschemachange.oms.enums.OscStepName;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectProgressResponse;
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectStepVO;
 
@@ -42,7 +42,7 @@ public class ProjectStepResultCheckerTest {
         OmsProjectStepVO incrementStep = new OmsProjectStepVO();
         incrementStep.setStatus(OmsStepStatus.MONITORING);
         incrementStep.setProgress(100);
-        incrementStep.setName(OmsStepName.INCR_TRANSFER);
+        incrementStep.setName(OscStepName.INCR_TRANSFER);
         projectSteps.add(incrementStep);
     }
 
@@ -52,7 +52,7 @@ public class ProjectStepResultCheckerTest {
         response.setIncrSyncCheckpoint(System.currentTimeMillis() / 1000 - 10);
         ProjectStepResultChecker checker = new ProjectStepResultChecker(response, projectSteps,
                 false, 1, Collections.emptyMap());
-        Assert.assertTrue(checker.checkStepFinished(OmsStepName.INCR_TRANSFER));
+        Assert.assertTrue(checker.checkStepFinished(OscStepName.INCR_TRANSFER));
     }
 
     @Test
@@ -61,6 +61,6 @@ public class ProjectStepResultCheckerTest {
         response.setIncrSyncCheckpoint(System.currentTimeMillis() / 1000 - 50);
         ProjectStepResultChecker checker = new ProjectStepResultChecker(response, projectSteps,
                 false, 1, Collections.emptyMap());
-        Assert.assertFalse(checker.checkStepFinished(OmsStepName.INCR_TRANSFER));
+        Assert.assertFalse(checker.checkStepFinished(OscStepName.INCR_TRANSFER));
     }
 }

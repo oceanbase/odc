@@ -104,4 +104,5 @@ public interface TaskFrameworkProperties {
 
     int getSupervisorEndpointKeepAliveSeconds();
 
+    boolean isEnableK8sPortMapper();
 }

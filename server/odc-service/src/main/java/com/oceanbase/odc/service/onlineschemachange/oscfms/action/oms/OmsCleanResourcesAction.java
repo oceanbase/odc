@@ -15,23 +15,12 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms;
 
-import java.util.List;
-
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Lists;
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
-import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
-import com.oceanbase.odc.core.shared.constant.TaskStatus;
-import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
-import com.oceanbase.odc.service.onlineschemachange.OscTableUtil;
 import com.oceanbase.odc.service.onlineschemachange.exception.OmsException;
-import com.oceanbase.odc.service.onlineschemachange.fsm.Action;
-import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsProjectStatusEnum;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenApiService;
@@ -39,6 +28,7 @@ import com.oceanbase.odc.service.onlineschemachange.oms.request.OmsProjectContro
 import com.oceanbase.odc.service.onlineschemachange.oms.response.OmsProjectProgressResponse;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionContext;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionResult;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.action.CleanResourcesActionBase;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OscStates;
 
 import lombok.NonNull;
@@ -50,12 +40,9 @@ import lombok.extern.slf4j.Slf4j;
  * @since 4.3.1
  */
 @Slf4j
-public class OmsCleanResourcesAction implements Action<OscActionContext, OscActionResult> {
+public class OmsCleanResourcesAction extends CleanResourcesActionBase {
 
     private final OmsProjectOpenApiService projectOpenApiService;
-
-    private final List<TaskStatus> expectedTaskStatus = Lists.newArrayList(TaskStatus.DONE, TaskStatus.FAILED,
-            TaskStatus.CANCELED, TaskStatus.RUNNING, TaskStatus.ABNORMAL);
 
     public OmsCleanResourcesAction(@NonNull OmsProjectOpenApiService omsProjectOpenApiService) {
         this.projectOpenApiService = omsProjectOpenApiService;
@@ -80,54 +67,6 @@ public class OmsCleanResourcesAction implements Action<OscActionContext, OscActi
             return new OscActionResult(OscStates.CLEAN_RESOURCE.getState(), null, OscStates.CLEAN_RESOURCE.getState());
         }
         return determinateNextState(scheduleTask, context.getSchedule());
-    }
-
-    protected boolean tryDropNewTable(OscActionContext context) {
-        ConnectionSession connectionSession = null;
-        OnlineSchemaChangeScheduleTaskParameters taskParam = context.getTaskParameter();
-        String databaseName = taskParam.getDatabaseName();
-        String tableName = taskParam.getNewTableNameUnwrapped();
-        boolean succeed;
-        try {
-            connectionSession = context.getConnectionProvider().createConnectionSession();
-            OscTableUtil.dropNewTableIfExits(databaseName, tableName, connectionSession);
-            succeed = true;
-        } catch (Throwable e) {
-            log.warn("osc: drop table = {}.{} failed", databaseName, tableName, e);
-            succeed = false;
-        } finally {
-            if (connectionSession != null) {
-                connectionSession.expire();
-            }
-        }
-        return succeed;
-    }
-
-    @VisibleForTesting
-    protected OscActionResult determinateNextState(ScheduleTaskEntity scheduleTask, ScheduleEntity schedule) {
-        Long scheduleId = schedule.getId();
-        // try to dispatch to next state for done status
-        if (scheduleTask.getStatus() == TaskStatus.DONE) {
-            return new OscActionResult(OscStates.CLEAN_RESOURCE.getState(), null, OscStates.YIELD_CONTEXT.getState());
-        }
-        // if task state is in cancel state, stop and transfer to complete state
-        if (scheduleTask.getStatus() == TaskStatus.CANCELED) {
-            log.info("Because task is canceled, so delete quartz job={}", scheduleId);
-            // cancel as complete
-            return new OscActionResult(OscStates.CLEAN_RESOURCE.getState(), null, OscStates.COMPLETE.getState());
-        }
-        // remain failed and prepare state
-        OnlineSchemaChangeParameters onlineSchemaChangeParameters = JsonUtils.fromJson(
-                schedule.getJobParametersJson(), OnlineSchemaChangeParameters.class);
-        if (onlineSchemaChangeParameters.getErrorStrategy() == TaskErrorStrategy.CONTINUE) {
-            log.info("Because error strategy is continue, so schedule next task");
-            // try schedule next task
-            return new OscActionResult(OscStates.CLEAN_RESOURCE.getState(), null, OscStates.YIELD_CONTEXT.getState());
-        } else {
-            log.info("Because error strategy is abort, so delete quartz job={}", scheduleId);
-            // not continue for remain state, transfer to complete state
-            return new OscActionResult(OscStates.CLEAN_RESOURCE.getState(), null, OscStates.COMPLETE.getState());
-        }
     }
 
     @VisibleForTesting

@@ -19,6 +19,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.tuple.Pair;
+
 import com.oceanbase.odc.service.task.constants.JobConstants;
 
 import lombok.Data;
@@ -66,4 +68,6 @@ public class PodConfig {
     private Double nodeCpu;
 
     private Long nodeMemInMB;
+
+    private List<Pair<Integer, Integer>> portsMapper;
 }

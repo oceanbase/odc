@@ -113,8 +113,8 @@ public class TaskFrameworkConfiguration {
     }
 
     @Bean
-    @ConditionalOnProperty(value = "odc.task-framework.enable-k8s-local-debug-mode", havingValue = "true")
-    public DefaultNativeK8sOperatorBuilder localDebugK8sOperatorBuilder(
+    @ConditionalOnProperty(value = "odc.task-framework.k8s-properties.k8s-impl-type", havingValue = "nativeK8sPod")
+    public DefaultNativeK8sOperatorBuilder localK8sOperatorBuilder(
             @Autowired TaskFrameworkProperties taskFrameworkProperties,
             @Autowired ResourceRepository resourceRepository) throws IOException {
         return new DefaultNativeK8sOperatorBuilder(taskFrameworkProperties, resourceRepository);

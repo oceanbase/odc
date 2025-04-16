@@ -132,4 +132,7 @@ public class DefaultTaskFrameworkProperties implements TaskFrameworkProperties {
 
     // keep supervisor endpoint alive for a period if there is no task running on it or release it
     private int supervisorEndpointKeepAliveSeconds = 300;
+
+    // if k8s port should be mapped, if enabled, then k8s may start pod failed, cause port conflict
+    private boolean enableK8sPortMapper = false;
 }

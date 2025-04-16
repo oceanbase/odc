@@ -200,8 +200,8 @@ public enum ErrorCodes implements ErrorCode {
     OmsGhanaOperateFailed,
     OmsParamError,
     OmsConnectivityTestFailed,
-    OmsPreCheckFailed,
-    OmsProjectExecutingFailed,
+    OscPreCheckFailed,
+    OscProjectExecutingFailed,
 
     // resource
     BuiltInResourceOperateNotAllowed,

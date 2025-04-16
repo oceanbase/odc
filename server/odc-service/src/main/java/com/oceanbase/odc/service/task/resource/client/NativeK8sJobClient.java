@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.sql.Date;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -41,7 +42,6 @@ import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.service.resource.ResourceState;
 import com.oceanbase.odc.service.task.config.K8sProperties;
-import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.resource.K8sPodResource;
 import com.oceanbase.odc.service.task.resource.K8sResourceContext;
@@ -52,6 +52,7 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -84,15 +85,9 @@ public class NativeK8sJobClient implements K8sJobClient {
         this.k8sProperties = k8sProperties;
         ApiClient apiClient = generateNativeK8sApiClient(k8sProperties);
         Verify.notNull(apiClient, "k8s api client");
-        Configuration.setDefaultApiClient(apiClient);
-    }
-
-    public static ApiClient generateNativeK8sApiClient(
-            @NonNull TaskFrameworkProperties taskFrameworkProperties) throws IOException {
-        if (taskFrameworkProperties.getK8sProperties() == null) {
-            return null;
+        if (null == Configuration.getDefaultApiClient()) {
+            Configuration.setDefaultApiClient(apiClient);
         }
-        return generateNativeK8sApiClient(taskFrameworkProperties.getK8sProperties());
     }
 
     public static ApiClient generateNativeK8sApiClient(@NonNull K8sProperties properties) throws IOException {
@@ -122,9 +117,13 @@ public class NativeK8sJobClient implements K8sJobClient {
     @Override
     public K8sPodResource create(K8sResourceContext k8sResourceContext) throws JobException {
         PodConfig podConfig = k8sResourceContext.getPodConfig();
-        return create(k8sResourceContext.resourceNamespace(), k8sResourceContext.resourceName(),
+        K8sPodResource ret = create(k8sResourceContext.resourceNamespace(), k8sResourceContext.resourceName(),
                 podConfig.getImage(),
                 podConfig.getCommand(), podConfig);
+        ret.setRegion(k8sResourceContext.getRegion());
+        ret.setGroup(k8sResourceContext.getGroup());
+        ret.setType(k8sResourceContext.getType());
+        return ret;
     }
 
     protected K8sPodResource create(@NonNull String namespace, @NonNull String name, @NonNull String image,
@@ -139,7 +138,8 @@ public class NativeK8sJobClient implements K8sJobClient {
             // return pod status
             return new K8sPodResource(null, null, null, namespace, createdJob.getMetadata().getName(),
                     k8sPodPhaseToResourceState(createdJob.getStatus().getPhase()),
-                    createdJob.getStatus().getPodIP(), String.valueOf(k8sProperties.getExecutorListenPort()),
+                    createdJob.getStatus().getPodIP(),
+                    createdJob.getStatus().getHostIP(), String.valueOf(k8sProperties.getExecutorListenPort()),
                     new Date(System.currentTimeMillis() / 1000));
         } catch (ApiException e) {
             Optional<K8sPodResource> existedPod = null;
@@ -181,6 +181,7 @@ public class NativeK8sJobClient implements K8sJobClient {
         V1Pod v1Pod = v1PodOptional.get();
         K8sPodResource resource = new K8sPodResource(k8sProperties.getRegion(), k8sProperties.getGroup(), null,
                 namespace, arn, k8sPodPhaseToResourceState(v1Pod.getStatus().getPhase()), v1Pod.getStatus().getPodIP(),
+                v1Pod.getStatus().getHostIP(),
                 String.valueOf(k8sProperties.getExecutorListenPort()),
                 new Date(System.currentTimeMillis() / 1000));
         return Optional.of(resource);
@@ -208,6 +209,16 @@ public class NativeK8sJobClient implements K8sJobClient {
 
         if (CollectionUtils.isNotEmpty(command)) {
             container.setCommand(command);
+        }
+        if (CollectionUtils.isNotEmpty(podParam.getPortsMapper())) {
+            List<V1ContainerPort> ports = new ArrayList<>();
+            int index = 0;
+            for (Pair<Integer, Integer> mapper : podParam.getPortsMapper()) {
+                ports.add(new V1ContainerPort().name("mapper" + index).containerPort(mapper.getLeft())
+                        .hostPort(mapper.getRight()));
+                index++;
+            }
+            container.setPorts(ports);
         }
 
         if (podParam.getEnvironments().size() > 0) {
