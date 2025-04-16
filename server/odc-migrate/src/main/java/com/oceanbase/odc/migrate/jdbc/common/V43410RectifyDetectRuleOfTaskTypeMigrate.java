@@ -189,12 +189,12 @@ public class V43410RectifyDetectRuleOfTaskTypeMigrate implements JdbcMigratable 
                     checkAndFillDetectRulesByOrganizationId(organizationId2HighestRiskLevelId);
             String sql =
                     "INSERT INTO regulation_riskdetect_rule (create_time, update_time, name, risk_level_id, is_builtin, creator_id, organization_id, value_json_old, value_json) "
-                            + "VALUES (NOW(), NOW(), :name, :riskLevelId, :isBuiltin, 1, :organizationId, :valueJsonOld, :valueJson) "
+                            + "VALUES (NOW(), NOW(), :detectRuleName, :riskLevelId, :isBuiltin, 1, :organizationId, :valueJsonOld, :valueJson) "
                             + "ON DUPLICATE KEY UPDATE update_time = NOW(), value_json_old = :valueJsonOld, value_json = :valueJson";
             int[] affectedRows = this.txTemplate.execute(status -> {
                 MapSqlParameterSource[] parameterSources = organizationId2DetectRules.values().stream()
                         .map(detectRule -> new MapSqlParameterSource()
-                                .addValue("name", DEFAULT_HIGH_RISK_DETECT_NAME)
+                                .addValue("detectRuleName", DEFAULT_HIGH_RISK_DETECT_NAME)
                                 .addValue("riskLevelId", detectRule.getRiskLevelId())
                                 .addValue("isBuiltin", -1L)
                                 .addValue("organizationId", detectRule.getOrganizationId())
