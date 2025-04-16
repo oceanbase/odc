@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.tools.dbbrowser.schema.oracle;
+package com.oceanbase.tools.dbbrowser.schema.mysql;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.jdbc.core.JdbcOperations;
 
@@ -24,21 +25,20 @@ import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecord;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
-import com.oceanbase.tools.dbbrowser.util.OracleDataDictTableNames;
 
 /**
- * @description: applicable to OB [4.3.2,4.3.5.1)
+ * @description: applicable to OB [4.3.2,4.3.5.2)
  * @author: zijia.cj
- * @date: 2025/3/17 13:26
+ * @date: 2025/3/4 19:00
  * @since: 4.3.4
  */
-public class OBOracleBetween432And4351SchemaAccessor extends OBOracleSchemaAccessor {
+public class OBMySQLBetween432And4352SchemaAccessor extends OBMySQLSchemaAccessor {
 
-    public OBOracleBetween432And4351SchemaAccessor(JdbcOperations jdbcOperations,
-            OracleDataDictTableNames dataDictTableNames) {
-        super(jdbcOperations, dataDictTableNames);
+    public OBMySQLBetween432And4352SchemaAccessor(JdbcOperations jdbcOperations) {
+        super(jdbcOperations);
     }
 
     @Override
@@ -62,17 +62,26 @@ public class OBOracleBetween432And4351SchemaAccessor extends OBOracleSchemaAcces
     }
 
     @Override
-    public List<DBMViewRefreshRecord> listMViewRefreshRecords(DBMViewRefreshRecordParam param) {
-        throw new UnsupportedOperationException("not support yet");
-    }
-
-    @Override
     public List<DBTableConstraint> listMViewConstraints(String schemaName, String mViewName) {
         throw new UnsupportedOperationException("not support yet");
     }
 
     @Override
+    public List<DBMViewRefreshRecord> listMViewRefreshRecords(DBMViewRefreshRecordParam param) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
     public List<DBTableIndex> listMViewIndexes(String schemaName, String mViewName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public Map<String, List<DBTableColumn>> listBasicMViewColumns(String schemaName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    public List<DBTableColumn> listBasicMViewColumns(String schemaName, String externalTableName) {
         throw new UnsupportedOperationException("not support yet");
     }
 
