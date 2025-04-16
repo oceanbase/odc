@@ -36,6 +36,7 @@ import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.Organization;
 
+import cn.hutool.core.codec.Caesar;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 
@@ -106,7 +107,7 @@ public class EncryptionFacadeImpl implements EncryptionFacade {
     public TextEncryptor organizationEncryptor(Long organizationId, String salt) {
         Organization organization = organizationService.get(organizationId).orElseThrow(
                 () -> new NotFoundException(ResourceType.ODC_ORGANIZATION, "organizationId", organizationId));
-        String secret = new String(Base64.getDecoder().decode(organization.getSecret()));
+        String secret = Caesar.decode(organization.getSecret(), 8);
         return getEncryptor(secret, salt);
     }
 
