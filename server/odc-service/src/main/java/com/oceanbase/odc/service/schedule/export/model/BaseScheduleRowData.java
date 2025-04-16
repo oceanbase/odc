@@ -83,6 +83,7 @@ public class BaseScheduleRowData implements Encryptable {
         rowPreviewDto.setOriginProjectName(originProjectName);
         rowPreviewDto.setDatabase(database);
         rowPreviewDto.setTargetDatabase(targetDatabase);
+        rowPreviewDto.setDescription(description);
         return rowPreviewDto;
     }
 }

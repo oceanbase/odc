@@ -760,6 +760,23 @@ public class FlowInstanceService {
         return taskService.detail(taskId);
     }
 
+    public Map<Long, TaskEntity> getTaskByFlowInstanceIds(Collection<Long> flowInstanceIds) {
+        List<ServiceTaskInstanceEntity> serviceTaskInstanceEntities = serviceTaskRepository
+                .findByFlowInstanceIdIn(flowInstanceIds)
+                .stream()
+                .filter(e -> e.getTaskType() != TaskType.GENERATE_ROLLBACK && e.getTaskType() != TaskType.SQL_CHECK
+                        && e.getTaskType() != TaskType.PRE_CHECK)
+                .collect(Collectors.toList());
+        Map<Long, Long> flowId2taskIds = serviceTaskInstanceEntities.stream().collect(
+                Collectors.toMap(ServiceTaskInstanceEntity::getFlowInstanceId,
+                        ServiceTaskInstanceEntity::getTargetTaskId, (exist, duplicate) -> exist));
+        List<TaskEntity> taskEntities = taskService.findByIds(flowId2taskIds.values());
+        Map<Long, TaskEntity> idTaskEntityMap =
+                taskEntities.stream().collect(Collectors.toMap(TaskEntity::getId, t -> t));
+        return flowId2taskIds.entrySet().stream()
+                .collect(Collectors.toMap(Entry::getKey, v -> idTaskEntityMap.get(v.getValue())));
+    }
+
     private void checkCreateFlowInstancePermission(CreateFlowInstanceReq req) {
         if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
             return;

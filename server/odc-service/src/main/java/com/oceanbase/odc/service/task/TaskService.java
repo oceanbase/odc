@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.task;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -365,6 +366,10 @@ public class TaskService {
     private TaskEntity nullSafeFindById(Long id) {
         return taskRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_TASK, "id", id));
+    }
+
+    public List<TaskEntity> findByIds(Collection<Long> ids) {
+        return taskRepository.findByIdIn(ids);
     }
 
     private void innerCancel(@NonNull Long id, Object taskResult) {
