@@ -17,7 +17,6 @@ package com.oceanbase.odc.migrate.jdbc.common;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;

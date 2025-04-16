@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.encryption;
 
 import java.time.Duration;
-import java.util.Base64;
 import java.util.Objects;
 
 import org.apache.commons.lang3.StringUtils;
