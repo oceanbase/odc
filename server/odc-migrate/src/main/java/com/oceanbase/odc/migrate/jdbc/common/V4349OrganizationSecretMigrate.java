@@ -65,7 +65,7 @@ public class V4349OrganizationSecretMigrate implements JdbcMigratable {
         String sql = "update iam_organization set secret=? where id=?";
         List<Object[]> parameters = organizationList.stream()
                 .map(organization -> new Object[] {
-                    Base64.getEncoder().encodeToString(organization.getSecret().getBytes()), organization.getId()})
+                        Base64.getEncoder().encodeToString(organization.getSecret().getBytes()), organization.getId()})
                 .collect(Collectors.toList());
         AtomicReference<Exception> thrown = new AtomicReference<>(null);
         Long total = transactionTemplate.execute(status -> {
