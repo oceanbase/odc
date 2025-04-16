@@ -40,6 +40,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.Sets;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
 import com.oceanbase.odc.metadb.connection.ConnectionEntity;
@@ -75,9 +76,7 @@ import com.oceanbase.odc.service.connection.util.ConnectionMapper;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangeDatabase;
 import com.oceanbase.odc.service.flow.ApprovalPermissionService;
 import com.oceanbase.odc.service.flow.instance.FlowInstance;
-import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp.FlowInstanceMapper;
-import com.oceanbase.odc.service.flow.model.FlowNodeInstanceDetailResp;
 import com.oceanbase.odc.service.flow.model.FlowNodeInstanceDetailResp.FlowNodeInstanceMapper;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowTaskExecutionStrategy;
@@ -109,6 +108,8 @@ import lombok.NonNull;
 @Component
 public class FlowResponseMapperFactory {
 
+    private final ConnectionMapper connectionMapper = ConnectionMapper.INSTANCE;
+    private final RiskLevelMapper riskLevelMapper = RiskLevelMapper.INSTANCE;
     @Autowired
     private UserTaskInstanceRepository userTaskInstanceRepository;
     @Autowired
@@ -143,10 +144,6 @@ public class FlowResponseMapperFactory {
     private AuthenticationFacade authenticationFacade;
     @Autowired
     private ProjectService projectService;
-
-    private final ConnectionMapper connectionMapper = ConnectionMapper.INSTANCE;
-
-    private final RiskLevelMapper riskLevelMapper = RiskLevelMapper.INSTANCE;
 
     public FlowNodeInstanceMapper generateNodeMapperByInstances(@NonNull Collection<FlowInstance> flowInstances,
             boolean skipAuth) {
@@ -250,10 +247,7 @@ public class FlowResponseMapperFactory {
         Specification<ServiceTaskInstanceEntity> serviceSpec =
                 Specification.where(ServiceTaskInstanceSpecs.flowInstanceIdIn(flowInstanceIds));
         List<ServiceTaskInstanceEntity> serviceEntities = serviceTaskRepository.findAll(serviceSpec);
-        Set<Long> taskIds = serviceEntities.stream().filter(entity -> entity.getTargetTaskId() != null)
-                .map(ServiceTaskInstanceEntity::getTargetTaskId).collect(Collectors.toSet());
-        Map<Long, TaskEntity> taskId2TaskEntity = listTasksByTaskIdsWithoutPermissionCheck(taskIds).stream()
-                .collect(Collectors.toMap(TaskEntity::getId, taskEntity -> taskEntity));
+        Map<Long, TaskEntity> taskId2TaskEntity = getTaskEntityMap(serviceEntities);
 
         return FlowNodeInstanceMapper.builder()
                 .getCandidatesByApprovalId(approvalId2Candidates::get)
@@ -283,110 +277,40 @@ public class FlowResponseMapperFactory {
         if (flowInstanceIds.isEmpty()) {
             return FlowInstanceMapper.builder().build();
         }
-        Specification<ServiceTaskInstanceEntity> serviceSpec =
-                Specification.where(ServiceTaskInstanceSpecs.flowInstanceIdIn(flowInstanceIds));
-        List<ServiceTaskInstanceEntity> serviceEntities = serviceTaskRepository.findAll(serviceSpec);
-
-        Map<Long, List<Date>> flowInstanceId2ExecutionTime = serviceEntities.stream()
-                .filter(entity -> entity.getExecutionTime() != null)
-                .collect(Collectors.groupingBy(ServiceTaskInstanceEntity::getFlowInstanceId,
-                        Collectors.mapping(ServiceTaskInstanceEntity::getExecutionTime, Collectors.toList())));
-
-        Map<Long, List<FlowTaskExecutionStrategy>> flowInstanceId2ExecutionStrategy = serviceEntities.stream()
-                .filter(e -> e.getTaskType().needForExecutionStrategy())
-                .collect(Collectors.groupingBy(ServiceTaskInstanceEntity::getFlowInstanceId,
-                        Collectors.mapping(ServiceTaskInstanceEntity::getStrategy, Collectors.toList())));
-
-        Map<Long, Integer> parentInstanceIdMap = flowInstanceRepository
-                .findByParentInstanceIdIn(flowInstanceIds)
-                .stream().collect(
-                        Collectors.toMap(ParentInstanceIdCount::getParentInstanceId, ParentInstanceIdCount::getCount));
-
-        Map<Long, Boolean> flowInstanceId2Rollbackable = flowInstanceIds.stream().collect(Collectors
-                .toMap(Function.identity(), id -> MoreObjects.firstNonNull(parentInstanceIdMap.get(id), 0) == 0));
-
+        List<ServiceTaskInstanceEntity> serviceEntities =
+                serviceTaskRepository.findByFlowInstanceIdIn(new HashSet<>(flowInstanceIds));
+        Map<Long, List<Date>> flowInstanceId2ExecutionTime = mapExecutionTimes(serviceEntities);
+        Map<Long, List<FlowTaskExecutionStrategy>> flowInstanceId2ExecutionStrategy =
+                mapExecutionStrategies(serviceEntities);
+        Map<Long, Boolean> flowInstanceId2Rollbackable = mapRollbackableStatus(flowInstanceIds);
         /**
+         *
          * In order to improve the interface efficiency, it is necessary to find out the task entity
          * corresponding to the process instance at one time
          */
         Map<Long, Set<TaskEntity>> flowInstanceId2Tasks = new HashMap<>();
-        Set<Long> taskIds = serviceEntities.stream().filter(entity -> entity.getTargetTaskId() != null)
-                .map(ServiceTaskInstanceEntity::getTargetTaskId).collect(Collectors.toSet());
-        Map<Long, TaskEntity> taskId2TaskEntity = listTasksByTaskIdsWithoutPermissionCheck(taskIds).stream()
-                .collect(Collectors.toMap(TaskEntity::getId, taskEntity -> taskEntity));
-        serviceEntities.stream().filter(entity -> entity.getTargetTaskId() != null).forEach(entity -> {
-            Set<TaskEntity> taskEntities =
-                    flowInstanceId2Tasks.computeIfAbsent(entity.getFlowInstanceId(), id -> new HashSet<>());
-            TaskEntity taskEntity = taskId2TaskEntity.get(entity.getTargetTaskId());
-            if (taskEntity != null) {
-                taskEntities.add(taskEntity);
-            }
-        });
+        Map<Long, TaskEntity> taskId2TaskEntity = getTaskEntityMap(serviceEntities);
+        populateTaskMappings(serviceEntities, flowInstanceId2Tasks, taskId2TaskEntity);
 
-        /**
-         * Get Database associated with each TaskEntity
-         */
-        Map<Long, Database> id2Database = new HashMap<>();
-        Set<Long> databaseIds = taskId2TaskEntity.values().stream()
-                .map(TaskEntity::getDatabaseId)
-                .filter(Objects::nonNull).collect(Collectors.toSet());
-
-        databaseIds.addAll(collectMultiDatabaseChangeDatabaseIds(taskId2TaskEntity));
-        databaseIds.addAll(collectDBStructureComparisonDatabaseIds(taskId2TaskEntity));
+        Set<Long> databaseIds = getDatabaseIds(taskId2TaskEntity);
         Set<Long> projectIds = new HashSet<>();
-        Map<Long, Project> id2Project = new HashMap<>();
-
-        if (CollectionUtils.isNotEmpty(databaseIds)) {
-            id2Database = databaseService.listDatabasesByIds(databaseIds).stream()
-                    .collect(Collectors.toMap(Database::getId, database -> database));
-            projectIds.addAll(id2Database.values().stream().map(db -> db.getProject().getId())
-                    .filter(Objects::nonNull).collect(Collectors.toSet()));
-        }
-        projectIds.addAll(collectApplyProjectIds(taskId2TaskEntity));
-        if (CollectionUtils.isNotEmpty(projectIds)) {
-            id2Project = projectService.listByIds(projectIds).stream()
-                    .collect(Collectors.toMap(Project::getId, project -> project, (a, b) -> a));
-        }
-        /**
-         * find the ConnectionConfig associated with each Database
-         */
-        Set<Long> connectionIds = id2Database.values().stream()
-                .filter(e -> e.getDataSource() != null && e.getDataSource().getId() != null)
-                .map(e -> e.getDataSource().getId()).collect(Collectors.toSet());
-        Map<Long, ConnectionConfig> id2Connection = listConnectionsByConnectionIdsWithoutPermissionCheck(connectionIds)
-                .stream().collect(Collectors.toMap(ConnectionEntity::getId, connectionMapper::entityToModel));
-        id2Database.values().forEach(database -> {
-            if (id2Connection.containsKey(database.getDataSource().getId())) {
-                database.setDataSource(id2Connection.get(database.getDataSource().getId()));
-            }
-        });
-
+        Map<Long, Database> id2Database = getIdDatabaseMapAndFillProjectIds(
+                databaseIds, projectIds, taskId2TaskEntity);
+        Map<Long, Project> id2Project = getIdProjectMap(projectIds, skipAuth);
         /**
          * list candidates
          */
         Map<Long, Set<UserEntity>> candidatesByFlowInstanceIds =
                 approvalPermissionService.getCandidatesByFlowInstanceIds(flowInstanceIds);
-
         /**
          * In order to improve the interface efficiency, it is necessary to find out the user entity
          * corresponding to the process instance at one time
          */
-        Set<Long> userIds = flowInstanceId2Tasks.values().stream()
-                .flatMap(Collection::stream)
-                .filter(entity -> entity.getCreatorId() != null)
-                .map(TaskEntity::getCreatorId).collect(Collectors.toSet());
-        userIds.addAll(creatorIds);
-        Map<Long, UserEntity> userId2User = listUsersByUserIds(userIds)
-                .stream().collect(Collectors.toMap(UserEntity::getId, entity -> entity));
-
+        Map<Long, UserEntity> userId2User = getUserId2EntityMap(creatorIds,
+                flowInstanceId2Tasks);
         Map<Long, List<RoleEntity>> userId2Roles = getUserId2Roles(userId2User.keySet(), skipAuth);
+        Set<Long> approvableFlowInstanceIds = getApprovableFlowInstanceIds(skipAuth);
 
-        Set<Long> approvableFlowInstanceIds = skipAuth ? Sets.newHashSet()
-                : approvalPermissionService.getApprovableApprovalInstances()
-                        .stream()
-                        .filter(entity -> FlowNodeStatus.EXECUTING == entity.getStatus()
-                                || entity.getStatus() == FlowNodeStatus.WAIT_FOR_CONFIRM)
-                        .map(UserTaskInstanceEntity::getFlowInstanceId).collect(Collectors.toSet());
         return FlowInstanceMapper.builder()
                 .ifRollbackable(flowInstanceId2Rollbackable::get)
                 .ifApprovable(approvableFlowInstanceIds::contains)
@@ -401,6 +325,124 @@ public class FlowResponseMapperFactory {
                 .getDatabaseById(id2Database::get)
                 .getProjectById(id2Project::get)
                 .build();
+    }
+
+    private void populateTaskMappings(List<ServiceTaskInstanceEntity> serviceEntities,
+            Map<Long, Set<TaskEntity>> flowInstanceId2Tasks, Map<Long, TaskEntity> taskId2TaskEntity) {
+        serviceEntities.stream().filter(entity -> entity.getTargetTaskId() != null).forEach(entity -> {
+            Set<TaskEntity> taskEntities =
+                    flowInstanceId2Tasks.computeIfAbsent(entity.getFlowInstanceId(), id -> new HashSet<>());
+            TaskEntity taskEntity = taskId2TaskEntity.get(entity.getTargetTaskId());
+            if (taskEntity != null) {
+                taskEntities.add(taskEntity);
+            }
+        });
+    }
+
+    private Map<Long, List<FlowTaskExecutionStrategy>> mapExecutionStrategies(
+            List<ServiceTaskInstanceEntity> serviceEntities) {
+        return serviceEntities.stream()
+                .filter(e -> e.getTaskType().needForExecutionStrategy())
+                .collect(Collectors.groupingBy(ServiceTaskInstanceEntity::getFlowInstanceId,
+                        Collectors.mapping(ServiceTaskInstanceEntity::getStrategy, Collectors.toList())));
+    }
+
+    private Map<Long, List<Date>> mapExecutionTimes(List<ServiceTaskInstanceEntity> serviceEntities) {
+        return serviceEntities.stream()
+                .filter(entity -> entity.getExecutionTime() != null)
+                .collect(Collectors.groupingBy(ServiceTaskInstanceEntity::getFlowInstanceId,
+                        Collectors.mapping(ServiceTaskInstanceEntity::getExecutionTime, Collectors.toList())));
+    }
+
+    private Map<Long, Project> getIdProjectMap(Set<Long> projectIds, boolean skipAuth) {
+        Map<Long, Project> id2Project = new HashMap<>();
+        if (CollectionUtils.isNotEmpty(projectIds)) {
+            List<Project> projects = projectService.listByIds(projectIds);
+            if (!skipAuth) {
+                Map<Long, Set<ResourceRoleName>> projectId2ResourceRoleNames =
+                        projectService.getProjectId2ResourceRoleNames();
+                projects.forEach(p -> p.setCurrentUserResourceRoles(
+                        projectId2ResourceRoleNames.getOrDefault(p.getId(),
+                                Collections.emptySet())));
+                id2Project = projects.stream()
+                        .collect(Collectors.toMap(Project::getId, project -> project, (a, b) -> a));
+            }
+        }
+        return id2Project;
+    }
+
+    private Map<Long, Database> getIdDatabaseMapAndFillProjectIds(Set<Long> databaseIds, Set<Long> projectIds,
+            Map<Long, TaskEntity> taskId2TaskEntity) {
+        Map<Long, Database> id2Database = new HashMap<>();
+        if (CollectionUtils.isNotEmpty(databaseIds)) {
+            id2Database = databaseService.listDatabasesByIds(databaseIds).stream()
+                    .collect(Collectors.toMap(Database::getId, database -> database));
+            populateDatasourceToDatabase(id2Database);
+            projectIds.addAll(id2Database.values().stream().map(db -> db.getProject().getId())
+                    .filter(Objects::nonNull).collect(Collectors.toSet()));
+        }
+        projectIds.addAll(collectApplyProjectIds(taskId2TaskEntity));
+        return id2Database;
+    }
+
+    private Set<Long> getApprovableFlowInstanceIds(boolean skipAuth) {
+        return skipAuth ? Sets.newHashSet()
+                : approvalPermissionService.getApprovableApprovalInstances()
+                        .stream()
+                        .filter(entity -> FlowNodeStatus.EXECUTING == entity.getStatus()
+                                || entity.getStatus() == FlowNodeStatus.WAIT_FOR_CONFIRM)
+                        .map(UserTaskInstanceEntity::getFlowInstanceId).collect(Collectors.toSet());
+    }
+
+    private Map<Long, UserEntity> getUserId2EntityMap(Set<Long> creatorIds,
+            Map<Long, Set<TaskEntity>> flowInstanceId2Tasks) {
+        Set<Long> userIds = flowInstanceId2Tasks.values().stream()
+                .flatMap(Collection::stream)
+                .map(TaskEntity::getCreatorId)
+                .filter(Objects::nonNull).collect(Collectors.toSet());
+        userIds.addAll(creatorIds);
+        return listUsersByUserIds(userIds)
+                .stream().collect(Collectors.toMap(UserEntity::getId, entity -> entity));
+    }
+
+    private void populateDatasourceToDatabase(Map<Long, Database> id2Database) {
+        Set<Long> connectionIds = id2Database.values().stream()
+                .filter(e -> e.getDataSource() != null && e.getDataSource().getId() != null)
+                .map(e -> e.getDataSource().getId()).collect(Collectors.toSet());
+        Map<Long, ConnectionConfig> id2Connection = listConnectionsByConnectionIdsWithoutPermissionCheck(connectionIds)
+                .stream().collect(Collectors.toMap(ConnectionEntity::getId, connectionMapper::entityToModel));
+        id2Database.values().forEach(database -> {
+            if (id2Connection.containsKey(database.getDataSource().getId())) {
+                database.setDataSource(id2Connection.get(database.getDataSource().getId()));
+            }
+        });
+    }
+
+    private Set<Long> getDatabaseIds(Map<Long, TaskEntity> taskId2TaskEntity) {
+        Set<Long> databaseIds = taskId2TaskEntity.values().stream()
+                .map(TaskEntity::getDatabaseId)
+                .filter(Objects::nonNull).collect(Collectors.toSet());
+
+        databaseIds.addAll(collectMultiDatabaseChangeDatabaseIds(taskId2TaskEntity));
+        databaseIds.addAll(collectDBStructureComparisonDatabaseIds(taskId2TaskEntity));
+        return databaseIds;
+    }
+
+    private Map<Long, TaskEntity> getTaskEntityMap(List<ServiceTaskInstanceEntity> serviceEntities) {
+        Set<Long> taskIds = serviceEntities.stream().map(ServiceTaskInstanceEntity::getTargetTaskId)
+                .filter(Objects::nonNull).collect(Collectors.toSet());
+        return listTasksByTaskIdsWithoutPermissionCheck(taskIds).stream()
+                .collect(Collectors.toMap(TaskEntity::getId, taskEntity -> taskEntity));
+    }
+
+    private Map<Long, Boolean> mapRollbackableStatus(Collection<Long> flowInstanceIds) {
+        Map<Long, Integer> parentInstanceIdMap = flowInstanceRepository
+                .findByParentInstanceIdIn(flowInstanceIds)
+                .stream().collect(
+                        Collectors.toMap(ParentInstanceIdCount::getParentInstanceId, ParentInstanceIdCount::getCount));
+
+        return flowInstanceIds.stream().collect(Collectors
+                .toMap(Function.identity(), id -> MoreObjects.firstNonNull(parentInstanceIdMap.get(id), 0) == 0));
     }
 
     public Map<Long, List<RoleEntity>> getUserId2Roles(@NonNull Collection<Long> userIds, boolean skipAuth) {
