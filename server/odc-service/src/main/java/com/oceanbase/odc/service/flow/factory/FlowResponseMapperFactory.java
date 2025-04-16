@@ -277,7 +277,8 @@ public class FlowResponseMapperFactory {
         if (flowInstanceIds.isEmpty()) {
             return FlowInstanceMapper.builder().build();
         }
-        List<ServiceTaskInstanceEntity> serviceEntities = serviceTaskRepository.findByFlowInstanceIdIn(flowInstanceIds);
+        List<ServiceTaskInstanceEntity> serviceEntities =
+                serviceTaskRepository.findByFlowInstanceIdIn(new HashSet<>(flowInstanceIds));
         Map<Long, List<Date>> flowInstanceId2ExecutionTime = mapExecutionTimes(serviceEntities);
         Map<Long, List<FlowTaskExecutionStrategy>> flowInstanceId2ExecutionStrategy =
                 mapExecutionStrategies(serviceEntities);
@@ -327,10 +328,10 @@ public class FlowResponseMapperFactory {
     }
 
     private void populateTaskMappings(List<ServiceTaskInstanceEntity> serviceEntities,
-        Map<Long, Set<TaskEntity>> flowInstanceId2Tasks, Map<Long, TaskEntity> taskId2TaskEntity) {
+            Map<Long, Set<TaskEntity>> flowInstanceId2Tasks, Map<Long, TaskEntity> taskId2TaskEntity) {
         serviceEntities.stream().filter(entity -> entity.getTargetTaskId() != null).forEach(entity -> {
             Set<TaskEntity> taskEntities =
-                flowInstanceId2Tasks.computeIfAbsent(entity.getFlowInstanceId(), id -> new HashSet<>());
+                    flowInstanceId2Tasks.computeIfAbsent(entity.getFlowInstanceId(), id -> new HashSet<>());
             TaskEntity taskEntity = taskId2TaskEntity.get(entity.getTargetTaskId());
             if (taskEntity != null) {
                 taskEntities.add(taskEntity);
@@ -339,18 +340,18 @@ public class FlowResponseMapperFactory {
     }
 
     private Map<Long, List<FlowTaskExecutionStrategy>> mapExecutionStrategies(
-        List<ServiceTaskInstanceEntity> serviceEntities) {
+            List<ServiceTaskInstanceEntity> serviceEntities) {
         return serviceEntities.stream()
-            .filter(e -> e.getTaskType().needForExecutionStrategy())
-            .collect(Collectors.groupingBy(ServiceTaskInstanceEntity::getFlowInstanceId,
-                Collectors.mapping(ServiceTaskInstanceEntity::getStrategy, Collectors.toList())));
+                .filter(e -> e.getTaskType().needForExecutionStrategy())
+                .collect(Collectors.groupingBy(ServiceTaskInstanceEntity::getFlowInstanceId,
+                        Collectors.mapping(ServiceTaskInstanceEntity::getStrategy, Collectors.toList())));
     }
 
     private Map<Long, List<Date>> mapExecutionTimes(List<ServiceTaskInstanceEntity> serviceEntities) {
         return serviceEntities.stream()
-            .filter(entity -> entity.getExecutionTime() != null)
-            .collect(Collectors.groupingBy(ServiceTaskInstanceEntity::getFlowInstanceId,
-                Collectors.mapping(ServiceTaskInstanceEntity::getExecutionTime, Collectors.toList())));
+                .filter(entity -> entity.getExecutionTime() != null)
+                .collect(Collectors.groupingBy(ServiceTaskInstanceEntity::getFlowInstanceId,
+                        Collectors.mapping(ServiceTaskInstanceEntity::getExecutionTime, Collectors.toList())));
     }
 
     private Map<Long, Project> getIdProjectMap(Set<Long> projectIds, boolean skipAuth) {
