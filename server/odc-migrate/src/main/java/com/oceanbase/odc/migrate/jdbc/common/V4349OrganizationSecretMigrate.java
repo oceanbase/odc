@@ -16,6 +16,7 @@
 package com.oceanbase.odc.migrate.jdbc.common;
 
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -63,7 +64,8 @@ public class V4349OrganizationSecretMigrate implements JdbcMigratable {
     private long migrateForOrganization(List<OrganizationEntity> organizationList) {
         String sql = "update iam_organization set secret=? where id=?";
         List<Object[]> parameters = organizationList.stream()
-                .map(organization -> new Object[] {organization.getSecret(), organization.getId()})
+                .map(organization -> new Object[] {
+                    Base64.getEncoder().encodeToString(organization.getSecret().getBytes()), organization.getId()})
                 .collect(Collectors.toList());
         AtomicReference<Exception> thrown = new AtomicReference<>(null);
         Long total = transactionTemplate.execute(status -> {
