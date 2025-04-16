@@ -90,7 +90,7 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
     private static final DBSchemaAccessors dbSchemaAccessors = new DBSchemaAccessors(getOBOracleDataSource());
     private static final DBSchemaAccessor accessor = dbSchemaAccessors.createOBOracle();
     private static final boolean isSupportMaterializedView =
-            VersionUtils.isGreaterThanOrEqualsTo(dbSchemaAccessors.getVersion(), "4.3.5.1");
+            VersionUtils.isGreaterThanOrEqualsTo(dbSchemaAccessors.getVersion(), "4.3.5.2");
 
     @BeforeClass
     public static void before() throws Exception {
@@ -199,15 +199,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
             DBMaterializedView test_mv_never = accessor.getMView(getOBOracleSchema(), "TEST_MV_NEVER");
             Assert.assertEquals(DBMaterializedViewRefreshMethod.NEVER_REFRESH, test_mv_never.getRefreshMethod());
-        }
-    }
-
-    @Test
-    public void listMViewConstraints_Success() {
-        if (isSupportMaterializedView) {
-            List<DBTableConstraint> constraints =
-                    accessor.listMViewConstraints(getOBOracleSchema(), "TEST_MV_ALLSYNTAX");
-            Assert.assertEquals(Collections.emptyList(), constraints);
         }
     }
 

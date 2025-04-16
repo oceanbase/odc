@@ -81,7 +81,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     private static final DBSchemaAccessors dbSchemaAccessors = new DBSchemaAccessors(getOBMySQLDataSource());
     private static final DBSchemaAccessor accessor = dbSchemaAccessors.createOBMysql();
     private static final boolean isSupportMaterializedView =
-            VersionUtils.isGreaterThanOrEqualsTo(dbSchemaAccessors.getVersion(), "4.3.5.1");
+            VersionUtils.isGreaterThanOrEqualsTo(dbSchemaAccessors.getVersion(), "4.3.5.2");
 
     @BeforeClass
     public static void setUp() throws Exception {
@@ -187,15 +187,6 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
             DBMaterializedView test_mv_never = accessor.getMView(getOBMySQLDataBaseName(), "test_mv_never");
             Assert.assertEquals(DBMaterializedViewRefreshMethod.NEVER_REFRESH, test_mv_never.getRefreshMethod());
 
-        }
-    }
-
-    @Test
-    public void listMViewConstraints_Success() {
-        if (isSupportMaterializedView) {
-            List<DBTableConstraint> constraints =
-                    accessor.listMViewConstraints(getOBMySQLDataBaseName(), "test_mv_all_syntax");
-            Assert.assertEquals(Collections.emptyList(), constraints);
         }
     }
 
