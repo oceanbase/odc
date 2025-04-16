@@ -24,6 +24,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import javax.persistence.EntityManager;
+import javax.persistence.LockModeType;
+
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -56,6 +59,9 @@ public class ResourceManager {
     @Getter
     @Autowired
     private ResourceRepository resourceRepository;
+    @Autowired
+    private EntityManager entityManager;
+
     private final List<ResourceOperatorBuilder<?, ?>> resourceOperatorBuilders = new ArrayList<>();
 
     public ResourceManager(@Autowired(required = false) List<ResourceOperatorBuilder<?, ?>> builders) {
@@ -236,8 +242,14 @@ public class ResourceManager {
         Optional<ResourceEntity> optional = this.resourceRepository.findByResourceID(resourceID);
         if (!optional.isPresent()) { // may old version job
             log.warn("Resource is not found, resourceID={}", resourceID);
-        } else if (optional.get().getStatus() == ResourceState.DESTROYING) {
+        } else if (ResourceState.isDestroying(optional.get().getStatus())) {
             log.warn("Resource is already in destroying state, resourceID={}", resourceID);
+            return null;
+        }
+        ResourceEntity resourceEntity =
+                entityManager.find(ResourceEntity.class, optional.get().getId(), LockModeType.PESSIMISTIC_WRITE);
+        // double check it
+        if (null == resourceEntity || ResourceState.isDestroying(resourceEntity.getStatus())) {
             return null;
         }
         return doDestroy(resourceID);
