@@ -1224,7 +1224,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
 
     @Override
     public List<DBTableConstraint> listMViewConstraints(String schemaName, String mViewName) {
-        return Collections.emptyList();
+        return listTableConstraints(schemaName, mViewName);
     }
 
     @Override
@@ -1246,8 +1246,8 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     }
 
     @Override
-    public List<DBTableIndex> listMViewIndexes(String schemaName, String tableName) {
-        return listTableIndexes(schemaName, tableName);
+    public List<DBTableIndex> listMViewIndexes(String schemaName, String mViewName) {
+        return listTableIndexes(schemaName, mViewName);
     }
 
     @Override

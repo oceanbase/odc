@@ -72,7 +72,7 @@ public class OBMySQLBetween432And4351SchemaAccessor extends OBMySQLSchemaAccesso
     }
 
     @Override
-    public List<DBTableIndex> listMViewIndexes(String schemaName, String tableName) {
+    public List<DBTableIndex> listMViewIndexes(String schemaName, String mViewName) {
         throw new UnsupportedOperationException("not support yet");
     }
 

@@ -166,7 +166,7 @@ public interface DBSchemaAccessor {
     /**
      * Gets all indexes in the specified materialized view
      */
-    List<DBTableIndex> listMViewIndexes(String schemaName, String tableName);
+    List<DBTableIndex> listMViewIndexes(String schemaName, String mViewName);
 
     /**
      * List all variables

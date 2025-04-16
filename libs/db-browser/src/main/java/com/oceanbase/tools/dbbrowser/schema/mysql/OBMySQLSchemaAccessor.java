@@ -158,12 +158,12 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
 
     @Override
     public List<DBTableConstraint> listMViewConstraints(String schemaName, String mViewName) {
-        return Collections.emptyList();
+        return listTableConstraints(schemaName, mViewName);
     }
 
     @Override
-    public List<DBTableIndex> listMViewIndexes(String schemaName, String tableName) {
-        List<DBTableIndex> indexList = super.listTableIndexes(schemaName, tableName);
+    public List<DBTableIndex> listMViewIndexes(String schemaName, String mViewName) {
+        List<DBTableIndex> indexList = super.listTableIndexes(schemaName, mViewName);
         for (DBTableIndex index : indexList) {
             if (index.getAlgorithm() == DBIndexAlgorithm.UNKNOWN) {
                 index.setAlgorithm(DBIndexAlgorithm.BTREE);
