@@ -18,6 +18,7 @@ package com.oceanbase.odc.server.web.controller.v2;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.saml2.provider.service.authentication.AbstractSaml2AuthenticationRequest;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -71,6 +72,12 @@ public class SSOController {
     @StatefulRoute(stateName = StateName.UUID_STATEFUL_ID, stateIdExpression = "#state")
     public SuccessResponse<Map<String, String>> getTestClientInfo(@RequestParam String state) {
         return Responses.ok(SSOStateManager.getStateParameters(state));
+    }
+
+    @GetMapping("/samlRequest")
+    @StatefulRoute(stateName = StateName.UUID_STATEFUL_ID, stateIdExpression = "#state")
+    public SuccessResponse<AbstractSaml2AuthenticationRequest> getSamlRequest(@RequestParam String state) {
+        return Responses.ok(SSOStateManager.getAuthenticationRequest(state));
     }
 
     @GetMapping("/credential")

@@ -29,10 +29,10 @@ public interface RiskDetectRuleMapper {
 
     RiskDetectRuleMapper INSTANCE = Mappers.getMapper(RiskDetectRuleMapper.class);
 
-    @Mapping(target = "rootNode", expression = "java(fromJson(entity.getValueJson()))")
+    @Mapping(target = "entity.rootNode", expression = "java(fromJson(entity.getValueJson()))")
     RiskDetectRule entityToModel(RiskDetectRuleEntity entity);
 
-    @Mapping(target = "valueJson", expression = "java(toJson(model.getRootNode()))")
+    @Mapping(target = "model.valueJson", expression = "java(toJson(model.getRootNode()))")
     RiskDetectRuleEntity modelToEntity(RiskDetectRule model);
 
     default BaseTreeNode fromJson(String json) {

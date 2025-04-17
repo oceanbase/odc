@@ -17,13 +17,13 @@ package com.oceanbase.odc.service.audit;
 
 import java.util.List;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.metadb.audit.AuditEventEntity;
 import com.oceanbase.odc.service.audit.model.AuditEventMeta;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @Component
 @Profile("alipay")

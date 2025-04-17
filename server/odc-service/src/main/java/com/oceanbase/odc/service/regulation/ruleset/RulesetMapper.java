@@ -27,8 +27,8 @@ import com.oceanbase.odc.service.regulation.ruleset.model.Ruleset;
 public interface RulesetMapper {
     RulesetMapper INSTANCE = Mappers.getMapper(RulesetMapper.class);
 
-    @Mapping(source = "creatorId", target = "creator.id")
-    @Mapping(source = "lastModifierId", target = "lastModifier.id")
+    @Mapping(source = "entity.creatorId", target = "creator.id")
+    @Mapping(source = "entity.lastModifierId", target = "lastModifier.id")
     Ruleset entityToModel(RulesetEntity entity);
 
     @InheritInverseConfiguration

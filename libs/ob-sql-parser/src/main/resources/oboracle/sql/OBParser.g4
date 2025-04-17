@@ -2620,7 +2620,6 @@ hint_option
     | PQ_MAP LeftParen qb_name_option relation_factor_in_hint RightParen
     | LOAD_BATCH_SIZE LeftParen INTNUM RightParen
     | NAME_OB
-    | EOF
     | PARSER_SYNTAX_ERROR
     | ENABLE_PARALLEL_DML
     | DISABLE_PARALLEL_DML

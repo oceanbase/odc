@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC
         "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.oceanbase.odc.metadb.connection.ConnectionLabelDAO">
+<mapper namespace="com.oceanbase.odc.metadb.mapper.ConnectionLabelDAO">
     <sql id="sqlColumns">
         `id` as id,`user_id` as userId,`label_name` as labelName, `label_color` as labelColor, gmt_create as gmtCreated, gmt_modify as
         gmtModified

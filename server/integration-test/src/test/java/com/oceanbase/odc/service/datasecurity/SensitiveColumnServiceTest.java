@@ -22,8 +22,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.validation.ConstraintViolationException;
-
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -54,6 +52,8 @@ import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnStats;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnType;
 import com.oceanbase.odc.service.datasecurity.util.SensitiveColumnMapper;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
+
+import jakarta.validation.ConstraintViolationException;
 
 /**
  * @author gaoda.xy

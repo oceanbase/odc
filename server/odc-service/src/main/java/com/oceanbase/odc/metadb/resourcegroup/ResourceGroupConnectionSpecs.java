@@ -18,13 +18,13 @@ package com.oceanbase.odc.metadb.resourcegroup;
 import java.util.Objects;
 import java.util.Set;
 
-import javax.persistence.criteria.CriteriaBuilder.In;
-
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.Validate;
 import org.springframework.data.jpa.domain.Specification;
 
 import com.oceanbase.odc.core.shared.constant.ResourceType;
+
+import jakarta.persistence.criteria.CriteriaBuilder.In;
 
 /**
  * Specification for repository <code>ResourceGroupConnectionRepository</code>

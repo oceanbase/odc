@@ -17,8 +17,6 @@ package com.oceanbase.odc.metadb.notification;
 
 import java.util.List;
 
-import javax.transaction.Transactional;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -31,6 +29,7 @@ import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.service.notification.model.MessageSendingStatus;
 import com.oceanbase.odc.service.notification.model.QueryMessageParams;
 
+import jakarta.transaction.Transactional;
 import lombok.NonNull;
 
 public interface MessageRepository extends OdcJpaRepository<MessageEntity, Long>,
@@ -50,7 +49,7 @@ public interface MessageRepository extends OdcJpaRepository<MessageEntity, Long>
             + " `last_sent_time`=now(), `retry_times`=retry_times+1 where `id`=:id",
             nativeQuery = true)
     @Transactional
-    @Modifying
+
     int updateStatusAndRetryTimesAndErrorMessageById(@Param("id") Long id, @Param("status") MessageSendingStatus status,
             @Param("errorMessage") String errorMessage);
 
@@ -63,6 +62,8 @@ public interface MessageRepository extends OdcJpaRepository<MessageEntity, Long>
     @Query(value = "update notification_message set `status`='SENT_FAILED' where `status`='SENDING' and "
             + "`update_time` < DATE_SUB(now(), INTERVAL :timeoutSeconds SECOND)",
             nativeQuery = true)
+    @Modifying
+    @Transactional
     int failSendingTimeoutMessages(@Param("timeoutSeconds") long timeoutSeconds);
 
     default Page<MessageEntity> find(@NonNull QueryMessageParams queryParams, @NonNull Pageable pageable) {

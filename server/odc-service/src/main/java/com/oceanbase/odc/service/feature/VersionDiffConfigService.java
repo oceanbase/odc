@@ -32,7 +32,7 @@ import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.metadb.feature.VersionDiffConfigDAO;
+import com.oceanbase.odc.metadb.mapper.feature.VersionDiffConfigDAO;
 import com.oceanbase.odc.service.config.SystemConfigService;
 import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.feature.model.DataTypeUnit;

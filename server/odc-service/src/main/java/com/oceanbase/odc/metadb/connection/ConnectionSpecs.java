@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.metadb.connection;
 
-import static org.springframework.data.jpa.repository.query.QueryUtils.toOrders;
-
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -24,12 +22,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.persistence.criteria.Expression;
-import javax.persistence.criteria.Predicate;
-
-import org.hibernate.query.criteria.internal.CriteriaBuilderImpl;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.JpaSort.JpaOrder;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.CollectionUtils;
 
@@ -40,7 +32,7 @@ import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.common.util.EmptyValues;
 
-import lombok.NonNull;
+import jakarta.persistence.criteria.Predicate;
 
 /**
  * @author yizhou.xw
@@ -50,25 +42,6 @@ public class ConnectionSpecs {
 
     public static Specification<ConnectionEntity> idIn(Collection<Long> ids) {
         return in("id", ids, Long.class);
-    }
-
-    public static Specification<ConnectionEntity> sort(@NonNull Sort sort) {
-        return (root, query, builder) -> {
-            if (sort.isUnsorted() || !(builder instanceof CriteriaBuilderImpl)) {
-                return builder.conjunction();
-            }
-            CriteriaBuilderImpl impl = (CriteriaBuilderImpl) builder;
-            query.orderBy(sort.stream().map(order -> {
-                if (order instanceof JpaOrder) {
-                    Class<ConnectionEntity> clazz = ConnectionEntity.class;
-                    JpaOrder jpaOrder = (JpaOrder) order;
-                    Expression<ConnectionEntity> expr = new JpaOrderExpression<>(impl, clazz, jpaOrder);
-                    return order.isAscending() ? builder.asc(expr) : builder.desc(expr);
-                }
-                return toOrders(Sort.by(order), root, builder).get(0);
-            }).collect(Collectors.toList()));
-            return builder.conjunction();
-        };
     }
 
     public static Specification<ConnectionEntity> clusterNameIn(List<String> clusterNames) {

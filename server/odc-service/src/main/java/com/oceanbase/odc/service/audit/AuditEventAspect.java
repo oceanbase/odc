@@ -28,8 +28,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.logging.log4j.util.Strings;
@@ -41,7 +39,8 @@ import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
+import org.springframework.core.ParameterNameDiscoverer;
+import org.springframework.core.StandardReflectionParameterNameDiscoverer;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
 import org.springframework.expression.ExpressionParser;
@@ -83,6 +82,7 @@ import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.session.model.SqlTuplesWithViolation;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -99,8 +99,8 @@ public class AuditEventAspect {
 
     private final int MAX_DETAIL_LENGTH = 20000;
 
-    private final LocalVariableTableParameterNameDiscoverer nameDiscoverer =
-            new LocalVariableTableParameterNameDiscoverer();
+    private final ParameterNameDiscoverer nameDiscoverer =
+            new StandardReflectionParameterNameDiscoverer();
 
     private final ExpressionParser parser = new SpelExpressionParser();
 

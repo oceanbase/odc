@@ -17,7 +17,7 @@ package com.oceanbase.odc.service.dispatch;
 
 import java.io.ByteArrayOutputStream;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 public interface HttpRequestProvider {
 

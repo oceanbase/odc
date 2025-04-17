@@ -19,7 +19,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-import javax.transaction.Transactional;
 import javax.validation.constraints.NotNull;
 
 import org.springframework.data.domain.Page;
@@ -33,6 +32,8 @@ import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
+
+import jakarta.transaction.Transactional;
 
 /**
  * @Author：tinker

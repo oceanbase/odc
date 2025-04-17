@@ -72,7 +72,7 @@ public class NotificationScheduleConfiguration implements SchedulingConfigurer {
             Date lastActualExecutionTime = triggerContext.lastActualExecutionTime();
             nextExecutionTime.setTime(lastActualExecutionTime != null ? lastActualExecutionTime : new Date());
             nextExecutionTime.add(Calendar.MILLISECOND, (int) durationSupplier.get().toMillis());
-            return nextExecutionTime.getTime();
+            return nextExecutionTime.getTime().toInstant();
         };
 
     }

@@ -21,8 +21,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Pageable;
@@ -69,6 +67,7 @@ import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.model.UserPreviewBatchImportResp;
 
 import io.swagger.annotations.ApiOperation;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * @author wenniu.ly

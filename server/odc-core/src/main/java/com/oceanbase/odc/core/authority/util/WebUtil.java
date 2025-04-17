@@ -17,15 +17,14 @@ package com.oceanbase.odc.core.authority.util;
 
 import java.util.concurrent.TimeUnit;
 
-import javax.servlet.ServletRequest;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
 import com.oceanbase.odc.core.authority.session.SecuritySession;
 
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.NonNull;
 
 /**

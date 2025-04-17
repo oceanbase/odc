@@ -88,3 +88,8 @@ management:
   endpoint:
     prometheus:
       enabled: ${odc.system.monitor.actuator.enabled:false}
+
+# Todo not safe, better use own migrate
+flowable:
+  database-schema-update: true
+debug: true

@@ -17,10 +17,6 @@ package com.oceanbase.odc.service.iam.auth;
 
 import java.io.IOException;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.springframework.security.web.DefaultRedirectStrategy;
 import org.springframework.security.web.RedirectStrategy;
 import org.springframework.security.web.session.InvalidSessionStrategy;
@@ -29,6 +25,9 @@ import org.springframework.web.servlet.LocaleResolver;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.service.common.util.WebResponseUtils;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 
 /**

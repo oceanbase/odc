@@ -15,11 +15,11 @@
  */
 package com.oceanbase.odc.common.validate;
 
-import javax.validation.Validation;
-import javax.validation.Validator;
-import javax.validation.executable.ExecutableValidator;
-
 import org.hibernate.validator.HibernateValidator;
+
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.executable.ExecutableValidator;
 
 /**
  * Validator Builder

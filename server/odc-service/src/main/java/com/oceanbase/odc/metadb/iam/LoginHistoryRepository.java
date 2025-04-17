@@ -34,12 +34,12 @@ public interface LoginHistoryRepository
      * @return
      */
     @Query("select NEW com.oceanbase.odc.metadb.iam.LastSuccessLoginHistory(e.userId, max(e.loginTime) as "
-            + "lastLoginTime) FROM LoginHistoryEntity e where e.userId in (:userIds) and e.success=1 group by "
+            + "lastLoginTime) FROM LoginHistoryEntity e where e.userId in (:userIds) and e.success= true group by "
             + "e.userId order by max(e.loginTime)")
     List<LastSuccessLoginHistory> lastSuccessLoginHistoryByUserIds(@Param("userIds") List<Long> userIds);
 
     @Query("select NEW com.oceanbase.odc.metadb.iam.LastSuccessLoginHistory(e.userId, max(e.loginTime) as "
-            + "lastLoginTime) FROM LoginHistoryEntity e where e.success=1 group by e.userId "
+            + "lastLoginTime) FROM LoginHistoryEntity e where e.success = true group by e.userId "
             + "order by max(e.loginTime) ASC")
     List<LastSuccessLoginHistory> lastSuccessLoginHistory();
 }

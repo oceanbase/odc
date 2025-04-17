@@ -18,18 +18,17 @@ package com.oceanbase.odc.core.authority.session.manager;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.oceanbase.odc.core.authority.session.SecuritySession;
 import com.oceanbase.odc.core.authority.session.SecuritySessionRepository;
 import com.oceanbase.odc.core.authority.session.factory.SecuritySessionFactory;
 import com.oceanbase.odc.core.authority.util.SecurityConstants;
 import com.oceanbase.odc.core.authority.util.WebUtil;
 
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 

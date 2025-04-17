@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.collaboration.environment;
 
-import org.mapstruct.InheritInverseConfiguration;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
@@ -33,6 +32,6 @@ public interface EnvironmentMapper {
     @Mapping(source = "name", target = "originalName")
     Environment entityToModel(EnvironmentEntity entity);
 
-    @InheritInverseConfiguration
+    // @InheritInverseConfiguration
     EnvironmentEntity modelToEntity(Environment model);
 }

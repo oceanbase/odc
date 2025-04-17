@@ -21,10 +21,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import javax.persistence.metamodel.SingularAttribute;
-
 import com.google.common.base.Joiner;
 import com.oceanbase.odc.common.util.StringUtils;
+
+import jakarta.persistence.metamodel.SingularAttribute;
 
 public final class InsertSqlTemplateBuilder {
 

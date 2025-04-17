@@ -33,7 +33,7 @@ public interface UserDatabasePermissionMapper {
 
     UserDatabasePermissionMapper INSTANCE = Mappers.getMapper(UserDatabasePermissionMapper.class);
 
-    @Mapping(source = "action", target = "type", qualifiedByName = "actionToType")
+    @Mapping(source = "entity.action", target = "type", qualifiedByName = "actionToType")
     UserDatabasePermission entityToModel(UserDatabasePermissionEntity entity);
 
     @Named("actionToType")

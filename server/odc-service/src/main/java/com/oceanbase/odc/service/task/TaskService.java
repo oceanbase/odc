@@ -64,7 +64,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 
 @Validated
-@Service
+@Service("odcTaskService")
 @Slf4j
 @SkipAuthorize("odc internal usage")
 public class TaskService {

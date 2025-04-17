@@ -18,8 +18,6 @@ package com.oceanbase.odc.metadb.resource;
 import java.util.Collection;
 import java.util.Optional;
 
-import javax.transaction.Transactional;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
@@ -28,6 +26,8 @@ import org.springframework.data.repository.query.Param;
 
 import com.oceanbase.odc.service.resource.ResourceID;
 import com.oceanbase.odc.service.resource.ResourceState;
+
+import jakarta.transaction.Transactional;
 
 /**
  * jdbc query for resource_resource table

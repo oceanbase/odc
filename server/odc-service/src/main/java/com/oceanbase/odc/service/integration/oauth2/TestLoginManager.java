@@ -23,7 +23,6 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nullable;
-import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.NotBlank;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,6 +55,7 @@ import com.oceanbase.odc.service.integration.model.SSOIntegrationConfig;
 import com.oceanbase.odc.service.integration.saml.AddableRelyingPartyRegistrationRepository;
 import com.oceanbase.odc.service.state.StatefulUuidStateIdGenerator;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
@@ -71,6 +71,7 @@ public class TestLoginManager {
      */
     public static final AntPathRequestMatcher samlAuthorizationRequestMatcher =
             new AntPathRequestMatcher("/login/saml2/sso/{registrationId}");
+
 
     private static final AntPathRequestMatcher LDAP_REQUEST_MATCHER =
             new AntPathRequestMatcher("/api/v2/iam/ldap/login", "POST");
@@ -126,7 +127,7 @@ public class TestLoginManager {
         return "test".equals(parseRegistrationName(registrationId));
     }
 
-    private static String resolveSamlRegistrationId(HttpServletRequest request) {
+    public static String resolveSamlRegistrationId(HttpServletRequest request) {
         if (samlAuthorizationRequestMatcher.matches(request)) {
             return samlAuthorizationRequestMatcher.matcher(request).getVariables()
                     .get(REGISTRATION_ID_URI_VARIABLE_NAME);

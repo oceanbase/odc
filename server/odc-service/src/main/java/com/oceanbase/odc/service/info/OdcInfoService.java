@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Set;
 
 import javax.annotation.PostConstruct;
-import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +46,7 @@ import com.oceanbase.odc.service.integration.IntegrationService;
 import com.oceanbase.odc.service.lab.model.LabProperties;
 import com.oceanbase.odc.service.script.model.ScriptProperties;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 
 /**

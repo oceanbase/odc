@@ -60,10 +60,9 @@ public class UsernamePasswordConfigureHelper {
         if (commonSecurityProperties.authTypeContainsLocal()) {
             http.addFilterAt(
                     getCustomUsernamePasswordAuthenticationFilter(authenticationManager),
-                    UsernamePasswordAuthenticationFilter.class)
-                    .formLogin()
-                    .loginPage(commonSecurityProperties.getLoginPage()).permitAll()
-                    .loginProcessingUrl(commonSecurityProperties.getLoginUri());
+                    UsernamePasswordAuthenticationFilter.class);
+            http.formLogin(f -> f.loginPage(commonSecurityProperties.getLoginPage()).permitAll()
+                    .loginProcessingUrl(commonSecurityProperties.getLoginUri()));
         }
         if (commonSecurityProperties.isBasicAuthenticationEnabled()) {
             log.info("Basic authentication is enabled, it is not recommended in production environment.");

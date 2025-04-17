@@ -18,10 +18,6 @@ package com.oceanbase.odc.core.authority;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -34,6 +30,10 @@ import com.oceanbase.odc.core.authority.session.manager.DefaultWebSecuritySessio
 import com.oceanbase.odc.core.authority.session.validate.ExpiredSecuritySessionValidator;
 import com.oceanbase.odc.core.authority.util.SecurityConstants;
 import com.oceanbase.odc.core.authority.util.WebUtil;
+
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 public class DefaultWebSecuritySessionManagerTest {
 

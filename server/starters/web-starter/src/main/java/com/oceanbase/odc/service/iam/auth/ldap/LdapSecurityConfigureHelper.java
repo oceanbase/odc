@@ -42,8 +42,8 @@ public class LdapSecurityConfigureHelper {
     private TestLoginManager testLoginManager;
 
 
-    public void configure(HttpSecurity http, AuthenticationManager authenticationManager)
-            throws Exception {
+    public void configure(HttpSecurity http, AuthenticationManager authenticationManager) {
+
         LdapUsernamePasswordAuthenticationFilter ldapUsernamePasswordAuthenticationFilter =
                 new LdapUsernamePasswordAuthenticationFilter(sensitivePropertyHandler,
                         authenticationManager);

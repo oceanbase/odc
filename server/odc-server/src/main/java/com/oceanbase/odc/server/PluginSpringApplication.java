@@ -15,8 +15,13 @@
  */
 package com.oceanbase.odc.server;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -46,6 +51,26 @@ public class PluginSpringApplication extends SpringApplication {
         if (activeProfiles.length != 0) {
             Starters.load(new HashSet<>(Arrays.asList(activeProfiles)));
         }
+    }
+
+    public static void addUrlToClassLoader(List<URL> addToPath)
+            throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException, NoSuchMethodException,
+            InvocationTargetException {
+        ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
+
+        Class<?> builtinClassLoaderClass = Class.forName("jdk.internal.loader.BuiltinClassLoader");
+        Field ucpField = builtinClassLoaderClass.getDeclaredField("ucp");
+        ucpField.setAccessible(true);
+
+        Object ucp = ucpField.get(systemClassLoader);
+
+        Class<?> urlClassPathClass = Class.forName("jdk.internal.loader.URLClassPath");
+        Method addURL = urlClassPathClass.getMethod("addURL", URL.class);
+        addURL.setAccessible(true);
+        for (URL url : addToPath) {
+            addURL.invoke(ucp, url);
+        }
+
     }
 
 }

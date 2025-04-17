@@ -15,9 +15,9 @@
  */
 package com.oceanbase.odc.service.websocket;
 
-import javax.websocket.Session;
-
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+
+import jakarta.websocket.Session;
 
 public interface ConnectionConfigProvider {
 

@@ -15,14 +15,14 @@
  */
 package com.oceanbase.odc.server.web.controller;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.ModelAndView;
 
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.service.common.util.WebRequestUtils;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * as odc use single page front-end architecture, all pages use index.html

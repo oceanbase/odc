@@ -52,9 +52,11 @@ public class DefaultExecutorIdentifier implements ExecutorIdentifier {
         StringBuilder sb = new StringBuilder();
         sb.append(protocol)
                 .append("://")
-                .append(host == null ? "" : host)
-                .append(":")
-                .append(port);
+                .append(host == null ? "" : host);
+        if (port > 0) {
+            sb.append(":")
+                    .append(port);
+        }
         if (StringUtils.isNotBlank(namespace)) {
             sb.append("/");
             sb.append(UrlUtils.encode(namespace));
