@@ -17,11 +17,10 @@ package com.oceanbase.odc.common.validate;
 
 import java.util.Set;
 
-import javax.validation.ConstraintViolation;
-import javax.validation.Validator;
-
 import org.apache.commons.collections4.CollectionUtils;
 
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
 import lombok.NonNull;
 
 /**

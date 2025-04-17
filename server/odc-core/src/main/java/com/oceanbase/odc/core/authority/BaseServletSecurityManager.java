@@ -20,9 +20,6 @@ import java.util.Collection;
 import java.util.Map;
 
 import javax.security.auth.Subject;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
 
 import com.oceanbase.odc.core.authority.exception.AuthenticationException;
 import com.oceanbase.odc.core.authority.exception.InvalidSessionException;
@@ -33,6 +30,9 @@ import com.oceanbase.odc.core.authority.session.SecuritySessionManager;
 import com.oceanbase.odc.core.authority.session.manager.ServletBaseSecuritySessionManager;
 import com.oceanbase.odc.core.authority.util.SecurityConstants;
 
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 
 /**

@@ -18,10 +18,6 @@ package com.oceanbase.odc.service.common.util;
 import java.io.IOException;
 import java.util.Locale;
 
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.commons.lang.Validate;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -41,6 +37,9 @@ import com.oceanbase.odc.service.common.response.ErrorResponse;
 import com.oceanbase.odc.service.common.response.OdcErrorResult;
 import com.oceanbase.odc.service.common.response.Responses;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 
 /**

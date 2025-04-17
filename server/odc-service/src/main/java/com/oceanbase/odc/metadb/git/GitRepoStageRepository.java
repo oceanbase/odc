@@ -15,14 +15,14 @@
  */
 package com.oceanbase.odc.metadb.git;
 
-import javax.transaction.Transactional;
-
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
+
+import jakarta.transaction.Transactional;
 
 /**
  * @author: liuyizhuo.lyz

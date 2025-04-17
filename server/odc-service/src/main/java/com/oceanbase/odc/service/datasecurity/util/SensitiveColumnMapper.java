@@ -31,10 +31,10 @@ public interface SensitiveColumnMapper {
 
     SensitiveColumnMapper INSTANCE = Mappers.getMapper(SensitiveColumnMapper.class);
 
-    @Mapping(source = "databaseId", target = "database.id")
+    @Mapping(source = "entity.databaseId", target = "database.id")
     SensitiveColumn entityToModel(SensitiveColumnEntity entity);
 
-    @Mapping(source = "database.id", target = "databaseId")
+    @Mapping(source = "model.database.id", target = "databaseId")
     SensitiveColumnEntity modelToEntity(SensitiveColumn model);
 
 }

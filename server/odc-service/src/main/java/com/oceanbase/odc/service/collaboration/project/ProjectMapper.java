@@ -27,8 +27,8 @@ import com.oceanbase.odc.service.collaboration.project.model.Project;
 public interface ProjectMapper {
     ProjectMapper INSTANCE = Mappers.getMapper(ProjectMapper.class);
 
-    @Mapping(source = "creatorId", target = "creator.id")
-    @Mapping(source = "lastModifierId", target = "lastModifier.id")
+    @Mapping(source = "entity.creatorId", target = "creator.id")
+    @Mapping(source = "entity.lastModifierId", target = "lastModifier.id")
     Project entityToModel(ProjectEntity entity);
 
     @InheritInverseConfiguration

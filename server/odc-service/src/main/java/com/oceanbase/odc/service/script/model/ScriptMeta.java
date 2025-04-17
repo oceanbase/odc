@@ -17,8 +17,10 @@ package com.oceanbase.odc.service.script.model;
 
 import java.util.Date;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @Author: Lebie
@@ -27,6 +29,8 @@ import lombok.Data;
  */
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ScriptMeta {
     private long id;
     private Date updateTime;

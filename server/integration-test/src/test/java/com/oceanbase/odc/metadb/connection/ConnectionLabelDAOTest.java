@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.ServiceTestEnv;
+import com.oceanbase.odc.metadb.mapper.ConnectionLabelDAO;
 import com.oceanbase.odc.service.connection.model.ConnectionLabel;
 import com.oceanbase.odc.test.tool.TestRandom;
 

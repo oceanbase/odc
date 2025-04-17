@@ -18,9 +18,6 @@ package com.oceanbase.odc.metadb.partitionplan;
 import java.util.List;
 import java.util.Optional;
 
-import javax.persistence.LockModeType;
-import javax.transaction.Transactional;
-
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
@@ -29,6 +26,8 @@ import org.springframework.data.repository.query.Param;
 
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 
+import jakarta.persistence.LockModeType;
+import jakarta.transaction.Transactional;
 import lombok.NonNull;
 
 /**

@@ -74,6 +74,7 @@ public abstract class BaseFlowableConfiguration {
         return processEngineCfg;
     }
 
+
     @Slf4j
     public static class OdcProcessEngineConfiguration extends SpringProcessEngineConfiguration {
 
@@ -96,6 +97,7 @@ public abstract class BaseFlowableConfiguration {
             }
             this.maxConcurrentSize = maxConcurrentSize;
             this.minConcurrentSize = minConcurrentSize;
+            super.databaseSchemaUpdate = DB_SCHEMA_UPDATE_TRUE;
         }
 
         @Override
@@ -125,54 +127,26 @@ public abstract class BaseFlowableConfiguration {
 
         @Override
         public void initAsyncExecutor() {
-            if (asyncExecutor == null) {
-                OdcAsyncJobExecutor asyncExecutor = new OdcAsyncJobExecutor(flowInstanceRepository, serviceRepository);
-                if (asyncExecutorExecuteAsyncRunnableFactory != null) {
-                    asyncExecutor.setExecuteAsyncRunnableFactory(asyncExecutorExecuteAsyncRunnableFactory);
+            this.initAsyncTaskExecutor();
+            if (this.asyncExecutor == null) {
+                DefaultAsyncJobExecutor defaultAsyncExecutor = new OdcAsyncJobExecutor(flowInstanceRepository,
+                        serviceRepository, this.asyncExecutorConfiguration);
+                if (this.asyncExecutorExecuteAsyncRunnableFactory != null) {
+                    defaultAsyncExecutor.setExecuteAsyncRunnableFactory(this.asyncExecutorExecuteAsyncRunnableFactory);
                 }
-                // Message queue mode
-                asyncExecutor.setMessageQueueMode(asyncExecutorMessageQueueMode);
-                // Thread pool config
-                asyncExecutor.setCorePoolSize(asyncExecutorCorePoolSize);
-                asyncExecutor.setMaxPoolSize(asyncExecutorMaxPoolSize);
-                asyncExecutor.setKeepAliveTime(asyncExecutorThreadKeepAliveTime);
-                // Threadpool queue
-                if (asyncExecutorThreadPoolQueue != null) {
-                    asyncExecutor.setThreadPoolQueue(asyncExecutorThreadPoolQueue);
-                }
-                asyncExecutor.setQueueSize(asyncExecutorThreadPoolQueueSize);
-                // Thread flags
-                asyncExecutor.setAsyncJobAcquisitionEnabled(isAsyncExecutorAsyncJobAcquisitionEnabled);
-                asyncExecutor.setTimerJobAcquisitionEnabled(isAsyncExecutorTimerJobAcquisitionEnabled);
-                asyncExecutor.setResetExpiredJobEnabled(isAsyncExecutorResetExpiredJobsEnabled);
-                // Acquisition wait time
-                asyncExecutor.setDefaultTimerJobAcquireWaitTimeInMillis(asyncExecutorDefaultTimerJobAcquireWaitTime);
-                asyncExecutor.setDefaultAsyncJobAcquireWaitTimeInMillis(asyncExecutorDefaultAsyncJobAcquireWaitTime);
-                // Queue full wait time
-                asyncExecutor.setDefaultQueueSizeFullWaitTimeInMillis(asyncExecutorDefaultQueueSizeFullWaitTime);
-                // Job locking
-                asyncExecutor.setTimerLockTimeInMillis(asyncExecutorTimerLockTimeInMillis);
-                asyncExecutor.setAsyncJobLockTimeInMillis(asyncExecutorAsyncJobLockTimeInMillis);
-                if (asyncExecutorLockOwner != null) {
-                    asyncExecutor.setLockOwner(asyncExecutorLockOwner);
-                }
-                // Reset expired
-                asyncExecutor.setResetExpiredJobsInterval(asyncExecutorResetExpiredJobsInterval);
-                asyncExecutor.setResetExpiredJobsPageSize(asyncExecutorResetExpiredJobsPageSize);
-                // Shutdown
-                asyncExecutor.setSecondsToWaitOnShutdown(asyncExecutorSecondsToWaitOnShutdown);
-                ThreadPoolExecutor customExecutor = customExecutorService();
-                asyncExecutor.setMockDataExecutorService(customExecutor);
-                asyncExecutor.setLoaderDumperExecutorService(customExecutor);
-                this.asyncExecutor = asyncExecutor;
+
+                this.asyncExecutor = defaultAsyncExecutor;
             }
-            asyncExecutor.setJobServiceConfiguration(jobServiceConfiguration);
-            asyncExecutor.setAutoActivate(asyncExecutorActivate);
-            jobServiceConfiguration.setAsyncExecutor(asyncExecutor);
-            DefaultAsyncJobExecutor jobExecutor = (DefaultAsyncJobExecutor) asyncExecutor;
-            jobExecutor.setExecutorService(defaultExecutorService());
+
+            if (this.asyncExecutor.getTaskExecutor() == null) {
+                this.asyncExecutor.setTaskExecutor(this.asyncTaskExecutor);
+            }
+
+            this.asyncExecutor.setJobServiceConfiguration(this.jobServiceConfiguration);
+            this.asyncExecutor.setAutoActivate(this.asyncExecutorActivate);
+            this.jobServiceConfiguration.setAsyncExecutor(this.asyncExecutor);
             // 由于任务执行器的该参数位 int 类型，有最大值限制，因此只能设置任务超期时间最大为 24 天
-            jobExecutor.setAsyncJobLockTimeInMillis(Integer.MAX_VALUE);
+            this.asyncExecutor.setAsyncJobLockTimeInMillis(Integer.MAX_VALUE);
         }
 
         private ThreadPoolExecutor defaultExecutorService() {

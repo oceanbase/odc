@@ -17,10 +17,10 @@ package com.oceanbase.odc.service.dispatch;
 
 import java.io.ByteArrayOutputStream;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @Component
 @Profile({"clientMode"})

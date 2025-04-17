@@ -706,7 +706,7 @@ public class PageManager implements Closeable {
                 this.pageCountSemaphore.release();
                 return null;
             }
-            boolean result = this.pagesInMemory.addFirst(page);
+            boolean result = this.pagesInMemory.addToFirst(page);
             if (!result) {
                 this.pageCountSemaphore.release();
                 return null;

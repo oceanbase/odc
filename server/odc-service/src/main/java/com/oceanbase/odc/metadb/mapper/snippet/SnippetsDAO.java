@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.metadb.snippet;
+package com.oceanbase.odc.metadb.mapper.snippet;
 
 import java.util.List;
 

@@ -58,14 +58,14 @@ public class IndexedLinkedPageListTest {
         for (int i = 0; i < 10; i++) {
             Assert.assertTrue(pages.add(Page.emptyPage(i)));
         }
-        Assert.assertFalse(pages.addLast(Page.emptyPage(0)));
+        Assert.assertFalse(pages.addToLast(Page.emptyPage(0)));
     }
 
     @Test
-    public void testAddFirstPage() {
+    public void testAddToFirstPage() {
         IndexedLinkedPageList pages = new IndexedLinkedPageList();
         for (int i = 0; i < 10; i++) {
-            Assert.assertTrue(pages.addFirst(Page.emptyPage(i)));
+            Assert.assertTrue(pages.addToFirst(Page.emptyPage(i)));
         }
         Assert.assertFalse(pages.isEmpty());
         Assert.assertEquals(10, pages.size());
@@ -76,19 +76,19 @@ public class IndexedLinkedPageListTest {
     }
 
     @Test
-    public void testAddFirstAnExistsPage() {
+    public void testAddToFirstAnExistsPage() {
         IndexedLinkedPageList pages = new IndexedLinkedPageList();
         for (int i = 0; i < 10; i++) {
-            Assert.assertTrue(pages.addFirst(Page.emptyPage(i)));
+            Assert.assertTrue(pages.addToFirst(Page.emptyPage(i)));
         }
-        Assert.assertFalse(pages.addFirst(Page.emptyPage(0)));
+        Assert.assertFalse(pages.addToFirst(Page.emptyPage(0)));
     }
 
     @Test
     public void testAddAllPage() {
         IndexedLinkedPageList pages = new IndexedLinkedPageList();
         for (int i = 0; i < 10; i++) {
-            Assert.assertTrue(pages.addFirst(Page.emptyPage(i)));
+            Assert.assertTrue(pages.addToFirst(Page.emptyPage(i)));
         }
         List<Page> pageList = Arrays.asList(Page.emptyPage(11), Page.emptyPage(12));
         Assert.assertTrue(pages.addAll(pageList));
@@ -100,7 +100,7 @@ public class IndexedLinkedPageListTest {
         IndexedLinkedPageList pages = new IndexedLinkedPageList();
         Assert.assertNull(pages.getFirst());
         for (int i = 0; i < 10; i++) {
-            Assert.assertTrue(pages.addLast(Page.emptyPage(i)));
+            Assert.assertTrue(pages.addToLast(Page.emptyPage(i)));
         }
         Assert.assertEquals(0, pages.getFirst().getPhysicalPageId());
     }
@@ -110,7 +110,7 @@ public class IndexedLinkedPageListTest {
         IndexedLinkedPageList pages = new IndexedLinkedPageList();
         Assert.assertNull(pages.getLast());
         for (int i = 0; i < 10; i++) {
-            Assert.assertTrue(pages.addFirst(Page.emptyPage(i)));
+            Assert.assertTrue(pages.addToFirst(Page.emptyPage(i)));
         }
         Assert.assertEquals(0, pages.getLast().getPhysicalPageId());
     }

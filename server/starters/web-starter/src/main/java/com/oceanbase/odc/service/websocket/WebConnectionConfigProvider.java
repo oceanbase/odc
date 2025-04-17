@@ -17,8 +17,6 @@ package com.oceanbase.odc.service.websocket;
 
 import java.security.Principal;
 
-import javax.websocket.Session;
-
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -30,6 +28,8 @@ import com.oceanbase.odc.core.authority.exception.AccessDeniedException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.iam.auth.bastion.BastionAuthenticationToken;
+
+import jakarta.websocket.Session;
 
 @Component
 @Profile("alipay")

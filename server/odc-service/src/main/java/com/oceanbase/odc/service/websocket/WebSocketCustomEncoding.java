@@ -15,11 +15,11 @@
  */
 package com.oceanbase.odc.service.websocket;
 
-import javax.websocket.EncodeException;
-import javax.websocket.Encoder;
-import javax.websocket.EndpointConfig;
-
 import com.alibaba.fastjson.JSON;
+
+import jakarta.websocket.EncodeException;
+import jakarta.websocket.Encoder;
+import jakarta.websocket.EndpointConfig;
 
 /**
  * @author wenniu.ly

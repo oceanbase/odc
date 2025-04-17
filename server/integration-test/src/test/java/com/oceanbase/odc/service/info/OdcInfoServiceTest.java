@@ -21,8 +21,6 @@ import static org.mockito.Mockito.when;
 import java.lang.reflect.Field;
 import java.util.Enumeration;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.apache.catalina.connector.RequestFacade;
 import org.junit.Assert;
 import org.junit.Before;
@@ -31,6 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.ServiceTestEnv;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.SneakyThrows;
 
 public class OdcInfoServiceTest extends ServiceTestEnv {

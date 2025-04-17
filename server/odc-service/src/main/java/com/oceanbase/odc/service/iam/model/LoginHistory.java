@@ -56,7 +56,7 @@ public class LoginHistory {
         model.setAccountName(entity.getAccountName());
         model.setLoginTime(entity.getLoginTime());
         model.setFailedReason(entity.getFailedReason());
-        model.setSuccess(entity.isSuccess());
+        model.setSuccess(entity.getSuccess());
         return model;
     }
 }

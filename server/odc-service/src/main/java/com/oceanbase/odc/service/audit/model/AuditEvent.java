@@ -23,8 +23,10 @@ import com.oceanbase.odc.core.shared.constant.AuditEventResult;
 import com.oceanbase.odc.core.shared.constant.AuditEventType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @Author: Lebie
@@ -33,6 +35,8 @@ import lombok.Data;
  */
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class AuditEvent {
     /**
      * ID of the audit event

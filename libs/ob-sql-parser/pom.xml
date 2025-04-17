@@ -53,18 +53,18 @@
 
     <properties>
         <!-- jdk and encoding -->
-        <java.version>1.8</java.version>
+        <java.version>17</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- dependencies version-->
         <maven-assembly-plugin.version>2.4</maven-assembly-plugin.version>
-        <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
+        <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>2.19.1</maven-surefire-plugin.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
-        <lombok.version>1.18.10</lombok.version>
+        <lombok.version>1.18.36</lombok.version>
         <commons-collections4.version>4.4</commons-collections4.version>
         <log4j.version>2.18.0</log4j.version>
-        <antlr4.version>4.9.1</antlr4.version>
+        <antlr4.version>4.13.0</antlr4.version>
         <!-- antlr config -->
         <antlr-base-package>com.oceanbase.tools.sqlparser</antlr-base-package>
         <antlr-generated-code-path>target/generated-sources/antlr/com/oceanbase/tools/sqlparser</antlr-generated-code-path>
@@ -282,6 +282,9 @@
                     <source>${java.version}</source>
                     <target>${java.version}</target>
                     <encoding>UTF-8</encoding>
+                    <compilerArgs>
+                        <arg>-parameters</arg>
+                    </compilerArgs>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>

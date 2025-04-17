@@ -19,8 +19,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 
-import javax.transaction.Transactional;
-
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -28,6 +26,8 @@ import org.springframework.data.repository.query.Param;
 import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
+
+import jakarta.transaction.Transactional;
 
 /**
  * @author gaoda.xy

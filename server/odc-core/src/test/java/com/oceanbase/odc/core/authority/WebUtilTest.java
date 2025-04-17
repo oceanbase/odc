@@ -17,14 +17,14 @@ package com.oceanbase.odc.core.authority;
 
 import java.util.concurrent.TimeUnit;
 
-import javax.servlet.http.Cookie;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import com.oceanbase.odc.core.authority.session.SecuritySession;
 import com.oceanbase.odc.core.authority.util.WebUtil;
+
+import jakarta.servlet.http.Cookie;
 
 /**
  * Test object for {@link WebUtil}

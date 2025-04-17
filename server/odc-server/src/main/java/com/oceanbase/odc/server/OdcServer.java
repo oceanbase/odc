@@ -21,13 +21,11 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Properties;
 
-import javax.validation.Validation;
-import javax.validation.Validator;
-
 import org.hibernate.validator.HibernateValidator;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.actuate.autoconfigure.metrics.CompositeMeterRegistryAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.groovy.template.GroovyTemplateAutoConfiguration;
 import org.springframework.boot.web.servlet.ServletComponentScan;
 import org.springframework.cloud.config.server.EnableConfigServer;
 import org.springframework.context.ApplicationContext;
@@ -36,6 +34,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.session.jdbc.config.annotation.web.http.EnableJdbcHttpSession;
 import org.springframework.validation.beanvalidation.MethodValidationPostProcessor;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
@@ -47,6 +46,8 @@ import com.oceanbase.odc.core.authority.interceptor.MethodAuthorizedPostProcesso
 import com.oceanbase.odc.migrate.AbstractMetaDBMigrate;
 import com.oceanbase.odc.service.config.SystemConfigBootstrap;
 
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -54,13 +55,15 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @SpringBootApplication(scanBasePackages = {"com.oceanbase.odc"},
-        exclude = CompositeMeterRegistryAutoConfiguration.class)
+        exclude = {
+                CompositeMeterRegistryAutoConfiguration.class, GroovyTemplateAutoConfiguration.class})
 @EnableWebMvc
 @Configuration
 @EnableScheduling
 @EnableAspectJAutoProxy(proxyTargetClass = true)
 @ServletComponentScan(value = {"com.oceanbase.odc.server.web", "com.oceanbase.odc.web.trace"})
 @EnableConfigServer
+@EnableJdbcHttpSession
 public class OdcServer {
 
     /**

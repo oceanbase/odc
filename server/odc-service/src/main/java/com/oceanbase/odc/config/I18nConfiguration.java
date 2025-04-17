@@ -19,8 +19,6 @@ import static org.springframework.web.servlet.DispatcherServlet.LOCALE_RESOLVER_
 
 import java.util.Locale;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.config.ConstructorArgumentValues;
@@ -38,6 +36,7 @@ import org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver;
 
 import com.oceanbase.odc.common.i18n.I18n;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 
 /**
