@@ -36,6 +36,10 @@ import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 @SkipAuthorize("inside connect session")
 public class DBIdentitiesService {
 
+    public List<SchemaIdentities> list(ConnectionSession session, List<DBObjectType> types) {
+        return list(session, null, types);
+    }
+
     public List<SchemaIdentities> list(ConnectionSession session, String identityNameLike, List<DBObjectType> types) {
         if (CollectionUtils.isEmpty(types)) {
             return Collections.emptyList();
