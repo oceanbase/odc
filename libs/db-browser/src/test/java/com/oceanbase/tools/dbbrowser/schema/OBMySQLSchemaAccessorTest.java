@@ -80,7 +80,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     private static final DBSchemaAccessors dbSchemaAccessors = new DBSchemaAccessors(getOBMySQLDataSource());
     private static final DBSchemaAccessor accessor = dbSchemaAccessors.createOBMysql();
     private static final boolean isSupportMaterializedView =
-            VersionUtils.isGreaterThanOrEqualsTo(dbSchemaAccessors.getVersion(), "4.3.5.1");
+            VersionUtils.isGreaterThanOrEqualsTo(dbSchemaAccessors.getVersion(), "4.3.5.2");
 
     @BeforeClass
     public static void setUp() throws Exception {
@@ -190,15 +190,6 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
-    public void listMViewConstraints_Success() {
-        if (isSupportMaterializedView) {
-            List<DBTableConstraint> constraints =
-                    accessor.listMViewConstraints(getOBMySQLDataBaseName(), "test_mv_all_syntax");
-            Assert.assertTrue(constraints.size() >= 1);
-        }
-    }
-
-    @Test
     public void listTableColumnGroups_stmtIsCreateMaterializedView_Success() {
         if (isSupportMaterializedView) {
             List<DBColumnGroupElement> columnGroups =
@@ -251,6 +242,25 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
                 Assert.assertEquals(column.getTableName(), "test_mv_all_syntax");
                 Assert.assertEquals(column.getSchemaName(), getOBMySQLDataBaseName());
             });
+        }
+    }
+
+    @Test
+    public void listMViewIndexes_Success() {
+        if (isSupportMaterializedView) {
+            List<DBTableIndex> indexList = accessor.listMViewIndexes(getOBMySQLDataBaseName(), "test_mv_auto_refresh");
+
+            Assert.assertEquals("test_global_idx", indexList.get(0).getName());
+            Assert.assertEquals(getOBMySQLDataBaseName(), indexList.get(0).getSchemaName());
+
+            Assert.assertEquals("test_local_idx", indexList.get(1).getName());
+            Assert.assertEquals(getOBMySQLDataBaseName(), indexList.get(1).getSchemaName());
+
+            Assert.assertEquals("test_eachcolumn_idx", indexList.get(2).getName());
+            Assert.assertEquals(getOBMySQLDataBaseName(), indexList.get(2).getSchemaName());
+
+            Assert.assertEquals("test_allcolumn_idx", indexList.get(3).getName());
+            Assert.assertEquals(getOBMySQLDataBaseName(), indexList.get(3).getSchemaName());
         }
     }
 
