@@ -158,12 +158,13 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
 
     @Override
     public List<DBTableConstraint> listMViewConstraints(String schemaName, String mViewName) {
-        return listTableConstraints(schemaName, mViewName);
+        return listTableConstraints(schemaName, getContainerTable(schemaName, mViewName));
     }
 
     @Override
     public List<DBTableIndex> listMViewIndexes(String schemaName, String mViewName) {
         List<DBTableIndex> indexList = super.listTableIndexes(schemaName, mViewName);
+        fillIndexInfo(indexList, schemaName, getContainerTable(schemaName, mViewName));
         for (DBTableIndex index : indexList) {
             if (index.getAlgorithm() == DBIndexAlgorithm.UNKNOWN) {
                 index.setAlgorithm(DBIndexAlgorithm.BTREE);
@@ -571,5 +572,16 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
 
     @Override
     protected void correctColumnPrecisionIfNeed(List<DBTableColumn> tableColumns) {}
+
+    private String getContainerTable(String schemaName, String mViewName) {
+        MySQLSqlBuilder sb = new MySQLSqlBuilder();
+        sb.append("SELECT CONTAINER_NAME \n" +
+                "FROM OCEANBASE.DBA_MVIEWS \n" +
+                "WHERE OWNER = ")
+                .value(schemaName)
+                .append(" AND MVIEW_NAME = ")
+                .value(mViewName);
+        return jdbcOperations.queryForObject(sb.toString(), String.class);
+    }
 
 }

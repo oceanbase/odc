@@ -68,6 +68,7 @@ import com.oceanbase.tools.dbbrowser.schema.OBMySQLSchemaAccessorTest.DataType;
 import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessors;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
 import com.oceanbase.tools.dbbrowser.util.VersionUtils;
+import com.oceanbase.tools.sqlparser.statement.createtable.ColumnAttributes;
 
 import lombok.Data;
 
@@ -255,6 +256,15 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
                 Assert.assertEquals(column.getTableName(), "TEST_MV_ALLSYNTAX");
                 Assert.assertEquals(column.getSchemaName(), getOBOracleSchema());
             });
+        }
+    }
+
+    @Test
+    public void listMViewIndexes_InSchema_Success() {
+        if (isSupportMaterializedView) {
+            List<DBTableConstraint> constraints =
+                    accessor.listMViewConstraints(getOBOracleSchema(), "TEST_MV_ALLSYNTAX");
+            Assert.assertEquals(Collections.emptyList(), constraints);
         }
     }
 

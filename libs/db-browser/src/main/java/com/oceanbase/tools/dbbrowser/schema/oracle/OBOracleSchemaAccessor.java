@@ -1224,7 +1224,15 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
 
     @Override
     public List<DBTableConstraint> listMViewConstraints(String schemaName, String mViewName) {
-        return listTableConstraints(schemaName, mViewName);
+        OracleSqlBuilder sb = new OracleSqlBuilder();
+        sb.append("SELECT CONTAINER_NAME FROM ")
+                .append(dataDictTableNames.MVIEWS())
+                .append(" WHERE OWNER = ")
+                .value(schemaName)
+                .append(" AND MVIEW_NAME = ")
+                .value(mViewName);
+        String containerName = jdbcOperations.queryForObject(sb.toString(), String.class);
+        return listTableConstraints(schemaName, containerName);
     }
 
     @Override
