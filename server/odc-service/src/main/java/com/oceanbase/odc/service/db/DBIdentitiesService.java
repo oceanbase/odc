@@ -24,6 +24,7 @@ import java.util.TreeMap;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
 
+import com.oceanbase.odc.common.util.ObjectUtil;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
@@ -56,7 +57,7 @@ public class DBIdentitiesService {
             listExternalTables(schemaAccessor, identityNameLike, all);
         }
         if (types.contains(DBObjectType.MATERIALIZED_VIEW)) {
-            listMViews(schemaAccessor, all);
+            listMViews(schemaAccessor, identityNameLike, all);
         }
         schemaAccessor.showDatabases().forEach(db -> all.computeIfAbsent(db, SchemaIdentities::of));
         return new ArrayList<>(all.values());
@@ -84,8 +85,8 @@ public class DBIdentitiesService {
                 .forEach(i -> all.computeIfAbsent(i.getSchemaName(), SchemaIdentities::of).add(i));
     }
 
-    void listMViews(DBSchemaAccessor schemaAccessor, Map<String, SchemaIdentities> all) {
-        schemaAccessor.listAllMViewsLike("")
+    void listMViews(DBSchemaAccessor schemaAccessor, String MViewNameLike, Map<String, SchemaIdentities> all) {
+        schemaAccessor.listAllMViewsLike(ObjectUtil.defaultIfNull(MViewNameLike, StringUtils.EMPTY))
                 .forEach(i -> all.computeIfAbsent(i.getSchemaName(), SchemaIdentities::of).add(i));
     }
 
