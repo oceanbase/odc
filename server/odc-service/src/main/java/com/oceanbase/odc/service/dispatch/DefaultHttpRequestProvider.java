@@ -18,14 +18,13 @@ package com.oceanbase.odc.service.dispatch;
 
 import java.io.ByteArrayOutputStream;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 import com.oceanbase.odc.core.shared.Verify;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.NonNull;
 
 public class DefaultHttpRequestProvider implements HttpRequestProvider {

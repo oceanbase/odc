@@ -79,16 +79,8 @@ jobs:
           echo "Start install pty4j"
           pushd import
           echo "Current dir is "`pwd`
-          mvn install:install-file -Dfile=./pty4j-0.11.4.jar -DgroupId=org.jetbrains.pty4j -DartifactId=pty4j -Dversion=0.11.4 -Dpackaging=jar
+          mvn install:install-file -Dfile=./pty4j-0.13.0.jar -DgroupId=org.jetbrains.pty4j -DartifactId=pty4j -Dversion=0.13.0 -Dpackaging=jar
           echo "Install pty4j success"
-          popd
-      - name: Install purejavacomm
-        run: |
-          echo "Start install purejavacomm"
-          pushd import
-          echo "Current dir is "`pwd`
-          mvn install:install-file -Dfile=./purejavacomm-0.0.11.1.jar -DgroupId=org.jetbrains.pty4j -DartifactId=purejavacomm -Dversion=0.0.11.1 -Dpackaging=jar
-          echo "Install purejavacomm success"
           popd
       - name: Build project
         run: mvn clean install -Dmaven.test.skip=true

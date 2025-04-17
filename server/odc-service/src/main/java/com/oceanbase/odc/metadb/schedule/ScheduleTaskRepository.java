@@ -15,12 +15,10 @@
  */
 package com.oceanbase.odc.metadb.schedule;
 
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import javax.transaction.Transactional;
 import javax.validation.constraints.NotNull;
 
 import org.springframework.data.domain.Page;
@@ -36,6 +34,8 @@ import org.springframework.stereotype.Repository;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleTaskParams;
+
+import jakarta.transaction.Transactional;
 
 /**
  * @Author：tinker

@@ -19,13 +19,9 @@
             <dependency>
                 <groupId>org.jetbrains.pty4j</groupId>
                 <artifactId>pty4j</artifactId>
-                <version>0.11.4</version>
+                <version>0.13.0</version>
             </dependency>
-            <dependency>
-                <groupId>org.jetbrains.pty4j</groupId>
-                <artifactId>purejavacomm</artifactId>
-                <version>0.0.11.1</version>
-            </dependency>
+
             <dependency>
                 <groupId>org.jetbrains</groupId>
                 <artifactId>annotations</artifactId>
@@ -54,6 +50,10 @@
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>odc-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate.common</groupId>
+            <artifactId>hibernate-commons-annotations</artifactId>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
@@ -88,6 +88,10 @@
             <artifactId>spring-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
@@ -101,6 +105,16 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <artifactId>byte-buddy-agent</artifactId>
+                    <groupId>net.bytebuddy</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>byte-buddy</artifactId>
+                    <groupId>net.bytebuddy</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
@@ -111,6 +125,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <artifactId>byte-buddy</artifactId>
+                    <groupId>net.bytebuddy</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
@@ -151,7 +171,6 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-oauth2-jose</artifactId>
-            <version>5.7.0</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.security</groupId>
@@ -184,6 +203,12 @@
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>ob-loader-dumper</artifactId>
+            <exclusions>
+                <exclusion>
+                    <artifactId>antlr4-runtime</artifactId>
+                    <groupId>org.antlr</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
@@ -230,10 +255,6 @@
         <dependency>
             <groupId>org.jetbrains.pty4j</groupId>
             <artifactId>pty4j</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.jetbrains.pty4j</groupId>
-            <artifactId>purejavacomm</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jetbrains</groupId>

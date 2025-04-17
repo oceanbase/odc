@@ -329,21 +329,14 @@ function maven_install_libs() {
     popd
     pushd "${ODC_DIR}/import" || return 1
 
-    func_echo "start install lib pty4j-0.11.4.jar"
+    func_echo "start install lib pty4j-0.13.0.jar"
 
-    if ! mvn install:install-file -Dfile=./pty4j-0.11.4.jar -DgroupId=org.jetbrains.pty4j -DartifactId=pty4j -Dversion=0.11.4 -Dpackaging=jar ${maven_extra_args[@]}; then
-        func_echo "maven install lib pty4j-0.11.4.jar failed"
+    if ! mvn install:install-file -Dfile=./pty4j-0.13.0.jar -DgroupId=org.jetbrains.pty4j -DartifactId=pty4j -Dversion=0.13.0 -Dpackaging=jar ${maven_extra_args[@]}; then
+        func_echo "maven install lib pty4j-0.13.0.jar failed"
     else
-        func_echo "maven install lib pty4j-0.11.4.jar succeed"
+        func_echo "maven install lib pty4j-0.13.0.jar succeed"
     fi
 
-    func_echo "start install lib purejavacomm-0.0.11.1.jar"
-
-    if ! mvn install:install-file -Dfile=./purejavacomm-0.0.11.1.jar -DgroupId=org.jetbrains.pty4j -DartifactId=purejavacomm -Dversion=0.0.11.1 -Dpackaging=jar ${maven_extra_args[@]}; then
-        func_echo "maven install lib purejavacomm-0.0.11.1.jar failed"
-    else
-        func_echo "maven install lib purejavacomm-0.0.11.1.jar succeed"
-    fi
 
     popd
     func_echo "maven install libs with args ${maven_extra_args[@]} succeed"

@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC
         "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.oceanbase.odc.metadb.snippet.SnippetsDAO">
+<mapper namespace="com.oceanbase.odc.metadb.mapper.snippet.SnippetsDAO">
     <sql id="sqlColumns">
         `id` as id, `user_id` as userId,`prefix` as prefix, `body` as body, `description` as description, `type` as type,
         `create_time` as createTime, `modify_time` as modifyTime

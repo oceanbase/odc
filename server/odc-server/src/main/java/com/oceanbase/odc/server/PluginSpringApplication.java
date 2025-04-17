@@ -15,8 +15,14 @@
  */
 package com.oceanbase.odc.server;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -24,6 +30,9 @@ import org.springframework.context.ConfigurableApplicationContext;
 import com.oceanbase.odc.server.module.Modules;
 import com.oceanbase.odc.server.starter.Starters;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class PluginSpringApplication extends SpringApplication {
 
     public PluginSpringApplication(Class<?>... primarySources) {
@@ -36,6 +45,37 @@ public class PluginSpringApplication extends SpringApplication {
 
     public static ConfigurableApplicationContext run(Class<?>[] primarySources, String[] args) {
         return new PluginSpringApplication(primarySources).run(args);
+    }
+
+    public static void addUrlToClassLoader(List<URL> addToPath, ClassLoader classLoader)
+            throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException, NoSuchMethodException,
+            InvocationTargetException {
+
+        if (classLoader instanceof URLClassLoader urlClassLoader) {
+            Method method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
+            method.setAccessible(true);
+            for (URL url : addToPath) {
+                method.invoke(urlClassLoader, url);
+                log.info("Starter has been added to classpath, url={}", url);
+            }
+            return;
+        }
+        Class<?> builtinClassLoaderClass = Class.forName("jdk.internal.loader.BuiltinClassLoader");
+        if (builtinClassLoaderClass.isInstance(classLoader)) {
+            Field ucpField = builtinClassLoaderClass.getDeclaredField("ucp");
+            ucpField.setAccessible(true);
+            Object ucp = ucpField.get(classLoader);
+            Class<?> urlClassPathClass = Class.forName("jdk.internal.loader.URLClassPath");
+            Method addURL = urlClassPathClass.getMethod("addURL", URL.class);
+            addURL.setAccessible(true);
+            for (URL url : addToPath) {
+                addURL.invoke(ucp, url);
+                log.info("Starter has been added to classpath, url={}", url);
+            }
+        }
+
+
+
     }
 
     @Override

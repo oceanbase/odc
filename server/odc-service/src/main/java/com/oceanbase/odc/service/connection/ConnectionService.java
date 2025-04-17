@@ -33,7 +33,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.stream.Collectors;
 
-import javax.persistence.EntityManager;
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
@@ -126,6 +125,7 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.auth.AuthorizationFacade;
 import com.oceanbase.odc.service.iam.model.User;
 
+import jakarta.persistence.EntityManager;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -955,9 +955,8 @@ public class ConnectionService {
         if (Objects.nonNull(params.getUsername())) {
             spec = spec.and(ConnectionSpecs.usernameEqual(params.getUsername()));
         }
-        spec = spec.and(ConnectionSpecs.sort(pageable.getSort()));
         Pageable page = pageable.equals(Pageable.unpaged()) ? pageable
-                : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+                : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), pageable.getSort());
         Page<ConnectionEntity> entities = this.repository.findAll(spec, page);
         List<ConnectionConfig> models = entitiesToModels(entities.getContent(), currentOrganizationId(), true, true);
         fullFillAttributes(models);

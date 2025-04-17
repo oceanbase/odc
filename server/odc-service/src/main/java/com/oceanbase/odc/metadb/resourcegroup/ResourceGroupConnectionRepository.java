@@ -19,7 +19,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-import javax.transaction.Transactional;
 import javax.validation.constraints.NotEmpty;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -27,6 +26,8 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import jakarta.transaction.Transactional;
 
 /**
  * Repository object for <code>ResourceGroupConnectionEntity</code>

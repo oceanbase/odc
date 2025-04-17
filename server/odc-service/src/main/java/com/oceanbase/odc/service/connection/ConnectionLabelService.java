@@ -26,8 +26,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
-import com.oceanbase.odc.metadb.connection.ConnectionLabelDAO;
 import com.oceanbase.odc.metadb.connection.ConnectionLabelRelationRepository;
+import com.oceanbase.odc.metadb.mapper.ConnectionLabelDAO;
 import com.oceanbase.odc.service.connection.model.ConnectionLabel;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 

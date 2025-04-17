@@ -278,7 +278,7 @@ public class PagedRandomAccessFile implements Closeable {
                 removedPages.add(removedPage);
                 removableCount--;
             }
-            pageBuffer.addFirst(target);
+            pageBuffer.addToFirst(target);
         }
         if (!removedPages.isEmpty()) {
             pageManager.modify(removedPages);

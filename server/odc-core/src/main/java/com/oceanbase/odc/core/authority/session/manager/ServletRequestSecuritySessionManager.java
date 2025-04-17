@@ -22,11 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.oceanbase.odc.core.authority.exception.InvalidSessionException;
 import com.oceanbase.odc.core.authority.session.EmptySecuritySessionEventListener;
 import com.oceanbase.odc.core.authority.session.SecuritySession;
@@ -35,6 +30,10 @@ import com.oceanbase.odc.core.authority.session.factory.SecuritySessionFactory;
 import com.oceanbase.odc.core.authority.session.validate.ExpiredSecuritySessionValidator;
 import com.oceanbase.odc.core.authority.util.SecurityConstants;
 
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import lombok.NonNull;
 
 /**

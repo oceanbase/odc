@@ -18,10 +18,6 @@ package com.oceanbase.odc.core.authority;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -33,6 +29,10 @@ import com.oceanbase.odc.core.authority.session.SecuritySession;
 import com.oceanbase.odc.core.authority.session.factory.DefaultSecuritySessionFactory;
 import com.oceanbase.odc.core.authority.session.manager.ServletRequestSecuritySessionManager;
 import com.oceanbase.odc.core.authority.util.SecurityConstants;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 
 public class ServletRequestSecuritySessionManagerTest {
 

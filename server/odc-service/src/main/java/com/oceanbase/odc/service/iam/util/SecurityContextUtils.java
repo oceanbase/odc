@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Objects;
 
 import javax.security.auth.Subject;
-import javax.servlet.http.HttpServletRequest;
 import javax.validation.constraints.NotNull;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -42,6 +41,8 @@ import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.connection.CloudMetadataClient;
 import com.oceanbase.odc.service.iam.model.Organization;
 import com.oceanbase.odc.service.iam.model.User;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 public class SecurityContextUtils {
 

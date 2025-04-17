@@ -17,14 +17,13 @@ package com.oceanbase.odc.service.bastion.model;
 
 import java.io.BufferedReader;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.apache.commons.lang.StringUtils;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oceanbase.odc.common.json.SensitiveInput;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 

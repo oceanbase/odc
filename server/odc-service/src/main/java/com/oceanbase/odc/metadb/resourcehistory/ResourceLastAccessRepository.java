@@ -20,8 +20,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import javax.transaction.Transactional;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -32,6 +30,7 @@ import com.oceanbase.odc.common.jdbc.JdbcTemplateUtils;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.core.shared.PreConditions;
 
+import jakarta.transaction.Transactional;
 import lombok.NonNull;
 
 @Repository

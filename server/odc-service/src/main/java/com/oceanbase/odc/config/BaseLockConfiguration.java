@@ -23,6 +23,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.service.common.util.SpringContextUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -45,6 +46,8 @@ public abstract class BaseLockConfiguration {
         initLockTable(dataSource);
         String lockId = String.format("%s:%s", localIpAddress, listenPort);
         DefaultLockRepository defaultLockRepository = new OdcLockRepository(dataSource, lockId);
+        defaultLockRepository.setApplicationContext(SpringContextUtil.getApplicationContext());
+        defaultLockRepository.afterSingletonsInstantiated();
         defaultLockRepository.setPrefix("DISTRIBUTED_");
         defaultLockRepository.setTimeToLive(LOCK_TIME_TO_LIVE_SECONDS * 1000);
         log.info("odc lock repository created.");

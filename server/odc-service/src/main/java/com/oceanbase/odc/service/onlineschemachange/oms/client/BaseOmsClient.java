@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.service.onlineschemachange.oms.client;
 
+import static com.oceanbase.odc.service.common.util.WebRequestUtils.convertToHttpStatus;
+
 import java.text.MessageFormat;
 import java.util.Objects;
 
@@ -96,12 +98,13 @@ public abstract class BaseOmsClient implements OmsClient {
         if (responseEntity.getStatusCode() != HttpStatus.OK) {
             if (responseEntity.getStatusCode() == HttpStatus.REQUEST_TIMEOUT) {
                 throw new OmsException(ErrorCodes.Timeout, responseEntity.toString(), null,
-                        responseEntity.getStatusCode());
+                        convertToHttpStatus(responseEntity.getStatusCode()));
             }
 
             ErrorCode errorCode = responseEntity.getStatusCode().is5xxServerError() ? ErrorCodes.ExternalServiceError
                     : ErrorCodes.BadRequest;
-            throw new OmsException(errorCode, responseEntity.toString(), null, responseEntity.getStatusCode());
+            throw new OmsException(errorCode, responseEntity.toString(), null,
+                    convertToHttpStatus(responseEntity.getStatusCode()));
         }
         OmsApiReturnResult<T> result = JsonUtils.fromJsonIgnoreMissingProperty(responseEntity.getBody(), typeReference);
         if (result == null) {
@@ -128,17 +131,17 @@ public abstract class BaseOmsClient implements OmsClient {
             if (Objects.equals("PARAM_ERROR", result.getCode()) &&
                     result.getMessage().startsWith("Connectivity test failed")) {
                 throw new OmsException(ErrorCodes.OmsConnectivityTestFailed, msg, result.getRequestId(),
-                        responseEntity.getStatusCode());
+                        convertToHttpStatus(responseEntity.getStatusCode()));
             } else if (Objects.equals("PARAM_ERROR", result.getCode())) {
                 throw new OmsException(ErrorCodes.OmsParamError, msg, result.getRequestId(),
-                        responseEntity.getStatusCode());
+                        convertToHttpStatus(responseEntity.getStatusCode()));
             } else if (result.getCode().startsWith("GHANA-OPERAT")) {
                 throw new OmsException(ErrorCodes.OmsGhanaOperateFailed, msg, result.getRequestId(),
-                        responseEntity.getStatusCode());
+                        convertToHttpStatus(responseEntity.getStatusCode()));
             }
         }
         throw new OmsException(ErrorCodes.BadArgument, msg, result.getRequestId(),
-                responseEntity.getStatusCode());
+                convertToHttpStatus(responseEntity.getStatusCode()));
     }
 
     private void cleanUpSensitiveMsgInRequest(ClientRequestParams requestParams) {

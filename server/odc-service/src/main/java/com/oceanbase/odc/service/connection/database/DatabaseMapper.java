@@ -32,8 +32,8 @@ import com.oceanbase.odc.service.connection.database.model.Database;
 public interface DatabaseMapper {
     DatabaseMapper INSTANCE = Mappers.getMapper(DatabaseMapper.class);
 
-    @Mapping(source = "connectionId", target = "dataSource.id")
-    @Mapping(source = "projectId", target = "project.id")
+    @Mapping(source = "entity.connectionId", target = "dataSource.id")
+    @Mapping(source = "entity.projectId", target = "project.id")
     Database entityToModel(DatabaseEntity entity);
 
     @InheritInverseConfiguration

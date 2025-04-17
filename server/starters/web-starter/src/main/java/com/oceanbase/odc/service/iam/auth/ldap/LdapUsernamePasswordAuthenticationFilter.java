@@ -15,9 +15,6 @@
  */
 package com.oceanbase.odc.service.iam.auth.ldap;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.Authentication;
@@ -30,6 +27,9 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.service.encryption.SensitivePropertyHandler;
 import com.oceanbase.odc.service.integration.model.LdapContextHolder;
 import com.oceanbase.odc.service.integration.model.LdapContextHolder.LdapContext;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 public class LdapUsernamePasswordAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 

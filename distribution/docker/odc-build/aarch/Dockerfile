@@ -18,7 +18,7 @@ ARG USERNAME=admin
 ARG WORKDIR=/home/admin
 ARG USER_HOME_DIR="/root"
 ARG NODE_VERSION="14.19.1"
-ARG JDK_VERSION="java-1.8.0-openjdk-headless-1.8.0.312.b07 java-1.8.0-openjdk-1.8.0.312.b07 java-1.8.0-openjdk-devel-1.8.0.312.b07"
+ARG JDK_VERSION="java-17-openjdk-headless java-17-openjdk java-17-openjdk-devel"
 ARG MAVEN_VERSION=3.5.4
 ARG MAVEN_BASE_URL=https://mirrors.aliyun.com/apache/maven/maven-3/${MAVEN_VERSION}/binaries
 ARG BUILD_UTIL_HOME=/home/admin/util
@@ -50,7 +50,7 @@ RUN mkdir -p /usr/share/maven /usr/share/maven/ref \
 # create node develop env & ossutil
 RUN sh ${WORKDIR}/create_node_env.sh && ${WORKDIR}/install_ossutil.sh ${BUILD_UTIL_HOME}
 
-ENV JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.312.b07-2.el8_5.aarch64
+ENV JAVA_HOME=/usr/lib/jvm/java-17
 ENV MAVEN_HOME=/usr/share/maven
 ENV MAVEN_CONFIG=$USER_HOME_DIR/.m2
 ENV NVS_HOME=/usr/local/nvs

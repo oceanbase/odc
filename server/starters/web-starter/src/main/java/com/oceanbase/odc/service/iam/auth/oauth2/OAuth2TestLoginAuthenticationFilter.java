@@ -15,10 +15,10 @@
  */
 package com.oceanbase.odc.service.iam.auth.oauth2;
 
-import javax.servlet.http.HttpServletRequest;
-
 import com.oceanbase.odc.service.iam.auth.local.AbstractTestLoginAuthenticationFilter;
 import com.oceanbase.odc.service.integration.oauth2.TestLoginManager;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 public class OAuth2TestLoginAuthenticationFilter extends AbstractTestLoginAuthenticationFilter {
 

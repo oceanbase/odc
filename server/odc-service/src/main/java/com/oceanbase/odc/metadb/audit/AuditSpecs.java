@@ -18,8 +18,6 @@ package com.oceanbase.odc.metadb.audit;
 import java.util.List;
 import java.util.Objects;
 
-import javax.persistence.criteria.Predicate;
-
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -28,6 +26,8 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.service.audit.model.QueryAuditEventMetaParams;
 import com.oceanbase.odc.service.audit.model.QueryAuditEventParams;
 import com.oceanbase.odc.service.common.util.SqlUtils;
+
+import jakarta.persistence.criteria.Predicate;
 
 /**
  * @Author: Lebie

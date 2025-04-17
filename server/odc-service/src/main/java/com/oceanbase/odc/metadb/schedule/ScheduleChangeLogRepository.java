@@ -18,13 +18,13 @@ package com.oceanbase.odc.metadb.schedule;
 import java.util.List;
 import java.util.Optional;
 
-import javax.transaction.Transactional;
-
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeStatus;
+
+import jakarta.transaction.Transactional;
 
 /**
  * @Author：tinker

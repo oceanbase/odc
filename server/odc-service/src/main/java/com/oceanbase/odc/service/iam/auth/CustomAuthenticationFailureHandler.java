@@ -21,9 +21,6 @@ import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.Locale;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.Validate;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -57,6 +54,8 @@ import com.oceanbase.odc.service.iam.LoginHistoryService;
 import com.oceanbase.odc.service.iam.model.LoginHistory;
 import com.oceanbase.odc.service.iam.util.FailedLoginAttemptLimiter;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 
 /**

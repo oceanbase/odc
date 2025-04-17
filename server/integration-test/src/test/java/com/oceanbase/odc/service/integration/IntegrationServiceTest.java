@@ -23,8 +23,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collections;
 
-import javax.validation.ConstraintViolationException;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.RandomStringUtils;
 import org.junit.After;
@@ -59,6 +57,8 @@ import com.oceanbase.odc.service.integration.model.Encryption.EncryptionAlgorith
 import com.oceanbase.odc.service.integration.model.IntegrationConfig;
 import com.oceanbase.odc.service.integration.model.IntegrationType;
 import com.oceanbase.odc.service.integration.model.QueryIntegrationParams;
+
+import jakarta.validation.ConstraintViolationException;
 
 /**
  * @author gaoda.xy

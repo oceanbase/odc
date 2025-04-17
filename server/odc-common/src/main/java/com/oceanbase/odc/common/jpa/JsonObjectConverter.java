@@ -18,10 +18,10 @@ package com.oceanbase.odc.common.jpa;
 import java.util.HashMap;
 import java.util.Objects;
 
-import javax.persistence.AttributeConverter;
-import javax.persistence.Converter;
-
 import com.oceanbase.odc.common.json.JsonUtils;
+
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
 
 /**
  * @author liuyizhuo.lyz
