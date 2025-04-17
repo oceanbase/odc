@@ -800,6 +800,45 @@ public class ConnectionService {
         return connection;
     }
 
+    @SkipAuthorize("internal usage")
+    public void updatePasswordEncrypted(@NotNull Long organizationId, String customKey) {
+        List<ConnectionConfig> connectionList = listByOrganizationId(organizationId);
+        // No connection need to be encrypted
+        if (connectionList.isEmpty()) {
+            return;
+        }
+        txTemplate.execute(status -> {
+            try {
+                List<ConnectionEntity> reEncryptedList = connectionList.stream()
+                        .map(encryptedConfig -> {
+                            ConnectionConfig decryptedConfig = getDecryptedConfig(encryptedConfig);
+                            ConnectionConfig reEncryptedConfig = getEncryptedConfig(decryptedConfig, customKey);
+                            return mapper.modelToEntity(reEncryptedConfig);
+                        })
+                        .collect(Collectors.toList());
+                batchUpdateConnectionConfig(reEncryptedList);
+                return null;
+            } catch (Exception e) {
+                status.setRollbackOnly();
+                throw new UnexpectedException("Failed to update connection config", e);
+            }
+        });
+    }
+
+    @SkipAuthorize("internal usage")
+    public ConnectionConfig getDecryptedConfig(@NotNull ConnectionConfig encryptedConfig) {
+        return connectionEncryption.decryptPasswords(encryptedConfig);
+    }
+
+    @SkipAuthorize("internal usage")
+    public ConnectionConfig getEncryptedConfig(@NotNull ConnectionConfig decryptedConfig, String customKey) {
+        return connectionEncryption.encryptPasswordsByCustomKey(decryptedConfig, customKey);
+    }
+
+    @SkipAuthorize("internal usage")
+    public void batchUpdateConnectionConfig(List<ConnectionEntity> connections) {
+        repository.saveAll(connections);
+    }
 
     @SkipAuthorize("internal usage")
     public List<ConnectionConfig> listForConnectionSkipPermissionCheck(@NotNull Collection<Long> ids) {

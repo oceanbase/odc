@@ -46,6 +46,7 @@ import com.oceanbase.odc.service.integration.model.Oauth2Parameter;
 import com.oceanbase.odc.service.integration.model.SSOIntegrationConfig;
 import com.oceanbase.odc.service.integration.model.SSOIntegrationConfig.MappingRule;
 
+import cn.hutool.core.codec.Caesar;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -198,7 +199,7 @@ public class V42013OAuth2ConfigMetaMigrate implements JdbcMigratable {
                     boolean enabled = org.getName().equals(enabledOrgName);
 
                     String salt = CryptoUtils.generateSalt();
-                    TextEncryptor textEncryptor = Encryptors.aesBase64(org.getSecret(), salt);
+                    TextEncryptor textEncryptor = Encryptors.aesBase64(Caesar.decode(org.getSecret(), 8), salt);
                     jdbcTemplate.update(insertIntegration, IntegrationType.SSO.name(), defaultName, 0L,
                             org.getId(),
                             enabled, false, now, now,
@@ -309,7 +310,7 @@ public class V42013OAuth2ConfigMetaMigrate implements JdbcMigratable {
                     LocalDateTime now = LocalDateTime.now();
                     boolean enabled = org.getName().equals(enabledOrgName);
                     String salt = CryptoUtils.generateSalt();
-                    TextEncryptor textEncryptor = Encryptors.aesBase64(org.getSecret(), salt);
+                    TextEncryptor textEncryptor = Encryptors.aesBase64(Caesar.decode(org.getSecret(), 8), salt);
                     String encrypt = textEncryptor.encrypt(decryptSecret);
                     jdbcTemplate.update(insertIntegration, IntegrationType.SSO.name(), defaultName, 0L,
                             org.getId(),

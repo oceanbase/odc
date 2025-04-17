@@ -79,4 +79,8 @@ public class OrganizationConfigUtils {
     public String getDefaultTaskDescription() {
         return getOrganizationConfig(OrganizationConfigKeys.DEFAULT_TASK_DESCRIPTION_PROMPT);
     }
+
+    public String getDefaultCustomDataSourceEncryptionKey() {
+        return getOrganizationConfig(OrganizationConfigKeys.DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY);
+    }
 }

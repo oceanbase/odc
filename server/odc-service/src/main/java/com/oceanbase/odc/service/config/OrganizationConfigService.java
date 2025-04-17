@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.config;
 
+import static com.oceanbase.odc.service.config.OrganizationConfigKeys.DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY;
 import static com.oceanbase.odc.service.config.OrganizationConfigKeys.DEFAULT_MAX_QUERY_LIMIT;
 import static com.oceanbase.odc.service.config.OrganizationConfigKeys.DEFAULT_QUERY_LIMIT;
 
@@ -32,21 +33,26 @@ import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.validation.annotation.Validated;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.oceanbase.odc.common.security.PasswordUtils;
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.metadb.config.OrganizationConfigDAO;
 import com.oceanbase.odc.metadb.config.OrganizationConfigEntity;
+import com.oceanbase.odc.metadb.iam.OrganizationRepository;
 import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.config.model.ConfigurationMeta;
+import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.session.SessionProperties;
 
+import cn.hutool.core.codec.Caesar;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -65,6 +71,13 @@ public class OrganizationConfigService {
     private OrganizationConfigMetaService organizationConfigMetaService;
     @Autowired
     private SessionProperties sessionProperties;
+    @Autowired
+    private OrganizationRepository organizationRepo;
+    @Autowired
+    @Lazy
+    private ConnectionService connectionService;
+    @Autowired
+    private TransactionTemplate transactionTemplate;
 
     private List<Configuration> defaultConfigurations;
     private Map<String, ConfigurationMeta> configKeyToConfigMeta;
@@ -123,18 +136,29 @@ public class OrganizationConfigService {
     /**
      * Batch update the organization configuration with the changes and clear the cache.
      */
-    @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(actions = "update", resourceType = "ODC_ORGANIZATION_CONFIG", isForAll = true)
     public List<Configuration> batchUpdate(@NotNull Long organizationId, @NotNull Long userId,
             @NotEmpty List<Configuration> configurations) {
         validateConfiguration(configurations);
-        List<OrganizationConfigEntity> organizationConfigEntities = configurations.stream()
-                .map(record -> record.convert2DO(organizationId, userId))
-                .collect(Collectors.toList());
-        int affectRows = organizationConfigDAO.batchUpsert(organizationConfigEntities);
-        log.info("Update organization configurations, organizationId={}, affectRows={}, configurations={}",
-                organizationId, affectRows, configurations);
-        evictOrgConfigurationsCache(organizationId);
+        String customDataSourceKey = getCustomDataSourceKey(configurations);
+        transactionTemplate.execute(status -> {
+            try {
+                migrateExistedDataSourcePassword(organizationId, customDataSourceKey);
+
+                List<OrganizationConfigEntity> organizationConfigEntities = configurations.stream()
+                        .map(record -> record.convert2DO(organizationId, userId))
+                        .collect(Collectors.toList());
+                int affectRows = organizationConfigDAO.batchUpsert(organizationConfigEntities);
+                log.info("Update organization configurations, organizationId={}, affectRows={}, configurations={}",
+                        organizationId, affectRows, configurations);
+                evictOrgConfigurationsCache(organizationId);
+                return null;
+            } catch (Exception e) {
+                log.error("Failed to update organization configurations, organizationId={}", organizationId);
+                status.setRollbackOnly();
+                throw new RuntimeException("Failed to update organization configurations", e);
+            }
+        });
         return queryList(organizationId);
     }
 
@@ -160,6 +184,23 @@ public class OrganizationConfigService {
             throw new IllegalArgumentException(
                     "Query limit exceeds the max value: " + queryLimit + " > " + maxQueryLimit);
         }
+
+        String customDataSourceKey = configMap.get(DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY).getValue();
+        if (customDataSourceKey.isEmpty()) {
+            return;
+        }
+        if (customDataSourceKey.length() != 32) {
+            throw new IllegalArgumentException(
+                    String.format("Value is not allowed for key '%s', value length must be 32",
+                            DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY));
+        }
+        // explain: reference RandomStringUtils.randomAlphanumeric
+        String regex = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])[A-Za-z0-9]{32}$";
+        if (!customDataSourceKey.matches(regex)) {
+            throw new IllegalArgumentException(
+                    String.format("Value must contain letters (uppercase and lowercase) and numbers for key '%s'",
+                            DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY));
+        }
     }
 
     private void evictOrgConfigurationsCache(@NotNull Long organizationId) {
@@ -174,6 +215,49 @@ public class OrganizationConfigService {
     private Map<String, Configuration> internalQuery(Long organizationId) {
         return queryList(organizationId).stream()
                 .collect(Collectors.toMap(Configuration::getKey, c -> c));
+    }
+
+    private void migrateExistedDataSourcePassword(Long organizationId, String customKey) {
+        OrganizationConfigEntity customKeyConfigInDB = organizationConfigDAO
+                .queryByOrganizationIdAndKey(organizationId, DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY);
+
+        if (Objects.nonNull(customKeyConfigInDB)) {
+            // The key is equal to the old one, no need to migrate
+            if (Objects.equals(customKey, customKeyConfigInDB.getValue())) {
+                return;
+            }
+        }
+        // Use odc default key, if not set
+        if (customKey.isEmpty()) {
+            customKey = PasswordUtils.random(32);
+        }
+        String finalCustomKey = customKey;
+        transactionTemplate.execute(status -> {
+            try {
+                log.info("Start migrate existed datasource password, organizationId={}", organizationId);
+                connectionService.updatePasswordEncrypted(organizationId, finalCustomKey);
+                log.info("Success migrate existed datasource password, organizationId={}", organizationId);
+                String secret = Caesar.encode(finalCustomKey, 8);
+                int updateRows = organizationRepo.updateOrganizationSecretById(organizationId, secret);
+                log.info("Update organization secret, organization={}, affectRows={}", organizationId, updateRows);
+            } catch (Exception e) {
+                log.error("Failed to migrate existed datasource password, organizationId={}", organizationId, e);
+                status.setRollbackOnly();
+                throw new RuntimeException("Failed to migrate existed datasource password", e);
+            }
+            return null;
+        });
+
+    }
+
+    private String getCustomDataSourceKey(List<Configuration> configurations) {
+        Optional<Configuration> customDataSourceKey = configurations.stream()
+                .filter(config -> Objects.equals(DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY, config.getKey()))
+                .findFirst();
+        if (!customDataSourceKey.isPresent()) {
+            throw new IllegalArgumentException("Custom data source key is not configured");
+        }
+        return customDataSourceKey.get().getValue();
     }
 
 }
