@@ -36,7 +36,7 @@ import cn.hutool.core.codec.Caesar;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Migratable(version = "4.3.4.9", description = "migrate the organization secret to this stored in confusion")
+@Migratable(version = "4.3.4.10", description = "migrate the organization secret to this stored in confusion")
 public class V43410OrganizationSecretMigrate implements JdbcMigratable {
 
     private JdbcTemplate jdbcTemplate;
