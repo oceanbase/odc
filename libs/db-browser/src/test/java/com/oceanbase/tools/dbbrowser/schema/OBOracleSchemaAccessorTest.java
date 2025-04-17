@@ -68,7 +68,6 @@ import com.oceanbase.tools.dbbrowser.schema.OBMySQLSchemaAccessorTest.DataType;
 import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessors;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
 import com.oceanbase.tools.dbbrowser.util.VersionUtils;
-import com.oceanbase.tools.sqlparser.statement.createtable.ColumnAttributes;
 
 import lombok.Data;
 
