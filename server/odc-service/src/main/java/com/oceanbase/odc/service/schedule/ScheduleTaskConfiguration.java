@@ -19,8 +19,13 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
+import com.oceanbase.odc.metadb.connection.DatabaseRepository;
+import com.oceanbase.odc.service.exporter.ImportService;
+import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.schedule.alarm.DefaultScheduleAlarmClient;
 import com.oceanbase.odc.service.schedule.alarm.ScheduleAlarmClient;
+import com.oceanbase.odc.service.schedule.export.DefaultScheduleFacade;
 import com.oceanbase.odc.service.schedule.flowtask.ApprovalFlowClient;
 import com.oceanbase.odc.service.schedule.flowtask.NoApprovalFlowClient;
 import com.oceanbase.odc.service.schedule.submitter.DefaultJobSubmitter;
@@ -36,7 +41,6 @@ import com.oceanbase.odc.service.schedule.util.ScheduleDescriptionGenerator;
 
 @Configuration
 public class ScheduleTaskConfiguration {
-
 
     @Bean
     @ConditionalOnMissingBean(ApprovalFlowClient.class)
@@ -60,5 +64,15 @@ public class ScheduleTaskConfiguration {
     @ConditionalOnMissingBean(ScheduleDescriptionGenerator.class)
     public ScheduleDescriptionGenerator scheduleDescriptionGenerator() {
         return new DefaultScheduleDescriptionGenerator();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(ScheduleExportImportFacade.class)
+    public ScheduleExportImportFacade defaultScheduleArchiveFacade(
+            ConnectionConfigRepository connectionConfigRepository,
+            DatabaseRepository databaseRepository, AuthenticationFacade authenticationFacade,
+            ImportService importService) {
+        return new DefaultScheduleFacade(connectionConfigRepository, databaseRepository, authenticationFacade,
+                importService);
     }
 }

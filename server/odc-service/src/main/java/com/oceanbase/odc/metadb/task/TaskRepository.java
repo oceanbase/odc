@@ -15,10 +15,10 @@
  */
 package com.oceanbase.odc.metadb.task;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import javax.transaction.Transactional;
 
@@ -61,7 +61,7 @@ public interface TaskRepository extends JpaRepository<TaskEntity, Long>, JpaSpec
     @Modifying
     int updateExecutorById(@Param("id") Long id, @Param("executor") String executor);
 
-    List<TaskEntity> findByIdIn(Set<Long> taskIds);
+    List<TaskEntity> findByIdIn(Collection<Long> taskIds);
 
     Optional<TaskEntity> findByJobId(Long jobId);
 

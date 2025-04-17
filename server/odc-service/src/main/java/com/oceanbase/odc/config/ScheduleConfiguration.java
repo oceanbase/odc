@@ -311,4 +311,21 @@ public class ScheduleConfiguration {
         return executor;
     }
 
+    @Bean(name = "scheduleImportExecutor")
+    public ThreadPoolTaskExecutor scheduleImportExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        int minPoolSize = Math.max(SystemUtils.availableProcessors(), 4);
+        executor.setCorePoolSize(minPoolSize);
+        executor.setMaxPoolSize(minPoolSize * 2);
+        executor.setQueueCapacity(10);
+        executor.setThreadNamePrefix("schedule-import-");
+        executor.setWaitForTasksToCompleteOnShutdown(false);
+        executor.setAwaitTerminationSeconds(5);
+        executor.setTaskDecorator(new TraceDecorator<>());
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
+        executor.initialize();
+        log.info("scheduleImportExecutor initialized");
+        return executor;
+    }
+
 }
