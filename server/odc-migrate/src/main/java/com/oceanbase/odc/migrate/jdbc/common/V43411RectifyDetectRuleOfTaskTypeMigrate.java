@@ -54,9 +54,9 @@ import lombok.extern.slf4j.Slf4j;
  *               organizations, add the types of tasks supported by default in ODC V434
  */
 @Slf4j
-@Migratable(version = "4.3.4.10",
+@Migratable(version = "4.3.4.11",
         description = "For rectifying default risk level detect rules in V4.3.4")
-public class V43410RectifyDetectRuleOfTaskTypeMigrate implements JdbcMigratable {
+public class V43411RectifyDetectRuleOfTaskTypeMigrate implements JdbcMigratable {
     private NamedParameterJdbcTemplate jdbcTemplate;
     private TransactionTemplate txTemplate;
     private static final String DEFAULT_TASK_TYPE_DETECT_RULE =
