@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.onlineschemachange.oms.client;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -37,7 +38,7 @@ public class DefaultPrivateCloudOmsClient extends BaseOmsClient {
 
     public DefaultPrivateCloudOmsClient(
             @Autowired OnlineSchemaChangeProperties onlineSchemaChangeProperties,
-            @Autowired RestTemplate omsRestTemplate) {
+            @Autowired @Qualifier("omsRestTemplate") RestTemplate omsRestTemplate) {
         super(onlineSchemaChangeProperties.getOms().getUrl() + "/api/v2", omsRestTemplate);
         this.onlineSchemaChangeProperties = onlineSchemaChangeProperties;
     }

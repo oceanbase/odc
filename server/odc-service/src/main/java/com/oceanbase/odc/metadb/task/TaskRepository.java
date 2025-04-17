@@ -20,8 +20,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
-import javax.transaction.Transactional;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
@@ -29,6 +27,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
+
+import jakarta.transaction.Transactional;
 
 /**
  * @author wenniu.ly
@@ -66,7 +66,7 @@ public interface TaskRepository extends JpaRepository<TaskEntity, Long>, JpaSpec
     Optional<TaskEntity> findByJobId(Long jobId);
 
     @Transactional
-    @Query("update TaskEntity set job_id=:jobId where id=:id")
+    @Query("update TaskEntity set jobId=:jobId where id=:id")
     @Modifying
     void updateJobId(@Param("id") Long id, @Param("jobId") Long jobId);
 

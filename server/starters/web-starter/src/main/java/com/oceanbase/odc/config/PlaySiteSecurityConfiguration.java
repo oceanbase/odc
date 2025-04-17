@@ -22,12 +22,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.AuthenticationUserDetailsService;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationProvider;
 import org.springframework.web.servlet.LocaleResolver;
@@ -56,16 +55,13 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Configuration
 @ConditionalOnProperty(value = "odc.iam.auth.type", havingValue = "alipay")
-public class PlaySiteSecurityConfiguration extends WebSecurityConfigurerAdapter {
+public class PlaySiteSecurityConfiguration {
     private static final String LOGIN_PAGE = "/index.html";
-
-    @Autowired
-    private LoadingCache<String, FailedLoginAttemptLimiter> clientAddressLoginAttemptCache;
-
     @Autowired
     @Qualifier("alipayUserDetailService")
     public AuthenticationUserDetailsService userDetailsService;
-
+    @Autowired
+    private LoadingCache<String, FailedLoginAttemptLimiter> clientAddressLoginAttemptCache;
     @Autowired
     private CommonSecurityProperties commonSecurityProperties;
 
@@ -100,50 +96,51 @@ public class PlaySiteSecurityConfiguration extends WebSecurityConfigurerAdapter 
         return preAuthProvider;
     }
 
-    @Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.authenticationProvider(preAuthProvider());
-    }
-
-    @Override
-    public void configure(WebSecurity web) throws Exception {
-        // 允许访问静态资源
-        web.ignoring().antMatchers(commonSecurityProperties.getStaticResources())
+    @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        return (web) -> web.ignoring()
+                .requestMatchers(commonSecurityProperties.getStaticResources())
                 .and()
-                .ignoring()
-                .antMatchers(commonSecurityProperties.getAuthWhitelist());
+                .ignoring().requestMatchers(commonSecurityProperties.getAuthWhitelist());
     }
 
-    @Override
+    @Bean
+    public SecurityFilterChain localFilterChain(HttpSecurity http) throws Exception {
+        http
+                .authenticationProvider(preAuthProvider());
+        configure(http);
+        return http.build();
+    }
+
+
     protected void configure(HttpSecurity http) throws Exception {
         corsConfigureHelper.configure(http);
         // @formatter:off
-        http.exceptionHandling()
-                .authenticationEntryPoint(new CustomAuthenticationEntryPoint(LOGIN_PAGE,localeResolver))
-            .and()
-                .authorizeRequests()
-                .anyRequest().authenticated()
-            .and()
-                .formLogin().loginPage(LOGIN_PAGE).permitAll()
-            .and()
-                .logout()
-                .logoutUrl(commonSecurityProperties.getLogoutUri())
-                .deleteCookies(PlaysiteOpenAPIConstants.OB_OFFICIAL_WEBSITE_TOKEN_COOKIE_NAME, commonSecurityProperties.getSessionCookieKey())
-                .invalidateHttpSession(true)
-                .permitAll()
-                .logoutSuccessHandler(new CustomLogoutSuccessHandler())
-            .and()
-                .sessionManagement()
-                // Never: Spring Security will never create an HttpSession, but will use the existing one
-                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                .sessionFixation()
-                .migrateSession()
-                .invalidSessionStrategy(new CustomInvalidSessionStrategy(commonSecurityProperties.getLoginPage(), localeResolver));
+        http.exceptionHandling(e->e.authenticationEntryPoint(new CustomAuthenticationEntryPoint(LOGIN_PAGE,localeResolver)));
+
+        http.authorizeHttpRequests(auth ->
+            auth.anyRequest().authenticated() // 任何请求都需要认证
+        );
+
+        http.formLogin(l->l.loginPage(LOGIN_PAGE).permitAll());
+        http.logout(l->l.logoutUrl(commonSecurityProperties.getLogoutUri())
+            .deleteCookies(PlaysiteOpenAPIConstants.OB_OFFICIAL_WEBSITE_TOKEN_COOKIE_NAME, commonSecurityProperties.getSessionCookieKey())
+            .invalidateHttpSession(true)
+            .permitAll()
+            .logoutSuccessHandler(new CustomLogoutSuccessHandler()));
+
+        // Never: Spring Security will never create an HttpSession, but will use the existing one
+      http.sessionManagement(s-> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+          .sessionFixation()
+          .migrateSession()
+          .invalidSessionStrategy(new CustomInvalidSessionStrategy(commonSecurityProperties.getLoginPage(), localeResolver)));
+                
         // @formatter:on        
         csrfConfigureHelper.configure(http);
 
+        AuthenticationManager authenticationManager = http.getSharedObject(AuthenticationManager.class);
         // 调用 Alipay OpenAPI 获取用户信息，并认证登录
-        http.addFilterAt(getAuthenticationFilter(authenticationManager()),
+        http.addFilterAt(getAuthenticationFilter(authenticationManager),
                 AbstractPreAuthenticatedProcessingFilter.class);
     }
 

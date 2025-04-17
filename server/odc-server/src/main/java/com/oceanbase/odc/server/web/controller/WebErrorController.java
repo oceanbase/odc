@@ -15,13 +15,10 @@
  */
 package com.oceanbase.odc.server.web.controller;
 
-import static javax.servlet.RequestDispatcher.ERROR_EXCEPTION;
-import static javax.servlet.RequestDispatcher.ERROR_STATUS_CODE;
+import static jakarta.servlet.RequestDispatcher.ERROR_EXCEPTION;
+import static jakarta.servlet.RequestDispatcher.ERROR_STATUS_CODE;
 
 import java.util.Objects;
-
-import javax.servlet.RequestDispatcher;
-import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.boot.web.servlet.error.ErrorController;
 import org.springframework.http.HttpStatus;
@@ -33,6 +30,8 @@ import org.springframework.web.servlet.ModelAndView;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
 import com.oceanbase.odc.service.common.util.WebRequestUtils;
 
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 
 /**

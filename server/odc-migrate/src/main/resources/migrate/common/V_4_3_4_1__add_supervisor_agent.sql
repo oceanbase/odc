@@ -1,7 +1,7 @@
 --
 -- Add supervisor_endpoint table to maintain supervisor agent info, this table will bind to resource_resource
 --
-CREATE TABLE `task_supervisor_endpoint` (
+CREATE TABLE IF NOT EXISTS `task_supervisor_endpoint` (
     `id` bigint(20) NOT NULL AUTO_INCREMENT,
     `host` varchar(256)  NOT NULL COMMENT 'host of supervisor',
     `port` int(11)  NOT NULL COMMENT 'port of supervisor',

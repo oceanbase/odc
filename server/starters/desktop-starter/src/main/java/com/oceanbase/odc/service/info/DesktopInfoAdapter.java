@@ -19,8 +19,6 @@ package com.oceanbase.odc.service.info;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.info.BuildProperties;
@@ -28,6 +26,8 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @Service
 @Profile("clientMode")

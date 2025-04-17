@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.service.iam.auth.play;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.springframework.web.servlet.LocaleResolver;
 
 import com.oceanbase.odc.core.authority.SecurityManager;
@@ -25,6 +23,7 @@ import com.oceanbase.odc.core.shared.exception.AccessDeniedException;
 import com.oceanbase.odc.service.common.util.WebRequestUtils;
 import com.oceanbase.odc.service.iam.auth.AbstractOdcPreAuthenticatedProcessingFilter;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 

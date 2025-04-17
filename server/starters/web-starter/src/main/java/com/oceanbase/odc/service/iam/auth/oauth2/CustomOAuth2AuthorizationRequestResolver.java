@@ -20,8 +20,6 @@ import static com.oceanbase.odc.service.integration.oauth2.TestLoginManager.REGI
 
 import java.net.URL;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
@@ -36,6 +34,7 @@ import com.oceanbase.odc.service.integration.oauth2.AddableClientRegistrationMan
 import com.oceanbase.odc.service.integration.oauth2.SSOStateManager;
 import com.oceanbase.odc.service.state.StatefulUuidStateIdGenerator;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.SneakyThrows;
 
 public class CustomOAuth2AuthorizationRequestResolver implements OAuth2AuthorizationRequestResolver {

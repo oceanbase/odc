@@ -18,10 +18,10 @@ package com.oceanbase.odc.service.flow;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.flowable.job.api.JobInfo;
+import org.flowable.job.service.impl.asyncexecutor.AsyncJobExecutorConfiguration;
 import org.flowable.job.service.impl.asyncexecutor.DefaultAsyncJobExecutor;
 import org.flowable.job.service.impl.persistence.entity.AbstractJobEntityImpl;
 import org.springframework.data.jpa.domain.Specification;
@@ -62,7 +62,9 @@ public class OdcAsyncJobExecutor extends DefaultAsyncJobExecutor {
             RetryExecutor.builder().initialDelay(true).retryIntervalMillis(1000).retryTimes(3).build();
 
     public OdcAsyncJobExecutor(@NonNull FlowInstanceRepository flowInstanceRepository,
-            @NonNull ServiceTaskInstanceRepository serviceTaskRepository) {
+            @NonNull ServiceTaskInstanceRepository serviceTaskRepository,
+            AsyncJobExecutorConfiguration asyncJobExecutorConfiguration) {
+        super(asyncJobExecutorConfiguration);
         this.flowInstanceRepository = flowInstanceRepository;
         this.serviceTaskRepository = serviceTaskRepository;
     }
@@ -73,7 +75,7 @@ public class OdcAsyncJobExecutor extends DefaultAsyncJobExecutor {
         try {
             flowInstanceId = getFlowInstanceIdByJob((AbstractJobEntityImpl) job);
             if (mockDataExecutorService == null && loaderDumperExecutorService == null) {
-                this.executorService.execute(runnable);
+                this.taskExecutor.execute(runnable);
                 return true;
             }
             Set<TaskType> taskTypes = getTaskTypesByJob(flowInstanceId);
@@ -86,7 +88,7 @@ public class OdcAsyncJobExecutor extends DefaultAsyncJobExecutor {
                 loaderDumperExecutorService.submit(runnable);
                 return true;
             }
-            this.executorService.execute(runnable);
+            this.taskExecutor.execute(runnable);
             return true;
         } catch (Exception e) {
             log.warn("Failed to submit a task", e);
@@ -112,23 +114,9 @@ public class OdcAsyncJobExecutor extends DefaultAsyncJobExecutor {
         super.stopExecutingAsyncJobs();
         if (mockDataExecutorService != null) {
             mockDataExecutorService.shutdown();
-            try {
-                if (!mockDataExecutorService.awaitTermination(secondsToWaitOnShutdown, TimeUnit.SECONDS)) {
-                    log.warn("Timeout during shutdown of async job executor.");
-                }
-            } catch (InterruptedException e) {
-                log.warn("Interrupted while shutting down the async job executor.", e);
-            }
         }
         if (loaderDumperExecutorService != null) {
             loaderDumperExecutorService.shutdown();
-            try {
-                if (!loaderDumperExecutorService.awaitTermination(secondsToWaitOnShutdown, TimeUnit.SECONDS)) {
-                    log.warn("Timeout during shutdown of async job executor.");
-                }
-            } catch (InterruptedException e) {
-                log.warn("Interrupted while shutting down the async job executor.", e);
-            }
         }
     }
 

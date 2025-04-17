@@ -34,10 +34,10 @@ public interface ConnectionMapper {
 
     ConnectionConfig clone(ConnectionConfig model);
 
-    @Mapping(source = "sslEnabled", target = "sslConfig.enabled")
-    @Mapping(source = "sslClientCertObjectId", target = "sslConfig.clientCertObjectId")
-    @Mapping(source = "sslClientKeyObjectId", target = "sslConfig.clientKeyObjectId")
-    @Mapping(source = "sslCACertObjectId", target = "sslConfig.CACertObjectId")
+    @Mapping(source = "entity.sslEnabled", target = "sslConfig.enabled")
+    @Mapping(source = "entity.sslClientCertObjectId", target = "sslConfig.clientCertObjectId")
+    @Mapping(source = "entity.sslClientKeyObjectId", target = "sslConfig.clientKeyObjectId")
+    @Mapping(source = "entity.sslCACertObjectId", target = "sslConfig.CACertObjectId")
     ConnectionConfig entityToModel(ConnectionEntity entity);
 
     @InheritInverseConfiguration

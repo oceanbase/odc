@@ -38,7 +38,7 @@ public class AesEncryptorTest extends EncryptorTest {
     @Test
     public void passwordSize64_EncryptedSizeLessThan256() {
         TextEncryptor encryptor = Encryptors.aesBase64("123456789012345678901234567890123456789012345678901234567890",
-                "salt1234salt1234");
+            "salt1234salt1234");
         String encrypted = encryptor.encrypt("1234567890123456789012345678901234567890123456789012345678901234");
         log.info("encrypted.length()={}", encrypted.length());
         Assert.assertTrue(encrypted.length() < 256);

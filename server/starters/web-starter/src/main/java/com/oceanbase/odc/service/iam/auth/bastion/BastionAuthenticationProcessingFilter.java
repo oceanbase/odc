@@ -18,10 +18,6 @@ package com.oceanbase.odc.service.iam.auth.bastion;
 import java.io.IOException;
 import java.util.Objects;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
@@ -31,6 +27,9 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oceanbase.odc.service.bastion.model.AuthLoginReq;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

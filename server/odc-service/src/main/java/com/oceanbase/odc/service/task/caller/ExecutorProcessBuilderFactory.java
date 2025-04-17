@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.task.caller;
 import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -26,11 +27,14 @@ import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @author yaobin
  * @date 2024-01-26
  * @since 4.2.4
  */
+@Slf4j
 public class ExecutorProcessBuilderFactory {
 
     private static final Pattern ODC_SERVER_EXECUTABLE_JAR = Pattern.compile("^.*odc-server-.*executable\\.jar$");
@@ -52,10 +56,7 @@ public class ExecutorProcessBuilderFactory {
             commands.add("-cp");
             // set jar package file name in commands
             commands.add(runtimeMxBean.getClassPath());
-            commands.add("-Dloader.main=" + mainClassName);
-            commands.add("org.springframework.boot.loader.PropertiesLauncher");
         } else {
-            // start odc executor by java -classpath
             commands.add("-cp");
             commands.add(runtimeMxBean.getClassPath());
             commands.add(mainClassName);
@@ -64,6 +65,8 @@ public class ExecutorProcessBuilderFactory {
         pb.command(commands);
         pb.directory(new File("."));
         pb.environment().putAll(processConfig.getEnvironments());
+        // The logPath of gc does not exist can't run
+        makeLogDir(processConfig, jobId);
         return pb;
     }
 
@@ -71,10 +74,10 @@ public class ExecutorProcessBuilderFactory {
         List<String> options = new ArrayList<>();
         options.add("-XX:+UseG1GC");
         options.add("-XX:+PrintAdaptiveSizePolicy");
-        options.add("-XX:+PrintGCDetails");
         options.add("-XX:+PrintGCTimeStamps");
         options.add("-XX:+PrintGCDateStamps");
-        options.add(String.format("-Xloggc:%s/task/%d/gc.log",
+        options.add("-Xlog:gc*");
+        options.add(String.format("-Xlog:gc:%s/task/%d/gc.log",
                 processConfig.getEnvironments().get(JobEnvKeyConstants.ODC_LOG_DIRECTORY), jobId));
         options.add("-XX:+UseGCLogFileRotation");
         options.add("-XX:GCLogFileSize=50M");
@@ -82,7 +85,18 @@ public class ExecutorProcessBuilderFactory {
         options.add("-XX:+ExitOnOutOfMemoryError");
         options.add(String.format("-Xmx%dm", processConfig.getJvmXmxMB()));
         options.add(String.format("-Xms%dm", processConfig.getJvmXmsMB()));
+        options.add("--add-opens=java.base/jdk.internal.loader=ALL-UNNAMED");
         return options;
+    }
+
+    private void makeLogDir(ProcessConfig processConfig, long jobId) {
+        String path = String.format("%s/task/%d",
+                processConfig.getEnvironments().get(JobEnvKeyConstants.ODC_LOG_DIRECTORY), jobId);
+        try {
+            Files.createDirectories(new File(path).toPath());
+        } catch (Exception e) {
+            log.error("MakeLogDir error, path={}", path, e);
+        }
     }
 
 }

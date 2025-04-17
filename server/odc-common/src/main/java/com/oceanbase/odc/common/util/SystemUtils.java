@@ -21,16 +21,17 @@ import java.io.InputStreamReader;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
-import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -179,74 +180,49 @@ public abstract class SystemUtils {
     public static long getProcessPid(Process process) {
         long pid = -1;
         try {
-            if (process.getClass().getName().equals(UNIX_PROCESS_CLASS_NAME)) {
-                Field f = process.getClass().getDeclaredField(PID_FIELD_NAME);
-                f.setAccessible(true);
-                pid = f.getLong(process);
-                f.setAccessible(false);
-            } else if (isOnWindows()) {
-                Field f = process.getClass().getDeclaredField("handle");
-                f.setAccessible(true);
-                pid = Kernel32.INSTANCE.getProcessId((Long) f.get(process));
-            } else {
-                throw new UnsupportedOperationException("Unsupported process class: " + process.getClass().getName());
-            }
+            pid = process.toHandle().pid();
         } catch (Exception e) {
-            log.warn("get process id failed.", e);
-            pid = -1;
+            log.warn("Failed to get process ID using ProcessHandle.", e);
         }
         return pid;
     }
 
     public static boolean killProcessByPid(long pid) {
-        if (-1 == pid) {
-            throw new IllegalArgumentException("kill process by illegal argument pid: " + pid);
+        if (pid <= 0) {
+            throw new IllegalArgumentException("Invalid PID: " + pid);
         }
-        String[] command;
-        if (isOnWindows()) {
-            command = new String[] {"cmd.exe", "/c", "taskkill /PID " + pid + " /F /T "};
-        } else {
-            command = new String[] {"sh", "-c", "kill -9 " + pid};
-        }
-
-        return executeCommand(command, reader -> {
-            boolean result = false;
-            try {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    log.info(line);
+        Optional<ProcessHandle> processHandle = ProcessHandle.of(pid);
+        if (processHandle.isPresent()) {
+            ProcessHandle handle = processHandle.get();
+            if (handle.isAlive()) {
+                boolean destroyed = handle.destroy();
+                if (!destroyed) {
+                    return handle.destroyForcibly();
                 }
-                result = true;
-            } catch (IOException e) {
-                log.warn("Reader from process output failed.", e);
+                return true;
             }
-            return result;
-        });
+        }
+        return false;
     }
 
     public static boolean isProcessRunning(long pid, String processSelector) {
-        if (-1 == pid) {
-            throw new IllegalArgumentException("query process by illegal argument pid: " + pid);
+        if (pid <= 0) {
+            throw new IllegalArgumentException("Invalid PID: " + pid);
         }
-        String[] command;
-        if (isOnWindows()) {
-            // tasklist exit code is always 0. Parse output
-            // findstr exit code 0 if found pid, 1 if it doesn't
-            command = new String[] {
-                    "cmd.exe", "/c", "tasklist /FI \"PID eq " + pid + "\" | findstr \"" + processSelector + "\""};
-        } else {
-            // ps -p pid -o lstart= | xargs -i date -d {} +%s
-            command = new String[] {"sh", "-c", "ps -f -p " + pid + " | grep '" + processSelector + "'"};
-        }
-        return executeCommand(command, reader -> {
-            boolean result = false;
-            try {
-                result = (reader.readLine() != null);
-            } catch (IOException e) {
-                log.warn("Reader from process output failed.", e);
-            }
-            return result;
-        });
+        Optional<ProcessHandle> processHandle = ProcessHandle.of(pid);
+        return processHandle
+                .filter(ProcessHandle::isAlive)
+                .map(handle -> {
+                    try {
+                        String processInfo = handle.info().command().orElse("") +
+                                " " + handle.info().arguments().map(Arrays::toString).orElse("");
+                        return processInfo.contains(processSelector);
+                    } catch (Exception e) {
+                        log.warn("Failed to retrieve process info for PID: {}", pid, e);
+                        return false;
+                    }
+                })
+                .orElse(false); //
     }
 
     private static <R> R executeCommand(String[] cmd, Function<BufferedReader, R> cmdResultReader) {

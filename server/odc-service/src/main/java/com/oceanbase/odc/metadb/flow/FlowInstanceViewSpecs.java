@@ -22,9 +22,6 @@ import java.util.Date;
 import java.util.Objects;
 import java.util.Set;
 
-import javax.persistence.criteria.Join;
-import javax.persistence.criteria.JoinType;
-import javax.persistence.criteria.Predicate;
 import javax.validation.constraints.NotNull;
 
 import org.springframework.data.jpa.domain.Specification;
@@ -33,6 +30,10 @@ import com.oceanbase.odc.common.jpa.SpecificationUtil;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
+
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
 
 /**
  * {@link FlowInstanceViewEntity}

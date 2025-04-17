@@ -24,9 +24,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import javax.persistence.EntityManager;
-import javax.persistence.LockModeType;
-
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -42,6 +39,8 @@ import com.oceanbase.odc.metadb.resource.ResourceRepository;
 import com.oceanbase.odc.metadb.resource.ResourceSpecs;
 import com.oceanbase.odc.service.resource.k8s.model.QueryResourceParams;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;

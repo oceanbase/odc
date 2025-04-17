@@ -26,7 +26,7 @@
 
     <properties>
         <!-- jdk and encoding -->
-        <java.version>1.8</java.version>
+        <java.version>17</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
@@ -44,23 +44,26 @@
         <ob-data-mocker.version>0.2.2</ob-data-mocker.version>
 
         <!-- dependency version -->
-        <springframework.version>5.3.26</springframework.version>
-        <spring-security.version>5.7.12</spring-security.version>
-        <spring-integration.version>5.5.18</spring-integration.version>
-        <springboot.version>2.7.12</springboot.version>
-        <hibernate.jpamodelgen.version>5.6.3.Final</hibernate.jpamodelgen.version>
-        <mybatis-spring-boot.version>2.1.1</mybatis-spring-boot.version>
+        <springframework.version>6.2.3</springframework.version>
+        <spring-security.version>6.4.3</spring-security.version>
+        <spring-security-web.version>6.4.3</spring-security-web.version>
+        <opensaml.version>5.1.4</opensaml.version>
+
+        <spring-integration.version>6.2.3</spring-integration.version>
+        <springboot.version>3.4.3</springboot.version>
+        <hibernate.jpamodelgen.version>6.2.14.Final</hibernate.jpamodelgen.version>
+        <mybatis-spring-boot.version>3.0.4</mybatis-spring-boot.version>
         <mybatis.version>3.5.6</mybatis.version>
-        <tomcat-embed.version>9.0.99</tomcat-embed.version>
+        <tomcat-embed.version>10.1.36</tomcat-embed.version>
         <springcloud.version>2021.0.7</springcloud.version>
-        <spring-cloud-config-server.version>3.1.4</spring-cloud-config-server.version>
+        <spring-cloud-config-server.version>4.2.0</spring-cloud-config-server.version>
         <spring-cloud-starter-config.version>2.2.1.RELEASE</spring-cloud-starter-config.version>
-        <spring-cloud-context.version>3.1.5</spring-cloud-context.version>
-        <spring-cloud-starter-bootstrap.version>3.1.0</spring-cloud-starter-bootstrap.version>
+        <spring-cloud-context.version>4.2.0</spring-cloud-context.version>
+        <spring-cloud-starter-bootstrap.version>4.2.0</spring-cloud-starter-bootstrap.version>
         <jasypt-spring-boot-starter.version>3.0.4</jasypt-spring-boot-starter.version>
         <thymeleaf-spring5.version>3.0.13.RELEASE</thymeleaf-spring5.version>
         <hutool.version>5.8.23</hutool.version>
-        <spring-session-jdbc.version>2.2.1.RELEASE</spring-session-jdbc.version>
+        <spring-session-jdbc.version>3.4.2</spring-session-jdbc.version>
         <h2.version>1.4.200</h2.version>
         <commons-text.version>1.10.0</commons-text.version>
         <commons-collections4.version>4.4</commons-collections4.version>
@@ -72,7 +75,7 @@
         <commons-beanutils.version>1.9.4</commons-beanutils.version>
         <httpcomponents-httpclient.version>4.5.13</httpcomponents-httpclient.version>
         <httpcomponents-httpcore.version>4.4.15</httpcomponents-httpcore.version>
-        <log4j2.version>2.17.1</log4j2.version>
+        <log4j2.version>2.24.3</log4j2.version>
         <jackson.version>2.15.2</jackson.version>
         <jackson-databind.version>2.14.1</jackson-databind.version>
         <json-path.version>2.7.0</json-path.version>
@@ -80,12 +83,12 @@
         <guava.version>31.1-jre</guava.version>
         <snakeyaml.version>2.0</snakeyaml.version>
         <caffeine.version>2.8.0</caffeine.version>
-        <org.mapstruct.version>1.4.2.Final</org.mapstruct.version>
-        <lombok.version>1.18.10</lombok.version>
-        <druid.version>1.2.18</druid.version>
+        <org.mapstruct.version>1.5.5.Final</org.mapstruct.version>
+        <lombok.version>1.18.36</lombok.version>
+        <druid.version>1.2.24</druid.version>
         <hikari.version>4.0.3</hikari.version>
         <fastjson.version>1.2.83_noneautotype</fastjson.version>
-        <mockito.version>3.11.2</mockito.version>
+        <mockito.version>3.12.4</mockito.version>
         <moco.version>1.4.0</moco.version>
         <apsara-audit-starter.version>3.17.0-SNAPSHOT</apsara-audit-starter.version>
         <awaitility.version>4.1.1</awaitility.version>
@@ -103,6 +106,7 @@
         <groovy-all.version>2.4.7</groovy-all.version>
         <org.locationtech.jts.version>1.16.1</org.locationtech.jts.version>
         <org.json.version>20230618</org.json.version>
+        <jakarta.persistence.version>3.1.0</jakarta.persistence.version>
 
         <!-- aliyun-sdk version -->
         <aliyun-sdk.version>4.6.2</aliyun-sdk.version>
@@ -126,10 +130,10 @@
         <impsort-maven-plugin.version>1.3.2</impsort-maven-plugin.version>
         <plexus-utils.version>3.5.1</plexus-utils.version>
         <git-commit-id-plugin.version>4.9.10</git-commit-id-plugin.version>
-        <flowable.version>6.3.1</flowable.version>
+        <flowable.version>7.1.0</flowable.version>
         <maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>
         <maven-pmd-plugin.version>3.21.0</maven-pmd-plugin.version>
-        <antlr4-maven-plugin.version>4.9.1</antlr4-maven-plugin.version>
+        <antlr4-maven-plugin.version>4.13.0</antlr4-maven-plugin.version>
 
         <!-- default test profile for unit testing-->
         <spring.profiles.active>clientMode,test,jdbc</spring.profiles.active>
@@ -142,7 +146,7 @@
         <oracle.jdbc.version>21.1.0.0</oracle.jdbc.version>
         <postgres.jdbc.version>42.7.3</postgres.jdbc.version>
 
-        <micrometer-core.version>1.8.0</micrometer-core.version>
+        <micrometer-core.version>1.10.5</micrometer-core.version>
         <mariadb-java-client.version>2.7.11</mariadb-java-client.version>
         <kubernetes-client.version>19.0.0</kubernetes-client.version>
         <okio-jvm.version>3.4.0</okio-jvm.version>
@@ -155,7 +159,7 @@
         <bouncycastle.jdk15.version>1.70</bouncycastle.jdk15.version>
         <commons-codec.version>1.15</commons-codec.version>
         <registry-prometheus.version>1.9.5</registry-prometheus.version>
-        <actuator.version>2.7.12</actuator.version>
+        <actuator.version>3.1.5</actuator.version>
         <picocli.version>4.7.0</picocli.version>
     </properties>
 
@@ -186,7 +190,7 @@
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-actuator</artifactId>
-                <version>${actuator.version}</version>
+                <version>${springboot.version}</version>
                 <scope>compile</scope>
             </dependency>
 
@@ -200,7 +204,7 @@
             <dependency>
                 <groupId>org.codehaus.groovy</groupId>
                 <artifactId>groovy-all</artifactId>
-                <version>${groovy-all.version}</version>
+                <version>2.4.7</version>
             </dependency>
             <dependency>
                 <groupId>commons-codec</groupId>
@@ -216,6 +220,11 @@
                 <groupId>org.mybatis</groupId>
                 <artifactId>mybatis</artifactId>
                 <version>${mybatis.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>1.14.7</version> <!-- 使用 Hibernate 6.6.8 推荐的版本 -->
             </dependency>
             <dependency>
                 <groupId>org.flowable</groupId>
@@ -389,9 +398,14 @@
                 <version>${hibernate.jpamodelgen.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.hibernate.common</groupId>
+                <artifactId>hibernate-commons-annotations</artifactId>
+                <version>6.0.6.Final</version>
+            </dependency>
+            <dependency>
                 <groupId>jakarta.persistence</groupId>
                 <artifactId>jakarta.persistence-api</artifactId>
-                <version>2.2.3</version>
+                <version>${jakarta.persistence.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
@@ -481,23 +495,49 @@
             </dependency>
             <dependency>
                 <groupId>org.springframework.security</groupId>
+                <artifactId>spring-security-oauth2-jose</artifactId>
+                <version>${spring-security.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.security</groupId>
                 <artifactId>spring-security-crypto</artifactId>
                 <version>${spring-security.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.security</groupId>
                 <artifactId>spring-security-web</artifactId>
-                <version>${spring-security.version}</version>
+                <version>${spring-security-web.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.security</groupId>
                 <artifactId>spring-security-config</artifactId>
-                <version>${spring-security.version}</version>
+                <version>${spring-security-web.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.security</groupId>
                 <artifactId>spring-security-ldap</artifactId>
                 <version>${spring-security.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.opensaml</groupId>
+                <artifactId>opensaml-saml-api</artifactId>
+                <version>${opensaml.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.opensaml</groupId>
+                <artifactId>opensaml-saml-impl</artifactId>
+                <version>${opensaml.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.opensaml</groupId>
+                <artifactId>opensaml-core</artifactId>
+                <version>${opensaml.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.opensaml</groupId>
+                <artifactId>opensaml-xmlsec-api</artifactId>
+                <version>${opensaml.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
@@ -668,7 +708,7 @@
             <dependency>
                 <groupId>io.springfox</groupId>
                 <artifactId>springfox-swagger2</artifactId>
-                <version>2.9.2</version>
+                <version>2.10.5</version>
                 <exclusions>
                     <exclusion>
                         <groupId>com.google.guava</groupId>
@@ -929,6 +969,11 @@
                 <artifactId>aliyun-sdk-oss</artifactId>
                 <version>${aliyun-sdk-oss.version}</version>
             </dependency>
+            <dependency>
+                <groupId>jakarta.validation</groupId>
+                <artifactId>jakarta.validation-api</artifactId>
+                <version>3.0.2</version>
+            </dependency>
 
             <!-- RAM dependency -->
             <dependency>
@@ -1030,7 +1075,7 @@
             <dependency>
                 <groupId>org.hibernate.validator</groupId>
                 <artifactId>hibernate-validator</artifactId>
-                <version>6.0.20.Final</version>
+                <version>8.0.0.Final</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.tomcat.embed</groupId>
@@ -1257,13 +1302,20 @@
         </dependencies>
     </dependencyManagement>
 
+    <repositories>
+        <repository>
+            <id>shibboleth-releases</id>
+            <url>https://build.shibboleth.net/maven/releases</url>
+        </repository>
+    </repositories>
+
     <build>
         <pluginManagement>
             <plugins>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.8.1</version>
+                    <version>3.14.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1273,12 +1325,12 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>versions-maven-plugin</artifactId>
-                    <version>2.13.0</version>
+                    <version>2.7</version>
                 </plugin>
                 <plugin>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
-                    <version>2.2.4.RELEASE</version>
+                    <version>${springboot.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -1335,6 +1387,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
+                    <parameters>true</parameters>
                     <compilerArgs>
                         <arg>-Xlint:all</arg>
                         <arg>-Xlint:-options</arg>
@@ -1360,6 +1413,11 @@
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
                             <version>${lombok.version}</version>
+                        </path>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok-mapstruct-binding</artifactId>
+                            <version>0.2.0</version>
                         </path>
                         <path>
                             <groupId>org.pf4j</groupId>
@@ -1596,7 +1654,7 @@ limitations under the License.
                 </property>
             </activation>
             <properties>
-                <oceanbase-client.version>2.4.12</oceanbase-client.version>
+                <oceanbase-client.version>2.4.13</oceanbase-client.version>
             </properties>
         </profile>
         <profile>

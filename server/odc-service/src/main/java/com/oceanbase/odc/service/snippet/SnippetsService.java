@@ -29,7 +29,7 @@ import org.springframework.validation.annotation.Validated;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
-import com.oceanbase.odc.metadb.snippet.SnippetsDAO;
+import com.oceanbase.odc.metadb.mapper.snippet.SnippetsDAO;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
 import lombok.extern.log4j.Log4j2;

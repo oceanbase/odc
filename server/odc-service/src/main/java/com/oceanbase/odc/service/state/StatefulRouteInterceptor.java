@@ -17,10 +17,6 @@ package com.oceanbase.odc.service.state;
 
 import java.util.Optional;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -28,6 +24,9 @@ import org.springframework.web.servlet.ModelAndView;
 
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
 
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 
 @Component

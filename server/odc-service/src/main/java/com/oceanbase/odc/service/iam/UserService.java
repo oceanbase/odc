@@ -685,9 +685,8 @@ public class UserService {
         } else {
             spec = spec.and(UserSpecs.userIdIn(userIdsInOrg));
         }
-        spec = spec.and(UserSpecs.sort(Sort.by(orderList)));
         Pageable page = pageable.equals(Pageable.unpaged()) ? pageable
-                : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+                : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(orderList));
         Page<UserEntity> userEntityPage = userRepository.findAll(spec, page);
         List<User> users = userEntityPage.getContent().stream().map(User::new).collect(Collectors.toList());
         acquireRolesAndRoleIds(users);

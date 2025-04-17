@@ -15,25 +15,14 @@
  */
 package com.oceanbase.odc.metadb.iam;
 
-import static org.springframework.data.jpa.repository.query.QueryUtils.toOrders;
-
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
-import javax.persistence.criteria.Expression;
-
-import org.hibernate.query.criteria.internal.CriteriaBuilderImpl;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.JpaSort.JpaOrder;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.CollectionUtils;
 
 import com.oceanbase.odc.common.util.StringUtils;
-import com.oceanbase.odc.metadb.connection.JpaOrderExpression;
 import com.oceanbase.odc.service.common.util.EmptyValues;
-
-import lombok.NonNull;
 
 /**
  * @author gaoda.xy
@@ -41,24 +30,6 @@ import lombok.NonNull;
  */
 public class UserSpecs {
 
-    public static Specification<UserEntity> sort(@NonNull Sort sort) {
-        return (root, query, builder) -> {
-            if (sort.isUnsorted() || !(builder instanceof CriteriaBuilderImpl)) {
-                return builder.conjunction();
-            }
-            CriteriaBuilderImpl impl = (CriteriaBuilderImpl) builder;
-            query.orderBy(sort.stream().map(order -> {
-                if (order instanceof JpaOrder) {
-                    Class<UserEntity> clazz = UserEntity.class;
-                    JpaOrder jpaOrder = (JpaOrder) order;
-                    Expression<UserEntity> expr = new JpaOrderExpression<>(impl, clazz, jpaOrder);
-                    return order.isAscending() ? builder.asc(expr) : builder.desc(expr);
-                }
-                return toOrders(Sort.by(order), root, builder).get(0);
-            }).collect(Collectors.toList()));
-            return builder.conjunction();
-        };
-    }
 
     public static Specification<UserEntity> enabledEqual(Boolean enabled) {
         return columnEqual("enabled", enabled);

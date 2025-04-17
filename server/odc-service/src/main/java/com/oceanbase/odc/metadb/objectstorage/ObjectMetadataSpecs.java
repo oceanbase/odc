@@ -18,13 +18,13 @@ package com.oceanbase.odc.metadb.objectstorage;
 import java.util.List;
 import java.util.Objects;
 
-import javax.persistence.criteria.Predicate;
-
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.data.jpa.domain.Specification;
 
 import com.google.common.collect.Lists;
 import com.oceanbase.odc.service.objectstorage.model.QueryObjectMetadataParam;
+
+import jakarta.persistence.criteria.Predicate;
 
 /**
  * @Author: Lebie

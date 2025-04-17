@@ -19,8 +19,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.oceanbase.odc.core.shared.constant.AuditEventAction;
 import com.oceanbase.odc.core.shared.constant.AuditEventType;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @Author: Lebie
@@ -29,6 +31,8 @@ import lombok.Data;
  */
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class AuditEventMeta {
     /**
      * id of the event meta

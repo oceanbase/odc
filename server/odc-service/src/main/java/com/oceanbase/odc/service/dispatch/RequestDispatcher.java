@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.dispatch;
 
+import static com.oceanbase.odc.service.common.util.WebRequestUtils.convertToHttpStatus;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -29,8 +31,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +38,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -48,6 +48,7 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.InternalServerError;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -122,7 +123,7 @@ public class RequestDispatcher {
         log.info("Request dispatch starts, uri={}", realUri);
         HttpHeaders responseHeaders = new HttpHeaders();
         RestTemplate restTemplate = dispatchRestTemplate();
-        AtomicReference<HttpStatus> statusCode = new AtomicReference<>();
+        AtomicReference<HttpStatusCode> statusCode = new AtomicReference<>();
         ByteArrayInputStream inputStream = restTemplate.execute(URI.create(realUri), method, clientRequest -> {
             clientRequest.getHeaders().addAll(headers);
             if (requestBody == null) {
@@ -137,7 +138,7 @@ public class RequestDispatcher {
         Verify.notNull(inputStream, "CallResult");
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         IOUtils.copy(inputStream, outputStream);
-        return DispatchResponse.of(outputStream.toByteArray(), responseHeaders, statusCode.get());
+        return DispatchResponse.of(outputStream.toByteArray(), responseHeaders, convertToHttpStatus(statusCode.get()));
     }
 
     private void verifyAndReduceTtl(HttpHeaders httpHeaders) {

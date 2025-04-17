@@ -17,7 +17,7 @@ package com.oceanbase.odc.service.info;
 
 import java.time.OffsetDateTime;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 public interface InfoAdapter {
 

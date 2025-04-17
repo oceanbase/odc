@@ -19,6 +19,7 @@ import java.util.Collections;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.stereotype.Component;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -32,9 +33,10 @@ public class CorsConfigureHelper {
 
     public HttpSecurity configure(HttpSecurity http) throws Exception {
         if (commonSecurityProperties.isCorsEnabled()) {
-            http.cors().configurationSource(corsConfigurationSource()).and();
+            http.cors(httpSecurityCorsConfigurer -> httpSecurityCorsConfigurer
+                    .configurationSource(corsConfigurationSource()));
         } else {
-            http.cors().disable();
+            http.cors(AbstractHttpConfigurer::disable);
         }
         return http;
     }

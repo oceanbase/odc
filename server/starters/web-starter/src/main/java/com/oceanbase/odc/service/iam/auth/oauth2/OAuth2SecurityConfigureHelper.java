@@ -56,29 +56,26 @@ public class OAuth2SecurityConfigureHelper {
     @Autowired
     private SSOStateManager SSOStateManager;
 
-
     public void configure(HttpSecurity http)
             throws Exception {
-        http.oauth2Login()
-                .successHandler(customAuthenticationSuccessHandler)
+
+        http.oauth2Login(o -> o.successHandler(customAuthenticationSuccessHandler)
                 .failureHandler(customAuthenticationFailureHandler)
-                .authorizationEndpoint()
-                .authorizationRequestResolver(
+                .authorizationEndpoint(a -> a.authorizationRequestResolver(
                         new CustomOAuth2AuthorizationRequestResolver(this.addableClientRegistrationManager,
-                                statefulUuidStateIdGenerator, SSOStateManager))
-                .and()
+                                statefulUuidStateIdGenerator, SSOStateManager)))
+
                 // token 端点配置, 根据 code 获取 token
-                .tokenEndpoint()
-                .accessTokenResponseClient(new CustomOAuth2AccessTokenResponseClient())
-                .and()
+                .tokenEndpoint(t -> t.accessTokenResponseClient(new CustomOAuth2AccessTokenResponseClient()))
                 // 用户信息端点配置, 根据accessToken获取用户基本信息
-                .userInfoEndpoint()
-                .userService(new DelegatingOAuth2UserService<>(
+                .userInfoEndpoint(u -> u.userService(new DelegatingOAuth2UserService<>(
                         Arrays.asList(this.oAuth2UserServiceImpl, new DefaultOAuth2UserService())))
-                .oidcUserService(oidcUserService);
+                        .oidcUserService(oidcUserService)));
+
 
         http.addFilterBefore(
                 new OAuth2TestLoginAuthenticationFilter(),
                 OAuth2LoginAuthenticationFilter.class);
     }
+
 }
