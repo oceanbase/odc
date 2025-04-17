@@ -37,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Migratable(version = "4.3.4.9", description = "migrate the organization secret to this stored in confusion")
-public class V4349OrganizationSecretMigrate implements JdbcMigratable {
+public class V43410OrganizationSecretMigrate implements JdbcMigratable {
 
     private JdbcTemplate jdbcTemplate;
     private TransactionTemplate transactionTemplate;
