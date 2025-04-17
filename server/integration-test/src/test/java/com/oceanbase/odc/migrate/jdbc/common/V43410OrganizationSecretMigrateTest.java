@@ -35,7 +35,7 @@ import com.oceanbase.odc.metadb.iam.OrganizationRepository;
 
 import cn.hutool.core.codec.Caesar;
 
-public class V4349OrganizationSecretMigrateTest extends ServiceTestEnv {
+public class V43410OrganizationSecretMigrateTest extends ServiceTestEnv {
 
     @Autowired
     private DataSource dataSource;
@@ -72,7 +72,7 @@ public class V4349OrganizationSecretMigrateTest extends ServiceTestEnv {
 
     @Test
     public void teamOrganizationSecretMigrate() {
-        V4349OrganizationSecretMigrate migrate = new V4349OrganizationSecretMigrate();
+        V43410OrganizationSecretMigrate migrate = new V43410OrganizationSecretMigrate();
         migrate.migrate(dataSource);
         String migratedSecret = selectSecretFromOrganization(100L);
         Assert.assertEquals(migratedSecret, Caesar.encode("Y75AZG91YuoepqL6VvyacJZ2fUaHVraI", 8));
@@ -90,7 +90,7 @@ public class V4349OrganizationSecretMigrateTest extends ServiceTestEnv {
         String currSecret = "AAAAZG91YuoepqL6VvyacJZ2fUaHVVVV";
         jdbcTemplate.update(String.format(addTeamOrg, currSecret));
 
-        V4349OrganizationSecretMigrate migrate = new V4349OrganizationSecretMigrate();
+        V43410OrganizationSecretMigrate migrate = new V43410OrganizationSecretMigrate();
         migrate.migrate(dataSource);
         String migratedSecret = selectSecretFromOrganization(101L);
         Assert.assertEquals(migratedSecret, Caesar.encode(currSecret, 8));
@@ -102,7 +102,7 @@ public class V4349OrganizationSecretMigrateTest extends ServiceTestEnv {
 
     @Test
     public void individualOrganizationSecretMigrate() {
-        V4349OrganizationSecretMigrate migrate = new V4349OrganizationSecretMigrate();
+        V43410OrganizationSecretMigrate migrate = new V43410OrganizationSecretMigrate();
         migrate.migrate(dataSource);
         String migratedSecret = selectSecretFromOrganization(1000L);
         Assert.assertEquals(migratedSecret, Caesar.encode(this.secret2, 8));
@@ -120,7 +120,7 @@ public class V4349OrganizationSecretMigrateTest extends ServiceTestEnv {
         String currSecret = passwordEncoder.encode("aaAA11___");
         jdbcTemplate.update(String.format(addIndivOrg, currSecret));
 
-        V4349OrganizationSecretMigrate migrate = new V4349OrganizationSecretMigrate();
+        V43410OrganizationSecretMigrate migrate = new V43410OrganizationSecretMigrate();
         migrate.migrate(dataSource);
         String migratedSecret = selectSecretFromOrganization(1001L);
         Assert.assertEquals(migratedSecret, Caesar.encode(currSecret, 8));
