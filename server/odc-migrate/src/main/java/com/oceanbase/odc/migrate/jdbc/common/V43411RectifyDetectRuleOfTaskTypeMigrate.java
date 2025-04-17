@@ -205,7 +205,7 @@ public class V43411RectifyDetectRuleOfTaskTypeMigrate implements JdbcMigratable 
             });
             return affectedRows == null ? 0 : Arrays.stream(affectedRows).sum();
         } catch (Exception e) {
-            log.warn("Migrate V43410 to rectify detect rule of task type error", e);
+            log.warn("Migrate V434 to rectify detect rule of task type error", e);
         }
         return 0;
     }
