@@ -321,6 +321,10 @@ public enum ErrorCodes implements ErrorCode {
      */
     WorkspaceDatabaseUserTypeMustBeAdmin,
     /**
+     * conflict occurred while pushing code to the remote repository
+     */
+    GitPushConflict,
+    /**
      * oss
      */
     BucketNotExist,
