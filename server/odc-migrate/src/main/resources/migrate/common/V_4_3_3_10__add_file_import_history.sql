@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2025 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.ssl;
 
-import com.oceanbase.odc.service.connection.model.SSLConnectionConfig;
-
-import lombok.NonNull;
-
-/**
- * @author jingtian
- * @date 2025/1/21
- */
-public interface ConnectionSSLAdaptor {
-    public <T extends SSLConnectionConfig> T adapt(@NonNull T connection);
-}
+CREATE TABLE IF NOT EXISTS import_file_row_history (
+     id bigint(20) NOT NULL AUTO_INCREMENT,
+     file_signature varchar(255) NOT NULL,
+     row_id varchar(255) NOT NULL,
+     create_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+     update_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+     PRIMARY KEY (id)
+);

@@ -38,8 +38,8 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.validate.Name;
 import com.oceanbase.odc.core.authority.model.SecurityResource;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
-import com.oceanbase.odc.core.shared.OrganizationIsolated;
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.SingleOrganizationResource;
 import com.oceanbase.odc.core.shared.constant.Cipher;
 import com.oceanbase.odc.core.shared.constant.ConnectEnvironmentType;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
@@ -66,7 +66,8 @@ import lombok.ToString;
 @ToString(exclude = {"salt", "password", "sysTenantPassword", "readonlyPassword",
         "passwordEncrypted", "sysTenantPasswordEncrypted", "readonlyPasswordEncrypted", "sslFileEntry"})
 public class ConnectionConfig
-        implements SecurityResource, OrganizationIsolated, CloudConnectionConfig, SSLConnectionConfig, Serializable {
+        implements SecurityResource, SingleOrganizationResource, CloudConnectionConfig, SSLConnectionConfig,
+        Serializable {
     private static final long serialVersionUID = -7198204983655038981L;
     private static final String SESSION_INIT_SCRIPT_KEY = "SESSION_INIT_SCRIPT";
     private static final String JDBC_URL_PARAMETERS_KEY = "JDBC_URL_PARAMETERS";

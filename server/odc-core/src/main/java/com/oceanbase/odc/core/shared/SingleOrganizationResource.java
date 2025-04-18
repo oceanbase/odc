@@ -13,16 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.connection.ssl;
-
-import com.oceanbase.odc.service.connection.model.SSLConnectionConfig;
-
-import lombok.NonNull;
+package com.oceanbase.odc.core.shared;
 
 /**
- * @author jingtian
- * @date 2025/1/21
+ * Organization resource bind to single organization.
  */
-public interface ConnectionSSLAdaptor {
-    public <T extends SSLConnectionConfig> T adapt(@NonNull T connection);
+public interface SingleOrganizationResource extends OrganizationResource {
+    Long organizationId();
+
 }

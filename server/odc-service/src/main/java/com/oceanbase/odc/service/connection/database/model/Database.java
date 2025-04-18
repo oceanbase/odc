@@ -27,7 +27,7 @@ import javax.validation.constraints.NotNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.core.authority.model.SecurityResource;
-import com.oceanbase.odc.core.shared.OrganizationIsolated;
+import com.oceanbase.odc.core.shared.SingleOrganizationResource;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -46,7 +46,7 @@ import lombok.Data;
  * @Description: []
  */
 @Data
-public class Database implements SecurityResource, OrganizationIsolated, Serializable {
+public class Database implements SecurityResource, SingleOrganizationResource, Serializable {
 
     private static final long serialVersionUID = 729227718029437346L;
 
