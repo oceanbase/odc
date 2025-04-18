@@ -72,11 +72,18 @@ public class OrganizationConfigDAO {
      */
     public int batchUpsert(List<OrganizationConfigEntity> entities) {
         PreConditions.notEmpty(entities, "entities");
-        String sql = "INSERT INTO config_organization_configuration(organization_id, `key`, `value`, description)"
-                + " VALUES(?, ?, ?, ?) ON DUPLICATE KEY UPDATE `value` = ?";
+        String sql = "INSERT INTO config_organization_configuration"
+                + "(organization_id, `key`, `value`, creator_id, last_modifier_id, description)"
+                + " VALUES(?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE "
+                + "`value`=VALUES(`value`), last_modifier_id=VALUES(last_modifier_id)";
         int[] rets = jdbcTemplate.batchUpdate(sql, entities.stream().map(
-                entity -> new Object[] {entity.getOrganizationId(), entity.getKey(), entity.getValue(),
-                        entity.getDescription(), entity.getValue()})
+                entity -> new Object[] {
+                        entity.getOrganizationId(),
+                        entity.getKey(),
+                        entity.getValue(),
+                        entity.getCreatorId(),
+                        entity.getLastModifierId(),
+                        entity.getDescription()})
                 .collect(Collectors.toList()));
         return Arrays.stream(rets).sum();
     }
