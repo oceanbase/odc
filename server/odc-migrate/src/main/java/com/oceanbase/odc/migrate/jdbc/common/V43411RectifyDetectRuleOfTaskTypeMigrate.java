@@ -37,7 +37,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.ObjectUtil;
 import com.oceanbase.odc.core.migrate.JdbcMigratable;
 import com.oceanbase.odc.core.migrate.Migratable;
@@ -67,13 +66,19 @@ public class V43411RectifyDetectRuleOfTaskTypeMigrate implements JdbcMigratable 
     public void migrate(DataSource dataSource) {
         this.jdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
         this.txTemplate = new TransactionTemplate(new DataSourceTransactionManager(dataSource));
-        final Map<Long, Long> organizationId2HighestRiskLevelId = getOrganizationIdMappingHighestRiskLevelId(
-                listAllTeamOrganizationId());
-        int affectedRows = upsertRiskLevelDetectRule(organizationId2HighestRiskLevelId);
-        log.info("Migrate final detect rules: {}, affected rows: {}",
-                JsonUtils.toJson(organizationId2HighestRiskLevelId), affectedRows);
+        txTemplate.execute(status -> {
+            try {
+                final Map<Long, Long> organizationId2HighestRiskLevelId = getOrganizationIdMappingHighestRiskLevelId(
+                        listAllTeamOrganizationId());
+                upsertRiskLevelDetectRule(organizationId2HighestRiskLevelId);
+            } catch (Exception e) {
+                log.error("upsert risk detect rules failed", e);
+                status.setRollbackOnly();
+                throw new RuntimeException("upsert risk detect rules failed", e);
+            }
+            return null;
+        });
     }
-
 
     private List<Long> listAllTeamOrganizationId() {
         String sql = "SELECT id FROM iam_organization WHERE type = 'TEAM'";
@@ -173,41 +178,33 @@ public class V43411RectifyDetectRuleOfTaskTypeMigrate implements JdbcMigratable 
             }
             wrapperCondition.set("children", childrenArray);
 
-            detectRule.setValueJsonOld(detectRule.getValueJson());
             detectRule.setValueJson(objectMapper.writeValueAsString(wrapperCondition));
             organizationId2DetectRules.computeIfAbsent(orgId, k -> detectRule);
         }
         return organizationId2DetectRules;
     }
 
-    private int upsertRiskLevelDetectRule(Map<Long, Long> organizationId2HighestRiskLevelId) {
+    private void upsertRiskLevelDetectRule(Map<Long, Long> organizationId2HighestRiskLevelId) throws Exception {
         if (CollectionUtils.isEmpty(organizationId2HighestRiskLevelId)) {
-            return 0;
+            return;
         }
-        try {
-            final Map<Long, DetectRule> organizationId2DetectRules =
-                    checkAndFillDetectRulesByOrganizationId(organizationId2HighestRiskLevelId);
-            String sql =
-                    "INSERT INTO regulation_riskdetect_rule (create_time, update_time, name, risk_level_id, is_builtin, creator_id, organization_id, value_json_old, value_json) "
-                            + "VALUES (NOW(), NOW(), :detectRuleName, :riskLevelId, :isBuiltin, 1, :organizationId, :valueJsonOld, :valueJson) "
-                            + "ON DUPLICATE KEY UPDATE update_time = NOW(), value_json_old = :valueJsonOld, value_json = :valueJson";
-            int[] affectedRows = this.txTemplate.execute(status -> {
-                MapSqlParameterSource[] parameterSources = organizationId2DetectRules.values().stream()
-                        .map(detectRule -> new MapSqlParameterSource()
-                                .addValue("detectRuleName", DEFAULT_HIGH_RISK_DETECT_NAME)
-                                .addValue("riskLevelId", detectRule.getRiskLevelId())
-                                .addValue("isBuiltin", -1L)
-                                .addValue("organizationId", detectRule.getOrganizationId())
-                                .addValue("valueJsonOld", detectRule.getValueJsonOld())
-                                .addValue("valueJson", detectRule.getValueJson()))
-                        .toArray(MapSqlParameterSource[]::new);
-                return jdbcTemplate.batchUpdate(sql, parameterSources);
-            });
-            return affectedRows == null ? 0 : Arrays.stream(affectedRows).sum();
-        } catch (Exception e) {
-            log.warn("Migrate V434 to rectify detect rule of task type error", e);
-        }
-        return 0;
+        final Map<Long, DetectRule> organizationId2DetectRules =
+                checkAndFillDetectRulesByOrganizationId(organizationId2HighestRiskLevelId);
+        String sql =
+                "INSERT INTO regulation_riskdetect_rule (create_time, update_time, name, risk_level_id, is_builtin, creator_id, organization_id, value_json) "
+                        + "VALUES (NOW(), NOW(), :detectRuleName, :riskLevelId, :isBuiltin, 1, :organizationId, :valueJson) "
+                        + "ON DUPLICATE KEY UPDATE update_time = NOW(), value_json = :valueJson";
+        MapSqlParameterSource[] parameterSources = organizationId2DetectRules.values().stream()
+                .map(detectRule -> new MapSqlParameterSource()
+                        .addValue("detectRuleName", DEFAULT_HIGH_RISK_DETECT_NAME)
+                        .addValue("riskLevelId", detectRule.getRiskLevelId())
+                        .addValue("isBuiltin", -1L)
+                        .addValue("organizationId", detectRule.getOrganizationId())
+                        .addValue("valueJson", detectRule.getValueJson()))
+                .toArray(MapSqlParameterSource[]::new);
+        int[] affectedRows = jdbcTemplate.batchUpdate(sql, parameterSources);
+        log.info("batch upsert risk detect rules finished, affected rows: {}",
+                Arrays.stream(affectedRows).sum());
     }
 
     @Data
@@ -215,7 +212,6 @@ public class V43411RectifyDetectRuleOfTaskTypeMigrate implements JdbcMigratable 
         Long id;
         Long riskLevelId;
         Long organizationId;
-        String valueJsonOld;
         String valueJson;
     }
 }
