@@ -19,6 +19,7 @@ import static com.oceanbase.tools.dbbrowser.editor.DBObjectUtilsTest.loadAsStrin
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -242,6 +243,15 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
                 Assert.assertEquals(column.getTableName(), "test_mv_all_syntax");
                 Assert.assertEquals(column.getSchemaName(), getOBMySQLDataBaseName());
             });
+        }
+    }
+
+    @Test
+    public void listMViewConstraints_Success() {
+        if (isSupportMaterializedView) {
+            List<DBTableConstraint> constraints =
+                    accessor.listMViewConstraints(getOBMySQLDataBaseName(), "test_mv_all_syntax");
+            Assert.assertEquals(Collections.emptyList(), constraints);
         }
     }
 
