@@ -241,7 +241,7 @@ public class PartitionPlanScheduleService {
         Set<Long> scheduleIds = ppts.stream().map(PartitionPlanTableEntity::getScheduleId)
                 .collect(Collectors.toSet());
         for (Long scheduleId : scheduleIds) {
-            // scheduleService.changeSchedule(scheduleService.nullSafeGetById(scheduleId));
+            scheduleService.innerTerminate(scheduleId);
         }
         log.info("Disable partition plan related tables succeed, ids={}, tableNames={}", pptIds, ppts.stream()
                 .map(PartitionPlanTableEntity::getTableName).collect(Collectors.toList()));
