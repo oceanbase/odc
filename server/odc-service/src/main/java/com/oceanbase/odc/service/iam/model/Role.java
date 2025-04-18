@@ -22,7 +22,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.core.authority.model.SecurityResource;
-import com.oceanbase.odc.core.shared.OrganizationIsolated;
+import com.oceanbase.odc.core.shared.SingleOrganizationResource;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.RoleType;
 import com.oceanbase.odc.metadb.iam.RoleEntity;
@@ -35,7 +35,7 @@ import lombok.Data;
  */
 
 @Data
-public class Role implements SecurityResource, OrganizationIsolated, Serializable {
+public class Role implements SecurityResource, SingleOrganizationResource, Serializable {
     private static final long serialVersionUID = 1094521546416165353L;
     @JsonProperty(access = Access.READ_ONLY)
     private Long id;

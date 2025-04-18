@@ -78,7 +78,6 @@ public class OdcServer {
      * @param args
      */
     public static void main(String[] args) {
-        AlarmUtils.alarm(SERVER_RESTART, LocalDateTime.now().toString());
         initEnv();
         System.setProperty("spring.cloud.bootstrap.enabled", "true");
         PluginSpringApplication.run(OdcServer.class, args);

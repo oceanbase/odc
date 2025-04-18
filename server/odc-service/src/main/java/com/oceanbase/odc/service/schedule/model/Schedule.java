@@ -17,6 +17,8 @@ package com.oceanbase.odc.service.schedule.model;
 
 import java.util.Date;
 
+import com.oceanbase.odc.core.shared.SingleOrganizationResource;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 
 import lombok.Data;
@@ -28,7 +30,7 @@ import lombok.Data;
  */
 
 @Data
-public class Schedule {
+public class Schedule implements SingleOrganizationResource {
 
     private Long id;
 
@@ -64,4 +66,18 @@ public class Schedule {
 
     private Date updateTime;
 
+    @Override
+    public String resourceType() {
+        return ResourceType.ODC_SCHEDULE.name();
+    }
+
+    @Override
+    public Long organizationId() {
+        return organizationId;
+    }
+
+    @Override
+    public Long id() {
+        return id;
+    }
 }

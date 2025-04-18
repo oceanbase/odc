@@ -20,12 +20,14 @@ import org.springframework.security.saml2.provider.service.authentication.Saml2A
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.service.common.util.ConditionalOnProperty;
 import com.oceanbase.odc.service.iam.auth.MappingRuleConvert;
 import com.oceanbase.odc.service.iam.auth.SsoUserDetailService;
 import com.oceanbase.odc.service.iam.auth.oauth2.MappingResult;
 import com.oceanbase.odc.service.iam.model.User;
 
 @Service
+@ConditionalOnProperty(value = "odc.iam.auth.type", havingValues = {"local"})
 public class DefaultSamlUserService {
 
     @Autowired

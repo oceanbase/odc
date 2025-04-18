@@ -160,7 +160,7 @@ public class FlowInstanceController {
     @ApiOperation(value = "cancelFlowInstance", notes = "终止流程")
     @RequestMapping(value = "/{id:[\\d]+}/cancel", method = RequestMethod.POST)
     public SuccessResponse<FlowInstanceDetailResp> cancelFlowInstance(@PathVariable Long id) {
-        return Responses.single(flowInstanceService.cancel(id, false));
+        return Responses.single(flowInstanceService.cancelWithWritePermission(id, false));
     }
 
     @ApiOperation(value = "executeFlowInstanceTask", notes = "手动执行流程任务")

@@ -34,6 +34,9 @@ public interface DatabaseRepository extends JpaRepository<DatabaseEntity, Long>,
         JpaSpecificationExecutor<DatabaseEntity> {
     Optional<DatabaseEntity> findByConnectionIdAndNameAndExisted(Long connectionId, String name, Boolean existed);
 
+    List<DatabaseEntity> findByConnectionIdInAndNameAndExisted(Collection<Long> connectionIds, String name,
+            Boolean existed);
+
     List<DatabaseEntity> findByConnectionId(Long connectionId);
 
     List<DatabaseEntity> findByConnectionIdIn(Collection<Long> connectionIds);

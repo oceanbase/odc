@@ -124,14 +124,8 @@ public class AuditEventService {
 
     private Page<AuditEvent> list(Specification<AuditEventEntity> specs, Pageable pageable) {
         return auditEventRepository.findAll(specs, pageable)
-                .map(entity -> {
-                    AuditEvent event = mapper.entityToModel(entity);
-                    event.setActionName(entity.getAction().getLocalizedMessage());
-                    event.setTypeName(entity.getType().getLocalizedMessage());
-                    return event;
-                });
+                .map(entity -> mapper.entityToModel(entity));
     }
-
 
     @PreAuthenticate(actions = "read", resourceType = "ODC_AUDIT_EVENT", isForAll = true)
     public Stats stats(@NotNull QueryAuditEventParams params) {

@@ -13,39 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.resourcegroup.model;
+package com.oceanbase.odc.service.schedule.export.model;
 
-import java.util.List;
+import java.util.Set;
+
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 
 import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 
-/**
- * Request object, used to list all <code>ResourceGroup</code> or get a specific
- * <code>ResourceGroup</code>
- *
- * @author yh263208
- * @date 2021-07-27 20:09
- * @since ODC-release_3.2.0
- */
-@Getter
-@Setter
+@Data
+@NoArgsConstructor
 @AllArgsConstructor
-@ToString
-public class QueryResourceGroupReq {
-    /**
-     * Query parmeter for <code>ResourceGroup.name</code>
-     */
-    private String fuzzySearchKeyword;
-    /**
-     * Query parmeter for <code>ResourceGroup.enabled</code>
-     */
-    private List<Boolean> statuses;
+public class ScheduleTaskImportRequest {
 
-    private String minPrivilege;
+    private String bucketName;
 
-    public QueryResourceGroupReq() {}
+    private String objectId;
 
+    private ScheduleType scheduleType;
+
+    private Long projectId;
+
+    @ToString.Exclude
+    private String decryptKey;
+
+    private Set<String> importableExportRowId;
 }

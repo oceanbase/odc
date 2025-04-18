@@ -37,3 +37,4 @@ public enum ScheduleType {
     LOAD_DATA;
 
 }
+

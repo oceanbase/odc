@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.objectstorage;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -24,10 +25,17 @@ import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
 import com.oceanbase.odc.service.objectstorage.model.StorageObject;
 
 public interface ObjectStorageFacade {
+
+    @Deprecated
     ObjectMetadata putObject(String bucket, String objectName, long totalLength,
             InputStream inputStream);
 
+    ObjectMetadata putObject(String bucket, File file);
+
     ObjectMetadata putTempObject(String bucket, String objectName, long totalLength, InputStream inputStream);
+
+
+    ObjectMetadata putTempObject(String bucket, File file);
 
     ObjectMetadata putTempObject(String bucket, String objectName, long userId, long totalLength,
             InputStream inputStream);

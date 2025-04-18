@@ -454,7 +454,7 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
     }
 
     @Test
-    public void cancelTask_taskNotRunning_cancelSucceed() {
+    public void cancelTask_taskNotRunning_cancelWithWritePermissionSucceed() {
         FlowInstance flowInstance = createFlowInstance("test");
         buildFlowInstance(flowInstance);
         List<BaseFlowNodeInstance> instanceList =
@@ -464,7 +464,7 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
         taskInstance.update();
 
         Mockito.when(taskService.detail(Mockito.anyLong())).thenReturn(new TaskEntity());
-        flowInstanceService.cancel(flowInstance.getId(), false);
+        flowInstanceService.cancelWithWritePermission(flowInstance.getId(), false);
         FlowInstanceEntity actual = flowInstanceRepository.findById(flowInstance.getId())
                 .orElseThrow(IllegalStateException::new);
         Assert.assertEquals(FlowStatus.CANCELLED, actual.getStatus());

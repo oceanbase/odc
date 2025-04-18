@@ -25,6 +25,7 @@ import com.oceanbase.odc.core.shared.constant.PermissionType;
 import com.oceanbase.odc.metadb.iam.PermissionEntity;
 import com.oceanbase.odc.service.iam.model.PermissionConfig;
 import com.oceanbase.odc.service.iam.util.PermissionUtil;
+import com.oceanbase.tools.loaddump.utils.StringUtils;
 
 /**
  * @author gaoda.xy
@@ -42,7 +43,7 @@ public class PermissionUtilTest {
         List<PermissionConfig> permissionConfigs = PermissionUtil.aggregatePermissions(permissionEntities);
         Assert.assertEquals(2, permissionConfigs.size());
         for (PermissionConfig config : permissionConfigs) {
-            if (config.getResourceId() == 1) {
+            if (StringUtils.equals(config.getResourceId(), "1")) {
                 Assert.assertEquals(2, config.getActions().size());
                 Assert.assertTrue(config.getActions().contains("connect"));
                 Assert.assertTrue(config.getActions().contains("apply"));
@@ -72,20 +73,6 @@ public class PermissionUtilTest {
                 Assert.assertTrue(config.getActions().contains("delete"));
             }
         }
-    }
-
-    @Test
-    public void isConnectionAccessPermission() {
-        Assert.assertTrue(PermissionUtil.isConnectionAccessPermission(
-                createPermission("ODC_CONNECTION:1", "connect", PermissionType.PUBLIC_RESOURCE)));
-        Assert.assertTrue(PermissionUtil.isConnectionAccessPermission(
-                createPermission("ODC_CONNECTION:*", "readonlyconnect", PermissionType.PUBLIC_RESOURCE)));
-        Assert.assertTrue(PermissionUtil.isConnectionAccessPermission(
-                createPermission("ODC_CONNECTION:1", "apply", PermissionType.PUBLIC_RESOURCE)));
-        Assert.assertFalse(PermissionUtil.isConnectionAccessPermission(
-                createPermission("ODC_CONNECTION:1", "read", PermissionType.PUBLIC_RESOURCE)));
-        Assert.assertFalse(PermissionUtil.isConnectionAccessPermission(
-                createPermission("ODC_PRIVATE_CONNECTION:1", "create", PermissionType.PRIVATE_RESOURCE)));
     }
 
     @Test

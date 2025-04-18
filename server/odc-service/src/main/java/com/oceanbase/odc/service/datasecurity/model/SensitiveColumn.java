@@ -23,7 +23,7 @@ import javax.validation.constraints.NotNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.core.authority.model.SecurityResource;
-import com.oceanbase.odc.core.shared.OrganizationIsolated;
+import com.oceanbase.odc.core.shared.SingleOrganizationResource;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.connection.database.model.Database;
@@ -35,7 +35,7 @@ import lombok.Data;
  * @date 2023/5/9 09:59
  */
 @Data
-public class SensitiveColumn implements SecurityResource, OrganizationIsolated {
+public class SensitiveColumn implements SecurityResource, SingleOrganizationResource {
 
     @JsonProperty(access = Access.READ_ONLY)
     private Long id;

@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.connection.model;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
@@ -55,6 +57,9 @@ public class OBTenant {
     private OBInstanceType instanceType;
 
     private OBInstanceRoleType instanceRole;
+    private OBTenantStatus status;
+    @JsonAlias("tenantUsers")
+    private List<String> usernames;
 
     public static OBTenant of(String clusterInstanceId, String tenantId) {
         OBTenant obTenant = new OBTenant();

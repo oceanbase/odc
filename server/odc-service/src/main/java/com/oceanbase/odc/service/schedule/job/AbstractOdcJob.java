@@ -31,7 +31,7 @@ public abstract class AbstractOdcJob implements OdcJob {
 
     public Long submitToTaskFramework(String parametersJson, String type, Long timeoutMillis, Long srcDatabaseId) {
         Database database =
-                SpringContextUtil.getBean(DatabaseService.class).detailSkipPermissionCheckForRead(srcDatabaseId);
+                SpringContextUtil.getBean(DatabaseService.class).innerDetailForTask(srcDatabaseId);
         CloudProvider cloudProvider = StringUtils.isEmpty(database.getDataSource().getCloudProvider()) ? null
                 : CloudProvider.fromValue(database.getDataSource().getCloudProvider());
         return submitToTaskFramework(parametersJson, type, timeoutMillis, cloudProvider,

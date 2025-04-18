@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.Arrays;
 
 import org.apache.commons.io.FileUtils;
@@ -85,11 +86,33 @@ public class CloudEnvironmentObjectStorageFacade extends AbstractObjectStorageFa
     }
 
     @Override
+    public ObjectMetadata putObject(String bucket, String objectName, File file, boolean isPersistent) {
+        try {
+            return objectStorageExecutor.concurrentSafeExecute(
+                    () -> doPutObject(bucket, objectName, currentUserId(), file, isPersistent));
+        } catch (Exception ex) {
+            log.warn("put object failed, cause={}", ex.getMessage());
+            throw new InternalServerError("put object failed", ex);
+        }
+    }
+
+    @Override
     public ObjectMetadata putObject(String bucket, String objectName, long userId, long totalLength,
             InputStream inputStream, boolean isPersistent) {
         try {
             return objectStorageExecutor.concurrentSafeExecute(
                     () -> doPutObject(bucket, objectName, userId, totalLength, inputStream, isPersistent));
+        } catch (Exception ex) {
+            log.warn("put object failed, cause={}", ex.getMessage());
+            throw new InternalServerError("put object failed", ex);
+        }
+    }
+
+    @Override
+    public ObjectMetadata putObject(String bucket, String objectName, long userId, File file, boolean isPersistent) {
+        try {
+            return objectStorageExecutor.concurrentSafeExecute(
+                    () -> doPutObject(bucket, objectName, userId, file, isPersistent));
         } catch (Exception ex) {
             log.warn("put object failed, cause={}", ex.getMessage());
             throw new InternalServerError("put object failed", ex);
@@ -193,12 +216,47 @@ public class CloudEnvironmentObjectStorageFacade extends AbstractObjectStorageFa
         return saveObjectMetadata(bucket, objectName, objectId, creatorId, totalLength, inputStream);
     }
 
+    private ObjectMetadata doPutObject(String bucket, String objectName, long creatorId, File file,
+            boolean isPersistent) {
+        String objectId;
+        try {
+            objectId = isPersistent ? cloudObjectStorageService.upload(objectName, Files.newInputStream(file.toPath()))
+                    : cloudObjectStorageService.uploadTemp(objectName, Files.newInputStream(file.toPath()));
+        } catch (IOException ex) {
+            log.warn("Failed to put object onto OSS, objectName={}", objectName, ex);
+            throw new InternalServerError("Failed to put object onto OSS", ex);
+        }
+        Verify.notNull(objectId, "objectId");
+        return saveObjectMetadata(bucket, objectName, objectId, creatorId, file);
+    }
 
+
+
+    private ObjectMetadata saveObjectMetadata(String bucket, String objectName, String objectId, long creatorId,
+            File file) {
+        String sha1;
+        try {
+            // toByteArray is not a safe operate, may lead to oom
+            sha1 = HashUtils.sha1(file);
+        } catch (IOException ex) {
+            log.warn("Failed to calculate sha1 of object, objectName={}", objectName, ex);
+            throw new InternalServerError("Failed to put object", ex);
+        }
+        ObjectMetadata metadata =
+                metaOperator.save(bucket, creatorId, objectName, objectId, file.length(), blockSplitLength,
+                        sha1);
+        log.info("Finish saving object, objectName={}", objectName);
+        return metadata;
+    }
+
+
+    // Todo inputStream should be closed after upload
     private ObjectMetadata saveObjectMetadata(String bucket, String objectName, String objectId, long creatorId,
             long totalLength,
             InputStream inputStream) {
         String sha1;
         try {
+            // toByteArray is not a safe operate, may lead to oom
             sha1 = HashUtils.sha1(IOUtils.toByteArray(inputStream));
         } catch (IOException ex) {
             log.warn("Failed to calculate sha1 of object, objectName={}", objectName, ex);

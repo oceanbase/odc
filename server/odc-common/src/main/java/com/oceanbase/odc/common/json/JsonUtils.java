@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.Nullable;
+
 import org.json.JSONObject;
 import org.json.XML;
 
@@ -30,6 +32,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -104,6 +107,7 @@ public class JsonUtils {
         return OBJECT_MAPPER.getTypeFactory().constructType(type);
     }
 
+    @Nullable
     public static <T> T fromJson(String json, TypeReference<T> valueTypeRef) {
         if (json == null) {
             return null;
@@ -111,6 +115,19 @@ public class JsonUtils {
         try {
             return OBJECT_MAPPER.readValue(json, valueTypeRef);
         } catch (JsonProcessingException e) {
+            log.warn("deserialize str = {} failed, reason = {}", json, e.getMessage());
+            return null;
+        }
+    }
+
+    @Nullable
+    public static <T> T fromJsonNode(JsonNode json, Class<T> valueTypeRef) {
+        if (json == null) {
+            return null;
+        }
+        try {
+            return OBJECT_MAPPER.convertValue(json, valueTypeRef);
+        } catch (IllegalArgumentException e) {
             log.warn("deserialize str = {} failed, reason = {}", json, e.getMessage());
             return null;
         }

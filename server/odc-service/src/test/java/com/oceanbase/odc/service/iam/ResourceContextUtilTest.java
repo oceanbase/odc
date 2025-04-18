@@ -16,12 +16,14 @@
 package com.oceanbase.odc.service.iam;
 
 import org.apache.commons.lang.Validate;
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.BadArgumentException;
 import com.oceanbase.odc.service.iam.util.ResourceContextUtil;
 import com.oceanbase.odc.service.resourcegroup.model.ResourceContext;
+import com.oceanbase.odc.service.resourcegroup.model.ResourceContext.ResourceIdExtractRule;
 
 /**
  * @author wenniu.ly
@@ -39,11 +41,22 @@ public class ResourceContextUtilTest {
         Validate.isTrue(resourceContext.getSubContexts() == null);
     }
 
-    @Test(expected = BadArgumentException.class)
-    public void testSingleLevelWithIllegalMultiValue() {
-        String resourceIdentifier = "resource_group:10,20";
+    @Test
+    public void testAllRule() {
+        String resourceIdentifier = "ODC_CONNECTION:*";
         ResourceContext resourceContext = ResourceContextUtil.parseFromResourceIdentifier(resourceIdentifier);
+        Assert.assertEquals("ODC_CONNECTION", resourceContext.getField());
+        Assert.assertEquals(ResourceIdExtractRule.ALL, resourceContext.getIdExtractRule());
     }
+
+    @Test
+    public void testCreatorRule() {
+        String resourceIdentifier = "ODC_CONNECTION:CREATOR";
+        ResourceContext resourceContext = ResourceContextUtil.parseFromResourceIdentifier(resourceIdentifier);
+        Assert.assertEquals("ODC_CONNECTION", resourceContext.getField());
+        Assert.assertEquals(ResourceIdExtractRule.CREATOR, resourceContext.getIdExtractRule());
+    }
+
 
     @Test(expected = BadArgumentException.class)
     public void testSingleLevelWithIllegalField() {

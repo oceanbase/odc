@@ -45,7 +45,7 @@ import com.oceanbase.odc.core.flow.ExecutionConfigurer;
 import com.oceanbase.odc.core.flow.builder.FlowableProcessBuilder;
 import com.oceanbase.odc.core.flow.model.FlowableElement;
 import com.oceanbase.odc.core.flow.util.FlowUtil;
-import com.oceanbase.odc.core.shared.OrganizationIsolated;
+import com.oceanbase.odc.core.shared.SingleOrganizationResource;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -80,7 +80,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Getter
 @Slf4j
-public class FlowInstance extends Graph implements SecurityResource, OrganizationIsolated {
+public class FlowInstance extends Graph implements SecurityResource, SingleOrganizationResource {
 
     private Long id;
     private Date createTime;

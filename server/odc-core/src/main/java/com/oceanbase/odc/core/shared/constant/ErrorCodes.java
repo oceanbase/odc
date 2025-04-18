@@ -326,7 +326,16 @@ public enum ErrorCodes implements ErrorCode {
     BucketNotExist,
     InvalidAccessKeyId,
     SignatureDoesNotMatch,
-    UnsupportedSyncTableStructure;
+    UnsupportedSyncTableStructure,
+
+    /**
+     * config export
+     */
+    ExtractFileFailed,
+    InvalidSignature,
+
+
+    ;
 
     @Override
     public String code() {

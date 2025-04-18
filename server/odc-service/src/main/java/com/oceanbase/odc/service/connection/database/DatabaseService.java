@@ -270,10 +270,14 @@ public class DatabaseService {
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)), true);
     }
 
+    /**
+     * This method provides database details for a task. Permission checks are skipped for internal use
+     * only. The returned datasource includes decrypted attributes and password.
+     */
     @SkipAuthorize("internal usage")
-    public Database detailSkipPermissionCheckForRead(@NonNull Long id) {
-        return entityToModelForRead(databaseRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)), true);
+    public Database innerDetailForTask(@NonNull Long id) {
+        return innerDetailForTask(databaseRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)));
     }
 
     @SkipAuthorize("odc internal usage")
@@ -1178,20 +1182,16 @@ public class DatabaseService {
         });
     }
 
-    private Database entityToModelForRead(DatabaseEntity entity, boolean includesPermittedAction) {
+    private Database innerDetailForTask(DatabaseEntity entity) {
         Database model = databaseMapper.entityToModel(entity);
         if (Objects.nonNull(entity.getProjectId())) {
             model.setProject(projectService.detail(entity.getProjectId()));
         }
         // for logical database, the connection id may be null
         if (entity.getConnectionId() != null) {
-            model.setDataSource(connectionService.getBasicWithoutPermissionCheck(entity.getConnectionId()));
+            model.setDataSource(connectionService.getDecryptedConfig(entity.getConnectionId()));
         }
         model.setEnvironment(environmentService.detailSkipPermissionCheck(entity.getEnvironmentId()));
-        if (includesPermittedAction) {
-            model.setAuthorizedPermissionTypes(
-                    permissionHelper.getDBPermissions(Collections.singleton(entity.getId())).get(entity.getId()));
-        }
         return model;
     }
 

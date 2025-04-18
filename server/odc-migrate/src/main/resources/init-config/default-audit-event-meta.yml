@@ -571,3 +571,20 @@
   in_connection: 0
   enabled: 1
   id: 102
+
+
+- type: "INSTANCE_MIGRATION"
+  action: "BATCH_TERMINAL_TASKS"
+  method_signature: "com.oceanbase.odc.server.web.controller.cloud.OcpConsoleController.terminateTask"
+  sid_extract_expression: ""
+  in_connection: 0
+  enabled: 1
+  id: 103
+
+- type: "INSTANCE_MIGRATION"
+  action: "BATCH_EXPORT_TASKS"
+  method_signature: "com.oceanbase.odc.server.web.controller.cloud.OcpConsoleController.export"
+  sid_extract_expression: ""
+  in_connection: 0
+  enabled: 1
+  id: 104
