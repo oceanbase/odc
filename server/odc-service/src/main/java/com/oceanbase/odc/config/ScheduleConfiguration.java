@@ -311,8 +311,8 @@ public class ScheduleConfiguration {
         return executor;
     }
 
-    @Bean(name = "scheduleImportExecutor")
-    public ThreadPoolTaskExecutor scheduleImportExecutor() {
+    @Bean(name = "commonAsyncTaskExecutor")
+    public ThreadPoolTaskExecutor commonAsyncTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         int minPoolSize = Math.max(SystemUtils.availableProcessors(), 4);
         executor.setCorePoolSize(minPoolSize);
@@ -324,7 +324,7 @@ public class ScheduleConfiguration {
         executor.setTaskDecorator(new TraceDecorator<>());
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
         executor.initialize();
-        log.info("scheduleImportExecutor initialized");
+        log.info("commonAsyncTaskExecutor initialized");
         return executor;
     }
 

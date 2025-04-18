@@ -46,7 +46,7 @@ public class ScheduleTaskImportService {
     private FutureCache futureCache;
 
     @Autowired
-    private ThreadPoolTaskExecutor scheduleImportExecutor;
+    private ThreadPoolTaskExecutor commonAsyncTaskExecutor;
 
     @Autowired
     private ScheduleTaskImporter scheduleTaskImporter;
@@ -63,7 +63,7 @@ public class ScheduleTaskImportService {
     public String startPreviewImportTask(ScheduleTaskImportRequest request) {
         String previewId = statefulUuidStateIdGenerator.generateStateId("scheduleImportReview");
         User user = authenticationFacade.currentUser();
-        Future<List<ImportScheduleTaskView>> future = scheduleImportExecutor.submit(
+        Future<List<ImportScheduleTaskView>> future = commonAsyncTaskExecutor.submit(
                 () -> {
                     SecurityContextUtils.setCurrentUser(user);
                     return scheduleTaskImporter.preview(request);
@@ -98,7 +98,7 @@ public class ScheduleTaskImportService {
         String previewId = statefulUuidStateIdGenerator.generateStateId("scheduleImport");
         User user = authenticationFacade.currentUser();
 
-        Future<List<ImportTaskResult>> future = scheduleImportExecutor.submit(
+        Future<List<ImportTaskResult>> future = commonAsyncTaskExecutor.submit(
                 new ScheduleTaskImportCallable(user, previewId, scheduleTaskImporter, request));
         futureCache.put(previewId, future);
         return previewId;

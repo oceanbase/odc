@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.schedule.export;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
@@ -31,10 +30,6 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.common.task.RouteLogCallable;
-import com.oceanbase.odc.core.shared.OrganizationIsolated;
-import com.oceanbase.odc.core.shared.constant.OrganizationType;
-import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
-import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
@@ -48,18 +43,14 @@ import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
-import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.export.model.FileExportResponse;
 import com.oceanbase.odc.service.schedule.export.model.ScheduleExportListView;
 import com.oceanbase.odc.service.schedule.export.model.ScheduleTaskExportRequest;
-import com.oceanbase.odc.service.schedule.model.Schedule;
 import com.oceanbase.odc.service.schedule.model.ScheduleMapper;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
+import com.oceanbase.odc.service.schedule.util.BatchSchedulePermissionValidator;
 import com.oceanbase.odc.service.state.StatefulUuidStateIdGenerator;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
-
-import lombok.AllArgsConstructor;
-import lombok.Data;
 
 @Service
 public class ScheduleExportService {
@@ -82,7 +73,7 @@ public class ScheduleExportService {
     private FlowInstanceService flowInstanceService;
 
     @Autowired
-    private ScheduleService scheduleService;
+    private BatchSchedulePermissionValidator batchSchedulePermissionValidator;
 
     @Autowired
     private UserService userService;
@@ -97,7 +88,7 @@ public class ScheduleExportService {
     private StatefulUuidStateIdGenerator statefulUuidStateIdGenerator;
 
     @Autowired
-    private ThreadPoolTaskExecutor scheduleImportExecutor;
+    private ThreadPoolTaskExecutor commonAsyncTaskExecutor;
 
     @Autowired
     private DatabaseService databaseService;
@@ -113,10 +104,10 @@ public class ScheduleExportService {
     }
 
     public String startExport(ScheduleTaskExportRequest request) {
-        checkRequestIdsPermission(request);
+        batchSchedulePermissionValidator.checkScheduleIdsPermission(request.getScheduleType(), request.getIds());
         String previewId = statefulUuidStateIdGenerator.generateCurrentUserIdStateId("scheduleExport");
         User user = authenticationFacade.currentUser();
-        Future<FileExportResponse> future = scheduleImportExecutor.submit(
+        Future<FileExportResponse> future = commonAsyncTaskExecutor.submit(
                 new ScheduleTaskExportCallable(previewId, request, user, scheduleTaskExporter,
                         getPersonalBucketName(), objectStorageFacade));
         futureCache.put(previewId, future);
@@ -124,7 +115,7 @@ public class ScheduleExportService {
     }
 
     public List<ScheduleExportListView> getExportListView(ScheduleTaskExportRequest request) {
-        checkRequestIdsPermission(request);
+        batchSchedulePermissionValidator.checkScheduleIdsPermission(request.getScheduleType(), request.getIds());
         if (request.getScheduleType().equals(ScheduleType.PARTITION_PLAN)) {
             return getPartitionPlanView(request);
         }
@@ -182,51 +173,5 @@ public class ScheduleExportService {
                 ScheduleTaskExportCallable.LOG_NAME);
         File logFile = new File(filePath);
         return LogUtils.getLatestLogContent(logFile, 10000L, 1048576L);
-    }
-
-    private void checkRequestIdsPermission(ScheduleTaskExportRequest request) {
-        Set<Long> projectIds;
-        if (request.getScheduleType().equals(ScheduleType.PARTITION_PLAN)) {
-            List<FlowInstanceEntity> flowInstanceEntities = flowInstanceService.listByIds(request.getIds());
-            projectIds =
-                    flowInstanceEntities.stream().map(FlowInstanceEntity::getProjectId).collect(Collectors.toSet());
-            List<FlowOrganizationIsolated> flowOrganizationIsolateds = flowInstanceEntities.stream().map(
-                    f -> new FlowOrganizationIsolated(f.getOrganizationId(), f.getId())).collect(
-                            Collectors.toList());
-            horizontalDataPermissionValidator.checkCurrentOrganization(flowOrganizationIsolateds);
-        } else {
-            List<Schedule> scheduleEntities = scheduleRepository.findByIdIn(request.getIds()).stream()
-                    .map(ScheduleMapper.INSTANCE::entityToModel).collect(
-                            Collectors.toList());
-            horizontalDataPermissionValidator.checkCurrentOrganization(scheduleEntities);
-            projectIds = scheduleEntities.stream().map(Schedule::getProjectId).collect(Collectors.toSet());
-        }
-        if (authenticationFacade.currentOrganization().getType().equals(OrganizationType.TEAM)) {
-            projectPermissionValidator.checkProjectRole(projectIds, ResourceRoleName.all());
-        }
-    }
-
-
-    @Data
-    @AllArgsConstructor
-    private final static class FlowOrganizationIsolated implements OrganizationIsolated {
-
-        private Long organizationId;
-        private Long id;
-
-        @Override
-        public String resourceType() {
-            return ResourceType.ODC_FLOW_INSTANCE.name();
-        }
-
-        @Override
-        public Long organizationId() {
-            return organizationId;
-        }
-
-        @Override
-        public Long id() {
-            return id;
-        }
     }
 }
