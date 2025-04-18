@@ -97,7 +97,7 @@ public class ScheduleChangePreprocessor implements InitializingBean {
     }
 
     private void adaptScheduleChangeParams(ScheduleChangeParams req) {
-        Database srcDb = databaseService.detailSkipPermissionCheckForRead(getTargetDatabaseId(req));
+        Database srcDb = databaseService.innerDetailForTask(getTargetDatabaseId(req));
         req.setProjectId(srcDb.getProject().getId());
         req.setProjectName(srcDb.getProject().getName());
         req.setConnectionId(srcDb.getDataSource().getId());

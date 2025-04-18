@@ -85,8 +85,10 @@ public class ConnectionTesting {
 
         PreConditions.validArgumentState(Objects.nonNull(req.getPassword()),
                 ErrorCodes.ConnectionPasswordMissed, null, "password required for connection without password saved");
-        cloudMetadataClient.checkPermission(OBTenant.of(req.getClusterName(),
-                req.getTenantName()), req.getInstanceType(), false, CloudPermissionAction.READONLY);
+        if (!req.getType().isFileSystem()) {
+            cloudMetadataClient.checkPermission(OBTenant.of(req.getClusterName(),
+                    req.getTenantName()), req.getInstanceType(), false, CloudPermissionAction.READONLY);
+        }
         connectionSSLAdaptor.adapt(req);
 
         PreConditions.validNotSqlInjection(req.getUsername(), "username");

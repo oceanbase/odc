@@ -246,6 +246,10 @@ public class MySQLTableOptionsFactory extends OBParserBaseVisitor<TableOptions>
             }
         } else if (ctx.INSERT_METHOD() != null) {
             target.setInsertMethod(ctx.merge_insert_types().getText());
+        } else if (ctx.ORGANIZATION() != null) {
+            target.setOrganization(ctx.index_or_heap().getText());
+        } else if (ctx.ENABLE_MACRO_BLOCK_BLOOM_FILTER() != null) {
+            target.setEnableMacroBlockBloomFilter(Boolean.valueOf(ctx.BOOL_VALUE().getText()));
         }
         return target;
     }
