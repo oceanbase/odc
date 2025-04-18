@@ -321,9 +321,9 @@ public enum ErrorCodes implements ErrorCode {
      */
     WorkspaceDatabaseUserTypeMustBeAdmin,
     /**
-     * conflict occurred while pushing code to the remote repository
+     * non-fast-forward update occurred while pushing code to the remote repository
      */
-    GitPushConflict,
+    GitPushRejectedNonFastForward,
     /**
      * oss
      */
