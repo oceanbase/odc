@@ -535,7 +535,6 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
                     e.getMessage());
         }
         OracleSqlBuilder sb = new OracleSqlBuilder();
-
         sb.append("desc ");
         sb.identifier(view.getSchemaName(), view.getViewName());
         Map<String, List<DBTableColumn>> finalName2Cols = name2Cols;
