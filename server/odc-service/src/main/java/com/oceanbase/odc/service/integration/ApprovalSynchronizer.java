@@ -130,7 +130,7 @@ public class ApprovalSynchronizer {
                 flowInstanceService.reject(flowInstanceId, "Rejected by external approval service", true);
                 return;
             case TERMINATED:
-                flowInstanceService.cancel(flowInstanceId, true);
+                flowInstanceService.cancelWithWritePermission(flowInstanceId, true);
                 return;
             case PENDING:
             default:
@@ -140,7 +140,7 @@ public class ApprovalSynchronizer {
         Date approvalExpireTime = new Date(startTime.getTime() + properties.getApprovalTimeoutSeconds() * 1000L);
         if (new Date().after(approvalExpireTime)) {
             approvalClient.cancel(properties, variables);
-            flowInstanceService.cancel(flowInstanceId, true);
+            flowInstanceService.cancelWithWritePermission(flowInstanceId, true);
         }
     }
 

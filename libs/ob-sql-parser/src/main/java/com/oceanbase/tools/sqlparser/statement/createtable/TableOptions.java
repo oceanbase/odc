@@ -118,6 +118,8 @@ public class TableOptions extends BaseOptions {
     private String statsSamplePages;
     private List<RelationFactor> union;
     private String insertMethod;
+    private String organization;
+    private Boolean enableMacroBlockBloomFilter;
 
     public TableOptions(@NonNull ParserRuleContext context) {
         super(context);
@@ -341,6 +343,13 @@ public class TableOptions extends BaseOptions {
         }
         if (this.insertMethod != null) {
             builder.append(" INSERT_METHOD=").append(this.insertMethod);
+        }
+        if (this.organization != null) {
+            builder.append(" ORGANIZATION=").append(this.organization);
+        }
+        if (this.enableMacroBlockBloomFilter != null) {
+            builder.append(" ENABLE_MACRO_BLOCK_BLOOM_FILTER=").append(
+                    Boolean.TRUE.equals(this.enableMacroBlockBloomFilter) ? "TRUE" : "FALSE");
         }
         return builder.length() == 0 ? "" : builder.substring(1);
     }

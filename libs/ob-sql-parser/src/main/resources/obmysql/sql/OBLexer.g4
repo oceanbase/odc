@@ -232,6 +232,10 @@ COSINE
     : C O S I N E
     ;
 
+ENABLE_MACRO_BLOCK_BLOOM_FILTER
+    : E N A B L E '_' M A C R O '_' B L O C K '_' B L O O M '_' F I L T E R
+    ;
+
 DECORRELATE
     : D E C O R R E L A T E
     ;
@@ -3532,6 +3536,10 @@ MAX_UPDATES_PER_HOUR
     : M A X '_' U P D A T E S '_' P E R '_' H O U R
     ;
 
+ORGANIZATION
+    : O R G A N I Z A T I O N
+    ;
+
 CURSOR_NAME
     : C U R S O R '_' N A M E
     ;
@@ -3722,6 +3730,10 @@ ANY
 
 UNIT_GROUP
     : U N I T '_' G R O U P
+    ;
+
+HEAP
+    : H E A P
     ;
 
 TTL

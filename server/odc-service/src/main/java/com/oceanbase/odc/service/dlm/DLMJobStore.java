@@ -21,8 +21,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import com.alibaba.druid.pool.DruidDataSource;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.odc.service.session.factory.DruidDataSourceFactory;
@@ -30,6 +33,7 @@ import com.oceanbase.tools.migrator.common.dto.JobStatistic;
 import com.oceanbase.tools.migrator.common.dto.TaskGenerator;
 import com.oceanbase.tools.migrator.common.element.PrimaryKey;
 import com.oceanbase.tools.migrator.core.handler.genarator.GeneratorStatus;
+import com.oceanbase.tools.migrator.core.meta.BoundPrimaryKey;
 import com.oceanbase.tools.migrator.core.meta.TaskMeta;
 import com.oceanbase.tools.migrator.core.store.IJobStore;
 
@@ -50,11 +54,17 @@ public class DLMJobStore implements IJobStore {
     private DlmTableUnit dlmTableUnit;
 
     public DLMJobStore(ConnectionConfig metaDBConfig) {
+        // only supports odc meta db to record save points
+        if ("odc_job".equals(metaDBConfig.getDefaultSchema())) {
+            log.info("Only ODC Meta DB is supported for recording and closing save points now.");
+            enableBreakpointRecovery = false;
+            return;
+        }
         try {
             DruidDataSourceFactory druidDataSourceFactory = new DruidDataSourceFactory(metaDBConfig);
             dataSource = (DruidDataSource) druidDataSourceFactory.getDataSource();
         } catch (Exception e) {
-            log.warn("Failed to connect to the meta database; closing save point.");
+            log.warn("Failed to connect to the meta database and closing save point.");
             enableBreakpointRecovery = false;
         }
 
@@ -87,10 +97,22 @@ public class DLMJobStore implements IJobStore {
                     taskGenerator.setTaskCount(resultSet.getInt("task_count"));
                     taskGenerator
                             .setPrimaryKeySavePoint(PrimaryKey.valuesOf(resultSet.getString("primary_key_save_point")));
-                    taskGenerator.setProcessedDataSize(resultSet.getLong("processed_row_count"));
+                    taskGenerator.setProcessedRowCount(resultSet.getLong("processed_row_count"));
                     taskGenerator.setProcessedDataSize(resultSet.getLong("processed_data_size"));
                     taskGenerator.setPartitionSavePoint(resultSet.getString("partition_save_point"));
-                    log.info("Load task generator success.jobId={}", jobId);
+                    Map<String, BoundPrimaryKey> partName2MaxKey = JsonUtils.fromJson(
+                            resultSet.getString("partition_max_key"),
+                            new TypeReference<Map<String, BoundPrimaryKey>>() {});
+                    if (partName2MaxKey != null && !partName2MaxKey.isEmpty()) {
+                        taskGenerator.setPartName2MaxKey(partName2MaxKey);
+                    }
+                    Map<String, BoundPrimaryKey> partName2MinKey = JsonUtils.fromJson(
+                            resultSet.getString("partition_min_key"),
+                            new TypeReference<Map<String, BoundPrimaryKey>>() {});
+                    if (partName2MinKey != null && !partName2MinKey.isEmpty()) {
+                        taskGenerator.setPartName2MinKey(partName2MinKey);
+                    }
+                    log.info("Load task generator success,generator={}", taskGenerator);
                     return taskGenerator;
                 }
             }
@@ -105,22 +127,17 @@ public class DLMJobStore implements IJobStore {
                 .forEach((k, v) -> dlmTableUnit.getStatistic().getPartName2MaxKey().put(k, v.getSqlString()));
         taskGenerator.getPartName2MinKey()
                 .forEach((k, v) -> dlmTableUnit.getStatistic().getPartName2MinKey().put(k, v.getSqlString()));
-        if (taskGenerator.getGlobalMaxKey() != null) {
-            dlmTableUnit.getStatistic().setGlobalMaxKey(taskGenerator.getGlobalMaxKey().getSqlString());
-        }
-        if (taskGenerator.getGlobalMinKey() != null) {
-            dlmTableUnit.getStatistic().setGlobalMinKey(taskGenerator.getGlobalMinKey().getSqlString());
-        }
         if (enableBreakpointRecovery) {
             StringBuilder sb = new StringBuilder();
             sb.append("INSERT INTO dlm_task_generator ");
             sb.append(
-                    "(generator_id,job_id,processed_data_size,processed_row_count,status,type,task_count,primary_key_save_point,partition_save_point)");
-            sb.append(" VALUES (?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE ");
+                    "(generator_id,job_id,processed_data_size,processed_row_count,status,type,task_count,primary_key_save_point,partition_save_point,partition_min_key,partition_max_key)");
+            sb.append(" VALUES (?,?,?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE ");
             sb.append(
                     "status=values(status),task_count=values(task_count),partition_save_point=values(partition_save_point),");
             sb.append(
                     "processed_row_count=values(processed_row_count),processed_data_size=values(processed_data_size),primary_key_save_point=values(primary_key_save_point)");
+            sb.append(",partition_min_key=values(partition_min_key),partition_max_key=values(partition_max_key)");
             log.info("start to store task generator:{}", taskGenerator);
             try (Connection conn = dataSource.getConnection();
                     PreparedStatement ps = conn.prepareStatement(sb.toString())) {
@@ -134,6 +151,8 @@ public class DLMJobStore implements IJobStore {
                 ps.setString(8, taskGenerator.getPrimaryKeySavePoint() == null ? ""
                         : taskGenerator.getPrimaryKeySavePoint().toSqlString());
                 ps.setString(9, taskGenerator.getPartitionSavePoint());
+                ps.setString(10, JsonUtils.toJson(taskGenerator.getPartName2MinKey()));
+                ps.setString(11, JsonUtils.toJson(taskGenerator.getPartName2MaxKey()));
                 if (ps.executeUpdate() == 1) {
                     log.info("Update task generator success.jobId={}", taskGenerator.getJobId());
                 } else {

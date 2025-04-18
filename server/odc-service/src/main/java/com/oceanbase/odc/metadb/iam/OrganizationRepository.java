@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.metadb.iam;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,6 +33,7 @@ public interface OrganizationRepository
 
     Optional<OrganizationEntity> findByUniqueIdentifier(String uniqueIdentifier);
 
+    List<OrganizationEntity> findByUniqueIdentifierIn(Collection<String> uniqueIdentifiers);
 
     Optional<OrganizationEntity> findByName(String name);
 

@@ -69,6 +69,9 @@ public class DataDeleteParameters implements ScheduleTaskParameters {
 
     private Long timeoutMillis;
 
+    // default cpu limit is 25%
+    private int cpuLimit = 25;
+
     private boolean fullDatabase = false;
 
     public String getDatabaseName() {

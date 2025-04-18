@@ -181,6 +181,13 @@ public class ResourceRoleService {
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal usage")
     public List<UserResourceRole> listByResourceTypeAndResourceId(ResourceType resourceType, Long resourceId) {
+        return listByResourceTypeAndResourceId(resourceType, resourceId, authenticationFacade.currentOrganizationId());
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("internal usage")
+    public List<UserResourceRole> listByResourceTypeAndResourceId(ResourceType resourceType, Long resourceId,
+            Long organizationId) {
         List<UserResourceRole> userResourceRoles =
                 fromEntities(userResourceRoleRepository.listByResourceTypeAndId(resourceType, resourceId));
         if (resourceType == ResourceType.ODC_DATABASE) {
@@ -188,7 +195,7 @@ public class ResourceRoleService {
         }
         List<UserGlobalResourceRole> globalResourceRoles =
                 globalResourceRoleService
-                        .findGlobalResourceRoleUsersByOrganizationId(authenticationFacade.currentOrganizationId());
+                        .findGlobalResourceRoleUsersByOrganizationId(organizationId);
         if (CollectionUtils.isEmpty(globalResourceRoles)) {
             return userResourceRoles;
         }
@@ -282,7 +289,8 @@ public class ResourceRoleService {
 
     @SkipAuthorize("internal usage")
     public List<UserResourceRole> listByUserId(Long userId) {
-        List<UserResourceRole> userResourceRoles = fromEntities(userResourceRoleRepository.findByUserId(userId));
+        List<UserResourceRole> userResourceRoles = fromEntities(userResourceRoleRepository
+                .findByOrganizationIdAndUserId(authenticationFacade.currentOrganizationId(), userId));
         List<UserGlobalResourceRole> globalResourceRoles =
                 globalResourceRoleService.findGlobalResourceRoleUsersByOrganizationIdAndUserId(
                         authenticationFacade.currentOrganizationId(),
@@ -322,16 +330,21 @@ public class ResourceRoleService {
 
     @SkipAuthorize("internal usage")
     public List<UserResourceRole> listByResourceIdentifierIn(Set<String> resourceIdentifiers) {
+        return listByResourceIdentifierIn(resourceIdentifiers, authenticationFacade.currentOrganizationId());
+    }
+
+    @SkipAuthorize("internal usage")
+    public List<UserResourceRole> listByResourceIdentifierIn(Set<String> resourceIdentifiers, Long organizationId) {
         List<UserResourceRole> userResourceRoles =
                 fromEntities(userResourceRoleRepository.findByResourceIdsAndResourceRoleIdsIn(resourceIdentifiers));
         List<UserGlobalResourceRole> globalUserResourceRoles = globalResourceRoleService
-                .findGlobalResourceRoleUsersByOrganizationIdAndRoleIn(authenticationFacade.currentOrganizationId(),
+                .findGlobalResourceRoleUsersByOrganizationIdAndRoleIn(organizationId,
                         filterResourceRoleNames(ResourceType.ODC_PROJECT, resourceIdentifiers));
         if (CollectionUtils.isEmpty(globalUserResourceRoles)) {
             return userResourceRoles;
         }
         Map<ResourceRoleName, Long> resourceRoleName2Id = getProjectResourceRoleName2Id();
-        projectRepository.findAllByOrganizationId(authenticationFacade.currentOrganizationId()).stream()
+        projectRepository.findAllByOrganizationId(organizationId).stream()
                 .forEach(p -> globalUserResourceRoles.stream()
                         .map(i -> new UserResourceRole(i.getUserId(), p.getId(), ResourceType.ODC_PROJECT,
                                 i.getResourceRole(), resourceRoleName2Id.get(i.getResourceRole()), true))

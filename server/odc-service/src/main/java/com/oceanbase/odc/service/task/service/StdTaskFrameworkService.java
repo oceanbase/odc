@@ -176,7 +176,8 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     public Page<JobEntity> findTerminalJob(int page, int size) {
         Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
                 .and(SpecificationUtil.columnIn(JobEntityColumn.STATUS,
-                        Lists.newArrayList(JobStatus.CANCELED, JobStatus.DONE, JobStatus.FAILED)))
+                        Lists.newArrayList(JobStatus.EXEC_TIMEOUT, JobStatus.CANCELED, JobStatus.DONE,
+                                JobStatus.FAILED)))
                 .and(SpecificationUtil.columnIsNull(JobEntityColumn.EXECUTOR_DESTROYED_TIME))
                 .and(getExecutorSpec());
         return page(condition, page, size);

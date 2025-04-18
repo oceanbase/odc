@@ -18,6 +18,7 @@ package com.oceanbase.odc.config;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
@@ -41,6 +42,9 @@ public class ScheduleConfiguration {
 
     @Autowired
     private DBSchemaSyncProperties dbSchemaSyncProperties;
+
+    @Value("${odc.flow.executor.flow-task.pool-size-times:10}")
+    private Integer flowTaskExecutorPoolSizeTimes;
 
     @Bean(name = "connectionStatusCheckExecutor")
     public ThreadPoolTaskExecutor connectionStatusCheckExecutor() {
@@ -111,8 +115,8 @@ public class ScheduleConfiguration {
     @Bean(name = "flowTaskExecutor")
     public ThreadPoolTaskExecutor flowTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(CORE_NUMBER * 2);
-        executor.setMaxPoolSize(CORE_NUMBER * 10);
+        executor.setCorePoolSize(CORE_NUMBER * flowTaskExecutorPoolSizeTimes);
+        executor.setMaxPoolSize(CORE_NUMBER * flowTaskExecutorPoolSizeTimes);
         executor.setThreadNamePrefix("flow-task-executor-");
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(5);
@@ -304,6 +308,23 @@ public class ScheduleConfiguration {
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
         executor.initialize();
         log.info("queryProfileMonitorExecutor initialized");
+        return executor;
+    }
+
+    @Bean(name = "scheduleImportExecutor")
+    public ThreadPoolTaskExecutor scheduleImportExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        int minPoolSize = Math.max(SystemUtils.availableProcessors(), 4);
+        executor.setCorePoolSize(minPoolSize);
+        executor.setMaxPoolSize(minPoolSize * 2);
+        executor.setQueueCapacity(10);
+        executor.setThreadNamePrefix("schedule-import-");
+        executor.setWaitForTasksToCompleteOnShutdown(false);
+        executor.setAwaitTerminationSeconds(5);
+        executor.setTaskDecorator(new TraceDecorator<>());
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy());
+        executor.initialize();
+        log.info("scheduleImportExecutor initialized");
         return executor;
     }
 

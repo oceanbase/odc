@@ -431,7 +431,7 @@ public class ScheduleService {
                 throw new IllegalArgumentException("Invalid cron expression");
             }
             long intervalMills = nextFiveFireTimes.get(1).getTime() - nextFiveFireTimes.get(0).getTime();
-            PreConditions.validArgumentState(intervalMills / 1000 > minInterval, ErrorCodes.ScheduleIntervalTooShort,
+            PreConditions.validArgumentState(intervalMills / 1000 >= minInterval, ErrorCodes.ScheduleIntervalTooShort,
                     new Object[] {minInterval}, null);
         }
     }
