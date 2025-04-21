@@ -49,6 +49,10 @@ public final class AlarmUtils {
 
     static AlarmService alarmService = new AlarmService();
 
+    public static void registerListener(AlarmEventListener listener) {
+        alarmService.addListener(listener);
+    }
+
     public static void alarm(String eventName, String eventMessage) {
         alarmService.alarm(eventName, eventMessage);
     }

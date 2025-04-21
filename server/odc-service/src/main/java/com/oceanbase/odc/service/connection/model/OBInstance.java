@@ -41,7 +41,7 @@ public class OBInstance {
     /**
      * 实例类型
      */
-    @JsonAlias("instanceType")
+    @JsonAlias({"instanceType", "type"})
     private OBInstanceType type;
 
     /**

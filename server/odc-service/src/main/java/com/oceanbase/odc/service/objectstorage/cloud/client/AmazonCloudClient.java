@@ -76,7 +76,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AmazonCloudClient implements CloudClient {
     private static final String STS_POLICY_VERSION = "2012-10-17";
-    private final AmazonS3 s3;
+    protected final AmazonS3 s3;
     private final AWSSecurityTokenService sts;
     private final String roleSessionName;
     private final String roleArn;
@@ -360,7 +360,7 @@ public class AmazonCloudClient implements CloudClient {
         });
     }
 
-    private <T> T callAmazonMethod(String operation, Supplier<T> supplier) {
+    protected <T> T callAmazonMethod(String operation, Supplier<T> supplier) {
         try {
             return supplier.get();
         } catch (Exception ex) {

@@ -186,10 +186,6 @@ public class OdcFileUtil {
         return absolutePath + "/" + staticDir + fileDir;
     }
 
-    public static void setAbsolutePath(String absolutePath) {
-        OdcFileUtil.absolutePath = absolutePath;
-    }
-
     /**
      * 一次性读取全部文件数据
      * 
@@ -277,4 +273,5 @@ public class OdcFileUtil {
             out.flush();
         }
     }
+
 }
