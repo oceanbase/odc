@@ -291,12 +291,12 @@ public class ScheduleController {
         return Responses.ok(scheduleService.startTerminateScheduleAndTask(cmd));
     }
 
-    @RequestMapping(value = "/schedules/asyncResult", method = RequestMethod.GET)
+    @RequestMapping(value = "/schedules/asyncTerminateResult", method = RequestMethod.GET)
     public SuccessResponse<List<ScheduleTerminateResult>> getTerminateScheduleResult(String terminateId) {
         return Responses.ok(scheduleService.getTerminateScheduleResult(terminateId));
     }
 
-    @RequestMapping(value = "/schedules/asyncLog", method = RequestMethod.GET)
+    @RequestMapping(value = "/schedules/asyncTerminateLog", method = RequestMethod.GET)
     public SuccessResponse<String> getTerminateScheduleLog(String terminateId) {
         return Responses.ok(scheduleService.getTerminateLog(terminateId));
     }

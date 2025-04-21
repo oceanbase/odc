@@ -260,13 +260,13 @@ public class FlowInstanceController {
     }
 
     @ApiOperation(value = "getBatchCancelResult", notes = "获取批量终止结果")
-    @RequestMapping(value = "/asyncResult", method = RequestMethod.GET)
+    @RequestMapping(value = "/asyncCancelResult", method = RequestMethod.GET)
     public SuccessResponse<List<BatchTerminateFlowResult>> getBatchCancelResult(String terminateId) {
         return Responses.single(flowInstanceService.getBatchCancelResult(terminateId));
     }
 
     @ApiOperation(value = "getBatchCancelLog", notes = "获取批量终止日志")
-    @RequestMapping(value = "/asyncLog", method = RequestMethod.GET)
+    @RequestMapping(value = "/asyncCancelLog", method = RequestMethod.GET)
     public SuccessResponse<String> getBatchCancelLog(String terminateId) {
         return Responses.single(flowInstanceService.getBatchCancelLog(terminateId));
     }
