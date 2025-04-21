@@ -26,7 +26,7 @@ import com.oceanbase.odc.core.authority.auth.ReturnValueProvider;
 import com.oceanbase.odc.core.authority.auth.SecurityContext;
 import com.oceanbase.odc.core.authority.exception.AccessDeniedException;
 import com.oceanbase.odc.core.authority.model.SecurityResource;
-import com.oceanbase.odc.core.shared.OrganizationIsolated;
+import com.oceanbase.odc.core.shared.OrganizationResource;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -67,7 +67,7 @@ abstract class BaseValueFilterSecurityManager extends BaseAuthorizerSecurityMana
     public Object decide(Subject subject, Object returnValue, SecurityContext context)
             throws AccessDeniedException {
         if (returnValue instanceof SecurityResource || returnValue instanceof Iterable
-                || returnValue instanceof Map || returnValue instanceof OrganizationIsolated) {
+                || returnValue instanceof Map || returnValue instanceof OrganizationResource) {
             return this.returnValueProvider.decide(subject, returnValue, context);
         }
         return returnValue;

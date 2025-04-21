@@ -259,6 +259,15 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void listMViewIndexes_InSchema_Success() {
+        if (isSupportMaterializedView) {
+            List<DBTableConstraint> constraints =
+                    accessor.listMViewConstraints(getOBOracleSchema(), "TEST_MV_ALLSYNTAX");
+            Assert.assertEquals(Collections.emptyList(), constraints);
+        }
+    }
+
+    @Test
     public void listMViewIndexes_Success() {
         if (isSupportMaterializedView) {
             List<DBTableIndex> indexList = accessor.listMViewIndexes(getOBOracleSchema(), "TEST_MV_AUTOREFRESH");
