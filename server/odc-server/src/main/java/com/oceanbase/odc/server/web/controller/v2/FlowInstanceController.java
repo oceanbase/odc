@@ -265,7 +265,7 @@ public class FlowInstanceController {
         return Responses.single(flowInstanceService.getBatchCancelResult(terminateId));
     }
 
-    @ApiOperation(value = "getBatchCancelLog", notes = "获取批量终止结果")
+    @ApiOperation(value = "getBatchCancelLog", notes = "获取批量终止日志")
     @RequestMapping(value = "/getBatchCancelLog", method = RequestMethod.GET)
     public SuccessResponse<String> getBatchCancelLog(String terminateId) {
         return Responses.single(flowInstanceService.getBatchCancelLog(terminateId));
