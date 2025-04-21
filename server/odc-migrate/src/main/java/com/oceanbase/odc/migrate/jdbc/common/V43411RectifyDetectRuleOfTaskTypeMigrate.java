@@ -61,6 +61,7 @@ public class V43411RectifyDetectRuleOfTaskTypeMigrate implements JdbcMigratable 
     private static final String DEFAULT_TASK_TYPE_DETECT_RULE =
             "{\"expression\":\"TASK_TYPE\",\"operator\":\"EQUALS\",\"type\":\"CONDITION\",\"value\":\"APPLY_TABLE_PERMISSION\"}";
     private static final String DEFAULT_HIGH_RISK_DETECT_NAME = "default high risk level detect rule";
+    private static final int HIGHEST_RISK_LEVEL = 3;
 
     @Override
     public void migrate(DataSource dataSource) {
@@ -90,8 +91,9 @@ public class V43411RectifyDetectRuleOfTaskTypeMigrate implements JdbcMigratable 
             return Collections.emptyMap();
         }
         String sql =
-                "SELECT id, organization_id FROM regulation_risklevel WHERE organization_id IN (:organizationIds) AND level = (SELECT MAX(level) FROM regulation_risklevel)";
+                "SELECT id, organization_id FROM regulation_risklevel WHERE level = :level AND organization_id IN (:organizationIds)";
         HashMap<String, Object> params = new HashMap<>();
+        params.put("level", HIGHEST_RISK_LEVEL);
         params.put("organizationIds", organizationIds);
         return jdbcTemplate.query(sql, params, rs -> {
             Map<Long, Long> resultMap = new HashMap<>();
