@@ -254,19 +254,19 @@ public class FlowInstanceController {
     }
 
     @ApiOperation(value = "cancelFlowInstance", notes = "批量终止流程")
-    @RequestMapping(value = "/batchCancelFlowInstance", method = RequestMethod.POST)
+    @RequestMapping(value  = "/asyncCancel", method = RequestMethod.POST)
     public SuccessResponse<String> batchCancelFlowInstance(@RequestBody Collection<Long> flowInstanceIds) {
         return Responses.single(flowInstanceService.startBatchCancelFlowInstance(flowInstanceIds));
     }
 
     @ApiOperation(value = "getBatchCancelResult", notes = "获取批量终止结果")
-    @RequestMapping(value = "/getBatchCancelResult", method = RequestMethod.GET)
+    @RequestMapping(value = "/asyncResult", method = RequestMethod.GET)
     public SuccessResponse<List<BatchTerminateFlowResult>> getBatchCancelResult(String terminateId) {
         return Responses.single(flowInstanceService.getBatchCancelResult(terminateId));
     }
 
     @ApiOperation(value = "getBatchCancelLog", notes = "获取批量终止日志")
-    @RequestMapping(value = "/getBatchCancelLog", method = RequestMethod.GET)
+    @RequestMapping(value = "/asyncLog", method = RequestMethod.GET)
     public SuccessResponse<String> getBatchCancelLog(String terminateId) {
         return Responses.single(flowInstanceService.getBatchCancelLog(terminateId));
     }

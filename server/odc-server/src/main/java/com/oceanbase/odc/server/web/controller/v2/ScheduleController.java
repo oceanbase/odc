@@ -286,17 +286,17 @@ public class ScheduleController {
         return Responses.single(scheduleService.updateDlmRateLimit(id, limiterConfig));
     }
 
-    @RequestMapping(value = "batchTerminateScheduleAndTask", method = RequestMethod.POST)
+    @RequestMapping(value = "/schedules/asyncTerminate", method = RequestMethod.POST)
     public SuccessResponse<String> startTerminateScheduleAndTask(@RequestBody ScheduleTerminateCmd cmd) {
         return Responses.ok(scheduleService.startTerminateScheduleAndTask(cmd));
     }
 
-    @RequestMapping(value = "getTerminateScheduleResult", method = RequestMethod.GET)
+    @RequestMapping(value = "/schedules/asyncResult", method = RequestMethod.GET)
     public SuccessResponse<List<ScheduleTerminateResult>> getTerminateScheduleResult(String terminateId) {
         return Responses.ok(scheduleService.getTerminateScheduleResult(terminateId));
     }
 
-    @RequestMapping(value = "getTerminateScheduleLog", method = RequestMethod.GET)
+    @RequestMapping(value = "/schedules/asyncLog", method = RequestMethod.GET)
     public SuccessResponse<String> getTerminateScheduleLog(String terminateId) {
         return Responses.ok(scheduleService.getTerminateLog(terminateId));
     }

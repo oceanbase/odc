@@ -32,6 +32,7 @@ public class FutureCache {
 
     private final Cache<String, Future<?>> tempId2Future =
             Caffeine.newBuilder().expireAfterWrite(30, TimeUnit.MINUTES)
+                    .maximumSize(1000L)
                     .removalListener((String key, Future<?> future, RemovalCause cause) -> {
                         if (future != null) {
                             future.cancel(true);
