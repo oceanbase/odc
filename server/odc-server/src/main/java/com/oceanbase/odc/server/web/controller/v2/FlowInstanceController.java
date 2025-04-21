@@ -254,7 +254,7 @@ public class FlowInstanceController {
     }
 
     @ApiOperation(value = "cancelFlowInstance", notes = "批量终止流程")
-    @RequestMapping(value  = "/asyncCancel", method = RequestMethod.POST)
+    @RequestMapping(value = "/asyncCancel", method = RequestMethod.POST)
     public SuccessResponse<String> batchCancelFlowInstance(@RequestBody Collection<Long> flowInstanceIds) {
         return Responses.single(flowInstanceService.startBatchCancelFlowInstance(flowInstanceIds));
     }
