@@ -98,6 +98,7 @@ import com.oceanbase.odc.metadb.iam.UserRoleEntity;
 import com.oceanbase.odc.metadb.iam.UserRoleRepository;
 import com.oceanbase.odc.metadb.iam.UserSpecs;
 import com.oceanbase.odc.service.automation.model.TriggerEvent;
+import com.oceanbase.odc.service.common.model.InnerUser;
 import com.oceanbase.odc.service.common.response.CustomPage;
 import com.oceanbase.odc.service.common.response.PaginatedData;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
@@ -1076,6 +1077,20 @@ public class UserService {
             if (userEntity != null) {
                 creatorNameSetter.accept(c, userEntity.getName());
             }
+        });
+    }
+
+
+    public <E> void assignInnerUserByCreatorId(List<E> content, Function<E, Long> userIdProvider,
+            BiConsumer<E, InnerUser> innerUserSetter) {
+        List<Long> userIds = content.stream().map(userIdProvider).collect(
+                Collectors.toList());
+        List<UserEntity> entities = userRepository.findByIdIn(userIds);
+        Map<Long, UserEntity> idUserEntityMap = entities.stream().collect(
+                Collectors.toMap(UserEntity::getId, t -> t));
+        content.forEach(c -> {
+            UserEntity userEntity = idUserEntityMap.get(userIdProvider.apply(c));
+            innerUserSetter.accept(c, new InnerUser(userEntity, null));
         });
     }
 

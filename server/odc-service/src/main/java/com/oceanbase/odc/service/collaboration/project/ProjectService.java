@@ -84,6 +84,7 @@ import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.ResourceRoleService;
 import com.oceanbase.odc.service.iam.UserOrganizationService;
+import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.auth.AuthorizationFacade;
 import com.oceanbase.odc.service.iam.model.User;
@@ -163,7 +164,8 @@ public class ProjectService {
     @Autowired
     @Lazy
     private FlowInstanceService flowInstanceService;
-
+    @Autowired
+    private UserService userService;
     @Value("${odc.integration.bastion.enabled:false}")
     private boolean bastionEnabled;
 
@@ -339,7 +341,11 @@ public class ProjectService {
 
     @SkipAuthorize("odc internal usage")
     public List<Project> listByIds(@NotEmpty Set<Long> ids) {
-        return repository.findAllById(ids).stream().map(this::entityToModel).collect(Collectors.toList());
+        List<Project> projects =
+                repository.findAllById(ids).stream().map(projectMapper::entityToModel).collect(Collectors.toList());
+        userService.assignInnerUserByCreatorId(projects, c -> c.getCreator().getId(), Project::setCreator);
+        userService.assignInnerUserByCreatorId(projects, c -> c.getLastModifier().getId(), Project::setCreator);
+        return projects;
     }
 
     private Page<ProjectEntity> innerList(@Valid QueryProjectParams params, @NotNull Pageable pageable,
