@@ -47,6 +47,12 @@
             <timezone>8</timezone>
         </developer>
         <developer>
+            <name>Jia Chen</name>
+            <url>https://github.com/zijiacj</url>
+            <organization>OceanBase</organization>
+            <timezone>8</timezone>
+        </developer>
+        <developer>
             <name>Hongbo Kang</name>
             <organization>OceanBase</organization>
             <timezone>8</timezone>
