@@ -90,7 +90,7 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
     private static final DBSchemaAccessors dbSchemaAccessors = new DBSchemaAccessors(getOBOracleDataSource());
     private static final DBSchemaAccessor accessor = dbSchemaAccessors.createOBOracle();
     private static final boolean isSupportMaterializedView =
-            VersionUtils.isGreaterThanOrEqualsTo(dbSchemaAccessors.getVersion(), "4.3.5.1");
+            VersionUtils.isGreaterThanOrEqualsTo(dbSchemaAccessors.getVersion(), "4.3.5.2");
 
     @BeforeClass
     public static void before() throws Exception {
@@ -203,15 +203,6 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
-    public void listMViewConstraints_Success() {
-        if (isSupportMaterializedView) {
-            List<DBTableConstraint> constraints =
-                    accessor.listMViewConstraints(getOBOracleSchema(), "TEST_MV_ALLSYNTAX");
-            Assert.assertTrue(constraints.size() >= 1);
-        }
-    }
-
-    @Test
     public void listTableColumnGroups_stmtIsCreateMaterializedView_Success() {
         if (isSupportMaterializedView) {
             List<DBColumnGroupElement> columnGroups =
@@ -264,6 +255,32 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
                 Assert.assertEquals(column.getTableName(), "TEST_MV_ALLSYNTAX");
                 Assert.assertEquals(column.getSchemaName(), getOBOracleSchema());
             });
+        }
+    }
+
+    @Test
+    public void listMViewIndexes_InSchema_Success() {
+        if (isSupportMaterializedView) {
+            List<DBTableConstraint> constraints =
+                    accessor.listMViewConstraints(getOBOracleSchema(), "TEST_MV_ALLSYNTAX");
+            Assert.assertEquals(Collections.emptyList(), constraints);
+        }
+    }
+
+    @Test
+    public void listMViewIndexes_Success() {
+        if (isSupportMaterializedView) {
+            List<DBTableIndex> indexList = accessor.listMViewIndexes(getOBOracleSchema(), "TEST_MV_AUTOREFRESH");
+
+            Assert.assertEquals("TEST_MV_GLOBAL_IDX", indexList.get(0).getName());
+            Assert.assertEquals(getOBOracleSchema(), indexList.get(0).getSchemaName());
+            Assert.assertEquals("TEST_MV_AUTOREFRESH", indexList.get(0).getTableName());
+            Assert.assertTrue(indexList.get(0).getGlobal());
+
+            Assert.assertEquals("TEST_MV_LOCAL_IDX", indexList.get(1).getName());
+            Assert.assertEquals(getOBOracleSchema(), indexList.get(1).getSchemaName());
+            Assert.assertEquals("TEST_MV_AUTOREFRESH", indexList.get(1).getTableName());
+            Assert.assertFalse(indexList.get(1).getGlobal());
         }
     }
 

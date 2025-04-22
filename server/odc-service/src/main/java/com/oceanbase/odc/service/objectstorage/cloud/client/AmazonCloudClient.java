@@ -18,7 +18,9 @@ package com.oceanbase.odc.service.objectstorage.cloud.client;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
@@ -74,7 +76,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AmazonCloudClient implements CloudClient {
     private static final String STS_POLICY_VERSION = "2012-10-17";
-    private final AmazonS3 s3;
+    protected final AmazonS3 s3;
     private final AWSSecurityTokenService sts;
     private final String roleSessionName;
     private final String roleArn;
@@ -294,8 +296,13 @@ public class AmazonCloudClient implements CloudClient {
             if (StringUtils.isBlank(customFileName)) {
                 fileName = CloudObjectStorageUtil.getOriginalFileName(key);
             }
-            responseHeaderOverrides.setContentDisposition(
-                    String.format("attachment;filename=%s", fileName));
+            try {
+                responseHeaderOverrides.setContentDisposition(
+                        String.format("attachment;filename*=UTF-8''%s",
+                                URLEncoder.encode(fileName, StandardCharsets.UTF_8.name())));
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
             request.setResponseHeaders(responseHeaderOverrides);
             return s3.generatePresignedUrl(request);
         });
@@ -353,7 +360,7 @@ public class AmazonCloudClient implements CloudClient {
         });
     }
 
-    private <T> T callAmazonMethod(String operation, Supplier<T> supplier) {
+    protected <T> T callAmazonMethod(String operation, Supplier<T> supplier) {
         try {
             return supplier.get();
         } catch (Exception ex) {

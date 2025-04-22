@@ -62,6 +62,7 @@ import com.oceanbase.odc.service.regulation.risklevel.model.RiskDetectRuleCondit
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskDetectRuleConditionGroup;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
+import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriberIdentifier;
 
 /**
  * @Author: ysj
@@ -228,23 +229,25 @@ public class MergeFlowInstanceTest extends ServiceTestEnv {
                         Sets.newHashSet("1:1", "2:2"));
     }
 
-    private List<RiskLevelDescriber> buildRiskLevelDescriber() {
+    private List<RiskLevelDescriberIdentifier> buildRiskLevelDescriberIdentifier() {
         return databases.stream().map(d -> {
-            return RiskLevelDescriber.of(d, TaskType.APPLY_DATABASE_PERMISSION.name());
+            return RiskLevelDescriberIdentifier.of(d.getId(),
+                    RiskLevelDescriber.of(d, TaskType.APPLY_DATABASE_PERMISSION.name()));
         }).collect(Collectors.toList());
     }
 
     @Test
     public void testSelectHeightestRiskLevel() {
-        List<RiskLevelDescriber> describers = buildRiskLevelDescriber();
-        Map<RiskLevelDescriber, RiskLevel> describer2RiskLevel = approvalFlowConfigSelector.batchSelect(describers);
-        ArrayList<RiskLevelDescriber> riskLevelDescribers = new ArrayList<>(describer2RiskLevel.keySet());
-        RiskLevelDescriber describer = riskLevelDescribers.get(0);
-        Assert.assertEquals(0, (int) describer2RiskLevel.get(describer).getLevel());
-        describer = riskLevelDescribers.get(1);
-        Assert.assertEquals(1, (int) describer2RiskLevel.get(describer).getLevel());
-        describer = riskLevelDescribers.get(2);
-        Assert.assertEquals(1, (int) describer2RiskLevel.get(describer).getLevel());
+        List<RiskLevelDescriberIdentifier> identifiers = buildRiskLevelDescriberIdentifier();
+        Map<RiskLevelDescriberIdentifier, RiskLevel> describer2RiskLevel =
+                approvalFlowConfigSelector.batchSelect(identifiers);
+        ArrayList<RiskLevelDescriberIdentifier> riskLevelDescribers = new ArrayList<>(describer2RiskLevel.keySet());
+        RiskLevelDescriberIdentifier identifier = riskLevelDescribers.get(0);
+        Assert.assertEquals(0, (int) describer2RiskLevel.get(identifier).getLevel());
+        identifier = riskLevelDescribers.get(1);
+        Assert.assertEquals(1, (int) describer2RiskLevel.get(identifier).getLevel());
+        identifier = riskLevelDescribers.get(2);
+        Assert.assertEquals(1, (int) describer2RiskLevel.get(identifier).getLevel());
     }
 
     @Test

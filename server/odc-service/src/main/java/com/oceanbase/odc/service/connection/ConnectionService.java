@@ -42,6 +42,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Example;
@@ -226,6 +227,9 @@ public class ConnectionService {
     @Autowired
     private ConnectionEventPublisher connectionEventPublisher;
 
+    @Value("${odc.integration.bastion.enabled:false}")
+    private boolean bastionEnabled;
+
     private final ConnectionMapper mapper = ConnectionMapper.INSTANCE;
 
     public static final String DEFAULT_MIN_PRIVILEGE = "read";
@@ -245,8 +249,10 @@ public class ConnectionService {
         ConnectionConfig saved = txTemplate.execute(status -> {
             try {
                 ConnectionConfig created = innerCreate(connection, creatorId, skipPermissionCheck);
-                userPermissionService.bindUserAndDataSourcePermission(creatorId, currentOrganizationId(),
-                        created.getId(), Arrays.asList("read", "update", "delete"));
+                if (bastionEnabled) {
+                    userPermissionService.bindUserAndDataSourcePermission(creatorId, currentOrganizationId(),
+                            created.getId(), Arrays.asList("read", "update", "delete"));
+                }
                 return created;
             } catch (Exception e) {
                 status.setRollbackOnly();
@@ -800,6 +806,45 @@ public class ConnectionService {
         return connection;
     }
 
+    @SkipAuthorize("internal usage")
+    public void updatePasswordEncrypted(@NotNull Long organizationId, String customKey) {
+        List<ConnectionConfig> connectionList = listByOrganizationId(organizationId);
+        // No connection need to be encrypted
+        if (connectionList.isEmpty()) {
+            return;
+        }
+        txTemplate.execute(status -> {
+            try {
+                List<ConnectionEntity> reEncryptedList = connectionList.stream()
+                        .map(encryptedConfig -> {
+                            ConnectionConfig decryptedConfig = getDecryptedConfig(encryptedConfig);
+                            ConnectionConfig reEncryptedConfig = getEncryptedConfig(decryptedConfig, customKey);
+                            return mapper.modelToEntity(reEncryptedConfig);
+                        })
+                        .collect(Collectors.toList());
+                batchUpdateConnectionConfig(reEncryptedList);
+                return null;
+            } catch (Exception e) {
+                status.setRollbackOnly();
+                throw new UnexpectedException("Failed to update connection config", e);
+            }
+        });
+    }
+
+    @SkipAuthorize("internal usage")
+    public ConnectionConfig getDecryptedConfig(@NotNull ConnectionConfig encryptedConfig) {
+        return connectionEncryption.decryptPasswords(encryptedConfig);
+    }
+
+    @SkipAuthorize("internal usage")
+    public ConnectionConfig getEncryptedConfig(@NotNull ConnectionConfig decryptedConfig, String customKey) {
+        return connectionEncryption.encryptPasswordsByCustomKey(decryptedConfig, customKey);
+    }
+
+    @SkipAuthorize("internal usage")
+    public void batchUpdateConnectionConfig(List<ConnectionEntity> connections) {
+        repository.saveAll(connections);
+    }
 
     @SkipAuthorize("internal usage")
     public List<ConnectionConfig> listForConnectionSkipPermissionCheck(@NotNull Collection<Long> ids) {

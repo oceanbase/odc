@@ -127,5 +127,8 @@ public interface ConnectionConfigRepository
     List<ConnectionEntity> findSyncableConnectionsByOrganizationIdIn(
             @Param("organizationIds") Collection<Long> organizationIds);
 
+    @Query("select e.id from ConnectionEntity e where e.organizationId=:organizationId and e.creatorId=:creatorId")
+    Set<Long> findIdsByOrganizationIdAndCreatorId(@Param("organizationId") Long organizationId,
+            @Param("creatorId") Long creatorId);
 
 }

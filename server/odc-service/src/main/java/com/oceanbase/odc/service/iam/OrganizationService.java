@@ -43,6 +43,7 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.Organization;
 import com.oceanbase.odc.service.iam.model.User;
 
+import cn.hutool.core.codec.Caesar;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -118,7 +119,7 @@ public class OrganizationService {
             organization.setUniqueIdentifier(uuid);
             log.info("uniqueIdentifier not given, generated uuid, uuid={}", uuid);
         }
-        organization.setSecret(PasswordUtils.random(32));
+        organization.setSecret(Caesar.encode(PasswordUtils.random(32), 8));
 
         OrganizationEntity entity = organization.toEntity();
         OrganizationEntity saved = organizationRepository.saveAndFlush(entity);
@@ -151,7 +152,7 @@ public class OrganizationService {
         entity.setBuiltIn(true);
         entity.setType(OrganizationType.INDIVIDUAL);
         entity.setUniqueIdentifier(StringUtils.uuid());
-        entity.setSecret(user.getPassword());
+        entity.setSecret(Caesar.encode(user.getPassword(), 8));
         entity.setCreatorId(user.getId());
         OrganizationEntity saved = organizationRepository.saveAndFlush(entity);
 

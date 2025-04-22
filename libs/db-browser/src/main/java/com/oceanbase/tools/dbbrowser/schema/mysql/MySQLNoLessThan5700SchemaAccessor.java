@@ -380,6 +380,11 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
+    public List<DBTableIndex> listMViewIndexes(String schemaName, String mViewName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
     public List<DBVariable> showVariables() {
         String sql = "show variables";
 

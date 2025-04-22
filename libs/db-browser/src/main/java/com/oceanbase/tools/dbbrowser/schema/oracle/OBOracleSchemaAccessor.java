@@ -536,8 +536,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         }
         OracleSqlBuilder sb = new OracleSqlBuilder();
         sb.append("desc ");
-        sb.identifier(view.getViewName());
-
+        sb.identifier(view.getSchemaName(), view.getViewName());
         Map<String, List<DBTableColumn>> finalName2Cols = name2Cols;
         List<DBTableColumn> columns = jdbcOperations.query(sb.toString(), (rs, rowNum) -> {
             DBTableColumn column = new DBTableColumn();
@@ -1225,12 +1224,12 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     @Override
     public List<DBTableConstraint> listMViewConstraints(String schemaName, String mViewName) {
         OracleSqlBuilder sb = new OracleSqlBuilder();
-        sb.append("select table_name from ")
-                .append("SYS.ALL_VIRTUAL_TABLE_REAL_AGENT where table_id = (select data_table_id from SYS.ALL_VIRTUAL_TABLE_REAL_AGENT a, SYS.ALL_VIRTUAL_DATABASE_REAL_AGENT b where a.database_id = b.database_id and b. database_name = ")
+        sb.append("SELECT CONTAINER_NAME FROM ")
+                .append(dataDictTableNames.MVIEWS())
+                .append(" WHERE OWNER = ")
                 .value(schemaName)
-                .append(" and a.table_name = ")
-                .value(mViewName)
-                .append(")");
+                .append(" AND MVIEW_NAME = ")
+                .value(mViewName);
         String containerName = jdbcOperations.queryForObject(sb.toString(), String.class);
         return listTableConstraints(schemaName, containerName);
     }
@@ -1251,6 +1250,11 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
                 .append(param.getQueryLimit())
                 .append(" ROWS ONLY");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBMViewRefreshRecord.class));
+    }
+
+    @Override
+    public List<DBTableIndex> listMViewIndexes(String schemaName, String mViewName) {
+        return listTableIndexes(schemaName, mViewName);
     }
 
     @Override

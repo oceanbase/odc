@@ -74,6 +74,8 @@ public class MultipleDatabaseChangeParameters extends DatabaseChangeParameters {
         databaseChangeParameters.setErrorStrategy(parameter.getErrorStrategy().toString());
         databaseChangeParameters.setDelimiter(parameter.getDelimiter());
         databaseChangeParameters.setGenerateRollbackPlan(parameter.getGenerateRollbackPlan());
+        // Query limit for sql changes in a single database
+        databaseChangeParameters.setQueryLimit(parameter.getQueryLimit());
         return databaseChangeParameters;
     }
 

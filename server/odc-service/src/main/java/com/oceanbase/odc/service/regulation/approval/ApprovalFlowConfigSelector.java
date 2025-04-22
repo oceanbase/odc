@@ -32,6 +32,7 @@ import com.oceanbase.odc.service.regulation.risklevel.RiskLevelService;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskDetectRule;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
+import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriberIdentifier;
 
 /**
  * @Author: Lebie
@@ -76,13 +77,14 @@ public class ApprovalFlowConfigSelector {
     }
 
     @SkipAuthorize("internal usage")
-    public Map<RiskLevelDescriber, RiskLevel> batchSelect(Collection<RiskLevelDescriber> describers) {
-        if (CollectionUtils.isEmpty(describers)) {
+    public Map<RiskLevelDescriberIdentifier, RiskLevel> batchSelect(
+            Collection<RiskLevelDescriberIdentifier> RiskLevelDescriberIdentifiers) {
+        if (CollectionUtils.isEmpty(RiskLevelDescriberIdentifiers)) {
             return Collections.emptyMap();
         }
         List<RiskDetectRule> rules =
                 riskDetectService.listAllByOrganizationId(authenticationFacade.currentOrganizationId());
-        return riskDetectService.batchDetectHighestRiskLevel(rules, describers);
+        return riskDetectService.batchDetectHighestRiskLevel(rules, RiskLevelDescriberIdentifiers);
     }
 
     @SkipAuthorize("internal usage")

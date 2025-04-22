@@ -186,6 +186,12 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             jobParameter.setShardingStrategy(req.getShardingStrategy());
             jobParameter.setPartName2MinKey(table.getPartName2MinKey());
             jobParameter.setPartName2MaxKey(table.getPartName2MaxKey());
+            if (req.getReadThreadCount() != 0) {
+                jobParameter.setReaderTaskCount(req.getReadThreadCount());
+            }
+            if (req.getWriteThreadCount() != 0) {
+                jobParameter.setWriterTaskCount(req.getWriteThreadCount());
+            }
             jobParameter.setCreateTempTableInSource(
                     req.isDeleteAfterMigration() && req.getTargetDs().getType().isFileSystem());
             jobParameter.setDirtyRowAction(req.getDirtyRowAction());

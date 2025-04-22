@@ -24,6 +24,8 @@ import java.util.TreeMap;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
 
+import com.oceanbase.odc.common.util.ObjectUtil;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
@@ -36,46 +38,55 @@ import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 public class DBIdentitiesService {
 
     public List<SchemaIdentities> list(ConnectionSession session, List<DBObjectType> types) {
+        return list(session, null, types);
+    }
+
+    public List<SchemaIdentities> list(ConnectionSession session, String identityNameLike, List<DBObjectType> types) {
         if (CollectionUtils.isEmpty(types)) {
             return Collections.emptyList();
         }
         DBSchemaAccessor schemaAccessor = DBSchemaAccessors.create(session);
         Map<String, SchemaIdentities> all = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         if (types.contains(DBObjectType.VIEW)) {
-            listViews(schemaAccessor, all);
+            listViews(schemaAccessor, identityNameLike, all);
         }
         if (types.contains(DBObjectType.TABLE)) {
-            listTables(schemaAccessor, all);
+            listTables(schemaAccessor, identityNameLike, all);
         }
         if (types.contains(DBObjectType.EXTERNAL_TABLE)) {
-            listExternalTables(schemaAccessor, all);
+            listExternalTables(schemaAccessor, identityNameLike, all);
         }
         if (types.contains(DBObjectType.MATERIALIZED_VIEW)) {
-            listMViews(schemaAccessor, all);
+            listMViews(schemaAccessor, identityNameLike, all);
         }
         schemaAccessor.showDatabases().forEach(db -> all.computeIfAbsent(db, SchemaIdentities::of));
         return new ArrayList<>(all.values());
     }
 
-    void listTables(DBSchemaAccessor schemaAccessor, Map<String, SchemaIdentities> all) {
-        schemaAccessor.listTables(null, null)
+    void listTables(DBSchemaAccessor schemaAccessor, String tableNameLike, Map<String, SchemaIdentities> all) {
+        schemaAccessor.listTables(null, tableNameLike)
                 .forEach(i -> all.computeIfAbsent(i.getSchemaName(), SchemaIdentities::of).add(i));
     }
 
-    void listViews(DBSchemaAccessor schemaAccessor, Map<String, SchemaIdentities> all) {
-        schemaAccessor.listAllUserViews()
-                .forEach(i -> all.computeIfAbsent(i.getSchemaName(), SchemaIdentities::of).add(i));
-        schemaAccessor.listAllSystemViews()
+    void listViews(DBSchemaAccessor schemaAccessor, String viewNameLike, Map<String, SchemaIdentities> all) {
+        if (StringUtils.isNotBlank(viewNameLike)) {
+            schemaAccessor.listViews(viewNameLike)
+                    .forEach(s -> all.computeIfAbsent(s.getSchemaName(), SchemaIdentities::of).add(s));
+        } else {
+            schemaAccessor.listAllUserViews()
+                    .forEach(i -> all.computeIfAbsent(i.getSchemaName(), SchemaIdentities::of).add(i));
+            schemaAccessor.listAllSystemViews()
+                    .forEach(i -> all.computeIfAbsent(i.getSchemaName(), SchemaIdentities::of).add(i));
+        }
+    }
+
+    void listExternalTables(DBSchemaAccessor schemaAccessor, String tableNameLike, Map<String, SchemaIdentities> all) {
+        schemaAccessor.listExternalTables(null, tableNameLike)
                 .forEach(i -> all.computeIfAbsent(i.getSchemaName(), SchemaIdentities::of).add(i));
     }
 
-    void listExternalTables(DBSchemaAccessor schemaAccessor, Map<String, SchemaIdentities> all) {
-        schemaAccessor.listExternalTables(null, null)
-                .forEach(i -> all.computeIfAbsent(i.getSchemaName(), SchemaIdentities::of).add(i));
-    }
-
-    void listMViews(DBSchemaAccessor schemaAccessor, Map<String, SchemaIdentities> all) {
-        schemaAccessor.listAllMViewsLike("")
+    void listMViews(DBSchemaAccessor schemaAccessor, String MViewNameLike, Map<String, SchemaIdentities> all) {
+        schemaAccessor.listAllMViewsLike(ObjectUtil.defaultIfNull(MViewNameLike, StringUtils.EMPTY))
                 .forEach(i -> all.computeIfAbsent(i.getSchemaName(), SchemaIdentities::of).add(i));
     }
 

@@ -45,6 +45,26 @@ public class OrganizationConfigDAO {
     }
 
     /**
+     * Query the organization configuration entity based on the organizationId and key
+     *
+     * @param organizationId organization ID
+     * @param key configuration key
+     * @return config entity
+     */
+    public OrganizationConfigEntity queryByOrganizationIdAndKey(Long organizationId, String key) {
+        PreConditions.notNull(organizationId, "organizationId");
+        PreConditions.notBlank(key, "key");
+        String sql = "SELECT organization_id, `key`, `value`, create_time, update_time, description"
+                + " FROM config_organization_configuration WHERE organization_id = ? AND `key` = ?";
+        try {
+            return jdbcTemplate.queryForObject(sql,
+                    new BeanPropertyRowMapper<>(OrganizationConfigEntity.class), organizationId, key);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
      * Batch insert or update organization configuration entity list
      *
      * @param entities config list

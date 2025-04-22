@@ -51,6 +51,7 @@ import com.oceanbase.odc.service.regulation.risklevel.model.QueryRiskDetectRuleP
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskDetectRule;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
+import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriberIdentifier;
 
 import cn.hutool.core.util.ObjectUtil;
 import lombok.NonNull;
@@ -108,22 +109,23 @@ public class RiskDetectService {
     }
 
     @SkipAuthorize("internal usage")
-    public Map<RiskLevelDescriber, RiskLevel> batchDetectHighestRiskLevel(List<RiskDetectRule> rules,
-            @NonNull Collection<RiskLevelDescriber> describers) {
-        if (CollectionUtils.isEmpty(describers)) {
+    public Map<RiskLevelDescriberIdentifier, RiskLevel> batchDetectHighestRiskLevel(List<RiskDetectRule> rules,
+            @NonNull Collection<RiskLevelDescriberIdentifier> identifiers) {
+        if (CollectionUtils.isEmpty(identifiers)) {
             return Collections.emptyMap();
         }
         RiskLevel defaultRiskLevel = null;
-        Map<RiskLevelDescriber, RiskLevel> describer2HighestRiskLevels = new HashMap<>();
-        for (RiskLevelDescriber describer : describers) {
+        Map<RiskLevelDescriberIdentifier, RiskLevel> identifiers2HighestRiskLevels = new HashMap<>();
+        for (RiskLevelDescriberIdentifier identifier : identifiers) {
             if (CollectionUtils.isEmpty(rules)) {
                 defaultRiskLevel = ObjectUtil.defaultIfNull(defaultRiskLevel, riskLevelService.findDefaultRiskLevel());
-                describer2HighestRiskLevels.put(describer, defaultRiskLevel);
+                identifiers2HighestRiskLevels.put(identifier, defaultRiskLevel);
                 continue;
             }
-            describer2HighestRiskLevels.put(describer, riskLevelService.findHighestRiskLevel(detect(rules, describer)));
+            identifiers2HighestRiskLevels.put(identifier,
+                    riskLevelService.findHighestRiskLevel(detect(rules, identifier.getDescriber())));
         }
-        return describer2HighestRiskLevels;
+        return identifiers2HighestRiskLevels;
     }
 
     @SkipAuthorize("internal authenticated")
