@@ -103,7 +103,7 @@ public class OrganizationConfigDAOTest extends ServiceTestEnv {
         System.out.println(org_config2);
         Assert.assertEquals("value_test_update2", org_config2.getValue());
         Assert.assertEquals(120L, (long) org_config2.getLastModifierId());
-        // update before
+        // before update, value of test_key3 should not be changed
         OrganizationConfigEntity org_config3 = findEntity(ORGANIZATION_ID_T1, "test_key3");
         System.out.println(org_config3);
         Assert.assertEquals("value_test", org_config3.getValue());
