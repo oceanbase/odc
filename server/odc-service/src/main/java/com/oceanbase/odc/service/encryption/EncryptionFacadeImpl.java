@@ -106,9 +106,12 @@ public class EncryptionFacadeImpl implements EncryptionFacade {
     public TextEncryptor organizationEncryptor(Long organizationId, String salt) {
         Organization organization = organizationService.get(organizationId).orElseThrow(
                 () -> new NotFoundException(ResourceType.ODC_ORGANIZATION, "organizationId", organizationId));
-        organization.getSecret();
-        String secret = Caesar.decode(organization.getSecret(), 8);
-        return getEncryptor(secret, salt);
+
+        if (organizationService.isOrganizationSecretMigrated(organizationId)) {
+            return getEncryptor(organization.getSecret(), salt);
+        } else {
+            return getEncryptor(organization.getSecretBeforeMigrate(), salt);
+        }
     }
 
     private TextEncryptor getEncryptor(String encryptionPassword, String salt) {

@@ -39,10 +39,8 @@ import lombok.ToString;
  * @version : Organization.java, v 0.1 2021-08-02 22:06
  */
 @Data
-@ToString(exclude = "secret")
-public class Organization implements Serializable, SecurityResource, SingleOrganizationResource {
 @ToString(exclude = {"secret", "secretBeforeMigrate"})
-public class Organization implements Serializable, SecurityResource, OrganizationIsolated {
+public class Organization implements Serializable, SecurityResource, SingleOrganizationResource {
     @JsonProperty(access = Access.READ_ONLY)
     private Long id;
     @JsonProperty(access = Access.READ_ONLY)
