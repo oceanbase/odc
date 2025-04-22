@@ -16,8 +16,11 @@
 package com.oceanbase.odc.plugin.task.oboracle.partitionplan.invoker.partitionname;
 
 import java.sql.Connection;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.sql.execute.model.TimeFormatResult;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator;
 import com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.SqlExprCalculator.SqlExprResult;
@@ -44,13 +47,24 @@ public class OBOracleDateBasedPartitionNameGenerator extends OBMySQLDateBasedPar
 
     @Override
     protected Date getPartitionUpperBound(@NonNull Connection connection,
-            @NonNull String partitionKey, @NonNull String upperBound) {
+            @NonNull String partitionKey, @NonNull String upperBound, String namingSuffixExpression) {
         SqlExprCalculator calculator = new OBOracleSqlExprCalculator(connection);
         SqlExprResult value = calculator.calculate(upperBound);
-        if (!(value.getValue() instanceof TimeFormatResult)) {
-            throw new IllegalStateException(upperBound + " isn't a date, " + value.getDataType().getDataTypeName());
+        if ((value.getValue() instanceof TimeFormatResult)) {
+            return new Date(((TimeFormatResult) value.getValue()).getTimestamp());
         }
-        return new Date(((TimeFormatResult) value.getValue()).getTimestamp());
+        SimpleDateFormat sdf = new SimpleDateFormat(namingSuffixExpression);
+        try {
+            return sdf.parse(unquoteValue(upperBound));
+        } catch (ParseException e) {
+            throw new IllegalStateException(
+                    "naming suffix expression is not a valid date format, please check the format as same as the partition key.");
+        }
+    }
+
+    @Override
+    protected String unquoteValue(String value) {
+        return StringUtils.unquoteOracleValue(value);
     }
 
 }
