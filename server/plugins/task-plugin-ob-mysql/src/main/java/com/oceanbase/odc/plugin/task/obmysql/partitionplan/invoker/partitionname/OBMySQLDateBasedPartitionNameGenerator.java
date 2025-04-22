@@ -73,7 +73,7 @@ public class OBMySQLDateBasedPartitionNameGenerator implements DateBasedPartitio
             @NonNull String partitionKey, @NonNull String upperBound, String namingSuffixExpression) {
         SqlExprCalculator calculator = new OBMySQLExprCalculator(connection);
         SqlExprResult value = calculator.calculate("convert(" + upperBound + ", datetime)");
-        if (!(value.getValue() instanceof Date)) {
+        if ((value.getValue() instanceof Date)) {
             return (Date) value.getValue();
         }
         SimpleDateFormat sdf = new SimpleDateFormat(namingSuffixExpression);
