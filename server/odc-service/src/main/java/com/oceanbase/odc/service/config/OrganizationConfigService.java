@@ -50,6 +50,8 @@ import com.oceanbase.odc.metadb.iam.OrganizationRepository;
 import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.config.model.ConfigurationMeta;
 import com.oceanbase.odc.service.connection.ConnectionService;
+import com.oceanbase.odc.service.git.GitIntegrationService;
+import com.oceanbase.odc.service.integration.IntegrationService;
 import com.oceanbase.odc.service.session.SessionProperties;
 
 import cn.hutool.core.codec.Caesar;
@@ -78,6 +80,10 @@ public class OrganizationConfigService {
     private ConnectionService connectionService;
     @Autowired
     private TransactionTemplate transactionTemplate;
+    @Autowired
+    private IntegrationService integrationService;
+    @Autowired
+    private GitIntegrationService gitIntegrationService;
 
     private List<Configuration> defaultConfigurations;
     private Map<String, ConfigurationMeta> configKeyToConfigMeta;
@@ -151,6 +157,11 @@ public class OrganizationConfigService {
                 int affectRows = organizationConfigDAO.batchUpsert(organizationConfigEntities);
                 log.info("Update organization configurations, organizationId={}, affectRows={}, configurations={}",
                         organizationId, affectRows, configurations);
+
+                int affectIntegration = attachedUpdateIntegrationConfig(organizationId);
+                log.info("Update all integration configurations, organizationId={}, affectRows={}",
+                        organizationId, affectIntegration);
+
                 evictOrgConfigurationsCache(organizationId);
                 return null;
             } catch (Exception e) {
@@ -164,6 +175,12 @@ public class OrganizationConfigService {
 
     public Map<String, Configuration> getOrgConfigurationsFromCache(Long organizationId) {
         return orgIdToConfigurationsCache.get(organizationId);
+    }
+
+    public int attachedUpdateIntegrationConfig(@NotNull Long organizationId) {
+        int affectedIntegrationRows = integrationService.updateIntegrationSecretConfig(organizationId);
+        int affectedGitIntegrationRows = gitIntegrationService.updateGitRepoPersonalAccessToken(organizationId);
+        return affectedIntegrationRows + affectedGitIntegrationRows;
     }
 
     private void validateConfiguration(List<Configuration> configurations) {

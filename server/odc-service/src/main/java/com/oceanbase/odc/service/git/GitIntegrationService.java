@@ -26,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.common.crypto.TextEncryptor;
@@ -119,6 +120,25 @@ public class GitIntegrationService {
 
         log.info("updated git repository, id={}", updated.getId());
         return entityToModel(updated);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("odc internal usage")
+    public int updateGitRepoPersonalAccessToken(@NotNull Long organizationId) {
+        List<GitRepositoryEntity> entities = gitRepoRepository.findByOrganizationId(organizationId);
+        if (entities.isEmpty()) {
+            return 0;
+        }
+        List<GitRepositoryEntity> saved = entities.stream().peek(entity -> {
+            TextEncryptor encryptor = getEncryptor(entity.getOrganizationId(), entity.getSalt());
+            String rawToken = encryptor.decrypt(entity.getPersonalAccessToken());
+            entity.setPersonalAccessToken(encryptor.encrypt(rawToken));
+        }).collect(Collectors.toList());
+        gitRepoRepository.saveAllAndFlush(saved);
+        int affectedRows = saved.size();
+
+        log.info("attached update git repository from organization config completed, total={}", affectedRows);
+        return affectedRows;
     }
 
     public GitRepository delete(@NotNull Long projectId, @NotNull Long id) {

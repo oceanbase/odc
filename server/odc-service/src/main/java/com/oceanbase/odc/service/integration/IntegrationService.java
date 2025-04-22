@@ -244,6 +244,27 @@ public class IntegrationService {
         return new IntegrationConfig(entity);
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    public int updateIntegrationSecretConfig(@NotNull Long organizationId) {
+        List<IntegrationEntity> entities = this.listNotBuiltInByOrganizationId(organizationId);
+        if (entities.isEmpty()) {
+            return 0;
+        }
+        List<IntegrationEntity> saved = entities.stream().peek(entity -> {
+            IntegrationConfig decodedConfig = getDecodeConfig(entity);
+            Encryption encryption = decodedConfig.getEncryption();
+            if (!encryption.getEnabled() || StringUtils.isNotBlank(encryption.getSecret())) {
+                entity.setSalt(encryptionFacade.generateSalt());
+                entity.setSecret(encodeSecret(encryption.getSecret(), entity.getSalt(), entity.getOrganizationId()));
+            }
+        }).collect(Collectors.toList());
+        integrationRepository.saveAllAndFlush(saved);
+        int affectedRows = saved.size();
+
+        log.info("attached update integration secret from organization config completed, total: {}", affectedRows);
+        return affectedRows;
+    }
+
     @SkipAuthorize("odc internal usage")
     public IntegrationConfig getDecodeConfig(IntegrationEntity entity) {
         IntegrationConfig integrationConfig = new IntegrationConfig(entity);
@@ -298,6 +319,11 @@ public class IntegrationService {
     public List<IntegrationEntity> listByTypeAndEnabled(@NotNull IntegrationType type, boolean enabled) {
         long organizationId = authenticationFacade.currentOrganizationId();
         return integrationRepository.findByTypeAndEnabledAndOrganizationId(type, enabled, organizationId);
+    }
+
+    @SkipAuthorize("odc internal usage")
+    public List<IntegrationEntity> listNotBuiltInByOrganizationId(@NotNull Long organizationId) {
+        return integrationRepository.findByOrganizationIdAndBuiltIn(organizationId, false);
     }
 
     @SkipAuthorize("odc internal usage")
