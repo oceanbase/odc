@@ -41,6 +41,8 @@ import lombok.ToString;
 @Data
 @ToString(exclude = "secret")
 public class Organization implements Serializable, SecurityResource, SingleOrganizationResource {
+@ToString(exclude = {"secret", "secretBeforeMigrate"})
+public class Organization implements Serializable, SecurityResource, OrganizationIsolated {
     @JsonProperty(access = Access.READ_ONLY)
     private Long id;
     @JsonProperty(access = Access.READ_ONLY)
@@ -54,6 +56,8 @@ public class Organization implements Serializable, SecurityResource, SingleOrgan
     private String displayName;
     @JsonIgnore
     private String secret;
+    @JsonIgnore
+    private String secretBeforeMigrate;
     @Internationalizable
     private String description;
     private Boolean builtin;
@@ -69,6 +73,7 @@ public class Organization implements Serializable, SecurityResource, SingleOrgan
         organization.setUniqueIdentifier(entity.getUniqueIdentifier());
         organization.setName(entity.getName());
         organization.setSecret(entity.getSecret());
+        organization.setSecretBeforeMigrate(entity.getSecretBeforeMigrate());
         organization.setDescription(entity.getDescription());
         organization.setBuiltin(entity.getBuiltIn());
         organization.setType(entity.getType());
@@ -84,6 +89,7 @@ public class Organization implements Serializable, SecurityResource, SingleOrgan
         entity.setUniqueIdentifier(this.getUniqueIdentifier());
         entity.setName(this.getName());
         entity.setSecret(this.getSecret());
+        entity.setSecretBeforeMigrate(this.secretBeforeMigrate);
         entity.setDescription(this.getDescription());
         entity.setBuiltIn(this.builtin);
         entity.setType(this.type);

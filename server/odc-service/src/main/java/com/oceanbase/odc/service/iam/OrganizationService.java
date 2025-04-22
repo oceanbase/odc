@@ -26,6 +26,7 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -34,6 +35,7 @@ import com.oceanbase.odc.common.security.PasswordUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
+import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.iam.OrganizationEntity;
 import com.oceanbase.odc.metadb.iam.OrganizationRepository;
 import com.oceanbase.odc.metadb.iam.UserOrganizationEntity;
@@ -68,6 +70,7 @@ public class OrganizationService {
     private VerticalPermissionValidator verticalPermissionValidator;
 
     private final OrganizationMapper organizationMapper = OrganizationMapper.INSTANCE;
+    private JdbcTemplate jdbcTemplate;
 
     @SkipAuthorize("internal authentication")
     public List<Organization> listCurrentUserOrganizations() {
@@ -169,5 +172,11 @@ public class OrganizationService {
 
     public Optional<Organization> get(@NotNull Long id) {
         return organizationRepository.findById(id).map(Organization::ofEntity);
+    }
+
+    public boolean isOrganizationSecretMigrated(@NotNull Long id) {
+        Organization organization = this.get(id)
+            .orElseThrow(() -> new UnexpectedException("organization is not found, " + id));
+        return !Objects.equals(organization.getSecret(), organization.getSecretBeforeMigrate());
     }
 }

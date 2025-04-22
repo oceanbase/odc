@@ -199,7 +199,7 @@ public class V42013OAuth2ConfigMetaMigrate implements JdbcMigratable {
                     boolean enabled = org.getName().equals(enabledOrgName);
 
                     String salt = CryptoUtils.generateSalt();
-                    TextEncryptor textEncryptor = Encryptors.aesBase64(Caesar.decode(org.getSecret(), 8), salt);
+                    TextEncryptor textEncryptor = Encryptors.aesBase64(org.getSecret(), salt);
                     jdbcTemplate.update(insertIntegration, IntegrationType.SSO.name(), defaultName, 0L,
                             org.getId(),
                             enabled, false, now, now,
@@ -310,7 +310,7 @@ public class V42013OAuth2ConfigMetaMigrate implements JdbcMigratable {
                     LocalDateTime now = LocalDateTime.now();
                     boolean enabled = org.getName().equals(enabledOrgName);
                     String salt = CryptoUtils.generateSalt();
-                    TextEncryptor textEncryptor = Encryptors.aesBase64(Caesar.decode(org.getSecret(), 8), salt);
+                    TextEncryptor textEncryptor = Encryptors.aesBase64(org.getSecret(), salt);
                     String encrypt = textEncryptor.encrypt(decryptSecret);
                     jdbcTemplate.update(insertIntegration, IntegrationType.SSO.name(), defaultName, 0L,
                             org.getId(),
