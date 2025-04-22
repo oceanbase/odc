@@ -30,7 +30,6 @@ import com.oceanbase.odc.service.integration.IntegrationService;
 import com.oceanbase.odc.service.integration.model.Oauth2Parameter;
 import com.oceanbase.odc.service.integration.model.SSOIntegrationConfig;
 
-import cn.hutool.core.codec.Caesar;
 import lombok.SneakyThrows;
 
 public class V42013OAuth2ConfigMetaMigrateTest extends ServiceTestEnv {

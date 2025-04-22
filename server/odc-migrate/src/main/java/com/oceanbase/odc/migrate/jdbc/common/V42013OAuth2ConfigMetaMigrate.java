@@ -46,7 +46,6 @@ import com.oceanbase.odc.service.integration.model.Oauth2Parameter;
 import com.oceanbase.odc.service.integration.model.SSOIntegrationConfig;
 import com.oceanbase.odc.service.integration.model.SSOIntegrationConfig.MappingRule;
 
-import cn.hutool.core.codec.Caesar;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

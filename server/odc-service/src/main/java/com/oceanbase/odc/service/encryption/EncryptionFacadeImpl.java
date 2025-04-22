@@ -35,7 +35,6 @@ import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.Organization;
 
-import cn.hutool.core.codec.Caesar;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 

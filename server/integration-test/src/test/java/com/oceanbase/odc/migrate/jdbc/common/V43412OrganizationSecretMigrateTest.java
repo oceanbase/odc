@@ -103,8 +103,8 @@ public class V43412OrganizationSecretMigrateTest extends ServiceTestEnv {
     @Test
     public void organizationSecretMigrate_AfterMigrate() {
         String addTeamOrg = "insert into iam_organization("
-                            + "`id`,`unique_identifier`,`secret`,`secret_before_migrate`,`name`,`creator_id`,`is_builtin`,`description`,`type`) "
-                            + "values(102,'aaa','%s','%s','OB1',1,0,'D','TEAM')";
+                + "`id`,`unique_identifier`,`secret`,`secret_before_migrate`,`name`,`creator_id`,`is_builtin`,`description`,`type`) "
+                + "values(102,'aaa','%s','%s','OB1',1,0,'D','TEAM')";
         String currSecret = "AAAAZG91YuoepqL6VvyacJZ2fUaHVVVV";
         jdbcTemplate.update(String.format(addTeamOrg, currSecret, currSecret));
 
