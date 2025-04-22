@@ -48,6 +48,8 @@ public class DLMBaseParameters implements ScheduleTaskParameters {
 
     private Long timeoutMillis;
 
+    private int cpuLimit = 25;
+
     private RateLimitConfiguration rateLimit;
 
     private ShardingStrategy shardingStrategy;
