@@ -21,16 +21,6 @@
   default_value: 'OFF'
   nullable: false
   description: ''
-- id: 3
-  category: 'user'
-  key: 'odc.sqlexecute.default.queryLimit'
-  type: 'integer'
-  max_value: 100000
-  min_value: 1
-  allowed_values: ~
-  default_value: '1000'
-  nullable: false
-  description: ''
 - id: 4
   category: 'user'
   key: 'odc.sqlexecute.default.fetchColumnInfo'

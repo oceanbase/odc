@@ -24,8 +24,6 @@ public interface UserConfigFacade {
 
     String getOracleAutoCommitMode();
 
-    Integer getDefaultQueryLimit();
-
     boolean isFullLinkTraceEnabled();
 
     boolean isContinueExecutionOnError();

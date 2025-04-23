@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.config;
 
 public class UserConfigKeys {
     public static final String DEFAULT_DELIMITER = "odc.sqlexecute.default.delimiter";
-    public static final String DEFAULT_QUERY_LIMIT = "odc.sqlexecute.default.queryLimit";
     public static final String DEFAULT_MYSQL_AUTO_COMMIT_MODE = "odc.sqlexecute.default.mysqlAutoCommitMode";
     public static final String DEFAULT_ORACLE_AUTO_COMMIT_MODE = "odc.sqlexecute.default.oracleAutoCommitMode";
     public static final String DEFAULT_FULL_LINK_TRACE_ENABLED = "odc.sqlexecute.default.fullLinkTraceEnabled";

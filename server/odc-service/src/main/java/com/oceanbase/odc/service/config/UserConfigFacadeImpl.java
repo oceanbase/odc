@@ -64,11 +64,6 @@ public class UserConfigFacadeImpl implements UserConfigFacade {
     }
 
     @Override
-    public Integer getDefaultQueryLimit() {
-        return Integer.parseInt(getUserConfig(UserConfigKeys.DEFAULT_QUERY_LIMIT));
-    }
-
-    @Override
     public boolean isFullLinkTraceEnabled() {
         return getUserConfig(UserConfigKeys.DEFAULT_FULL_LINK_TRACE_ENABLED).equalsIgnoreCase("true");
     }
