@@ -149,7 +149,7 @@ public class OrganizationConfigService {
         String customDataSourceKey = getCustomDataSourceKey(configurations);
         transactionTemplate.execute(status -> {
             try {
-                migrateExistedDataSourcePassword(organizationId, customDataSourceKey);
+                migrateExistedSecretAndDataSourcePassword(organizationId, customDataSourceKey);
 
                 List<OrganizationConfigEntity> organizationConfigEntities = configurations.stream()
                         .map(record -> record.convert2DO(organizationId, userId))
@@ -157,10 +157,6 @@ public class OrganizationConfigService {
                 int affectRows = organizationConfigDAO.batchUpsert(organizationConfigEntities);
                 log.info("Update organization configurations, organizationId={}, affectRows={}, configurations={}",
                         organizationId, affectRows, configurations);
-
-                int affectIntegration = attachedUpdateIntegrationConfig(organizationId);
-                log.info("Update all integration configurations, organizationId={}, affectRows={}",
-                        organizationId, affectIntegration);
 
                 evictOrgConfigurationsCache(organizationId);
                 return null;
@@ -175,12 +171,6 @@ public class OrganizationConfigService {
 
     public Map<String, Configuration> getOrgConfigurationsFromCache(Long organizationId) {
         return orgIdToConfigurationsCache.get(organizationId);
-    }
-
-    public int attachedUpdateIntegrationConfig(@NotNull Long organizationId) {
-        int affectedIntegrationRows = integrationService.updateIntegrationSecretConfig(organizationId);
-        int affectedGitIntegrationRows = gitIntegrationService.updateGitRepoPersonalAccessToken(organizationId);
-        return affectedIntegrationRows + affectedGitIntegrationRows;
     }
 
     private void validateConfiguration(List<Configuration> configurations) {
@@ -234,7 +224,7 @@ public class OrganizationConfigService {
                 .collect(Collectors.toMap(Configuration::getKey, c -> c));
     }
 
-    private void migrateExistedDataSourcePassword(Long organizationId, String customKey) {
+    private void migrateExistedSecretAndDataSourcePassword(Long organizationId, String customKey) {
         OrganizationConfigEntity customKeyConfigInDB = organizationConfigDAO
                 .queryByOrganizationIdAndKey(organizationId, DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY);
 
@@ -251,12 +241,21 @@ public class OrganizationConfigService {
         String finalCustomKey = customKey;
         transactionTemplate.execute(status -> {
             try {
-                log.info("Start migrate existed datasource password, organizationId={}", organizationId);
-                connectionService.updatePasswordEncrypted(organizationId, finalCustomKey);
-                log.info("Success migrate existed datasource password, organizationId={}", organizationId);
-                String secret = Caesar.encode(finalCustomKey, 8);
-                int updateRows = organizationRepo.updateOrganizationSecretById(organizationId, secret);
-                log.info("Update organization secret, organization={}, affectRows={}", organizationId, updateRows);
+                log.info("Start migrate existed secret and datasource password, organizationId={}", organizationId);
+
+                // Step1: update connection password
+                int affectConnection = connectionService.updatePasswordEncrypted(organizationId, finalCustomKey);
+                log.info("Success migrate existed datasource password, organizationId={}, affectedRows: {}",
+                        organizationId, affectConnection);
+                // Step2: update integration secret
+                int affectIntegration = attachedUpdateIntegrationConfig(organizationId, finalCustomKey);
+                log.info("Success update all integration configurations, organizationId={}, affectedRows: {}",
+                        organizationId, affectIntegration);
+                // Step3: update organization secret
+                int affectOrganization = organizationRepo
+                        .updateOrganizationSecretById(organizationId, Caesar.encode(finalCustomKey, 8));
+                log.info("Success update current organization secret, organizationId={}, affectedRows={}",
+                        organizationId, affectOrganization);
             } catch (Exception e) {
                 log.error("Failed to migrate existed datasource password, organizationId={}", organizationId, e);
                 status.setRollbackOnly();
@@ -265,6 +264,12 @@ public class OrganizationConfigService {
             return null;
         });
 
+    }
+
+    private int attachedUpdateIntegrationConfig(Long organizationId, String customKey) {
+        int affectedIntegrationRows = integrationService.updateIntegrationSecretConfig(organizationId, customKey);
+        int affectedGitIntegrationRows = gitIntegrationService.updateGitRepoPersonalToken(organizationId, customKey);
+        return affectedIntegrationRows + affectedGitIntegrationRows;
     }
 
     private String getCustomDataSourceKey(List<Configuration> configurations) {

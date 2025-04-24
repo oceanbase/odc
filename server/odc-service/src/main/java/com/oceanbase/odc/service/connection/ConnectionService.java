@@ -807,13 +807,13 @@ public class ConnectionService {
     }
 
     @SkipAuthorize("internal usage")
-    public void updatePasswordEncrypted(@NotNull Long organizationId, String customKey) {
+    public Integer updatePasswordEncrypted(@NotNull Long organizationId, String customKey) {
         List<ConnectionConfig> connectionList = listByOrganizationId(organizationId);
         // No connection need to be encrypted
         if (connectionList.isEmpty()) {
-            return;
+            return 0;
         }
-        txTemplate.execute(status -> {
+        Integer affected = txTemplate.execute(status -> {
             try {
                 List<ConnectionEntity> reEncryptedList = connectionList.stream()
                         .map(encryptedConfig -> {
@@ -822,13 +822,13 @@ public class ConnectionService {
                             return mapper.modelToEntity(reEncryptedConfig);
                         })
                         .collect(Collectors.toList());
-                batchUpdateConnectionConfig(reEncryptedList);
-                return null;
+                return batchUpdateConnectionConfig(reEncryptedList);
             } catch (Exception e) {
                 status.setRollbackOnly();
                 throw new UnexpectedException("Failed to update connection config", e);
             }
         });
+        return affected;
     }
 
     @SkipAuthorize("internal usage")
@@ -842,8 +842,9 @@ public class ConnectionService {
     }
 
     @SkipAuthorize("internal usage")
-    public void batchUpdateConnectionConfig(List<ConnectionEntity> connections) {
+    public int batchUpdateConnectionConfig(List<ConnectionEntity> connections) {
         repository.saveAll(connections);
+        return connections.size();
     }
 
     @SkipAuthorize("internal usage")

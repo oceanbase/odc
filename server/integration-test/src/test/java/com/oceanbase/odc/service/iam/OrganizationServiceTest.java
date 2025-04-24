@@ -110,7 +110,7 @@ public class OrganizationServiceTest extends ServiceTestEnv {
         Organization organization = newOrganization();
         Organization org = organizationService.create(organization);
         Assert.assertTrue(Objects.nonNull(org.getSecret()));
-        Assert.assertTrue(Objects.isNull(org.getSecretBeforeMigrate()));
+        Assert.assertTrue(Objects.isNull(org.getCustomSecret()));
         Assert.assertTrue(organizationService.isOrganizationSecretMigrated(org.getId()));
     }
 
@@ -118,9 +118,9 @@ public class OrganizationServiceTest extends ServiceTestEnv {
     public void isOrganizationSecretMigrated_IsMigratedTrue2() {
         Organization organization = newOrganization();
         Organization org = organizationService.create(organization);
-        org.setSecretBeforeMigrate(Caesar.decode(org.getSecret(), 8));
+        org.setCustomSecret(Caesar.decode(org.getSecret(), 8));
         organizationRepository.saveAndFlush(org.toEntity());
-        Assert.assertEquals(org.getSecret(), Caesar.encode(org.getSecretBeforeMigrate(), 8));
+        Assert.assertEquals(org.getSecret(), Caesar.encode(org.getCustomSecret(), 8));
         Assert.assertTrue(organizationService.isOrganizationSecretMigrated(org.getId()));
     }
 

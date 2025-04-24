@@ -124,7 +124,7 @@ public class GitIntegrationService {
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("odc internal usage")
-    public int updateGitRepoPersonalAccessToken(@NotNull Long organizationId) {
+    public int updateGitRepoPersonalToken(@NotNull Long organizationId, String customSecret) {
         List<GitRepositoryEntity> entities = gitRepoRepository.findByOrganizationId(organizationId);
         if (entities.isEmpty()) {
             return 0;
@@ -132,7 +132,8 @@ public class GitIntegrationService {
         List<GitRepositoryEntity> saved = entities.stream().peek(entity -> {
             TextEncryptor encryptor = getEncryptor(entity.getOrganizationId(), entity.getSalt());
             String rawToken = encryptor.decrypt(entity.getPersonalAccessToken());
-            entity.setPersonalAccessToken(encryptor.encrypt(rawToken));
+            String encryptedToken = attachedEncodeToken(rawToken, entity.getSalt(), customSecret);
+            entity.setPersonalAccessToken(encryptedToken);
         }).collect(Collectors.toList());
         gitRepoRepository.saveAllAndFlush(saved);
         int affectedRows = saved.size();
@@ -172,6 +173,14 @@ public class GitIntegrationService {
         entity.setPersonalAccessToken(encryptor.encrypt(repo.getPersonalAccessToken()));
         entity.setSalt(salt);
         return entity;
+    }
+
+    private String attachedEncodeToken(String rawToken, String salt, String organizationSecret) {
+        if (rawToken == null) {
+            return null;
+        }
+        TextEncryptor encryptor = encryptionFacade.passwordEncryptor(organizationSecret, salt);
+        return encryptor.encrypt(rawToken);
     }
 
     TextEncryptor getEncryptor(@NonNull Long organizationId, @NonNull String salt) {

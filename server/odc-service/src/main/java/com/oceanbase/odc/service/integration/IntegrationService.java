@@ -245,8 +245,9 @@ public class IntegrationService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public int updateIntegrationSecretConfig(@NotNull Long organizationId) {
-        List<IntegrationEntity> entities = this.listNotBuiltInByOrganizationId(organizationId);
+    @SkipAuthorize("odc internal usage")
+    public int updateIntegrationSecretConfig(@NotNull Long organizationId, String customSecret) {
+        List<IntegrationEntity> entities = this.listByOrganizationId(organizationId);
         if (entities.isEmpty()) {
             return 0;
         }
@@ -255,7 +256,7 @@ public class IntegrationService {
             Encryption encryption = decodedConfig.getEncryption();
             if (!encryption.getEnabled() || StringUtils.isNotBlank(encryption.getSecret())) {
                 entity.setSalt(encryptionFacade.generateSalt());
-                entity.setSecret(encodeSecret(encryption.getSecret(), entity.getSalt(), entity.getOrganizationId()));
+                entity.setSecret(attachedEncodeSecret(entity.getSecret(), entity.getSalt(), customSecret));
             }
         }).collect(Collectors.toList());
         integrationRepository.saveAllAndFlush(saved);
@@ -322,8 +323,8 @@ public class IntegrationService {
     }
 
     @SkipAuthorize("odc internal usage")
-    public List<IntegrationEntity> listNotBuiltInByOrganizationId(@NotNull Long organizationId) {
-        return integrationRepository.findByOrganizationIdAndBuiltIn(organizationId, false);
+    public List<IntegrationEntity> listByOrganizationId(@NotNull Long organizationId) {
+        return integrationRepository.findByOrganizationId(organizationId);
     }
 
     @SkipAuthorize("odc internal usage")
@@ -387,6 +388,14 @@ public class IntegrationService {
             return null;
         }
         TextEncryptor encryptor = encryptionFacade.organizationEncryptor(organizationId, salt);
+        return encryptor.encrypt(plainSecret);
+    }
+
+    private String attachedEncodeSecret(String plainSecret, String salt, String organizationSecret) {
+        if (plainSecret == null) {
+            return null;
+        }
+        TextEncryptor encryptor = encryptionFacade.passwordEncryptor(organizationSecret, salt);
         return encryptor.encrypt(plainSecret);
     }
 

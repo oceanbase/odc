@@ -35,6 +35,7 @@ import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.Organization;
 
+import cn.hutool.core.codec.Caesar;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 
@@ -105,12 +106,13 @@ public class EncryptionFacadeImpl implements EncryptionFacade {
     public TextEncryptor organizationEncryptor(Long organizationId, String salt) {
         Organization organization = organizationService.get(organizationId).orElseThrow(
                 () -> new NotFoundException(ResourceType.ODC_ORGANIZATION, "organizationId", organizationId));
-
-        if (organizationService.isOrganizationSecretMigrated(organizationId)) {
-            return getEncryptor(organization.getSecret(), salt);
-        } else {
-            return getEncryptor(organization.getSecretBeforeMigrate(), salt);
+        // use new secret if secret has been migrated
+        if (organizationService.isOrganizationSecretMigrated(organizationId)
+                && StringUtils.isNotBlank(organization.getCustomSecret())) {
+            String secret = Caesar.decode(organization.getCustomSecret(), 8);
+            return getEncryptor(secret, salt);
         }
+        return getEncryptor(organization.getSecret(), salt);
     }
 
     private TextEncryptor getEncryptor(String encryptionPassword, String salt) {
