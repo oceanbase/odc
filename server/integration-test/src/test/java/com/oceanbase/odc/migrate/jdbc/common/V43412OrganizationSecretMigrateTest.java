@@ -53,7 +53,7 @@ public class V43412OrganizationSecretMigrateTest extends ServiceTestEnv {
 
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         String addTeamOrg = "insert into iam_organization("
-                + "`id`,`unique_identifier`,`secret`,`secret_before_migrate`,`name`,`creator_id`,`is_builtin`,`description`,`type`) "
+                + "`id`,`unique_identifier`,`secret`,`custom_secret`,`name`,`creator_id`,`is_builtin`,`description`,`type`) "
                 + "values(100,'a','%s','%s','OceanBase',1,0,'D','TEAM')";
         String secret = "Y75AZG91YuoepqL6VvyacJZ2fUaHVraI";
         jdbcTemplate.update(String.format(addTeamOrg, secret, secret));
@@ -103,7 +103,7 @@ public class V43412OrganizationSecretMigrateTest extends ServiceTestEnv {
     @Test
     public void organizationSecretMigrate_AfterMigrate() {
         String addTeamOrg = "insert into iam_organization("
-                + "`id`,`unique_identifier`,`secret`,`secret_before_migrate`,`name`,`creator_id`,`is_builtin`,`description`,`type`) "
+                + "`id`,`unique_identifier`,`secret`,`custom_secret`,`name`,`creator_id`,`is_builtin`,`description`,`type`) "
                 + "values(102,'aaa','%s','%s','OB1',1,0,'D','TEAM')";
         String currSecret = "AAAAZG91YuoepqL6VvyacJZ2fUaHVVVV";
         jdbcTemplate.update(String.format(addTeamOrg, currSecret, currSecret));
@@ -111,12 +111,12 @@ public class V43412OrganizationSecretMigrateTest extends ServiceTestEnv {
         V43412OrganizationSecretMigrate migrate = new V43412OrganizationSecretMigrate();
         migrate.migrate(dataSource);
 
-        String secretBeforeMigrated = selectSecretBeforeMigratedFromOrganization(100L);
-        Assert.assertEquals("Y75AZG91YuoepqL6VvyacJZ2fUaHVraI", secretBeforeMigrated);
+        String customSecret = selectCustomSecretFromOrganization(100L);
+        Assert.assertEquals("Y75AZG91YuoepqL6VvyacJZ2fUaHVraI", customSecret);
         String secret = selectSecretFromOrganization(100L);
         Assert.assertEquals(Caesar.encode("Y75AZG91YuoepqL6VvyacJZ2fUaHVraI", 8), secret);
-        String secretBeforeMigrated2 = selectSecretBeforeMigratedFromOrganization(102L);
-        Assert.assertEquals(currSecret, secretBeforeMigrated2);
+        String customSecret2 = selectCustomSecretFromOrganization(102L);
+        Assert.assertEquals(currSecret, customSecret2);
         String secret2 = selectSecretFromOrganization(102L);
         Assert.assertEquals(Caesar.encode(currSecret, 8), secret2);
         int count = selectAllFromOrganization().size();
@@ -158,8 +158,8 @@ public class V43412OrganizationSecretMigrateTest extends ServiceTestEnv {
         return jdbcTemplate.queryForObject(sql, String.class);
     }
 
-    private String selectSecretBeforeMigratedFromOrganization(Long id) {
-        String sql = "select `secret_before_migrate` from iam_organization where `id` = " + id;
+    private String selectCustomSecretFromOrganization(Long id) {
+        String sql = "select `custom_secret` from iam_organization where `id` = " + id;
         return jdbcTemplate.queryForObject(sql, String.class);
     }
 

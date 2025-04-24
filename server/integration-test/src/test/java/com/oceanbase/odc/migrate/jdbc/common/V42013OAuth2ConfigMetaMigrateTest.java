@@ -49,7 +49,6 @@ public class V42013OAuth2ConfigMetaMigrateTest extends ServiceTestEnv {
                 + "`id`,`unique_identifier`,`secret`,`name`,`creator_id`,`is_builtin`,`description`,`type`) "
                 + "values(2,'a','%s','CompanyA',1,0,'D','TEAM')";
         String secret = PasswordUtils.random(32);
-        // String finalSecret = Caesar.encode(secret, 8);
         jdbcTemplate.update(String.format(addOrg, secret));
     }
 
