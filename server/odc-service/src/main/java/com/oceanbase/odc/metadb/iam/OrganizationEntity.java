@@ -37,7 +37,7 @@ import lombok.ToString;
 @Data
 @Entity
 @Table(name = "iam_organization")
-@ToString(exclude = {"secret", "secretBeforeMigrate"})
+@ToString(exclude = {"secret", "customSecret"})
 public class OrganizationEntity {
 
     @Id
@@ -85,10 +85,10 @@ public class OrganizationEntity {
     private String secret;
 
     /**
-     * Secret for public connection encryption before migrate to ODC 4.3.4
+     * Custom secret for public connection encryption after migrate to ODC 4.3.4
      */
-    @Column(name = "secret_before_migrate")
-    private String secretBeforeMigrate;
+    @Column(name = "custom_secret")
+    private String customSecret;
 
     /**
      * UserID of creator, may NULL
