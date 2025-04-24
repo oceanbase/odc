@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 
 import lombok.Data;
 
@@ -45,13 +46,13 @@ public class DataArchiveTableConfig {
     // the sql condition such as "gmt_create < '2023-01-01'"
     private String conditionExpression;
 
-    private String minKey;
-
-    private String maxKey;
+    private List<JoinTableConfig> joinTableConfigs = new LinkedList<>();
 
     private Map<String, String> partName2MinKey = new HashMap<>();
 
     private Map<String, String> partName2MaxKey = new HashMap<>();
+
+    private TaskStatus lastProcessedStatus;
 
     public String getTargetTableName() {
         return StringUtils.isEmpty(targetTableName) ? tableName : targetTableName;

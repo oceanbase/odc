@@ -54,7 +54,12 @@ public class DLMService {
         String previewSqlTemp = "select * from %s where %s;";
         Date now = new Date();
         req.getTables().forEach(tableConfig -> {
-            returnValue.add(String.format(previewSqlTemp, tableConfig.getTableName(),
+            StringBuilder sb = new StringBuilder();
+            tableConfig.getJoinTableConfigs().forEach(joinTableConfig -> {
+                sb.append(String.format(" join %s on %s", joinTableConfig.getTableName(),
+                        joinTableConfig.getJoinCondition()));
+            });
+            returnValue.add(String.format(previewSqlTemp, tableConfig.getTableName() + sb,
                     StringUtils.isEmpty(tableConfig.getConditionExpression()) ? "1=1"
                             : DataArchiveConditionUtil
                                     .parseCondition(tableConfig.getConditionExpression(), req.getVariables(), now)));

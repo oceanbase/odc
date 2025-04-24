@@ -42,11 +42,11 @@ import com.oceanbase.odc.service.task.base.TaskBase;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.util.JobUtils;
+import com.oceanbase.tools.migrator.common.configure.JoinCondition;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 import com.oceanbase.tools.migrator.core.meta.JobMeta;
 import com.oceanbase.tools.migrator.job.Job;
 import com.oceanbase.tools.migrator.limiter.LimiterConfig;
-import com.oceanbase.tools.migrator.task.CheckMode;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -81,7 +81,7 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             log.info("Start to init dlm job,tables={}", parameters.getTables());
             initTableUnit(parameters);
             currentIndex = -1;
-            buildToDoTableInfo();
+            log.info(buildToDoTableInfo());
         } catch (Exception e) {
             log.warn("Initialization of the DLM job was failed,jobIdentity={}", context.getJobIdentity(), e);
         }
@@ -114,6 +114,9 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
                     log.info("{} job finished,dlmTableUnitId={}", dlmTableUnit.getType(),
                             dlmTableUnit.getDlmTableUnitId());
                     dlmTableUnit.setStatus(TaskStatus.DONE);
+                } else {
+                    log.warn("Job is canceled,dlmTableUnitId={},status={}", dlmTableUnit.getDlmTableUnitId(),
+                            dlmTableUnit.getStatus());
                 }
             } catch (Throwable e) {
                 dlmTableUnit.setStatus(isToStop ? TaskStatus.CANCELED : TaskStatus.FAILED);
@@ -175,7 +178,6 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             dlmTableUnit.setScheduleTaskId(req.getScheduleTaskId());
             DlmTableUnitParameters jobParameter = new DlmTableUnitParameters();
             jobParameter.setMigrateRule(table.getConditionExpression());
-            jobParameter.setCheckMode(CheckMode.MULTIPLE_GET);
             jobParameter.setReaderBatchSize(req.getRateLimit().getBatchSize());
             jobParameter.setWriterBatchSize(req.getRateLimit().getBatchSize());
             jobParameter.setMigrationInsertAction(req.getMigrationInsertAction());
@@ -192,6 +194,15 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             }
             jobParameter.setCreateTempTableInSource(
                     req.isDeleteAfterMigration() && req.getTargetDs().getType().isFileSystem());
+            jobParameter.setDirtyRowAction(req.getDirtyRowAction());
+            jobParameter.setMaxAllowedDirtyRowCount(req.getMaxAllowedDirtyRowCount());
+            jobParameter.setJoinConditions(table.getJoinTableConfigs().stream().map(joinTableConfig -> {
+                JoinCondition joinCondition = new JoinCondition();
+                joinCondition.setTableName(joinTableConfig.getTableName());
+                joinCondition.setCondition(joinTableConfig.getJoinCondition());
+                return joinCondition;
+            }).collect(Collectors.toList()));
+            jobParameter.setPrintSqlTrace(true);
             dlmTableUnit.setParameters(jobParameter);
             dlmTableUnit.setDlmTableUnitId(DlmJobIdUtil.generateHistoryJobId(req.getJobName(), req.getJobType().name(),
                     req.getScheduleTaskId(), dlmTableUnits.size()));
@@ -200,7 +211,8 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             dlmTableUnit.setSourceDatasourceInfo(req.getSourceDs());
             dlmTableUnit.setTargetDatasourceInfo(req.getTargetDs());
             dlmTableUnit.setFireTime(req.getFireTime());
-            dlmTableUnit.setStatus(TaskStatus.PREPARING);
+            dlmTableUnit.setStatus(
+                    table.getLastProcessedStatus() == null ? TaskStatus.PREPARING : table.getLastProcessedStatus());
             dlmTableUnit.setType(req.getJobType());
             dlmTableUnit.setStatistic(new DlmTableUnitStatistic());
             dlmTableUnit.setSyncTableStructure(req.getSyncTableStructure());

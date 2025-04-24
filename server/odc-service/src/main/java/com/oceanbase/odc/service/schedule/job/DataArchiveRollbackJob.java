@@ -58,7 +58,7 @@ public class DataArchiveRollbackJob extends AbstractDlmJob {
         DataArchiveParameters dataArchiveParameters = JsonUtils.fromJson(dataArchiveTask.getParametersJson(),
                 DataArchiveParameters.class);
         // execute in task framework.
-        DLMJobReq parameters = getDLMJobReq(dataArchiveTask.getJobId());
+        DLMJobReq parameters = getDLMJobReqWithArchiveRange(dataArchiveTask.getJobId());
         parameters.setJobType(JobType.ROLLBACK);
         DataSourceInfo tempDataSource = parameters.getSourceDs();
         parameters.setSourceDs(parameters.getTargetDs());
