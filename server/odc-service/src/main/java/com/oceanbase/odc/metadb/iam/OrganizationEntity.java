@@ -85,10 +85,10 @@ public class OrganizationEntity {
     private String secret;
 
     /**
-     * Custom secret for public connection encryption after migrate to ODC 4.3.4
+     * Obfuscated secret for public connection encryption after migrate to ODC 4.3.4
      */
-    @Column(name = "custom_secret")
-    private String customSecret;
+    @Column(name = "obfuscated_secret")
+    private String obfuscatedSecret;
 
     /**
      * UserID of creator, may NULL

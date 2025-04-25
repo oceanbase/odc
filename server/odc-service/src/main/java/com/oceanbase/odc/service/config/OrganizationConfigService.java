@@ -149,7 +149,7 @@ public class OrganizationConfigService {
         String customDataSourceKey = getCustomDataSourceKey(configurations);
         transactionTemplate.execute(status -> {
             try {
-                migrateExistedSecretAndDataSourcePassword(organizationId, customDataSourceKey);
+                migrateExistedEncryptionRelated2OrganizationSecret(organizationId, customDataSourceKey);
 
                 List<OrganizationConfigEntity> organizationConfigEntities = configurations.stream()
                         .map(record -> record.convert2DO(organizationId, userId))
@@ -224,7 +224,7 @@ public class OrganizationConfigService {
                 .collect(Collectors.toMap(Configuration::getKey, c -> c));
     }
 
-    private void migrateExistedSecretAndDataSourcePassword(Long organizationId, String customKey) {
+    private void migrateExistedEncryptionRelated2OrganizationSecret(Long organizationId, String customKey) {
         OrganizationConfigEntity customKeyConfigInDB = organizationConfigDAO
                 .queryByOrganizationIdAndKey(organizationId, DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY);
 

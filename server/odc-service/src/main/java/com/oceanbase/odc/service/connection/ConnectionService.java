@@ -822,7 +822,8 @@ public class ConnectionService {
                             return mapper.modelToEntity(reEncryptedConfig);
                         })
                         .collect(Collectors.toList());
-                return batchUpdateConnectionConfig(reEncryptedList);
+                repository.saveAll(reEncryptedList);
+                return (reEncryptedList.size());
             } catch (Exception e) {
                 status.setRollbackOnly();
                 throw new UnexpectedException("Failed to update connection config", e);
@@ -839,12 +840,6 @@ public class ConnectionService {
     @SkipAuthorize("internal usage")
     public ConnectionConfig getEncryptedConfig(@NotNull ConnectionConfig decryptedConfig, String customKey) {
         return connectionEncryption.encryptPasswordsByCustomKey(decryptedConfig, customKey);
-    }
-
-    @SkipAuthorize("internal usage")
-    public int batchUpdateConnectionConfig(List<ConnectionEntity> connections) {
-        repository.saveAll(connections);
-        return connections.size();
     }
 
     @SkipAuthorize("internal usage")

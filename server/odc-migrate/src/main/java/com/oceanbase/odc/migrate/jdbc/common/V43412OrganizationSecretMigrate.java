@@ -62,7 +62,7 @@ public class V43412OrganizationSecretMigrate implements JdbcMigratable {
     }
 
     public long migrateForOrganization(List<OrganizationEntity> organizationList) {
-        String sql = "update iam_organization set secret=? where id=?";
+        String sql = "update iam_organization set obfuscated_secret=? where id=?";
         List<Object[]> parameters = organizationList.stream()
                 .map(organization -> new Object[] {
                         Caesar.encode(organization.getSecret(), 8), organization.getId()})

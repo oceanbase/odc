@@ -39,7 +39,7 @@ import lombok.ToString;
  * @version : Organization.java, v 0.1 2021-08-02 22:06
  */
 @Data
-@ToString(exclude = {"secret", "customSecret"})
+@ToString(exclude = {"secret", "obfuscatedSecret"})
 public class Organization implements Serializable, SecurityResource, SingleOrganizationResource {
     @JsonProperty(access = Access.READ_ONLY)
     private Long id;
@@ -55,7 +55,7 @@ public class Organization implements Serializable, SecurityResource, SingleOrgan
     @JsonIgnore
     private String secret;
     @JsonIgnore
-    private String customSecret;
+    private String obfuscatedSecret;
     @Internationalizable
     private String description;
     private Boolean builtin;
@@ -71,7 +71,7 @@ public class Organization implements Serializable, SecurityResource, SingleOrgan
         organization.setUniqueIdentifier(entity.getUniqueIdentifier());
         organization.setName(entity.getName());
         organization.setSecret(entity.getSecret());
-        organization.setCustomSecret(entity.getCustomSecret());
+        organization.setObfuscatedSecret(entity.getObfuscatedSecret());
         organization.setDescription(entity.getDescription());
         organization.setBuiltin(entity.getBuiltIn());
         organization.setType(entity.getType());
@@ -87,7 +87,7 @@ public class Organization implements Serializable, SecurityResource, SingleOrgan
         entity.setUniqueIdentifier(this.getUniqueIdentifier());
         entity.setName(this.getName());
         entity.setSecret(this.getSecret());
-        entity.setCustomSecret(this.getCustomSecret());
+        entity.setObfuscatedSecret(this.getObfuscatedSecret());
         entity.setDescription(this.getDescription());
         entity.setBuiltIn(this.builtin);
         entity.setType(this.type);

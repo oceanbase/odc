@@ -70,7 +70,6 @@ public class OrganizationService {
     private VerticalPermissionValidator verticalPermissionValidator;
 
     private final OrganizationMapper organizationMapper = OrganizationMapper.INSTANCE;
-    private JdbcTemplate jdbcTemplate;
 
     @SkipAuthorize("internal authentication")
     public List<Organization> listCurrentUserOrganizations() {
