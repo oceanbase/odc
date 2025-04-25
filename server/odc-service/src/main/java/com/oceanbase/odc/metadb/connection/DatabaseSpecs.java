@@ -27,7 +27,6 @@ import org.springframework.data.jpa.domain.Specification;
 import com.oceanbase.odc.common.jpa.SpecificationUtil;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
-import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 
 /**
@@ -42,17 +41,13 @@ public class DatabaseSpecs {
     }
 
     public static Specification<DatabaseEntity> nameLike(String name) {
-        if (SpringContextUtil.isActive("clientMode")) {
-            return (root, query, builder) -> StringUtils.isBlank(name) ? builder.conjunction()
-                    : builder.like(root.get("name"), "%" + StringUtils.escapeLike(name) + "%");
-        }
-        return binaryNameLike(name);
+        return (root, query, builder) -> StringUtils.isBlank(name) ? builder.conjunction()
+                : builder.like(root.get("name"), "%" + StringUtils.escapeLike(name) + "%");
     }
 
-    public static Specification<DatabaseEntity> binaryNameLike(String name) {
+    public static Specification<DatabaseEntity> nameLikeWithoutCase(String name) {
         return (root, query, builder) -> StringUtils.isBlank(name) ? builder.conjunction()
-                : builder.like(builder.function("BINARY ", String.class, root.get("name")),
-                        "%" + StringUtils.escapeLike(name) + "%");
+                : builder.like(builder.lower(root.get("name")), "%" + StringUtils.escapeLike(name.toLowerCase()) + "%");
     }
 
     public static Specification<DatabaseEntity> projectIdEquals(Long projectId) {

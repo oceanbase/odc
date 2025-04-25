@@ -384,9 +384,10 @@ public class DatabaseService {
         }
         if (CollectionUtils.isNotEmpty(orDataSourceIds)) {
             specs = specs.and(
-                    DatabaseSpecs.nameLike(params.getSchemaName()).or(DatabaseSpecs.connectionIdIn(orDataSourceIds)));
+                    DatabaseSpecs.nameLikeWithoutCase(params.getSchemaName())
+                            .or(DatabaseSpecs.connectionIdIn(orDataSourceIds)));
         } else {
-            specs = specs.and(DatabaseSpecs.nameLike(params.getSchemaName()));
+            specs = specs.and(DatabaseSpecs.nameLikeWithoutCase(params.getSchemaName()));
         }
         Page<DatabaseEntity> entities = databaseRepository.findAll(specs, pageable);
         return entitiesToModels(entities,
