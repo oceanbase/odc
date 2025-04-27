@@ -24,4 +24,5 @@ public class UserConfigKeys {
     public static final String DEFAULT_ENABLE_GLOBAL_OBJECT_SEARCH = "odc.database.default.enableGlobalObjectSearch";
     public static final String DEFAULT_FETCH_COLUMN_INFO = "odc.sqlexecute.default.fetchColumnInfo";
     public static final String DEFAULT_ADD_INTERNAL_ROW_ID= "odc.sqlexecute.default.addInternalRowId";
+
 }
