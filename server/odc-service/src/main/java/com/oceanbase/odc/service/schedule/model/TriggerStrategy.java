@@ -28,9 +28,4 @@ public enum TriggerStrategy {
     CRON,
     START_NOW,
     START_AT;
-
-    public static boolean isPeriodical(TriggerStrategy triggerStrategy) {
-        return triggerStrategy == DAY || triggerStrategy == WEEK || triggerStrategy == MONTH || triggerStrategy == CRON;
-    }
-
 }

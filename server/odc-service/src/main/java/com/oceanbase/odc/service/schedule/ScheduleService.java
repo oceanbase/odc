@@ -152,7 +152,6 @@ import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
 import com.oceanbase.odc.service.schedule.model.UpdateScheduleReq;
 import com.oceanbase.odc.service.schedule.processor.ScheduleChangePreprocessor;
 import com.oceanbase.odc.service.schedule.util.ScheduleDescriptionGenerator;
-import com.oceanbase.odc.service.schedule.util.ScheduleUtils;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.exception.JobException;
@@ -1121,8 +1120,11 @@ public class ScheduleService {
         if (CollectionUtils.isEmpty(schedules)) {
             return Collections.emptyList();
         }
-        return schedules.stream().filter(s -> ScheduleUtils.isPeriodical(s.getTriggerConfigJson()))
-                .collect(Collectors.toList());
+        return schedules.stream().filter(s -> {
+            TriggerConfig triggerConfig = JsonUtils.fromJson(s.getTriggerConfigJson(), TriggerConfig.class);
+            return triggerConfig != null && triggerConfig.getTriggerStrategy() != TriggerStrategy.START_NOW
+                   && triggerConfig.getTriggerStrategy() != TriggerStrategy.START_AT;
+        }).collect(Collectors.toList());
     }
 
     private Set<Long> filterScheduleIds(Set<Long> scheduleIds) {
