@@ -48,6 +48,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.MoreObjects;
 import com.oceanbase.odc.common.trace.TraceContextHolder;
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.datamasking.config.MaskConfig;
 import com.oceanbase.odc.core.datamasking.masker.AbstractDataMasker;
 import com.oceanbase.odc.core.datamasking.masker.DataMaskerFactory;
@@ -102,6 +103,9 @@ import lombok.extern.slf4j.Slf4j;
 public class DataTransferTask implements Callable<DataTransferTaskResult> {
     public static final Set<String> OUTPUT_FILTER_FILES = new HashSet<>();
     private static final Logger LOGGER = LoggerFactory.getLogger("DataTransferLogger");
+    private static final String HADOOP_PATH =
+            Paths.get(StringUtils.defaultIfBlank(SystemUtils.getEnvOrProperty("libraries.others.file.path"), ""),
+                    "hadoop-3.3.6").toString();
 
     private final DataMaskingService maskingService;
     private final User creator;
@@ -117,6 +121,9 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
     @Override
     public DataTransferTaskResult call() throws Exception {
         try {
+            if (SystemUtils.isOnWindows()) {
+                loadHadoopDllOnWindows();
+            }
             TraceContextHolder.put(DataTransferConstants.LOG_PATH_NAME, logDir.getPath());
             SecurityContextUtils.setCurrentUser(creator);
 
@@ -430,6 +437,21 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
             dumpParameter.setNullString("null");
         }
         return dumpParameter;
+    }
+
+    private void loadHadoopDllOnWindows() {
+        if (!SystemUtils.isOnWindows()) {
+            return;
+        }
+        try {
+            File file = new File(HADOOP_PATH, "bin/hadoop.dll");
+            if (!file.exists()) {
+                throw new FileNotFoundException("File not found, " + file.getAbsolutePath());
+            }
+            System.load(file.getAbsolutePath());
+        } catch (Exception e) {
+            log.warn("Load hadoop.dll failed", e);
+        }
     }
 
     @AllArgsConstructor
