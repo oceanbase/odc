@@ -60,6 +60,11 @@ public class ConnectionSessionConstants {
      */
     public static final String QUERY_LIMIT_KEY = "QUERY_LIMIT";
     /**
+     * The column info of the current database session needs to be stored in the database session in
+     * the form of attributes, this is the key
+     */
+    public static final String FETCH_COLUMN_INFO_KEY = "FETCH_COLUMN_INFO";
+    /**
      * The sql processor of the current database session needs to be stored in the database session in
      * the form of attributes, this is the key
      */

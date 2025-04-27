@@ -500,6 +500,7 @@ public class ConnectSessionService {
         ConnectionSessionUtil.setSqlCommentProcessor(connectionSession, processor);
         ConnectionSessionUtil.setUserId(connectionSession, authenticationFacade.currentUserId());
         ConnectionSessionUtil.setQueryLimit(connectionSession, organizationConfigUtils.getDefaultQueryLimit());
+        ConnectionSessionUtil.setFetchColumnInfo(connectionSession, userConfigFacade.isFetchColumnInfo());
         if (connectionSession.getDialectType().isOracle()) {
             ConnectionSessionUtil.initConsoleSessionTimeZone(connectionSession, connectProperties.getDefaultTimeZone());
         }

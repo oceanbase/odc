@@ -73,6 +73,7 @@ public class SessionSettingsService {
         settings.setObVersion(ConnectionSessionUtil.getVersion(session));
         settings.setDelimiter(ConnectionSessionUtil.getSqlCommentProcessor(session).getDelimiter());
         settings.setQueryLimit(ConnectionSessionUtil.getQueryLimit(session));
+        settings.setFetchColumnInfo(ConnectionSessionUtil.getFetchColumnInfo(session));
         Optional<Integer> envMaxQueryLimit = sqlConsoleRuleService.getProperties(
                 ConnectionSessionUtil.getRuleSetId(session), SqlConsoleRules.MAX_QUERY_LIMIT,
                 session.getDialectType(), Integer.class);
@@ -101,8 +102,9 @@ public class SessionSettingsService {
         if (!settings.getDelimiter().equals(processor.getDelimiter())) {
             processor.setDelimiter(settings.getDelimiter());
         }
-        Integer queryLimit = ConnectionSessionUtil.getQueryLimit(session);
+        ConnectionSessionUtil.setFetchColumnInfo(session, settings.getFetchColumnInfo());
 
+        Integer queryLimit = ConnectionSessionUtil.getQueryLimit(session);
         if (!Objects.equals(wait2UpdateQueryLimit, queryLimit)) {
             Optional<Integer> envMaxQueryLimit = sqlConsoleRuleService.getProperties(
                     ConnectionSessionUtil.getRuleSetId(session), SqlConsoleRules.MAX_QUERY_LIMIT,

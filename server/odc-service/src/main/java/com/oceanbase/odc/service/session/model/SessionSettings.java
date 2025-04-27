@@ -53,6 +53,11 @@ public class SessionSettings {
     @Max(value = Integer.MAX_VALUE, message = "QueryLimit can not be bigger than " + Integer.MAX_VALUE)
     private Integer queryLimit;
     /**
+     * Show table column info flag
+     */
+    @NotNull(message = "Show table column info flag can not be null")
+    private Boolean fetchColumnInfo;
+    /**
      * Max query limit settings
      */
     private Integer maxQueryLimit;

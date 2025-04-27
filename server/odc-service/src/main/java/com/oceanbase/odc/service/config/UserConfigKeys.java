@@ -22,4 +22,6 @@ public class UserConfigKeys {
     public static final String DEFAULT_FULL_LINK_TRACE_ENABLED = "odc.sqlexecute.default.fullLinkTraceEnabled";
     public static final String DEFAULT_CONTINUE_EXECUTION_ON_ERROR = "odc.sqlexecute.default.continueExecutionOnError";
     public static final String DEFAULT_ENABLE_GLOBAL_OBJECT_SEARCH = "odc.database.default.enableGlobalObjectSearch";
+    public static final String DEFAULT_FETCH_COLUMN_INFO = "odc.sqlexecute.default.fetchColumnInfo";
+    public static final String DEFAULT_ADD_INTERNAL_ROW_ID= "odc.sqlexecute.default.addInternalRowId";
 }

@@ -297,6 +297,14 @@ public class ConnectionSessionUtil {
         return (Integer) connectionSession.getAttribute(ConnectionSessionConstants.QUERY_LIMIT_KEY);
     }
 
+    public static void setFetchColumnInfo(@NonNull ConnectionSession connectionSession, @NonNull Boolean fetchColumnInfo) {
+        connectionSession.setAttribute(ConnectionSessionConstants.FETCH_COLUMN_INFO_KEY, fetchColumnInfo);
+    }
+
+    public static Boolean getFetchColumnInfo(@NonNull ConnectionSession connectionSession) {
+        return (Boolean) connectionSession.getAttribute(ConnectionSessionConstants.FETCH_COLUMN_INFO_KEY);
+    }
+
     public static void setSqlCommentProcessor(@NonNull ConnectionSession connectionSession,
             @NonNull SqlCommentProcessor commentProcessor) {
         connectionSession.setAttribute(ConnectionSessionConstants.SQL_COMMENT_PROCESSOR_KEY, commentProcessor);

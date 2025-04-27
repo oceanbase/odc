@@ -27,4 +27,7 @@ public interface UserConfigFacade {
     boolean isFullLinkTraceEnabled();
 
     boolean isContinueExecutionOnError();
+
+    boolean isFetchColumnInfo();
+
 }

@@ -73,4 +73,9 @@ public class UserConfigFacadeImpl implements UserConfigFacade {
         return getUserConfig(UserConfigKeys.DEFAULT_CONTINUE_EXECUTION_ON_ERROR).equalsIgnoreCase("true");
     }
 
+    @Override
+    public boolean isFetchColumnInfo() {
+        return getUserConfig(UserConfigKeys.DEFAULT_FETCH_COLUMN_INFO).equalsIgnoreCase("true");
+    }
+
 }
