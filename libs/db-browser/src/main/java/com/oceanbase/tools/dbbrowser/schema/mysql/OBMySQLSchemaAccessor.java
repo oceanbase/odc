@@ -488,7 +488,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
         }
         if (StringUtils.isNotBlank(tableNameLike)) {
             sb.append(" AND table_name LIKE ");
-            sb.value(tableNameLike);
+            sb.value("%" + tableNameLike + "%");
         }
         sb.append(" ORDER BY table_name");
         return jdbcOperations.queryForList(sb.toString(), String.class);
@@ -505,7 +505,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
         }
         if (StringUtils.isNotBlank(tableNameLike)) {
             sb.append(" AND table_name LIKE ");
-            sb.value(tableNameLike);
+            sb.value("%" + tableNameLike + "%");
         }
         sb.append(" ORDER BY schema_name, table_name");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
