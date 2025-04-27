@@ -54,6 +54,6 @@ public class ScheduleOverviewHist {
 
     private Project project;
 
-    private TriggerStrategy triggerStrategy;
+    private TriggerConfig triggerConfig;
 
 }
