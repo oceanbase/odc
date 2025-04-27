@@ -225,7 +225,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         sb.value(schemaName);
         if (StringUtils.isNotBlank(tableNameLike)) {
             sb.append(" AND TABLE_NAME LIKE ");
-            sb.value(tableNameLike);
+            sb.value("%" + tableNameLike + "%");
         }
         sb.append(" ORDER BY TABLE_NAME ASC");
         return jdbcOperations.queryForList(sb.toString(), String.class);
@@ -245,7 +245,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         }
         if (StringUtils.isNotBlank(tableNameLike)) {
             sb.append(" AND TABLE_NAME LIKE ");
-            sb.value(tableNameLike);
+            sb.value("%" + tableNameLike + "%");
         }
         sb.append(" ORDER BY schema_name, type, name");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
