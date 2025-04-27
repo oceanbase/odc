@@ -75,6 +75,7 @@ import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskType;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
+import com.oceanbase.odc.service.schedule.util.ScheduleUtils;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanAttributes;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanTaskResult;
@@ -369,6 +370,7 @@ public class ScheduleResponseMapperFactory {
                 resp.setCandidateApprovers(candidates.stream().map(InnerUser::new).collect(Collectors.toSet()));
             }
             resp.setProject(id2Project.get(schedule.getProjectId()));
+            resp.setPeriodical(ScheduleUtils.isPeriodical(schedule.getTriggerConfigJson()));
             return resp;
         }).collect(Collectors.toMap(ScheduleOverviewHist::getId, o -> o));
     }
