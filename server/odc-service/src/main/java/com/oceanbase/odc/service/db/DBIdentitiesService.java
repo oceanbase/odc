@@ -53,8 +53,9 @@ public class DBIdentitiesService {
         }
         DBSchemaAccessor schemaAccessor = DBSchemaAccessors.create(session);
         Map<String, SchemaIdentities> all = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        if (!isSchemaExist(schemaAccessor, schemaName)) {
-            schemaAccessor.showDatabases().forEach(db -> all.computeIfAbsent(db, SchemaIdentities::of));
+        List<String> existedDatabases = schemaAccessor.showDatabases();
+        if (StringUtils.isNotBlank(schemaName) && !existedDatabases.contains(schemaName)) {
+            existedDatabases.forEach(db -> all.computeIfAbsent(db, SchemaIdentities::of));
             return new ArrayList<>(all.values());
         }
         if (types.contains(DBObjectType.VIEW)) {
@@ -69,7 +70,7 @@ public class DBIdentitiesService {
         if (types.contains(DBObjectType.MATERIALIZED_VIEW)) {
             listMViews(schemaAccessor, schemaName, identityNameLike, all);
         }
-        schemaAccessor.showDatabases().forEach(db -> all.computeIfAbsent(db, SchemaIdentities::of));
+        existedDatabases.forEach(db -> all.computeIfAbsent(db, SchemaIdentities::of));
         return new ArrayList<>(all.values());
     }
 
@@ -115,13 +116,5 @@ public class DBIdentitiesService {
             identities.stream().filter(i -> StringUtils.isBlank(schemaName) || schemaName.equals(i.getSchemaName()))
                     .forEach(i -> all.computeIfAbsent(i.getSchemaName(), SchemaIdentities::of).add(i));
         }
-    }
-
-    boolean isSchemaExist(DBSchemaAccessor schemaAccessor, String schemaName) {
-        if (StringUtils.isBlank(schemaName)) {
-            return true;
-        }
-        List<String> databases = schemaAccessor.showDatabases();
-        return databases.contains(schemaName);
     }
 }
