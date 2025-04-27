@@ -369,6 +369,11 @@ public class ScheduleResponseMapperFactory {
                 resp.setCandidateApprovers(candidates.stream().map(InnerUser::new).collect(Collectors.toSet()));
             }
             resp.setProject(id2Project.get(schedule.getProjectId()));
+
+            TriggerConfig triggerConfig = JsonUtils.fromJson(schedule.getTriggerConfigJson(), TriggerConfig.class);
+            if (triggerConfig != null) {
+                resp.setTriggerStrategy(triggerConfig.getTriggerStrategy());
+            }
             return resp;
         }).collect(Collectors.toMap(ScheduleOverviewHist::getId, o -> o));
     }
