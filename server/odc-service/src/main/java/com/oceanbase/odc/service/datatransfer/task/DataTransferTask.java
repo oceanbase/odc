@@ -121,11 +121,11 @@ public class DataTransferTask implements Callable<DataTransferTaskResult> {
     @Override
     public DataTransferTaskResult call() throws Exception {
         try {
-            TraceContextHolder.put(DataTransferConstants.LOG_PATH_NAME, logDir.getPath());
-            SecurityContextUtils.setCurrentUser(creator);
             if (SystemUtils.isOnWindows()) {
                 loadHadoopDllOnWindows();
             }
+            TraceContextHolder.put(DataTransferConstants.LOG_PATH_NAME, logDir.getPath());
+            SecurityContextUtils.setCurrentUser(creator);
 
             List<URL> inputs = Collections.emptyList();
             if (config.getTransferType() == DataTransferType.IMPORT) {
