@@ -275,7 +275,7 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
         }
         if (StringUtils.isNotBlank(tableNameLike)) {
             sb.append(" AND table_name LIKE ");
-            sb.value(tableNameLike);
+            sb.value("%" + tableNameLike + "%");
         }
         sb.append(" ORDER BY schema_name, table_name");
 
