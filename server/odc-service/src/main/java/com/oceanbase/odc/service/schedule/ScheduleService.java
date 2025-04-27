@@ -1123,7 +1123,7 @@ public class ScheduleService {
         return schedules.stream().filter(s -> {
             TriggerConfig triggerConfig = JsonUtils.fromJson(s.getTriggerConfigJson(), TriggerConfig.class);
             return triggerConfig != null && triggerConfig.getTriggerStrategy() != TriggerStrategy.START_NOW
-                   && triggerConfig.getTriggerStrategy() != TriggerStrategy.START_AT;
+                    && triggerConfig.getTriggerStrategy() != TriggerStrategy.START_AT;
         }).collect(Collectors.toList());
     }
 
