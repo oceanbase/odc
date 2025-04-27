@@ -17,22 +17,26 @@ package com.oceanbase.odc.service.db;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.stereotype.Service;
 
+import com.dingtalk.api.response.CorpRoleSimplelistResponse.EmpSimpleList;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
@@ -113,22 +117,20 @@ public class DBMaterializedViewService {
                             && !StringUtils.startsWithIgnoreCase(name, OdcConstants.MATERIALIZED_VIEW_LOG_PREFIX))
                     .collect(Collectors.toList());
             return tablesLike.size() != 0 ? new DatabaseAndTables(schema, tablesLike)
-                    : new DatabaseAndTables();
+                    : new DatabaseAndTables(schema, Collections.emptyList());
         }).filter(item -> item.getDatabaseName() != null)
                 .sorted(Comparator.comparing(DatabaseAndTables::getDatabaseName)).collect(Collectors.toList());
         List<DBObjectIdentity> mvIdentities = accessor.listAllMViewsLike(tableNameLike);
         Map<String, List<String>> schema2mvs = new HashMap<>();
         mvIdentities.forEach(item -> {
-            List<String> views = schema2mvs.computeIfAbsent(item.getSchemaName(), t -> new ArrayList<>());
-            views.add(item.getName());
+            schema2mvs.computeIfAbsent(item.getSchemaName(), t -> new ArrayList<>()).add(item.getName());
         });
-        List<DatabaseAndMVs> mvs = new ArrayList<>();
-        schema2mvs.forEach((schema, viewNames) -> {
-            DatabaseAndMVs view = new DatabaseAndMVs();
-            view.setDatabaseName(schema);
-            view.setMvs(viewNames);
-            mvs.add(view);
-        });
+
+        List<DatabaseAndMVs> mvs = databases.stream()
+            .map(schema -> new DatabaseAndMVs(schema, Optional.ofNullable(schema2mvs.get(schema))
+                .orElse(Collections.emptyList())))
+            .collect(Collectors.toList());
+
         allResult.setTables(tables);
         allResult.setMvs(mvs);
         return allResult;
