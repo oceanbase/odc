@@ -160,9 +160,9 @@ public class DBMaterializedViewService {
     }
 
     private List<DatabaseAndMVs> generateDatabaseAndMVs(@NotNull DBSchemaAccessor accessor,
-            @NotNull String tableNameLike,
+            @NotNull String mViewNameLike,
             @NonNull List<String> existedDatabases) {
-        List<DBObjectIdentity> existedMViewIdentities = accessor.listAllMViewsLike(tableNameLike);
+        List<DBObjectIdentity> existedMViewIdentities = accessor.listAllMViewsLike(mViewNameLike);
         Map<String, List<String>> schema2ExistedMViews = new HashMap<>();
         existedMViewIdentities.forEach(item -> {
             schema2ExistedMViews.computeIfAbsent(item.getSchemaName(), t -> new ArrayList<>()).add(item.getName());

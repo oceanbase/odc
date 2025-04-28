@@ -112,9 +112,9 @@ public class DBViewService {
     }
 
     private List<DatabaseAndViews> generateDatabaseAndViews(@NotNull DBSchemaAccessor accessor,
-            @NotNull String tableNameLike,
+            @NotNull String viewNameLike,
             @NonNull List<String> existedDatabases) {
-        List<DBObjectIdentity> existedViewIdentities = accessor.listAllViews(tableNameLike);
+        List<DBObjectIdentity> existedViewIdentities = accessor.listAllViews(viewNameLike);
         Map<String, List<String>> schema2ExistedViews = new HashMap<>();
         existedViewIdentities.forEach(item -> {
             schema2ExistedViews.computeIfAbsent(item.getSchemaName(), t -> new ArrayList<>()).add(item.getName());
