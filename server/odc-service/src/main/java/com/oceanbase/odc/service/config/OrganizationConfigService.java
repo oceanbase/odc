@@ -46,6 +46,7 @@ import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.metadb.config.OrganizationConfigDAO;
 import com.oceanbase.odc.metadb.config.OrganizationConfigEntity;
+import com.oceanbase.odc.metadb.iam.OrganizationEntity;
 import com.oceanbase.odc.metadb.iam.OrganizationRepository;
 import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.config.model.ConfigurationMeta;
@@ -267,9 +268,13 @@ public class OrganizationConfigService {
     }
 
     private int attachedUpdateIntegrationConfig(Long organizationId, String customKey) {
-        int affectedIntegrationRows = integrationService.attachedUpdateIntegrationSecret(organizationId, customKey);
+        OrganizationEntity organization = organizationRepo.findById(organizationId)
+                .orElseThrow(() -> new IllegalArgumentException("Organization not found"));
+        String oldSecret = Caesar.decode(organization.getObfuscatedSecret(), 8);
+        int affectedIntegrationRows =
+                integrationService.attachedUpdateIntegrationSecret(organizationId, oldSecret, customKey);
         int affectedGitIntegrationRows =
-                gitIntegrationService.attachedUpdateGitPersonalToken(organizationId, customKey);
+                gitIntegrationService.attachedUpdateGitPersonalToken(organizationId, oldSecret, customKey);
         return affectedIntegrationRows + affectedGitIntegrationRows;
     }
 

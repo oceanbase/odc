@@ -246,24 +246,31 @@ public class IntegrationService {
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("odc internal usage")
-    public int attachedUpdateIntegrationSecret(@NotNull Long organizationId, String customSecret) {
+    public int attachedUpdateIntegrationSecret(@NotNull Long organizationId, String oldSecret, String newSecret) {
         List<IntegrationEntity> entities = this.listByOrganizationId(organizationId);
         if (entities.isEmpty()) {
             return 0;
         }
-        List<IntegrationEntity> saved = entities.stream().peek(entity -> {
-            IntegrationConfig decodedConfig = getDecodeConfig(entity);
-            Encryption encryption = decodedConfig.getEncryption();
-            if (!encryption.getEnabled() || StringUtils.isNotBlank(encryption.getSecret())) {
-                entity.setSalt(encryptionFacade.generateSalt());
-                entity.setSecret(attachedEncodeSecret(entity.getSecret(), entity.getSalt(), customSecret));
-            }
-        }).collect(Collectors.toList());
+        List<IntegrationEntity> saved = entities.stream()
+                .map(entity -> migrateSecretFromOld2New(entity, oldSecret, newSecret))
+                .collect(Collectors.toList());
         integrationRepository.saveAllAndFlush(saved);
         int affectedRows = saved.size();
 
         log.info("attached update integration secret from organization config completed, total: {}", affectedRows);
         return affectedRows;
+    }
+
+    private IntegrationEntity migrateSecretFromOld2New(IntegrationEntity entity, String oldSecret, String newSecret) {
+        IntegrationConfig integrationConfig = new IntegrationConfig(entity);
+        String rawSecret = decodeSecret(entity.getSecret(), entity.getSalt(), oldSecret);
+        integrationConfig.getEncryption().setSecret(rawSecret);
+        Encryption encryption = integrationConfig.getEncryption();
+        if (!encryption.getEnabled() || StringUtils.isNotBlank(encryption.getSecret())) {
+            entity.setSalt(encryptionFacade.generateSalt());
+            entity.setSecret(attachedEncodeSecret(entity.getSecret(), entity.getSalt(), newSecret));
+        }
+        return entity;
     }
 
     @SkipAuthorize("odc internal usage")
@@ -397,6 +404,14 @@ public class IntegrationService {
         }
         TextEncryptor encryptor = encryptionFacade.passwordEncryptor(organizationSecret, salt);
         return encryptor.encrypt(plainSecret);
+    }
+
+    private String decodeSecret(String encryptedSecret, String salt, String secret) {
+        if (encryptedSecret == null) {
+            return null;
+        }
+        TextEncryptor encryptor = encryptionFacade.passwordEncryptor(secret, salt);
+        return encryptor.decrypt(encryptedSecret);
     }
 
     @SkipAuthorize("odc internal usage")

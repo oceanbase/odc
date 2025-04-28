@@ -124,13 +124,13 @@ public class GitIntegrationService {
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("odc internal usage")
-    public int attachedUpdateGitPersonalToken(@NotNull Long organizationId, String customSecret) {
+    public int attachedUpdateGitPersonalToken(@NotNull Long organizationId, String oldSecret, String newSecret) {
         List<GitRepositoryEntity> entities = gitRepoRepository.findByOrganizationId(organizationId);
         if (entities.isEmpty()) {
             return 0;
         }
         List<GitRepositoryEntity> saved = entities.stream()
-                .map(entity -> migrateTokenFromOld2New(entity, customSecret))
+                .map(entity -> migrateTokenFromOld2New(entity, oldSecret, newSecret))
                 .collect(Collectors.toList());
         gitRepoRepository.saveAllAndFlush(saved);
         int affectedRows = saved.size();
@@ -172,10 +172,11 @@ public class GitIntegrationService {
         return entity;
     }
 
-    private GitRepositoryEntity migrateTokenFromOld2New(GitRepositoryEntity entity, String customSecret) {
-        TextEncryptor encryptor = getEncryptor(entity.getOrganizationId(), entity.getSalt());
+    private GitRepositoryEntity migrateTokenFromOld2New(GitRepositoryEntity entity, String oldSecret,
+            String newSecret) {
+        TextEncryptor encryptor = encryptionFacade.passwordEncryptor(oldSecret, entity.getSalt());
         String rawToken = encryptor.decrypt(entity.getPersonalAccessToken());
-        String reEncodeToken = attachedEncodeToken(rawToken, entity.getSalt(), customSecret);
+        String reEncodeToken = attachedEncodeToken(rawToken, entity.getSalt(), newSecret);
         entity.setPersonalAccessToken(reEncodeToken);
         return entity;
     }
