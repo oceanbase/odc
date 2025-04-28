@@ -307,7 +307,7 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
         sb.append("show full tables from `information_schema` where Table_type='SYSTEM VIEW'");
         if (StringUtils.isNotBlank(viewNameLike)) {
-            sb.append(" WHERE Tables_in_information_schema LIKE ")
+            sb.append(" AND Tables_in_information_schema LIKE ")
                 .value("%" + viewNameLike + "%");
         }
         try {
