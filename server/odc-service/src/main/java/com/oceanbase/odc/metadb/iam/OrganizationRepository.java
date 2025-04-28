@@ -59,7 +59,7 @@ public interface OrganizationRepository
 
     @Transactional
     @Modifying
-    @Query("update OrganizationEntity as e set e.secret=:secret where e.id=:id")
-    int updateOrganizationSecretById(@Param("id") Long id, @Param("secret") String secret);
+    @Query("update OrganizationEntity as e set e.obfuscated_secret=:obfuscatedSecret where e.id=:id")
+    int updateOrganizationSecretById(@Param("id") Long id, @Param("obfuscated_secret") String obfuscatedSecret);
 
 }
