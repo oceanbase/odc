@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -194,6 +195,14 @@ public class MySQLNoLessThan5700SchemaAccessorTest extends BaseTestEnv {
     public void listAllSystemViews_Success() {
         List<DBObjectIdentity> sysViews = accessor.listAllSystemViews(null);
         Assert.assertTrue(sysViews != null && sysViews.size() > 0);
+    }
+
+    @Test
+    public void listSystemViewsWhenViewNameLikeNotNull_Success() {
+        List<DBObjectIdentity> sysViews = accessor.listAllSystemViews("TABLE");
+        if (CollectionUtils.isNotEmpty(sysViews)) {
+            Assert.assertTrue(sysViews.stream().allMatch(o -> o.getName().contains("TABLE")));
+        }
     }
 
     @Test
