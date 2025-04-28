@@ -72,6 +72,7 @@ public class OBOracleBetween410And432SchemaAccessor extends OBOracleBetween432An
         if (StringUtils.isNotBlank(tableNameLike)) {
             sb.append(" AND TABLE_NAME LIKE ");
             sb.value("%" + tableNameLike + "%");
+            sb.escapeLikeEnd();
         }
         sb.append(" ORDER BY TABLE_NAME ASC");
         return jdbcOperations.queryForList(sb.toString(), String.class);
@@ -97,6 +98,7 @@ public class OBOracleBetween410And432SchemaAccessor extends OBOracleBetween432An
         if (StringUtils.isNotBlank(tableNameLike)) {
             sb.append(" AND TABLE_NAME LIKE ");
             sb.value("%" + tableNameLike + "%");
+            sb.escapeLikeEnd();
         }
         sb.append(" ORDER BY schema_name, type, name");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));

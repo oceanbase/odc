@@ -312,15 +312,15 @@ public class OracleSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
-    public void listAllUserViews_Success() {
-        List<DBObjectIdentity> views = accessor.listAllUserViews("_TEST");
+    public void listUserViewsWhenViewNameLikeNotNull_Success() {
+        List<DBObjectIdentity> views = accessor.listAllUserViews(StringUtils.escapeLike("_TEST"));
         if (CollectionUtils.isNotEmpty(views)) {
             Assert.assertTrue(views.stream().allMatch(o -> o.getName().toUpperCase().contains("_TEST")));
         }
     }
 
     @Test
-    public void listUserViewsWhenViewNameLikeNotNull_Success() {
+    public void listAllUserViews_Success()  {
         List<DBObjectIdentity> views = accessor.listAllUserViews(null);
         Assert.assertTrue(views.size() > 0);
     }

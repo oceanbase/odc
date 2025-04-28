@@ -1078,6 +1078,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         if (StringUtils.isNotBlank(tableNameLike)) {
             sb.append(" AND TABLE_NAME LIKE ");
             sb.value("%" + tableNameLike + "%");
+            sb.escapeLikeEnd();
         }
         sb.append(" ORDER BY schema_name, type, name");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
@@ -1113,6 +1114,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         if (StringUtils.isNotBlank(tableNameLike)) {
             sb.append(" AND TABLE_NAME LIKE ");
             sb.value("%" + tableNameLike + "%");
+            sb.escapeLikeEnd();
         }
         sb.append(" ORDER BY schema_name, type, name");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
@@ -1154,6 +1156,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         if (StringUtils.isNotBlank(tableNameLike)) {
             sb.append(" AND TABLE_NAME LIKE ");
             sb.value("%" + tableNameLike + "%");
+            sb.escapeLikeEnd();
         }
         sb.append(" ORDER BY TABLE_NAME ASC");
         return jdbcOperations.queryForList(sb.toString(), String.class);
@@ -1175,8 +1178,8 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         sb.append("select OWNER AS schema_name, MVIEW_NAME AS name,'MATERIALIZED_VIEW' AS type FROM ")
                 .append(dataDictTableNames.MVIEWS())
                 .append(" WHERE MVIEW_NAME LIKE ")
-                .value('%' + viewNameLike + '%')
-                .append(" ORDER BY name ASC;");
+                .value('%' + viewNameLike + '%');
+        sb.escapeLikeEnd().append(" ORDER BY name ASC;");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
     }
 

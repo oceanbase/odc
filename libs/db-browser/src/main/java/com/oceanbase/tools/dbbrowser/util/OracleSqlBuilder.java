@@ -35,6 +35,10 @@ public class OracleSqlBuilder extends SqlBuilder {
         return append(StringUtils.quoteOracleValue(value));
     }
 
+    public SqlBuilder escapeLikeEnd() {
+        return append(" ESCAPE ").value("\\");
+    }
+
     @Override
     public SqlBuilder defaultValue(String value) {
         return append(value);
