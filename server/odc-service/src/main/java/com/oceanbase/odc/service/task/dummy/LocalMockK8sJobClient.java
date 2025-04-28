@@ -45,12 +45,15 @@ import com.oceanbase.odc.service.task.supervisor.TaskSupervisor;
 import com.oceanbase.odc.service.task.supervisor.endpoint.ExecutorEndpoint;
 import com.oceanbase.odc.service.task.supervisor.endpoint.SupervisorEndpoint;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * use local process to mock k8s command
  * 
  * @author longpeng.zlp
  * @date 2024/8/28 11:18
  */
+@Slf4j
 public class LocalMockK8sJobClient implements K8sJobClientSelector {
 
     @Override
@@ -69,6 +72,8 @@ public class LocalMockK8sJobClient implements K8sJobClientSelector {
 
         @Override
         public K8sPodResource create(K8sResourceContext k8sResourceContext) throws JobException {
+            log.info("LocalMockK8sJobClient: create with mock client, context={}",
+                    k8sResourceContext.getResourceName());
             JobContext jobContext = getJobContext(k8sResourceContext.getExtraData());
             if (null != jobContext) {
                 // normal process
@@ -83,7 +88,8 @@ public class LocalMockK8sJobClient implements K8sJobClientSelector {
                         k8sResourceContext.type(),
                         executorIdentifier.getNamespace(),
                         executorIdentifier.getExecutorName(), ResourceState.AVAILABLE,
-                        SystemUtils.getLocalIpAddress(), String.valueOf(executorIdentifier.getPort()),
+                        SystemUtils.getLocalIpAddress(), SystemUtils.getLocalIpAddress(),
+                        String.valueOf(executorIdentifier.getPort()),
                         new Date(System.currentTimeMillis()));
             } else {
                 // supervisor
@@ -95,7 +101,7 @@ public class LocalMockK8sJobClient implements K8sJobClientSelector {
                         k8sResourceContext.type(),
                         executorIdentifier.getNamespace(),
                         executorEndpoint.getIdentifier() + "supervisor", ResourceState.AVAILABLE,
-                        SystemUtils.getLocalIpAddress(),
+                        SystemUtils.getLocalIpAddress(), SystemUtils.getLocalIpAddress(),
                         podConfig.getEnvironments().get(JobEnvKeyConstants.ODC_SUPERVISOR_LISTEN_PORT),
                         new Date(System.currentTimeMillis()));
             }
@@ -112,7 +118,8 @@ public class LocalMockK8sJobClient implements K8sJobClientSelector {
             K8sPodResource ret = new K8sPodResource(ResourceIDUtil.REGION_PROP_NAME,
                     ResourceIDUtil.GROUP_PROP_NAME, AbstractK8sResourceOperatorBuilder.CLOUD_K8S_POD_TYPE,
                     namespace, arn, ResourceState.AVAILABLE,
-                    SystemUtils.getLocalIpAddress(), "8989", new Date(System.currentTimeMillis()));
+                    SystemUtils.getLocalIpAddress(), SystemUtils.getLocalIpAddress(), "8989",
+                    new Date(System.currentTimeMillis()));
             return Optional.of(ret);
         }
 

@@ -13,22 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms;
+package com.oceanbase.odc.service.onlineschemachange.oscfms.action.odc;
 
 import java.util.Map;
 
 import javax.validation.constraints.NotNull;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskParameters;
-import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeScheduleTaskResult;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.OscStepName;
-import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenApiService;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionContext;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.action.ProjectStepResult;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.action.SwapTableActionBase;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms.OmsRequestUtil;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
 
 import lombok.extern.slf4j.Slf4j;
@@ -37,32 +35,30 @@ import lombok.extern.slf4j.Slf4j;
  * swap table action
  * 
  * @author longpeng.zlp
- * @date 2024/7/9 11:38
+ * @date 2024/3/24 11:38
  * @since 4.3.1
  */
 @Slf4j
-public class OmsSwapTableAction extends SwapTableActionBase {
+public class OdcSwapTableAction extends SwapTableActionBase {
 
-    private final OmsProjectOpenApiService projectOpenApiService;
+    private final OdcMonitorDataTaskAction odcMonitorDataTaskAction;
 
-    public OmsSwapTableAction(@NotNull DBSessionManageFacade dbSessionManageFacade,
-            @NotNull OmsProjectOpenApiService projectOpenApiService,
-            @NotNull OnlineSchemaChangeProperties onlineSchemaChangeProperties) {
+    public OdcSwapTableAction(@NotNull DBSessionManageFacade dbSessionManageFacade,
+            @NotNull OnlineSchemaChangeProperties onlineSchemaChangeProperties,
+            @NotNull OdcMonitorDataTaskAction odcMonitorDataTaskAction) {
         super(dbSessionManageFacade, onlineSchemaChangeProperties);
-        this.projectOpenApiService = projectOpenApiService;
+        this.odcMonitorDataTaskAction = odcMonitorDataTaskAction;
     }
 
     protected boolean checkOSCProjectReady(OscActionContext context) {
         OnlineSchemaChangeScheduleTaskParameters taskParameter = context.getTaskParameter();
-        // get result
-        OnlineSchemaChangeScheduleTaskResult lastResult = JsonUtils.fromJson(context.getScheduleTask().getResultJson(),
-                OnlineSchemaChangeScheduleTaskResult.class);
         // get oms step result
         ProjectStepResult projectStepResult =
-                OmsRequestUtil.buildProjectStepResult(projectOpenApiService, onlineSchemaChangeProperties,
-                        taskParameter.getUid(), taskParameter.getOmsProjectId(), taskParameter.getDatabaseName(),
-                        lastResult.getCheckFailedTime());
-        return OmsRequestUtil.isOmsTaskReady(projectStepResult);
+                odcMonitorDataTaskAction.getProjectStepResultInner(taskParameter.getOdcCommandURl());
+        if (null == projectStepResult) {
+            return false;
+        }
+        return odcMonitorDataTaskAction.isMigrateTaskReady(projectStepResult);
     }
 
     /**
@@ -77,13 +73,11 @@ public class OmsSwapTableAction extends SwapTableActionBase {
         // max check 25s
         long checkTimeoutMs = System.currentTimeMillis() + timeOutMS;
         while (true) {
-            ProjectStepResult projectStepResult = OmsRequestUtil.buildProjectStepResult(projectOpenApiService,
-                    onlineSchemaChangeProperties, parameters.getUid(), parameters.getOmsProjectId(),
-                    parameters.getDatabaseName(),
-                    checkFailedTimes);
-            log.info("Osc check oms increment checkpoint, expect greater than {}, current = {}",
+            ProjectStepResult projectStepResult =
+                    odcMonitorDataTaskAction.getProjectStepResultInner(parameters.getOdcCommandURl());
+            log.info("Osc check increment checkpoint, expect greater than {}, current = {}",
                     safeDataCheckpoint, projectStepResult.getIncrementCheckpoint());
-            if (OmsRequestUtil.isOmsTaskReady(projectStepResult)
+            if (odcMonitorDataTaskAction.isMigrateTaskReady(projectStepResult)
                     && projectStepResult.getIncrementCheckpoint() > safeDataCheckpoint) {
                 return true;
             }

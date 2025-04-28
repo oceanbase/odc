@@ -21,6 +21,7 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenApiService;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.action.odc.OdcModifyDataTaskAction;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms.OmsModifyDataTaskAction;
 
 /**
@@ -34,7 +35,8 @@ public class ModifyDataTaskAction extends ActionDelegate {
             @NotNull OmsProjectOpenApiService projectOpenApiService,
             @NotNull OnlineSchemaChangeProperties onlineSchemaChangeProperties) {
         ModifyDataTaskAction ret = new ModifyDataTaskAction();
-        ret.action = new OmsModifyDataTaskAction(projectOpenApiService, onlineSchemaChangeProperties);
+        ret.omsAction = new OmsModifyDataTaskAction(projectOpenApiService, onlineSchemaChangeProperties);
+        ret.odcAction = new OdcModifyDataTaskAction();
         return ret;
     }
 }

@@ -108,6 +108,18 @@ public class OnlineSchemaChangeScheduleTaskParameters {
     // only set when column is dropped
     private List<String> filterColumns;
 
+    // if odc migrate is enabled
+    private boolean useODCMigrateTool = false;
+
+    // odc command url to migrate data
+    private String odcCommandURl;
+
+    // mapper port to access, maybe a part of odcCommandURl if k8s only access by host ip
+    private Integer k8sMapperPort;
+
+    // resourceID for pod if useODCMigrateTool = true, -1 means release not needed
+    private Long resourceID;
+
     public String getOriginTableNameWithSchema() {
         return tableNameWithSchema(originTableName);
     }

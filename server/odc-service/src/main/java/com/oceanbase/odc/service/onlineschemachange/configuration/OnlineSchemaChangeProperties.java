@@ -40,6 +40,11 @@ public class OnlineSchemaChangeProperties {
 
     private boolean enableFullVerify;
 
+    // if use odc migrate tool
+    private boolean useOdcMigrateTool = false;
+    // if this url provided, use provided url, or use k8s pod to create new instance
+    private String odcMigrateUrl = null;
+
     @Data
     public static class OmsProperties {
         private String url;

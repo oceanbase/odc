@@ -17,10 +17,15 @@ package com.oceanbase.odc.service.onlineschemachange.oscfms.action;
 
 import javax.validation.constraints.NotNull;
 
+import com.oceanbase.odc.service.config.SystemConfigService;
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.DataSourceOpenApiService;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenApiService;
+import com.oceanbase.odc.service.onlineschemachange.oscfms.action.odc.OdcCreateDataTaskAction;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms.OmsCreateDataTaskAction;
+import com.oceanbase.odc.service.resource.ResourceManager;
+
+import lombok.NonNull;
 
 /**
  * @author longpeng.zlp
@@ -29,12 +34,15 @@ import com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms.OmsCreateD
  */
 public class CreateDataTaskAction extends ActionDelegate {
 
-    public static CreateDataTaskAction ofOMSCreateDataTaskAction(
+    public static CreateDataTaskAction createDataTaskAction(
             @NotNull DataSourceOpenApiService dataSourceOpenApiService,
             @NotNull OmsProjectOpenApiService projectOpenApiService,
-            @NotNull OnlineSchemaChangeProperties oscProperties) {
+            @NotNull OnlineSchemaChangeProperties oscProperties,
+            @NonNull SystemConfigService systemConfigService,
+            @NonNull ResourceManager resourceManager) {
         CreateDataTaskAction ret = new CreateDataTaskAction();
-        ret.action = new OmsCreateDataTaskAction(dataSourceOpenApiService, projectOpenApiService, oscProperties);
+        ret.omsAction = new OmsCreateDataTaskAction(dataSourceOpenApiService, projectOpenApiService, oscProperties);
+        ret.odcAction = new OdcCreateDataTaskAction(systemConfigService, resourceManager, oscProperties);
         return ret;
     }
 }

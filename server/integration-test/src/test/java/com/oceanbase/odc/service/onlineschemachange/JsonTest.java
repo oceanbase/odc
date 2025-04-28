@@ -26,7 +26,7 @@ import org.junit.Test;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
-import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsStepName;
+import com.oceanbase.odc.service.onlineschemachange.oms.enums.OscStepName;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.CommonTransferConfig;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.CreateOmsProjectRequest;
 import com.oceanbase.odc.service.onlineschemachange.oms.request.DatabaseTransferObject;
@@ -83,7 +83,7 @@ public class JsonTest {
         Assert.assertNotNull(apiReturnResults);
         Assert.assertTrue(CollectionUtils.isNotEmpty(apiReturnResults.getData()));
         Optional<OmsProjectStepVO> first = apiReturnResults.getData().stream().filter(
-                a -> a.getName() == OmsStepName.FULL_TRANSFER).findFirst();
+                a -> a.getName() == OscStepName.FULL_TRANSFER).findFirst();
         Assert.assertTrue(first.isPresent());
         FullTransferStepInfoVO fullTransferStepInfoVO = (FullTransferStepInfoVO) first.get().getStepInfo();
         Assert.assertSame(fullTransferStepInfoVO.getProcessedRecords(), 100L);

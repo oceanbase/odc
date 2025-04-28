@@ -36,6 +36,7 @@ import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.dispatch.ImmediateJobDispatcher;
 import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
+import com.oceanbase.odc.service.task.resource.AbstractK8sResourceOperatorBuilder;
 import com.oceanbase.odc.service.task.resource.LocalProcessResource;
 import com.oceanbase.odc.service.task.resource.SupervisorAgentAllocator;
 import com.oceanbase.odc.service.task.resource.manager.TaskResourceManager;
@@ -47,6 +48,7 @@ import com.oceanbase.odc.service.task.schedule.StartJobRateLimiter;
 import com.oceanbase.odc.service.task.schedule.StartJobRateLimiterSupport;
 import com.oceanbase.odc.service.task.schedule.provider.DefaultHostUrlProvider;
 import com.oceanbase.odc.service.task.schedule.provider.DefaultJobImageNameProvider;
+import com.oceanbase.odc.service.task.schedule.provider.JobImageNameProvider;
 import com.oceanbase.odc.service.task.service.SpringTransactionManager;
 import com.oceanbase.odc.service.task.service.StdTaskFrameworkService;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
@@ -129,6 +131,8 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
                             ResourceAllocateInfoRepository.class), new ProcessResourceManageStrategy(),
                             taskFrameworkProperties);
         } else {
+            JobImageNameProvider jobImageNameProvider = JobConfigurationHolder.getJobConfiguration()
+                    .getJobImageNameProvider();
             // k8s mode
             taskResourceManager =
                     new TaskResourceManager(ctx.getBean(SupervisorEndpointRepository.class), ctx.getBean(
@@ -138,7 +142,10 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
                                     ctx.getBean(SupervisorEndpointRepository.class),
                                     taskFrameworkProperties.isEnableK8sLocalDebugMode()
                                             ? this::getPortForLocalDebugSupervisorEndpoint
-                                            : taskFrameworkProperties.getK8sProperties()::getSupervisorListenPort),
+                                            : taskFrameworkProperties.getK8sProperties()::getSupervisorListenPort,
+                                    // default cloud k8s pod mode
+                                    AbstractK8sResourceOperatorBuilder.CLOUD_K8S_POD_TYPE,
+                                    jobImageNameProvider.provide(), taskFrameworkProperties.isEnableK8sPortMapper()),
                             taskFrameworkProperties);
         }
 
