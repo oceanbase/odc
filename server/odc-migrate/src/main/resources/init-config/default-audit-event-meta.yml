@@ -110,11 +110,13 @@
   action: "OTHERS"
   method_signature: "com.oceanbase.odc.server.web.controller.v2.ConnectSessionController.streamExecute"
   sid_extract_expression: "{#sessionId}"
+  database_id_extract_expression: "{#databaseId}"
   in_connection: 1
   enabled: 1
   id: 15
 
 # 白屏 DROP 操作
+# 目前均已废弃，无对应方法
 - type: "DATABASE_OPERATION"
   action: "DROP"
   method_signature: "com.oceanbase.odc.server.web.controller.v1.DBTableController.dropTable"
