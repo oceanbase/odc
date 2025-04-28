@@ -176,6 +176,6 @@ public class OrganizationService {
     public boolean isOrganizationSecretMigrated(@NotNull Long id) {
         Organization organization = this.get(id)
                 .orElseThrow(() -> new UnexpectedException("organization is not found, " + id));
-        return !Objects.equals(organization.getSecret(), organization.getCustomSecret());
+        return !Objects.equals(organization.getSecret(), organization.getObfuscatedSecret());
     }
 }

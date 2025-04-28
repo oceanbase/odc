@@ -37,7 +37,7 @@ import lombok.ToString;
 @Data
 @Entity
 @Table(name = "iam_organization")
-@ToString(exclude = {"secret", "customSecret"})
+@ToString(exclude = {"secret", "obfuscatedSecret"})
 public class OrganizationEntity {
 
     @Id

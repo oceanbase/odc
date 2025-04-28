@@ -246,7 +246,7 @@ public class IntegrationService {
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("odc internal usage")
-    public int updateIntegrationSecretConfig(@NotNull Long organizationId, String customSecret) {
+    public int attachedUpdateIntegrationSecret(@NotNull Long organizationId, String customSecret) {
         List<IntegrationEntity> entities = this.listByOrganizationId(organizationId);
         if (entities.isEmpty()) {
             return 0;

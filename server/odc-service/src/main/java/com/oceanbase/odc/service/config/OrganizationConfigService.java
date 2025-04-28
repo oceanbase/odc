@@ -267,8 +267,8 @@ public class OrganizationConfigService {
     }
 
     private int attachedUpdateIntegrationConfig(Long organizationId, String customKey) {
-        int affectedIntegrationRows = integrationService.updateIntegrationSecretConfig(organizationId, customKey);
-        int affectedGitIntegrationRows = gitIntegrationService.updateGitRepoPersonalToken(organizationId, customKey);
+        int affectedIntegrationRows = integrationService.attachedUpdateIntegrationSecret(organizationId, customKey);
+        int affectedGitIntegrationRows = gitIntegrationService.attachedUpdateGitPersonalToken(organizationId, customKey);
         return affectedIntegrationRows + affectedGitIntegrationRows;
     }
 

@@ -108,8 +108,8 @@ public class EncryptionFacadeImpl implements EncryptionFacade {
                 () -> new NotFoundException(ResourceType.ODC_ORGANIZATION, "organizationId", organizationId));
         // use new secret if secret has been migrated
         if (organizationService.isOrganizationSecretMigrated(organizationId)
-                && StringUtils.isNotBlank(organization.getCustomSecret())) {
-            String secret = Caesar.decode(organization.getCustomSecret(), 8);
+                && StringUtils.isNotBlank(organization.getObfuscatedSecret())) {
+            String secret = Caesar.decode(organization.getObfuscatedSecret(), 8);
             return getEncryptor(secret, salt);
         }
         return getEncryptor(organization.getSecret(), salt);
