@@ -30,13 +30,11 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.stereotype.Service;
 
-import com.dingtalk.api.response.CorpRoleSimplelistResponse.EmpSimpleList;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
@@ -127,9 +125,9 @@ public class DBMaterializedViewService {
         });
 
         List<DatabaseAndMVs> mvs = databases.stream()
-            .map(schema -> new DatabaseAndMVs(schema, Optional.ofNullable(schema2mvs.get(schema))
-                .orElse(Collections.emptyList())))
-            .collect(Collectors.toList());
+                .map(schema -> new DatabaseAndMVs(schema, Optional.ofNullable(schema2mvs.get(schema))
+                        .orElse(Collections.emptyList())))
+                .collect(Collectors.toList());
 
         allResult.setTables(tables);
         allResult.setMvs(mvs);
