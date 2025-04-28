@@ -264,11 +264,10 @@ public class IntegrationService {
     private IntegrationEntity migrateSecretFromOld2New(IntegrationEntity entity, String oldSecret, String newSecret) {
         IntegrationConfig integrationConfig = new IntegrationConfig(entity);
         String rawSecret = decodeSecret(entity.getSecret(), entity.getSalt(), oldSecret);
-        integrationConfig.getEncryption().setSecret(rawSecret);
         Encryption encryption = integrationConfig.getEncryption();
         if (!encryption.getEnabled() || StringUtils.isNotBlank(encryption.getSecret())) {
             entity.setSalt(encryptionFacade.generateSalt());
-            entity.setSecret(attachedEncodeSecret(entity.getSecret(), entity.getSalt(), newSecret));
+            entity.setSecret(attachedEncodeSecret(rawSecret, entity.getSalt(), newSecret));
         }
         return entity;
     }
