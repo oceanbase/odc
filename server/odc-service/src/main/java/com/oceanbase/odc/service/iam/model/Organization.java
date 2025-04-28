@@ -70,7 +70,6 @@ public class Organization implements Serializable, SecurityResource, SingleOrgan
         organization.setUpdateTime(entity.getUpdateTime());
         organization.setUniqueIdentifier(entity.getUniqueIdentifier());
         organization.setName(entity.getName());
-        organization.setSecret(entity.getSecret());
         organization.setObfuscatedSecret(entity.getObfuscatedSecret());
         organization.setDescription(entity.getDescription());
         organization.setBuiltin(entity.getBuiltIn());
@@ -86,7 +85,6 @@ public class Organization implements Serializable, SecurityResource, SingleOrgan
         entity.setUpdateTime(this.getUpdateTime());
         entity.setUniqueIdentifier(this.getUniqueIdentifier());
         entity.setName(this.getName());
-        entity.setSecret(this.getSecret());
         entity.setObfuscatedSecret(this.getObfuscatedSecret());
         entity.setDescription(this.getDescription());
         entity.setBuiltIn(this.builtin);

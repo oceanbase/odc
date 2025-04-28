@@ -130,8 +130,8 @@ public class GitIntegrationService {
             return 0;
         }
         List<GitRepositoryEntity> saved = entities.stream()
-            .map(entity -> migrateTokenFromOld2New(entity, customSecret))
-            .collect(Collectors.toList());
+                .map(entity -> migrateTokenFromOld2New(entity, customSecret))
+                .collect(Collectors.toList());
         gitRepoRepository.saveAllAndFlush(saved);
         int affectedRows = saved.size();
 

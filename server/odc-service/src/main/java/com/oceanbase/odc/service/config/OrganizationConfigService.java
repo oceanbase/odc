@@ -253,7 +253,7 @@ public class OrganizationConfigService {
                         organizationId, affectIntegration);
                 // Step3: update organization secret
                 int affectOrganization = organizationRepo
-                        .updateOrganizationSecretById(organizationId, Caesar.encode(finalCustomKey, 8));
+                        .updateOrganizationObfuscatedSecretById(organizationId, Caesar.encode(finalCustomKey, 8));
                 log.info("Success update current organization secret, organizationId={}, affectedRows={}",
                         organizationId, affectOrganization);
             } catch (Exception e) {
@@ -268,7 +268,8 @@ public class OrganizationConfigService {
 
     private int attachedUpdateIntegrationConfig(Long organizationId, String customKey) {
         int affectedIntegrationRows = integrationService.attachedUpdateIntegrationSecret(organizationId, customKey);
-        int affectedGitIntegrationRows = gitIntegrationService.attachedUpdateGitPersonalToken(organizationId, customKey);
+        int affectedGitIntegrationRows =
+                gitIntegrationService.attachedUpdateGitPersonalToken(organizationId, customKey);
         return affectedIntegrationRows + affectedGitIntegrationRows;
     }
 

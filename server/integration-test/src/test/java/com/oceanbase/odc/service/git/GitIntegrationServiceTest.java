@@ -44,6 +44,8 @@ import com.oceanbase.odc.service.git.model.VcsProvider;
 import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.model.Organization;
 
+import cn.hutool.core.codec.Caesar;
+
 /**
  * @author: liuyizhuo.lyz
  * @date: 2024/8/1
@@ -66,7 +68,7 @@ public class GitIntegrationServiceTest extends AuthorityTestEnv {
     @Before
     public void setUp() {
         Organization organization = new Organization();
-        organization.setSecret(PasswordUtils.random(32));
+        organization.setObfuscatedSecret(Caesar.encode(PasswordUtils.random(32), 8));
         Mockito.when(organizationService.get(Mockito.any())).thenReturn(Optional.of(organization));
         GitRepositoryEntity saved = gitRepoRepository.saveAndFlush(modelToEntity(getRepo()));
         repoId = saved.getId();

@@ -26,7 +26,6 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -35,7 +34,6 @@ import com.oceanbase.odc.common.security.PasswordUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
-import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.metadb.iam.OrganizationEntity;
 import com.oceanbase.odc.metadb.iam.OrganizationRepository;
 import com.oceanbase.odc.metadb.iam.UserOrganizationEntity;
@@ -121,7 +119,7 @@ public class OrganizationService {
             organization.setUniqueIdentifier(uuid);
             log.info("uniqueIdentifier not given, generated uuid, uuid={}", uuid);
         }
-        organization.setSecret(Caesar.encode(PasswordUtils.random(32), 8));
+        organization.setObfuscatedSecret(Caesar.encode(PasswordUtils.random(32), 8));
 
         OrganizationEntity entity = organization.toEntity();
         OrganizationEntity saved = organizationRepository.saveAndFlush(entity);
@@ -154,7 +152,7 @@ public class OrganizationService {
         entity.setBuiltIn(true);
         entity.setType(OrganizationType.INDIVIDUAL);
         entity.setUniqueIdentifier(StringUtils.uuid());
-        entity.setSecret(Caesar.encode(user.getPassword(), 8));
+        entity.setObfuscatedSecret(Caesar.encode(user.getPassword(), 8));
         entity.setCreatorId(user.getId());
         OrganizationEntity saved = organizationRepository.saveAndFlush(entity);
 
@@ -173,9 +171,4 @@ public class OrganizationService {
         return organizationRepository.findById(id).map(Organization::ofEntity);
     }
 
-    public boolean isOrganizationSecretMigrated(@NotNull Long id) {
-        Organization organization = this.get(id)
-                .orElseThrow(() -> new UnexpectedException("organization is not found, " + id));
-        return !Objects.equals(organization.getSecret(), organization.getObfuscatedSecret());
-    }
 }

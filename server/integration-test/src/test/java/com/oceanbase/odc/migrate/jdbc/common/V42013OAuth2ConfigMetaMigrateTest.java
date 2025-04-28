@@ -30,6 +30,7 @@ import com.oceanbase.odc.service.integration.IntegrationService;
 import com.oceanbase.odc.service.integration.model.Oauth2Parameter;
 import com.oceanbase.odc.service.integration.model.SSOIntegrationConfig;
 
+import cn.hutool.core.codec.Caesar;
 import lombok.SneakyThrows;
 
 public class V42013OAuth2ConfigMetaMigrateTest extends ServiceTestEnv {
@@ -46,10 +47,11 @@ public class V42013OAuth2ConfigMetaMigrateTest extends ServiceTestEnv {
     public void init() {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         String addOrg = "insert into iam_organization("
-                + "`id`,`unique_identifier`,`secret`,`name`,`creator_id`,`is_builtin`,`description`,`type`) "
-                + "values(2,'a','%s','CompanyA',1,0,'D','TEAM')";
+                + "`id`,`unique_identifier`,`secret`,`obfuscated_secret`,`name`,`creator_id`,`is_builtin`,`description`,`type`) "
+                + "values(2,'a','%s','%s','CompanyA',1,0,'D','TEAM')";
         String secret = PasswordUtils.random(32);
-        jdbcTemplate.update(String.format(addOrg, secret));
+        String obfuscatedSecret = Caesar.encode(secret, 8);
+        jdbcTemplate.update(String.format(addOrg, secret, obfuscatedSecret));
     }
 
     @After

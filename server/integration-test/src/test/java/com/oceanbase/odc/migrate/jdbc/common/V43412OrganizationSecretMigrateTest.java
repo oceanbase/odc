@@ -58,11 +58,11 @@ public class V43412OrganizationSecretMigrateTest extends ServiceTestEnv {
         String secret = "Y75AZG91YuoepqL6VvyacJZ2fUaHVraI";
         jdbcTemplate.update(String.format(addTeamOrg, secret, secret));
         String addIndivOrg = "insert into iam_organization("
-                + "`id`,`unique_identifier`,`secret`,`name`,`creator_id`,`is_builtin`,`description`,`type`) "
-                + "values(1000,'b','%s','OceanBase2',1,0,'D','INDIVIDUAL')";
+                + "`id`,`unique_identifier`,`secret`,`obfuscated_secret`,`name`,`creator_id`,`is_builtin`,`description`,`type`) "
+                + "values(1000,'b','%s','%s','OceanBase2',1,0,'D','INDIVIDUAL')";
         // individual organization secret is encoded by BCryptPasswordEncoder
         secret2 = passwordEncoder.encode("aaAA11__");
-        jdbcTemplate.update(String.format(addIndivOrg, secret2));
+        jdbcTemplate.update(String.format(addIndivOrg, secret2, secret2));
     }
 
     @After
@@ -74,9 +74,9 @@ public class V43412OrganizationSecretMigrateTest extends ServiceTestEnv {
     public void teamOrganizationSecretMigrate() {
         V43412OrganizationSecretMigrate migrate = new V43412OrganizationSecretMigrate();
         migrate.migrate(dataSource);
-        String migratedSecret = selectSecretFromOrganization(100L);
+        String migratedSecret = selectObfuscatedSecretFromOrganization(100L);
         Assert.assertEquals(migratedSecret, Caesar.encode("Y75AZG91YuoepqL6VvyacJZ2fUaHVraI", 8));
-        String secret = Caesar.decode(migratedSecret, 8);
+        String secret = selectSecretFromOrganization(100L);
         Assert.assertEquals("Y75AZG91YuoepqL6VvyacJZ2fUaHVraI", secret);
         int count = selectAllFromOrganization().size();
         Assert.assertEquals(2, count);
@@ -85,14 +85,14 @@ public class V43412OrganizationSecretMigrateTest extends ServiceTestEnv {
     @Test
     public void teamOrganizationSecretMigrate2() {
         String addTeamOrg = "insert into iam_organization("
-                + "`id`,`unique_identifier`,`secret`,`name`,`creator_id`,`is_builtin`,`description`,`type`) "
-                + "values(101,'aa','%s','OceanBase3',1,0,'D','TEAM')";
+                + "`id`,`unique_identifier`,`secret`,`obfuscated_secret`,`name`,`creator_id`,`is_builtin`,`description`,`type`) "
+                + "values(101,'aa','%s','%s','OceanBase3',1,0,'D','TEAM')";
         String currSecret = "AAAAZG91YuoepqL6VvyacJZ2fUaHVVVV";
-        jdbcTemplate.update(String.format(addTeamOrg, currSecret));
+        jdbcTemplate.update(String.format(addTeamOrg, currSecret, currSecret));
 
         V43412OrganizationSecretMigrate migrate = new V43412OrganizationSecretMigrate();
         migrate.migrate(dataSource);
-        String migratedSecret = selectSecretFromOrganization(101L);
+        String migratedSecret = selectObfuscatedSecretFromOrganization(101L);
         Assert.assertEquals(migratedSecret, Caesar.encode(currSecret, 8));
         String secret = Caesar.decode(migratedSecret, 8);
         Assert.assertEquals(currSecret, secret);
@@ -111,14 +111,14 @@ public class V43412OrganizationSecretMigrateTest extends ServiceTestEnv {
         V43412OrganizationSecretMigrate migrate = new V43412OrganizationSecretMigrate();
         migrate.migrate(dataSource);
 
-        String customSecret = selectCustomSecretFromOrganization(100L);
-        Assert.assertEquals("Y75AZG91YuoepqL6VvyacJZ2fUaHVraI", customSecret);
+        String customSecret = selectObfuscatedSecretFromOrganization(100L);
+        Assert.assertEquals(Caesar.encode("Y75AZG91YuoepqL6VvyacJZ2fUaHVraI", 8), customSecret);
         String secret = selectSecretFromOrganization(100L);
-        Assert.assertEquals(Caesar.encode("Y75AZG91YuoepqL6VvyacJZ2fUaHVraI", 8), secret);
-        String customSecret2 = selectCustomSecretFromOrganization(102L);
-        Assert.assertEquals(currSecret, customSecret2);
+        Assert.assertEquals("Y75AZG91YuoepqL6VvyacJZ2fUaHVraI", secret);
+        String customSecret2 = selectObfuscatedSecretFromOrganization(102L);
+        Assert.assertEquals(Caesar.encode(currSecret, 8), customSecret2);
         String secret2 = selectSecretFromOrganization(102L);
-        Assert.assertEquals(Caesar.encode(currSecret, 8), secret2);
+        Assert.assertEquals(currSecret, secret2);
         int count = selectAllFromOrganization().size();
         Assert.assertEquals(3, count);
     }
@@ -127,7 +127,7 @@ public class V43412OrganizationSecretMigrateTest extends ServiceTestEnv {
     public void individualOrganizationSecretMigrate() {
         V43412OrganizationSecretMigrate migrate = new V43412OrganizationSecretMigrate();
         migrate.migrate(dataSource);
-        String migratedSecret = selectSecretFromOrganization(1000L);
+        String migratedSecret = selectObfuscatedSecretFromOrganization(1000L);
         Assert.assertEquals(migratedSecret, Caesar.encode(this.secret2, 8));
         String secret = Caesar.decode(migratedSecret, 8);
         Assert.assertEquals(this.secret2, secret);
@@ -138,14 +138,14 @@ public class V43412OrganizationSecretMigrateTest extends ServiceTestEnv {
     @Test
     public void individualOrganizationSecretMigrate2() {
         String addIndivOrg = "insert into iam_organization("
-                + "`id`,`unique_identifier`,`secret`,`name`,`creator_id`,`is_builtin`,`description`,`type`) "
-                + "values(1001,'bb','%s','OceanBase4',1,0,'D','INDIVIDUAL')";
+                + "`id`,`unique_identifier`,`secret`,`obfuscated_secret`,`name`,`creator_id`,`is_builtin`,`description`,`type`) "
+                + "values(1001,'bb','%s','%s','OceanBase4',1,0,'D','INDIVIDUAL')";
         String currSecret = passwordEncoder.encode("aaAA11___");
-        jdbcTemplate.update(String.format(addIndivOrg, currSecret));
+        jdbcTemplate.update(String.format(addIndivOrg, currSecret, currSecret));
 
         V43412OrganizationSecretMigrate migrate = new V43412OrganizationSecretMigrate();
         migrate.migrate(dataSource);
-        String migratedSecret = selectSecretFromOrganization(1001L);
+        String migratedSecret = selectObfuscatedSecretFromOrganization(1001L);
         Assert.assertEquals(migratedSecret, Caesar.encode(currSecret, 8));
         String secret = Caesar.decode(migratedSecret, 8);
         Assert.assertEquals(currSecret, secret);
@@ -158,7 +158,7 @@ public class V43412OrganizationSecretMigrateTest extends ServiceTestEnv {
         return jdbcTemplate.queryForObject(sql, String.class);
     }
 
-    private String selectCustomSecretFromOrganization(Long id) {
+    private String selectObfuscatedSecretFromOrganization(Long id) {
         String sql = "select `obfuscated_secret` from iam_organization where `id` = " + id;
         return jdbcTemplate.queryForObject(sql, String.class);
     }

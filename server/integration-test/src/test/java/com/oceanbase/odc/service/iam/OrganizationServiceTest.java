@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.iam;
 
-import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
@@ -28,8 +27,6 @@ import com.oceanbase.odc.ServiceTestEnv;
 import com.oceanbase.odc.metadb.iam.OrganizationRepository;
 import com.oceanbase.odc.service.iam.model.Organization;
 
-import cn.hutool.core.codec.Caesar;
-
 public class OrganizationServiceTest extends ServiceTestEnv {
     @Autowired
     private OrganizationService organizationService;
@@ -39,8 +36,6 @@ public class OrganizationServiceTest extends ServiceTestEnv {
     @Before
     public void setUp() throws Exception {
         organizationRepository.deleteAll();
-        Organization created = organizationService.createIfNotExists("company-unique-id-1000", "CompanyOB");
-        organizationRepository.saveAndFlush(created.toEntity());
     }
 
     @Test
@@ -103,25 +98,6 @@ public class OrganizationServiceTest extends ServiceTestEnv {
         Optional<Organization> get = organizationService.getByIdentifier("company-unique-id-1");
 
         Assert.assertTrue(get.isPresent());
-    }
-
-    @Test
-    public void isOrganizationSecretMigrated_IsMigratedTrue() {
-        Organization organization = newOrganization();
-        Organization org = organizationService.create(organization);
-        Assert.assertTrue(Objects.nonNull(org.getSecret()));
-        Assert.assertTrue(Objects.isNull(org.getCustomSecret()));
-        Assert.assertTrue(organizationService.isOrganizationSecretMigrated(org.getId()));
-    }
-
-    @Test
-    public void isOrganizationSecretMigrated_IsMigratedTrue2() {
-        Organization organization = newOrganization();
-        Organization org = organizationService.create(organization);
-        org.setCustomSecret(Caesar.decode(org.getSecret(), 8));
-        organizationRepository.saveAndFlush(org.toEntity());
-        Assert.assertEquals(org.getSecret(), Caesar.encode(org.getCustomSecret(), 8));
-        Assert.assertTrue(organizationService.isOrganizationSecretMigrated(org.getId()));
     }
 
     private Organization newOrganization() {
