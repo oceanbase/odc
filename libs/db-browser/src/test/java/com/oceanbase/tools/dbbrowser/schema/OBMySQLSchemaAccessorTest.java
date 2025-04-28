@@ -436,7 +436,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     public void listSystemViewsWhenViewNameLikeNotNull_Success() {
         List<DBObjectIdentity> sysViews = accessor.listAllSystemViews("TABLE");
         if (CollectionUtils.isNotEmpty(sysViews)) {
-            Assert.assertTrue(sysViews.stream().allMatch(o -> o.getName().contains("TABLE")));
+            Assert.assertTrue(sysViews.stream().allMatch(o -> o.getName().toUpperCase().contains("TABLE")));
         }
     }
 

@@ -315,7 +315,7 @@ public class OracleSchemaAccessorTest extends BaseTestEnv {
     public void listAllUserViews_Success() {
         List<DBObjectIdentity> views = accessor.listAllUserViews("_TEST");
         if (CollectionUtils.isNotEmpty(views)) {
-            Assert.assertTrue(views.stream().allMatch(o -> o.getName().contains("_TEST")));
+            Assert.assertTrue(views.stream().allMatch(o -> o.getName().toUpperCase().contains("_TEST")));
         }
     }
 
