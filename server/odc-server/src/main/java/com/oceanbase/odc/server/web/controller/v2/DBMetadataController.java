@@ -57,7 +57,8 @@ public class DBMetadataController {
         if (ConnectionSessionUtil.isLogicalSession(session)) {
             return Responses.list(ListUtils.EMPTY_LIST);
         }
-        return Responses.list(identitiesService.list(session, schemaName, StringUtils.escapeLike(identityNameLike), types));
+        return Responses
+                .list(identitiesService.list(session, schemaName, StringUtils.escapeLike(identityNameLike), types));
     }
 
 }
