@@ -639,11 +639,13 @@ public class FlowInstanceService {
                 .and(FlowInstanceViewSpecs.createTimeBefore(params.getEndTime()))
                 .and(FlowInstanceViewSpecs.idEquals(targetId))
                 .and(FlowInstanceViewSpecs.groupByIdAndTaskType());
+        Set<TaskType> taskTypes;
         if (params.getType() != null) {
+            taskTypes = Sets.newHashSet(params.getType());
             specification = specification.and(FlowInstanceViewSpecs.taskTypeEquals(params.getType()));
         } else {
             // Task type which will be filtered independently
-            List<TaskType> types = Arrays.asList(
+            taskTypes = Sets.newHashSet(
                     TaskType.MULTIPLE_ASYNC,
                     TaskType.EXPORT,
                     TaskType.IMPORT,
@@ -657,20 +659,27 @@ public class FlowInstanceService {
                     TaskType.APPLY_DATABASE_PERMISSION,
                     TaskType.STRUCTURE_COMPARISON,
                     TaskType.APPLY_TABLE_PERMISSION);
-            specification = specification.and(FlowInstanceViewSpecs.taskTypeIn(types));
+            specification = specification.and(FlowInstanceViewSpecs.taskTypeIn(taskTypes));
         }
 
         if (CollectionUtils.isNotEmpty(params.getProjectIds())) {
             specification = specification.and(FlowInstanceViewSpecs.projectIdIn(params.getProjectIds()));
         } else {
             Set<Long> joinedProjectIds = userService.getCurrentUserJoinedProjectIds();
-            // if the user does not join any projects in team space, then return empty directly
+            // If the user does not join any projects in team space, and it filters out the
+            // APPLY_PROJECT_PERMISSION, then return empty directly
             if (CollectionUtils.isEmpty(joinedProjectIds)
-                    && authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM) {
+                    && authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM
+                    && !taskTypes.contains(TaskType.APPLY_PROJECT_PERMISSION)) {
                 return Page.empty();
             }
+            // Add the condition of joined project ids or if it contains APPLY_PROJECT_PERMISSION, we only need
+            // to require creatorId equals currentUserId because user should be allowed to view the
+            // APPLY_PROJECT_PERMISSION tickets even if they have not joined that project
             specification =
-                    specification.and(FlowInstanceViewSpecs.projectIdIn(userService.getCurrentUserJoinedProjectIds()));
+                    specification.and(FlowInstanceViewSpecs.projectIdIn(userService.getCurrentUserJoinedProjectIds())
+                            .or(FlowInstanceViewSpecs.creatorIdEquals(authenticationFacade.currentUserId())
+                                    .and(FlowInstanceViewSpecs.taskTypeEquals(TaskType.APPLY_PROJECT_PERMISSION))));
         }
         if (params.getContainsAll()) {
             return flowInstanceViewRepository.findAll(specification, pageable).map(FlowInstanceEntity::from);
