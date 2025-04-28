@@ -167,6 +167,17 @@ public class DBIdentitiesServiceTest extends ServiceTestEnv {
     }
 
     @Test
+    public void list_whenNoSchemaAndTableOrViewExists_success() {
+        ConnectionSession connectionSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
+        List<DBObjectType> types = Arrays.asList(DBObjectType.TABLE, DBObjectType.VIEW);
+        List<SchemaIdentities> result = dbIdentitiesService.list(connectionSession, null, "test_", types);
+        Assert.assertFalse(result.isEmpty());
+        Assert.assertTrue(result.stream().filter(r -> SCHEMA_NAME.equals(r.getSchemaName()))
+            .filter(r -> r.getIdentities().stream().allMatch(rr -> rr.getName().contains("test_")))
+            .allMatch(r -> CollectionUtils.isNotEmpty(r.getIdentities())));
+    }
+
+    @Test
     public void list_whenSchemaExactlyExistsAndTableOrViewNotExists_success() {
         ConnectionSession connectionSession = TestConnectionUtil.getTestConnectionSession(ConnectType.OB_MYSQL);
         List<DBObjectType> types = Arrays.asList(DBObjectType.TABLE, DBObjectType.VIEW);
