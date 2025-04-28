@@ -16,11 +16,15 @@
 package com.oceanbase.odc.service.db;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
+
+import javax.validation.constraints.NotNull;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +41,7 @@ import com.oceanbase.odc.plugin.schema.api.ViewExtensionPoint;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.db.model.AllTablesAndViews;
 import com.oceanbase.odc.service.db.model.DBViewResponse;
+import com.oceanbase.odc.service.db.model.DatabaseAndMVs;
 import com.oceanbase.odc.service.db.model.DatabaseAndTables;
 import com.oceanbase.odc.service.db.model.DatabaseAndViews;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
@@ -53,7 +58,7 @@ import lombok.extern.slf4j.Slf4j;
 @SkipAuthorize("inside connect session")
 public class DBViewService {
     @Autowired
-    private ConnectConsoleService consoleService;
+    private DBTableService dbTableService;
 
     public List<String> listSystemViews(@NonNull ConnectionSession session, String databaseName) {
         DBSchemaAccessor schemaAccessor = DBSchemaAccessors.create(session);
@@ -89,6 +94,7 @@ public class DBViewService {
         AllTablesAndViews allResult = new AllTablesAndViews();
         DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
         List<DatabaseAndTables> tables = new ArrayList<>();
+        List<String> databases = accessor.showDatabases();;
         if (connectionSession.getConnectType().equals(ConnectType.ODP_SHARDING_OB_MYSQL)) {
             List<String> names = accessor.showTablesLike(null, tableNameLike).stream()
                     .filter(name -> !StringUtils.endsWithIgnoreCase(name, OdcConstants.VALIDATE_DDL_TABLE_POSTFIX))
@@ -97,38 +103,28 @@ public class DBViewService {
                     ConnectionSessionUtil.getCurrentSchema(connectionSession), names);
             tables.add(databaseAndTables);
         } else {
-            List<String> databases = accessor.showDatabases();
-            tables = databases.stream().map(schema -> {
-                List<String> tablesLike = accessor.showTablesLike(schema, tableNameLike).stream()
-                        .filter(name -> !StringUtils.endsWith(name.toUpperCase(),
-                                OdcConstants.VALIDATE_DDL_TABLE_POSTFIX))
-                        .collect(Collectors.toList());
-                return tablesLike.size() != 0 ? new DatabaseAndTables(schema, tablesLike)
-                        : new DatabaseAndTables();
-            }).filter(item -> item.getDatabaseName() != null)
-                    .sorted(Comparator.comparing(DatabaseAndTables::getDatabaseName)).collect(Collectors.toList());
+           tables=dbTableService.generateDatabaseAndTables(accessor, tableNameLike,databases);
         }
-
-        List<DBObjectIdentity> viewsIdentities = accessor.listAllViews(tableNameLike);
-        Map<String, List<String>> schema2views = new HashMap<>();
-        viewsIdentities.forEach(item -> {
-            List<String> views = schema2views.computeIfAbsent(item.getSchemaName(), t -> new ArrayList<>());
-            views.add(item.getName());
-        });
-        List<DatabaseAndViews> views = new ArrayList<>();
-        schema2views.forEach((schema, viewNames) -> {
-            DatabaseAndViews view = new DatabaseAndViews();
-            view.setDatabaseName(schema);
-            view.setViews(viewNames);
-            views.add(view);
-        });
         allResult.setTables(tables);
-        allResult.setViews(views);
+        allResult.setViews(generateDatabaseAndViews(accessor, tableNameLike, databases));
         return allResult;
     }
 
     private ViewExtensionPoint getDBViewExtensionPoint(@NonNull ConnectionSession session) {
         return SchemaPluginUtil.getViewExtension(session.getDialectType());
+    }
+
+    private List<DatabaseAndViews> generateDatabaseAndViews(@NotNull DBSchemaAccessor accessor, @NotNull String tableNameLike,
+        @NonNull List<String> databases) {
+        List<DBObjectIdentity> existedViewIdentities = accessor.listAllViews(tableNameLike);
+        Map<String, List<String>> schema2ExistedViews = new HashMap<>();
+        existedViewIdentities.forEach(item -> {
+            schema2ExistedViews.computeIfAbsent(item.getSchemaName(), t -> new ArrayList<>()).add(item.getName());
+        });
+        return databases.stream()
+            .map(schema -> new DatabaseAndViews(schema, Optional.ofNullable(schema2ExistedViews.get(schema))
+                .orElse(Collections.emptyList())))
+            .collect(Collectors.toList());
     }
 
 }
