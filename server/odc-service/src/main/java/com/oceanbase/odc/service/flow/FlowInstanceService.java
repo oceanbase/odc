@@ -670,8 +670,7 @@ public class FlowInstanceService {
             // APPLY_PROJECT_PERMISSION, then return empty directly
             if (CollectionUtils.isEmpty(joinedProjectIds)
                     && authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM
-                    && !taskTypes.contains(
-                            TaskType.APPLY_PROJECT_PERMISSION)) {
+                    && !taskTypes.contains(TaskType.APPLY_PROJECT_PERMISSION)) {
                 return Page.empty();
             }
             // Add the condition of joined project ids or if it contains APPLY_PROJECT_PERMISSION, we only need
