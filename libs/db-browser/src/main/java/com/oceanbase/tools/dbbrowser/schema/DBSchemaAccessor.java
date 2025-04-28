@@ -121,12 +121,12 @@ public interface DBSchemaAccessor {
     /**
      * List all user view as DBObjectIdentity
      */
-    List<DBObjectIdentity> listAllUserViews();
+    List<DBObjectIdentity> listAllUserViews(String viewNameLike);
 
     /**
      * List all system view as DBObjectIdentity
      */
-    List<DBObjectIdentity> listAllSystemViews();
+    List<DBObjectIdentity> listAllSystemViews(String viewNameLike);
 
     /**
      * Show all system view names list
