@@ -28,7 +28,6 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.stereotype.Service;
 
@@ -50,7 +49,6 @@ import com.oceanbase.odc.service.db.model.GenerateTableDDLResp;
 import com.oceanbase.odc.service.db.model.GenerateUpdateTableDDLReq;
 import com.oceanbase.odc.service.db.model.UpdateTableDdlCheck;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
-import com.oceanbase.odc.service.session.ConnectConsoleService;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
 import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
@@ -234,22 +232,24 @@ public class DBTableService {
         return schemaAccessor.isLowerCaseTableName();
     }
 
-    public List<DatabaseAndTables> generateDatabaseAndTables( @NotNull DBSchemaAccessor accessor, @NotNull String tableNameLike,
-        @NotNull List<String> databases) {
+    public List<DatabaseAndTables> generateDatabaseAndTables(@NotNull DBSchemaAccessor accessor,
+            @NotNull String tableNameLike,
+            @NotNull List<String> existedDatabases) {
         List<DBObjectIdentity> existedTablesIdentities = accessor.listTables(null, tableNameLike).stream()
-            .filter(identity -> !StringUtils.endsWithIgnoreCase(identity.getName(),
-                OdcConstants.VALIDATE_DDL_TABLE_POSTFIX)
-                                && !StringUtils.startsWithIgnoreCase(identity.getName(), OdcConstants.CONTAINER_TABLE_PREFIX)
-                                && !StringUtils.startsWithIgnoreCase(identity.getName(), OdcConstants.MATERIALIZED_VIEW_LOG_PREFIX))
-            .collect(Collectors.toList());
+                .filter(identity -> !StringUtils.endsWithIgnoreCase(identity.getName(),
+                        OdcConstants.VALIDATE_DDL_TABLE_POSTFIX)
+                        && !StringUtils.startsWithIgnoreCase(identity.getName(), OdcConstants.CONTAINER_TABLE_PREFIX)
+                        && !StringUtils.startsWithIgnoreCase(identity.getName(),
+                                OdcConstants.MATERIALIZED_VIEW_LOG_PREFIX))
+                .collect(Collectors.toList());
         Map<String, List<String>> schema2ExistedTables = new HashMap<>();
         existedTablesIdentities.forEach(item -> {
             schema2ExistedTables.computeIfAbsent(item.getSchemaName(), t -> new ArrayList<>()).add(item.getName());
         });
-        return databases.stream()
-            .map(schema -> new DatabaseAndTables(schema, Optional.ofNullable(schema2ExistedTables.get(schema))
-                .orElse(Collections.emptyList())))
-            .collect(Collectors.toList());
+        return existedDatabases.stream()
+                .map(schema -> new DatabaseAndTables(schema, Optional.ofNullable(schema2ExistedTables.get(schema))
+                        .orElse(Collections.emptyList())))
+                .collect(Collectors.toList());
     }
 
     private TableExtensionPoint getTableExtensionPoint(@NotNull ConnectionSession connectionSession) {

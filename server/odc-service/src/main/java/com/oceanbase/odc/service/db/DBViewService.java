@@ -17,7 +17,6 @@ package com.oceanbase.odc.service.db;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,11 +40,9 @@ import com.oceanbase.odc.plugin.schema.api.ViewExtensionPoint;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.db.model.AllTablesAndViews;
 import com.oceanbase.odc.service.db.model.DBViewResponse;
-import com.oceanbase.odc.service.db.model.DatabaseAndMVs;
 import com.oceanbase.odc.service.db.model.DatabaseAndTables;
 import com.oceanbase.odc.service.db.model.DatabaseAndViews;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
-import com.oceanbase.odc.service.session.ConnectConsoleService;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
@@ -94,7 +91,7 @@ public class DBViewService {
         AllTablesAndViews allResult = new AllTablesAndViews();
         DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
         List<DatabaseAndTables> tables = new ArrayList<>();
-        List<String> databases = accessor.showDatabases();;
+        List<String> existedDatabases = accessor.showDatabases();;
         if (connectionSession.getConnectType().equals(ConnectType.ODP_SHARDING_OB_MYSQL)) {
             List<String> names = accessor.showTablesLike(null, tableNameLike).stream()
                     .filter(name -> !StringUtils.endsWithIgnoreCase(name, OdcConstants.VALIDATE_DDL_TABLE_POSTFIX))
@@ -103,10 +100,10 @@ public class DBViewService {
                     ConnectionSessionUtil.getCurrentSchema(connectionSession), names);
             tables.add(databaseAndTables);
         } else {
-           tables=dbTableService.generateDatabaseAndTables(accessor, tableNameLike,databases);
+            tables = dbTableService.generateDatabaseAndTables(accessor, tableNameLike, existedDatabases);
         }
         allResult.setTables(tables);
-        allResult.setViews(generateDatabaseAndViews(accessor, tableNameLike, databases));
+        allResult.setViews(generateDatabaseAndViews(accessor, tableNameLike, existedDatabases));
         return allResult;
     }
 
@@ -114,17 +111,18 @@ public class DBViewService {
         return SchemaPluginUtil.getViewExtension(session.getDialectType());
     }
 
-    private List<DatabaseAndViews> generateDatabaseAndViews(@NotNull DBSchemaAccessor accessor, @NotNull String tableNameLike,
-        @NonNull List<String> databases) {
+    private List<DatabaseAndViews> generateDatabaseAndViews(@NotNull DBSchemaAccessor accessor,
+            @NotNull String tableNameLike,
+            @NonNull List<String> existedDatabases) {
         List<DBObjectIdentity> existedViewIdentities = accessor.listAllViews(tableNameLike);
         Map<String, List<String>> schema2ExistedViews = new HashMap<>();
         existedViewIdentities.forEach(item -> {
             schema2ExistedViews.computeIfAbsent(item.getSchemaName(), t -> new ArrayList<>()).add(item.getName());
         });
-        return databases.stream()
-            .map(schema -> new DatabaseAndViews(schema, Optional.ofNullable(schema2ExistedViews.get(schema))
-                .orElse(Collections.emptyList())))
-            .collect(Collectors.toList());
+        return existedDatabases.stream()
+                .map(schema -> new DatabaseAndViews(schema, Optional.ofNullable(schema2ExistedViews.get(schema))
+                        .orElse(Collections.emptyList())))
+                .collect(Collectors.toList());
     }
 
 }
