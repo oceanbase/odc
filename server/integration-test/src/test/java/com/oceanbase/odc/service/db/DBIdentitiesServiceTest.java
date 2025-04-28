@@ -173,8 +173,8 @@ public class DBIdentitiesServiceTest extends ServiceTestEnv {
         List<SchemaIdentities> result = dbIdentitiesService.list(connectionSession, null, "test_", types);
         Assert.assertFalse(result.isEmpty());
         Assert.assertTrue(result.stream().filter(r -> SCHEMA_NAME.equals(r.getSchemaName()))
-            .filter(r -> r.getIdentities().stream().allMatch(rr -> rr.getName().contains("test_")))
-            .allMatch(r -> CollectionUtils.isNotEmpty(r.getIdentities())));
+                .filter(r -> r.getIdentities().stream().allMatch(rr -> rr.getName().contains("test_")))
+                .allMatch(r -> CollectionUtils.isNotEmpty(r.getIdentities())));
     }
 
     @Test
