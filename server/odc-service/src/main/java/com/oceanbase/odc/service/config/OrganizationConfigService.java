@@ -254,7 +254,7 @@ public class OrganizationConfigService {
                         organizationId, affectIntegration);
                 // Step3: update organization secret
                 int affectOrganization = organizationRepo
-                        .updateOrganizationObfuscatedSecretById(organizationId, Caesar.encode(finalCustomKey, 8));
+                        .updateOrganizationSecretById(organizationId, Caesar.encode(finalCustomKey, 8));
                 log.info("Success update current organization secret, organizationId={}, affectedRows={}",
                         organizationId, affectOrganization);
             } catch (Exception e) {
@@ -270,7 +270,7 @@ public class OrganizationConfigService {
     private int attachedUpdateIntegrationConfig(Long organizationId, String customKey) {
         OrganizationEntity organization = organizationRepo.findById(organizationId)
                 .orElseThrow(() -> new IllegalArgumentException("Organization not found"));
-        String oldSecret = Caesar.decode(organization.getObfuscatedSecret(), 8);
+        String oldSecret = Caesar.decode(organization.getSecret(), 8);
         int affectedIntegrationRows =
                 integrationService.attachedUpdateIntegrationSecret(organizationId, oldSecret, customKey);
         int affectedGitIntegrationRows =

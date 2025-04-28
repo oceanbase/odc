@@ -47,7 +47,7 @@ public class V42013OAuth2ConfigMetaMigrateTest extends ServiceTestEnv {
     public void init() {
         this.jdbcTemplate = new JdbcTemplate(dataSource);
         String addOrg = "insert into iam_organization("
-                + "`id`,`unique_identifier`,`secret`,`obfuscated_secret`,`name`,`creator_id`,`is_builtin`,`description`,`type`) "
+                + "`id`,`unique_identifier`,`secret`,`secret_new`,`name`,`creator_id`,`is_builtin`,`description`,`type`) "
                 + "values(2,'a','%s','%s','CompanyA',1,0,'D','TEAM')";
         String secret = PasswordUtils.random(32);
         String obfuscatedSecret = Caesar.encode(secret, 8);

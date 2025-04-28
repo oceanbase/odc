@@ -119,7 +119,7 @@ public class OrganizationService {
             organization.setUniqueIdentifier(uuid);
             log.info("uniqueIdentifier not given, generated uuid, uuid={}", uuid);
         }
-        organization.setObfuscatedSecret(Caesar.encode(PasswordUtils.random(32), 8));
+        organization.setSecret(Caesar.encode(PasswordUtils.random(32), 8));
 
         OrganizationEntity entity = organization.toEntity();
         OrganizationEntity saved = organizationRepository.saveAndFlush(entity);
@@ -152,7 +152,7 @@ public class OrganizationService {
         entity.setBuiltIn(true);
         entity.setType(OrganizationType.INDIVIDUAL);
         entity.setUniqueIdentifier(StringUtils.uuid());
-        entity.setObfuscatedSecret(Caesar.encode(user.getPassword(), 8));
+        entity.setSecret(Caesar.encode(user.getPassword(), 8));
         entity.setCreatorId(user.getId());
         OrganizationEntity saved = organizationRepository.saveAndFlush(entity);
 

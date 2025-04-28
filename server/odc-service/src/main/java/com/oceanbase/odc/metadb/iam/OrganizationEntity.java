@@ -37,7 +37,7 @@ import lombok.ToString;
 @Data
 @Entity
 @Table(name = "iam_organization")
-@ToString(exclude = {"obfuscatedSecret"})
+@ToString(exclude = {"secret"})
 public class OrganizationEntity {
 
     @Id
@@ -77,13 +77,12 @@ public class OrganizationEntity {
      */
     @Column(name = "display_name", nullable = false)
     private String displayName;
-    private String secret;
 
     /**
      * Obfuscated secret for public connection encryption after migrate to ODC 4.3.4
      */
-    @Column(name = "obfuscated_secret", nullable = false)
-    private String obfuscatedSecret;
+    @Column(name = "secret_new", nullable = false)
+    private String secret;
 
     /**
      * UserID of creator, may NULL

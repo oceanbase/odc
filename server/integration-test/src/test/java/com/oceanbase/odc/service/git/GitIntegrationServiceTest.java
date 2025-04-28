@@ -68,7 +68,7 @@ public class GitIntegrationServiceTest extends AuthorityTestEnv {
     @Before
     public void setUp() {
         Organization organization = new Organization();
-        organization.setObfuscatedSecret(Caesar.encode(PasswordUtils.random(32), 8));
+        organization.setSecret(Caesar.encode(PasswordUtils.random(32), 8));
         Mockito.when(organizationService.get(Mockito.any())).thenReturn(Optional.of(organization));
         GitRepositoryEntity saved = gitRepoRepository.saveAndFlush(modelToEntity(getRepo()));
         repoId = saved.getId();

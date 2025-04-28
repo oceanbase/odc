@@ -57,15 +57,15 @@ public class V43412OrganizationSecretMigrate implements JdbcMigratable {
     }
 
     private List<OrganizationEntity> listOrganizations() {
-        String sql = "select `id`, `obfuscated_secret` from iam_organization";
+        String sql = "select `id`, `secret` from iam_organization";
         return jdbcTemplate.query(sql, new BeanPropertyRowMapper<>(OrganizationEntity.class));
     }
 
     public long migrateForOrganization(List<OrganizationEntity> organizationList) {
-        String sql = "update iam_organization set obfuscated_secret=? where id=?";
+        String sql = "update iam_organization set secret_new=? where id=?";
         List<Object[]> parameters = organizationList.stream()
                 .map(organization -> new Object[] {
-                        Caesar.encode(organization.getObfuscatedSecret(), 8), organization.getId()})
+                        Caesar.encode(organization.getSecret(), 8), organization.getId()})
                 .collect(Collectors.toList());
         AtomicReference<Exception> thrown = new AtomicReference<>(null);
         Long total = transactionTemplate.execute(status -> {
