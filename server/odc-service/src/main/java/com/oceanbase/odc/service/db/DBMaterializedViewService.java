@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.db;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -107,30 +106,15 @@ public class DBMaterializedViewService {
         AllMVBaseTables allResult = new AllMVBaseTables();
         DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
         List<String> databases = accessor.showDatabases();
-        List<DatabaseAndTables> tables = databases.stream().map(schema -> {
-            List<String> tablesLike = accessor.showTablesLike(schema, tableNameLike).stream()
-                    .filter(name -> !StringUtils.endsWith(name.toUpperCase(),
-                            OdcConstants.VALIDATE_DDL_TABLE_POSTFIX)
-                            && !StringUtils.startsWithIgnoreCase(name, OdcConstants.CONTAINER_TABLE_PREFIX)
-                            && !StringUtils.startsWithIgnoreCase(name, OdcConstants.MATERIALIZED_VIEW_LOG_PREFIX))
-                    .collect(Collectors.toList());
-            return tablesLike.size() != 0 ? new DatabaseAndTables(schema, tablesLike)
-                    : new DatabaseAndTables(schema, Collections.emptyList());
-        }).filter(item -> item.getDatabaseName() != null)
-                .sorted(Comparator.comparing(DatabaseAndTables::getDatabaseName)).collect(Collectors.toList());
-        List<DBObjectIdentity> mvIdentities = accessor.listAllMViewsLike(tableNameLike);
-        Map<String, List<String>> schema2mvs = new HashMap<>();
-        mvIdentities.forEach(item -> {
-            schema2mvs.computeIfAbsent(item.getSchemaName(), t -> new ArrayList<>()).add(item.getName());
-        });
-
-        List<DatabaseAndMVs> mvs = databases.stream()
-                .map(schema -> new DatabaseAndMVs(schema, Optional.ofNullable(schema2mvs.get(schema))
-                        .orElse(Collections.emptyList())))
-                .collect(Collectors.toList());
-
-        allResult.setTables(tables);
-        allResult.setMvs(mvs);
+        List<DBObjectIdentity> existedTablesIdentities = accessor.listTables(null, tableNameLike).stream()
+            .filter(identity -> !StringUtils.endsWithIgnoreCase(identity.getName(),
+                                OdcConstants.VALIDATE_DDL_TABLE_POSTFIX)
+                                && !StringUtils.startsWithIgnoreCase(identity.getName(), OdcConstants.CONTAINER_TABLE_PREFIX)
+                                && !StringUtils.startsWithIgnoreCase(identity.getName(), OdcConstants.MATERIALIZED_VIEW_LOG_PREFIX))
+                        .collect(Collectors.toList());
+        List<DBObjectIdentity> existedMViewIdentities = accessor.listAllMViewsLike(tableNameLike);
+        allResult.setTables(generateDatabaseAndTables(existedTablesIdentities, databases));
+        allResult.setMvs(generateDatabaseAndMVs(existedMViewIdentities, databases));
         return allResult;
     }
 
@@ -183,6 +167,33 @@ public class DBMaterializedViewService {
 
     private MViewExtensionPoint getDBMViewExtensionPoint(@NonNull ConnectionSession session) {
         return SchemaPluginUtil.getMViewExtension(session.getDialectType());
+    }
+
+    private List<DatabaseAndMVs> generateDatabaseAndMVs(List<DBObjectIdentity> existedMViewIdentities,
+        List<String> databases) {
+        Map<String, List<String>> schema2ExistedMViews = new HashMap<>();
+        existedMViewIdentities.forEach(item -> {
+            schema2ExistedMViews.computeIfAbsent(item.getSchemaName(), t -> new ArrayList<>()).add(item.getName());
+        });
+
+        List<DatabaseAndMVs> mvs = databases.stream()
+            .map(schema -> new DatabaseAndMVs(schema, Optional.ofNullable(schema2ExistedMViews.get(schema))
+                .orElse(Collections.emptyList())))
+            .collect(Collectors.toList());
+        return mvs;
+    }
+
+    private List<DatabaseAndTables> generateDatabaseAndTables(List<DBObjectIdentity> existedTablesIdentities,
+        List<String> databases) {
+        Map<String, List<String>> schema2ExistedTables = new HashMap<>();
+        existedTablesIdentities.forEach(item -> {
+            schema2ExistedTables.computeIfAbsent(item.getSchemaName(), t -> new ArrayList<>()).add(item.getName());
+        });
+        List<DatabaseAndTables> tables = databases.stream()
+            .map(schema -> new DatabaseAndTables(schema, Optional.ofNullable(schema2ExistedTables.get(schema))
+                .orElse(Collections.emptyList())))
+            .collect(Collectors.toList());
+        return tables;
     }
 
 }
