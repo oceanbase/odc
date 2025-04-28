@@ -427,7 +427,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listAllSystemViews_Success() {
-        List<DBObjectIdentity> sysViews = accessor.listAllSystemViews();
+        List<DBObjectIdentity> sysViews = accessor.listAllSystemViews(null);
         Assert.assertTrue(sysViews != null && sysViews.size() > 0);
     }
 

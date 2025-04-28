@@ -239,11 +239,16 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     }
 
     @Override
-    public List<DBObjectIdentity> listAllSystemViews() {
-        List<DBObjectIdentity> results = super.listAllSystemViews();
-        String sql1 = "show full tables from `oceanbase` where Table_type='SYSTEM VIEW'";
+    public List<DBObjectIdentity> listAllSystemViews(String viewNameLike) {
+        List<DBObjectIdentity> results = super.listAllSystemViews(viewNameLike);
+        MySQLSqlBuilder sb = new MySQLSqlBuilder();
+        sb.append("show full tables from `oceanbase` where Table_type='SYSTEM VIEW'");
+        if (StringUtils.isNotBlank(viewNameLike)) {
+            sb.append(" AND Tables_in_oceanbase LIKE ")
+                    .value("%" + viewNameLike + "%");
+        }
         try {
-            List<String> oceanbaseViews = jdbcOperations.query(sql1, (rs, rowNum) -> rs.getString(1));
+            List<String> oceanbaseViews = jdbcOperations.query(sb.toString(), (rs, rowNum) -> rs.getString(1));
             oceanbaseViews.forEach(name -> results.add(DBObjectIdentity.of("oceanbase", DBObjectType.VIEW, name)));
         } catch (Exception ex) {
             log.info("List tables for 'oceanbase' failed, reason={}", ex.getMessage());

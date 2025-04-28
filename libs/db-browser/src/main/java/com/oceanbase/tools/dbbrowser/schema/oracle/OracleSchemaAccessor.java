@@ -294,17 +294,21 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public List<DBObjectIdentity> listAllUserViews() {
+    public List<DBObjectIdentity> listAllUserViews(String viewNameLike) {
         OracleSqlBuilder sb = new OracleSqlBuilder();
         sb.append("select OWNER as schema_name, 'VIEW' as type, VIEW_NAME as name");
         sb.append(" from ");
         sb.append(dataDictTableNames.VIEWS());
+        if (StringUtils.isNotBlank(viewNameLike)) {
+            sb.append(" WHERE VIEW_NAME LIKE ");
+            sb.value("%" + viewNameLike + "%");
+        }
         sb.append(" ORDER BY schema_name, type, name");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
     }
 
     @Override
-    public List<DBObjectIdentity> listAllSystemViews() {
+    public List<DBObjectIdentity> listAllSystemViews(String viewNameLike) {
         return Collections.emptyList();
     }
 
