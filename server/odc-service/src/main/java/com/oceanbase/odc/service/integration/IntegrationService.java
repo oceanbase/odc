@@ -246,10 +246,10 @@ public class IntegrationService {
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("odc internal usage")
-    public int attachedUpdateIntegrationSecret(@NotNull Long organizationId, String oldSecret, String newSecret) {
+    public void attachedUpdateIntegrationSecret(@NotNull Long organizationId, String oldSecret, String newSecret) {
         List<IntegrationEntity> entities = this.listByOrganizationId(organizationId);
         if (entities.isEmpty()) {
-            return 0;
+            return;
         }
         List<IntegrationEntity> saved = entities.stream()
                 .map(entity -> migrateSecretFromOld2New(entity, oldSecret, newSecret))
@@ -258,7 +258,6 @@ public class IntegrationService {
         int affectedRows = saved.size();
 
         log.info("attached update integration secret from organization config completed, total: {}", affectedRows);
-        return affectedRows;
     }
 
     private IntegrationEntity migrateSecretFromOld2New(IntegrationEntity entity, String oldSecret, String newSecret) {

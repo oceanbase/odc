@@ -57,6 +57,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.validation.annotation.Validated;
 
+import com.oceanbase.odc.common.crypto.TextEncryptor;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.model.DefaultSecurityResource;
@@ -116,6 +117,7 @@ import com.oceanbase.odc.service.connection.ssl.ConnectionSSLAdaptor;
 import com.oceanbase.odc.service.connection.util.ConnectionIdList;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
 import com.oceanbase.odc.service.db.schema.syncer.DBSchemaSyncProperties;
+import com.oceanbase.odc.service.encryption.EncryptionFacade;
 import com.oceanbase.odc.service.flow.model.BinaryDataResult;
 import com.oceanbase.odc.service.flow.model.ByteArrayDataResult;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
@@ -226,6 +228,9 @@ public class ConnectionService {
 
     @Autowired
     private ConnectionEventPublisher connectionEventPublisher;
+
+    @Autowired
+    private EncryptionFacade encryptionFacade;
 
     @Value("${odc.integration.bastion.enabled:false}")
     private boolean bastionEnabled;
@@ -807,20 +812,16 @@ public class ConnectionService {
     }
 
     @SkipAuthorize("internal usage")
-    public Integer updatePasswordEncrypted(@NotNull Long organizationId, String customKey) {
+    public void updatePasswordEncrypted(@NotNull Long organizationId, String oldSecret, String newSecret) {
         List<ConnectionConfig> connectionList = listByOrganizationId(organizationId);
         // No connection need to be encrypted
         if (connectionList.isEmpty()) {
-            return 0;
+            return;
         }
-        Integer affected = txTemplate.execute(status -> {
+        txTemplate.execute(status -> {
             try {
                 List<ConnectionEntity> reEncryptedList = connectionList.stream()
-                        .map(encryptedConfig -> {
-                            ConnectionConfig decryptedConfig = getDecryptedConfig(encryptedConfig);
-                            ConnectionConfig reEncryptedConfig = getEncryptedConfig(decryptedConfig, customKey);
-                            return mapper.modelToEntity(reEncryptedConfig);
-                        })
+                        .map(config -> mapper.modelToEntity(getReEncryptedConfig(config, oldSecret, newSecret)))
                         .collect(Collectors.toList());
                 repository.saveAll(reEncryptedList);
                 return (reEncryptedList.size());
@@ -829,17 +830,19 @@ public class ConnectionService {
                 throw new UnexpectedException("Failed to update connection config", e);
             }
         });
-        return affected;
     }
 
     @SkipAuthorize("internal usage")
-    public ConnectionConfig getDecryptedConfig(@NotNull ConnectionConfig encryptedConfig) {
-        return connectionEncryption.decryptPasswords(encryptedConfig);
-    }
-
-    @SkipAuthorize("internal usage")
-    public ConnectionConfig getEncryptedConfig(@NotNull ConnectionConfig decryptedConfig, String customKey) {
-        return connectionEncryption.encryptPasswordsByCustomKey(decryptedConfig, customKey);
+    public ConnectionConfig getReEncryptedConfig(@NotNull ConnectionConfig config, String oldSecret, String newSecret) {
+        PreConditions.notNull(config.getCipher(), "connection.cipher");
+        PreConditions.notEmpty(config.getSalt(), "connection.salt");
+        TextEncryptor decrypt = encryptionFacade.passwordEncryptor(oldSecret, config.getSalt());
+        String rawPassword = decrypt.decrypt(config.getPasswordEncrypted());
+        String rawSysPassword = decrypt.decrypt(config.getSysTenantPasswordEncrypted());
+        TextEncryptor encryptor = encryptionFacade.passwordEncryptor(newSecret, config.getSalt());
+        config.setPasswordEncrypted(encryptor.encrypt(rawPassword));
+        config.setSysTenantPasswordEncrypted(encryptor.encrypt(rawSysPassword));
+        return config;
     }
 
     @SkipAuthorize("internal usage")

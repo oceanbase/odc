@@ -239,24 +239,23 @@ public class OrganizationConfigService {
         if (customKey.isEmpty()) {
             customKey = PasswordUtils.random(32);
         }
-        String finalCustomKey = customKey;
+        String newSecret = customKey;
         transactionTemplate.execute(status -> {
             try {
                 log.info("Start migrate existed secret and datasource password, organizationId={}", organizationId);
+                OrganizationEntity organization = organizationRepo.findById(organizationId)
+                        .orElseThrow(() -> new IllegalArgumentException("Organization not found"));
+                String oldSecret = Caesar.decode(organization.getSecret(), 8);
 
                 // Step1: update connection password
-                int affectConnection = connectionService.updatePasswordEncrypted(organizationId, finalCustomKey);
-                log.info("Success migrate existed datasource password, organizationId={}, affectedRows: {}",
-                        organizationId, affectConnection);
+                connectionService.updatePasswordEncrypted(organizationId, oldSecret, newSecret);
                 // Step2: update integration secret
-                int affectIntegration = attachedUpdateIntegrationConfig(organizationId, finalCustomKey);
-                log.info("Success update all integration configurations, organizationId={}, affectedRows: {}",
-                        organizationId, affectIntegration);
+                integrationService.attachedUpdateIntegrationSecret(organizationId, oldSecret, newSecret);
+                gitIntegrationService.attachedUpdateGitPersonalToken(organizationId, oldSecret, newSecret);
+
                 // Step3: update organization secret
-                int affectOrganization = organizationRepo
-                        .updateOrganizationSecretById(organizationId, Caesar.encode(finalCustomKey, 8));
-                log.info("Success update current organization secret, organizationId={}, affectedRows={}",
-                        organizationId, affectOrganization);
+                organization.setSecret(Caesar.encode(newSecret, 8));
+                organizationRepo.save(organization);
             } catch (Exception e) {
                 log.error("Failed to migrate existed datasource password, organizationId={}", organizationId, e);
                 status.setRollbackOnly();
@@ -265,17 +264,6 @@ public class OrganizationConfigService {
             return null;
         });
 
-    }
-
-    private int attachedUpdateIntegrationConfig(Long organizationId, String customKey) {
-        OrganizationEntity organization = organizationRepo.findById(organizationId)
-                .orElseThrow(() -> new IllegalArgumentException("Organization not found"));
-        String oldSecret = Caesar.decode(organization.getSecret(), 8);
-        int affectedIntegrationRows =
-                integrationService.attachedUpdateIntegrationSecret(organizationId, oldSecret, customKey);
-        int affectedGitIntegrationRows =
-                gitIntegrationService.attachedUpdateGitPersonalToken(organizationId, oldSecret, customKey);
-        return affectedIntegrationRows + affectedGitIntegrationRows;
     }
 
     private String getCustomDataSourceKey(List<Configuration> configurations) {

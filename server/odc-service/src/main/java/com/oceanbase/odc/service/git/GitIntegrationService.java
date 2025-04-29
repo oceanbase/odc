@@ -124,10 +124,10 @@ public class GitIntegrationService {
 
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("odc internal usage")
-    public int attachedUpdateGitPersonalToken(@NotNull Long organizationId, String oldSecret, String newSecret) {
+    public void attachedUpdateGitPersonalToken(@NotNull Long organizationId, String oldSecret, String newSecret) {
         List<GitRepositoryEntity> entities = gitRepoRepository.findByOrganizationId(organizationId);
         if (entities.isEmpty()) {
-            return 0;
+            return;
         }
         List<GitRepositoryEntity> saved = entities.stream()
                 .map(entity -> migrateTokenFromOld2New(entity, oldSecret, newSecret))
@@ -136,7 +136,6 @@ public class GitIntegrationService {
         int affectedRows = saved.size();
 
         log.info("attached update git repository from organization config completed, total={}", affectedRows);
-        return affectedRows;
     }
 
     public GitRepository delete(@NotNull Long projectId, @NotNull Long id) {
