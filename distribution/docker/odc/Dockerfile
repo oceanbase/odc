@@ -16,7 +16,7 @@ LABEL description="OceanBase Developer Center (ODC)"
 
 # parameters
 ARG ODC_INSTALL_DIR=/opt/odc
-ARG JDK_VERSION="java-1.8.0-openjdk-headless java-1.8.0-openjdk java-1.8.0-openjdk-devel"
+ARG JDK_VERSION="java-17-openjdk-headless java-17-openjdk java-17-openjdk-devel"
 ARG PYTHON_VERSION=python2
 ARG PYTHON_PIP_VERSION=python2-pip-9.0.3
 ARG PYTHON_PIP_UPGRADE_VERSION=20.0.2
