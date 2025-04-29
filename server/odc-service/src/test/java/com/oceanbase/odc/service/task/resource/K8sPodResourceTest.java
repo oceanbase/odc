@@ -13,26 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.db.model;
+package com.oceanbase.odc.service.task.resource;
 
-import java.util.List;
-
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import org.apache.commons.lang3.tuple.Pair;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
- * @description:
- * @author: zijia.cj
- * @date: 2025/3/8 14:03
- * @since: 4.3.4
+ * @author longpeng.zlp
+ * @date 2025/4/29 09:59
  */
-@Setter
-@Getter
-@AllArgsConstructor
-@NoArgsConstructor
-public class DatabaseAndMVs {
-    private String databaseName;
-    private List<String> mvs;
+public class K8sPodResourceTest {
+    @Test
+    public void testParseIpAndPort() {
+        String ipAndPortStr =
+                "k8s::cn-shanghai::default::obc:aliyun:iaas:cn-shanghai:oceanbase:pod:p-T5205qKf9N0001::null::null";
+        Pair<String, String> ret = K8sPodResource.parseIPAndPort(ipAndPortStr);
+        Assert.assertNull(ret.getLeft());
+        Assert.assertNull(ret.getRight());
+    }
 }

@@ -92,7 +92,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * applicable to OB [4.3.5.1, ~)
+ * applicable to OB [4.3.5.2, ~)
  * 
  * @author jingtian
  */

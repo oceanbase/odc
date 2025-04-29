@@ -36,8 +36,8 @@ import cn.hutool.core.codec.Caesar;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Migratable(version = "4.3.4.10", description = "migrate the organization secret to this stored in confusion")
-public class V43410OrganizationSecretMigrate implements JdbcMigratable {
+@Migratable(version = "4.3.4.12", description = "migrate the organization secret to this stored in confusion")
+public class V43412OrganizationSecretMigrate implements JdbcMigratable {
 
     private JdbcTemplate jdbcTemplate;
     private TransactionTemplate transactionTemplate;
@@ -62,7 +62,7 @@ public class V43410OrganizationSecretMigrate implements JdbcMigratable {
     }
 
     public long migrateForOrganization(List<OrganizationEntity> organizationList) {
-        String sql = "update iam_organization set secret=? where id=?";
+        String sql = "update iam_organization set secret_new=? where id=?";
         List<Object[]> parameters = organizationList.stream()
                 .map(organization -> new Object[] {
                         Caesar.encode(organization.getSecret(), 8), organization.getId()})

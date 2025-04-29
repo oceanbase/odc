@@ -38,6 +38,8 @@ public interface GitRepoRepository extends OdcJpaRepository<GitRepositoryEntity,
 
     List<GitRepositoryEntity> findByOrganizationIdAndProjectId(Long organizationId, Long projectId);
 
+    List<GitRepositoryEntity> findByOrganizationId(Long organizationId);
+
     default Page<GitRepositoryEntity> find(@NonNull QueryGitRepositoryParams params, @NonNull Pageable pageable) {
         Specification<GitRepositoryEntity> specs = Specification
                 .where(OdcJpaRepository.eq(GitRepositoryEntity_.organizationId, params.getOrganizationId()))

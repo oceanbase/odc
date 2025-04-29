@@ -170,4 +170,5 @@ public class OrganizationService {
     public Optional<Organization> get(@NotNull Long id) {
         return organizationRepository.findById(id).map(Organization::ofEntity);
     }
+
 }

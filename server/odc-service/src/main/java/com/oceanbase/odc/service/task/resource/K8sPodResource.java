@@ -100,7 +100,7 @@ public class K8sPodResource implements Resource {
     }
 
     public static Pair<String, String> parseIPAndPort(String k8sEndPoint) {
-        String[] infos = StringUtils.split(k8sEndPoint, "::");
+        String[] infos = StringUtils.splitByWholeSeparator(k8sEndPoint, "::");
         if (null == infos || infos.length != 6) {
             throw new IllegalStateException(
                     "expect k8s endpoint constructed by k8s::region::namespace::arn::ip::port, but current is "
