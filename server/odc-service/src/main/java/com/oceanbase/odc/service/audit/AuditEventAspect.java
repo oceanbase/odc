@@ -343,7 +343,7 @@ public class AuditEventAspect {
 
     private DatabaseEntity getDatabaseEntityById(Long databaseId) {
         return databaseRepository.findById(databaseId).orElseThrow(() -> new NotFoundException(
-            ResourceType.ODC_DATABASE, "id", databaseId));
+                ResourceType.ODC_DATABASE, "id", databaseId));
     }
 
     private String parseDetailFromApiParams(Map<String, Object> apiParams) {
