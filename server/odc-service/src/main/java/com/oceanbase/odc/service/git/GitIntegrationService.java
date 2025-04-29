@@ -122,6 +122,13 @@ public class GitIntegrationService {
         return entityToModel(updated);
     }
 
+    /**
+     * Adaptive multi-cloud is required.
+     * 
+     * @param organizationId
+     * @param oldSecret
+     * @param newSecret
+     */
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("odc internal usage")
     public void attachedUpdateGitPersonalToken(@NotNull Long organizationId, String oldSecret, String newSecret) {

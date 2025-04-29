@@ -251,7 +251,8 @@ public class OrganizationConfigService {
                 connectionService.updatePasswordEncrypted(organizationId, oldSecret, newSecret);
                 // Step2: update integration secret
                 integrationService.attachedUpdateIntegrationSecret(organizationId, oldSecret, newSecret);
-                gitIntegrationService.attachedUpdateGitPersonalToken(organizationId, oldSecret, newSecret);
+                // The community version has been removed, Multi-cloud adaptation is required.
+                // gitIntegrationService.attachedUpdateGitPersonalToken(organizationId, oldSecret, newSecret);
 
                 // Step3: update organization secret
                 organization.setSecret(Caesar.encode(newSecret, 8));
