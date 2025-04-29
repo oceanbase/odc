@@ -226,8 +226,7 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
             sb.value(schemaName);
         }
         if (StringUtils.isNotBlank(tableNameLike)) {
-            sb.append(" AND table_name LIKE ");
-            sb.value("%" + tableNameLike + "%");
+            sb.append(" AND ").like("table_name", tableNameLike);
         }
         sb.append(" ORDER BY table_name");
         return jdbcOperations.queryForList(sb.toString(), String.class);
@@ -274,8 +273,7 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
             sb.value(schemaName);
         }
         if (StringUtils.isNotBlank(tableNameLike)) {
-            sb.append(" AND table_name LIKE ");
-            sb.value("%" + tableNameLike + "%");
+            sb.append(" AND ").like("table_name", tableNameLike);
         }
         sb.append(" ORDER BY schema_name, table_name");
 
@@ -287,7 +285,7 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
         sb.append("show full tables from ");
         sb.identifier(schemaName);
-        sb.append(" where Table_type like '%VIEW%'");
+        sb.append(" where ").like("Table_type", "VIEW");
         return jdbcOperations.query(sb.toString(),
                 (rs, rowNum) -> DBObjectIdentity.of(schemaName, DBObjectType.VIEW, rs.getString(1)));
     }
@@ -295,30 +293,34 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
     @Override
     public List<DBObjectIdentity> listAllViews(String viewNameLike) {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
-        sb.append(
-                "select TABLE_SCHEMA as schema_name,TABLE_NAME as name, 'VIEW' as type from information_schema.views "
-                        + "where TABLE_NAME LIKE ")
-                .value('%' + viewNameLike + '%')
+        sb.append("select TABLE_SCHEMA as schema_name,TABLE_NAME as name, 'VIEW' as type from information_schema.views")
+                .append(" where ").like("TABLE_NAME", viewNameLike)
                 .append(" order by name asc;");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
     }
 
     @Override
-    public List<DBObjectIdentity> listAllUserViews() {
+    public List<DBObjectIdentity> listAllUserViews(String viewNameLike) {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
         sb.append("SELECT table_schema as schema_name, 'VIEW' as type, table_name as name ");
         sb.append(" FROM information_schema.tables where table_type = 'VIEW'");
+        if (StringUtils.isNotBlank(viewNameLike)) {
+            sb.append(" AND ").like("table_name", viewNameLike);
+        }
         sb.append(" ORDER BY schema_name, name");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
     }
 
     @Override
-    public List<DBObjectIdentity> listAllSystemViews() {
+    public List<DBObjectIdentity> listAllSystemViews(String viewNameLike) {
         List<DBObjectIdentity> results = new ArrayList<>();
-
-        String sql = "show full tables from `information_schema` where Table_type='SYSTEM VIEW'";
+        MySQLSqlBuilder sb = new MySQLSqlBuilder();
+        sb.append("show full tables from `information_schema` where Table_type='SYSTEM VIEW'");
+        if (StringUtils.isNotBlank(viewNameLike)) {
+            sb.append(" AND ").like("Tables_in_information_schema", viewNameLike);
+        }
         try {
-            List<String> informationSchemaViews = jdbcOperations.query(sql, (rs, rowNum) -> rs.getString(1));
+            List<String> informationSchemaViews = jdbcOperations.query(sb.toString(), (rs, rowNum) -> rs.getString(1));
             informationSchemaViews
                     .forEach(name -> results.add(DBObjectIdentity.of("information_schema", DBObjectType.VIEW, name)));
         } catch (Exception ex) {

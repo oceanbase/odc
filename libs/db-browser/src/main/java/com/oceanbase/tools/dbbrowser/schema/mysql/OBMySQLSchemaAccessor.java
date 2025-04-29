@@ -94,8 +94,8 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     public List<DBObjectIdentity> listAllMViewsLike(String viewNameLike) {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
         sb.append(
-                "select OWNER AS schema_name, MVIEW_NAME AS name,'MATERIALIZED_VIEW' AS type FROM OCEANBASE.DBA_MVIEWS WHERE MVIEW_NAME LIKE ")
-                .value('%' + viewNameLike + '%')
+                "select OWNER AS schema_name, MVIEW_NAME AS name,'MATERIALIZED_VIEW' AS type FROM OCEANBASE.DBA_MVIEWS")
+                .append(" WHERE ").like("MVIEW_NAME", viewNameLike)
                 .append(" ORDER BY name ASC;");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
     }
@@ -211,7 +211,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
             MySQLSqlBuilder querySystemTable = new MySQLSqlBuilder();
             querySystemTable.append("show full tables from oceanbase where Table_type='BASE TABLE'");
             if (StringUtils.isNotBlank(tableNameLike)) {
-                querySystemTable.append(" and tables_in_oceanbase like ").value("%" + tableNameLike + "%");
+                querySystemTable.append(" and ").like("tables_in_oceanbase", tableNameLike);
             }
             try {
                 List<String> tables =
@@ -226,7 +226,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
             MySQLSqlBuilder queryMysqlTable = new MySQLSqlBuilder();
             queryMysqlTable.append("show full tables from `mysql` where Table_type='BASE TABLE'");
             if (StringUtils.isNotBlank(tableNameLike)) {
-                queryMysqlTable.append(" and tables_in_mysql like ").value("%" + tableNameLike + "%");
+                queryMysqlTable.append(" and ").like("tables_in_mysql", tableNameLike);
             }
             try {
                 jdbcOperations.query(queryMysqlTable.toString(),
@@ -239,11 +239,15 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     }
 
     @Override
-    public List<DBObjectIdentity> listAllSystemViews() {
-        List<DBObjectIdentity> results = super.listAllSystemViews();
-        String sql1 = "show full tables from `oceanbase` where Table_type='SYSTEM VIEW'";
+    public List<DBObjectIdentity> listAllSystemViews(String viewNameLike) {
+        List<DBObjectIdentity> results = super.listAllSystemViews(viewNameLike);
+        MySQLSqlBuilder sb = new MySQLSqlBuilder();
+        sb.append("show full tables from `oceanbase` where Table_type='SYSTEM VIEW'");
+        if (StringUtils.isNotBlank(viewNameLike)) {
+            sb.append(" AND ").like("Tables_in_oceanbase", viewNameLike);
+        }
         try {
-            List<String> oceanbaseViews = jdbcOperations.query(sql1, (rs, rowNum) -> rs.getString(1));
+            List<String> oceanbaseViews = jdbcOperations.query(sb.toString(), (rs, rowNum) -> rs.getString(1));
             oceanbaseViews.forEach(name -> results.add(DBObjectIdentity.of("oceanbase", DBObjectType.VIEW, name)));
         } catch (Exception ex) {
             log.info("List tables for 'oceanbase' failed, reason={}", ex.getMessage());
@@ -487,8 +491,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
             sb.value(schemaName);
         }
         if (StringUtils.isNotBlank(tableNameLike)) {
-            sb.append(" AND table_name LIKE ");
-            sb.value("%" + tableNameLike + "%");
+            sb.append(" AND ").like("table_name", tableNameLike);
         }
         sb.append(" ORDER BY table_name");
         return jdbcOperations.queryForList(sb.toString(), String.class);
@@ -504,8 +507,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
             sb.value(schemaName);
         }
         if (StringUtils.isNotBlank(tableNameLike)) {
-            sb.append(" AND table_name LIKE ");
-            sb.value("%" + tableNameLike + "%");
+            sb.append(" AND ").like("table_name", tableNameLike);
         }
         sb.append(" ORDER BY schema_name, table_name");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));

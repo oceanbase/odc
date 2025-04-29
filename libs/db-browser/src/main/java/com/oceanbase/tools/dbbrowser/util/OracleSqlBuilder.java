@@ -39,4 +39,10 @@ public class OracleSqlBuilder extends SqlBuilder {
     public SqlBuilder defaultValue(String value) {
         return append(value);
     }
+
+    @Override
+    public SqlBuilder like(String fieldKey, String fieldLikeValue) {
+        super.like(fieldKey, fieldLikeValue);
+        return append(" ESCAPE ").value("\\");
+    }
 }

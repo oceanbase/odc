@@ -172,12 +172,12 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public List<DBObjectIdentity> listAllUserViews() {
+    public List<DBObjectIdentity> listAllUserViews(String viewNameLike) {
         throw new UnsupportedOperationException("Not supported yet");
     }
 
     @Override
-    public List<DBObjectIdentity> listAllSystemViews() {
+    public List<DBObjectIdentity> listAllSystemViews(String viewNameLike) {
         throw new UnsupportedOperationException("Not supported yet");
     }
 
