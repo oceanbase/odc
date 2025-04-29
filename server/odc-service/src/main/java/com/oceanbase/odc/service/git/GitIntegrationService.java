@@ -124,6 +124,7 @@ public class GitIntegrationService {
 
     /**
      * Adaptive multi-cloud is required.
+     * 
      * @param organizationId
      * @param oldSecret
      * @param newSecret
