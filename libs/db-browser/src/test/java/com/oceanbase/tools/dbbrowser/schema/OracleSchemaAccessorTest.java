@@ -320,7 +320,7 @@ public class OracleSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
-    public void listAllUserViews_Success()  {
+    public void listAllUserViews_Success() {
         List<DBObjectIdentity> views = accessor.listAllUserViews(null);
         Assert.assertTrue(views.size() > 0);
     }

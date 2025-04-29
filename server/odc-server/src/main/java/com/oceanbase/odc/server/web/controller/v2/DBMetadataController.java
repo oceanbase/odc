@@ -25,7 +25,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.service.common.response.ListResponse;
@@ -58,7 +57,7 @@ public class DBMetadataController {
             return Responses.list(ListUtils.EMPTY_LIST);
         }
         return Responses
-                .list(identitiesService.list(session, schemaName, StringUtils.escapeLike(identityNameLike), types));
+                .list(identitiesService.list(session, schemaName, identityNameLike, types));
     }
 
 }

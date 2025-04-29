@@ -99,7 +99,7 @@ public class ODPOBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor 
         if (tableNameLike == null) {
             sb.append("show tables");
         } else {
-            sb.append("show tables like ").value("%" + tableNameLike + "%");
+            sb.append("show tables").like(null, tableNameLike);
         }
         return jdbcOperations.queryForList(sb.toString(), String.class);
     }

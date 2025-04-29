@@ -224,9 +224,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         sb.append(" WHERE OWNER=");
         sb.value(schemaName);
         if (StringUtils.isNotBlank(tableNameLike)) {
-            sb.append(" AND TABLE_NAME LIKE ");
-            sb.value("%" + tableNameLike + "%");
-            sb.escapeLikeEnd();
+            sb.append(" AND ").like("TABLE_NAME", tableNameLike);
         }
         sb.append(" ORDER BY TABLE_NAME ASC");
         return jdbcOperations.queryForList(sb.toString(), String.class);
@@ -245,9 +243,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             sb.value(schemaName);
         }
         if (StringUtils.isNotBlank(tableNameLike)) {
-            sb.append(" AND TABLE_NAME LIKE ");
-            sb.value("%" + tableNameLike + "%");
-            sb.escapeLikeEnd();
+            sb.append(" AND ").like("TABLE_NAME", tableNameLike);
         }
         sb.append(" ORDER BY schema_name, type, name");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
@@ -289,9 +285,8 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         OracleSqlBuilder sb = new OracleSqlBuilder();
         sb.append("select OWNER as schema_name, VIEW_NAME as name, 'VIEW' as type from ")
                 .append(dataDictTableNames.VIEWS())
-                .append(" where VIEW_NAME LIKE ")
-                .value('%' + viewNameLike + '%');
-        sb.escapeLikeEnd().append("  order by name asc");
+                .append(" WHERE ").like("VIEW_NAME", viewNameLike)
+                .append("  order by name asc");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
     }
 
@@ -302,9 +297,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         sb.append(" from ");
         sb.append(dataDictTableNames.VIEWS());
         if (StringUtils.isNotBlank(viewNameLike)) {
-            sb.append(" WHERE VIEW_NAME LIKE ")
-                .value("%" + viewNameLike + "%");
-            sb.escapeLikeEnd();
+            sb.append(" WHERE ").like("VIEW_NAME", viewNameLike);
         }
         sb.append(" ORDER BY schema_name, type, name");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
