@@ -285,10 +285,10 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         OracleSqlBuilder sb = new OracleSqlBuilder();
         sb.append("select OWNER as schema_name, VIEW_NAME as name, 'VIEW' as type from ")
                 .append(dataDictTableNames.VIEWS());
-            if(StringUtils.isNotBlank(viewNameLike)){
-                sb.append(" WHERE ").like("VIEW_NAME", viewNameLike);
-            }
-                sb.append("  order by name asc");
+        if (StringUtils.isNotBlank(viewNameLike)) {
+            sb.append(" WHERE ").like("VIEW_NAME", viewNameLike);
+        }
+        sb.append("  order by name asc");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
     }
 

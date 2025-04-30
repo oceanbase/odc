@@ -151,7 +151,7 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
     public void listAllMViewsLike_InputIsNonEmptyString_Success() {
         if (isSupportMaterializedView) {
             List<DBObjectIdentity> mViewsContains_ = accessor.listAllMViewsLike("_");
-            Assert.assertTrue(mViewsContains_.size()>0);
+            Assert.assertTrue(mViewsContains_.size() > 0);
             Assert.assertTrue(mViewsContains_.stream().allMatch(o -> o.getName().contains("_")));
         }
     }

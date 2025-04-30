@@ -295,6 +295,7 @@ public class OracleSchemaAccessorTest extends BaseTestEnv {
     @Test
     public void showTablesLike_InputIsNonEmptyString_Success() {
         List<String> tables = accessor.showTablesLike(getOracleSchema(), "_");
+        Assert.assertTrue(tables.size() > 0);
         Assert.assertTrue(tables.stream().allMatch(o -> o.contains("_")));
     }
 
@@ -307,8 +308,8 @@ public class OracleSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listTables_InputIsNonEmptyString_Success() {
-        List<DBObjectIdentity> tables =
-            accessor.listTables(getOracleSchema(), "_");
+        List<DBObjectIdentity> tables = accessor.listTables(getOracleSchema(), "_");
+        Assert.assertTrue(tables.size() > 0);
         Assert.assertTrue(tables.stream().allMatch(o -> o.getName().contains("_")));
     }
 
