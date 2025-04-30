@@ -483,6 +483,12 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void listTables_InputIsNonEmptyString_Success() {
+        List<DBObjectIdentity> tables = accessor.listTables(getOBMySQLDataBaseName(), "_");
+        Assert.assertTrue(tables.stream().allMatch(o -> o.getName().contains("_")));
+    }
+
+    @Test
     public void listTables_inOceanbaseSchema_Success() {
         List<DBObjectIdentity> tables = accessor.listTables("oceanbase", "job");
         Assert.assertTrue(tables != null && tables.size() > 0);
