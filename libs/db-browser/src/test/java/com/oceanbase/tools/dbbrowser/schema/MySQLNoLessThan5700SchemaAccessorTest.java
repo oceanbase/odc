@@ -198,6 +198,36 @@ public class MySQLNoLessThan5700SchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void showTablesLike_inputIsNonEmptyString_Success() {
+        List<String> tableNames = accessor.showTablesLike(getMySQLDataBaseName(),"_");
+        Assert.assertTrue(tableNames.stream().allMatch(name->name.contains("_")));
+    }
+
+    @Test
+    public void listTables_inputIsNonEmptyString_Success() {
+        List<DBObjectIdentity> tables = accessor.listTables(getMySQLDataBaseName(), "_");
+        Assert.assertTrue(tables.stream().allMatch(table->table.getName().contains("_")));
+    }
+
+    @Test
+    public void listAllViews_inputIsNonEmptyString_Success() {
+        List<DBObjectIdentity> views = accessor.listAllViews("_");
+        Assert.assertTrue(views.stream().allMatch(table->table.getName().contains("_")));
+    }
+
+    @Test
+    public void listAllUserViews_inputIsNonEmptyString_Success() {
+        List<DBObjectIdentity> views = accessor.listAllUserViews("_");
+        Assert.assertTrue(views.stream().allMatch(table->table.getName().contains("_")));
+    }
+
+    @Test
+    public void listAllSystemViews_inputIsNonEmptyString_Success() {
+        List<DBObjectIdentity> views = accessor.listAllSystemViews("_");
+        Assert.assertTrue(views.stream().allMatch(table->table.getName().contains("_")));
+    }
+
+    @Test
     public void listSystemViewsWhenViewNameLikeNotNull_Success() {
         List<DBObjectIdentity> sysViews = accessor.listAllSystemViews("TABLE");
         if (CollectionUtils.isNotEmpty(sysViews)) {
@@ -286,7 +316,7 @@ public class MySQLNoLessThan5700SchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
-    public void showTablelike_Success() {
+    public void listTables_Success() {
         List<DBObjectIdentity> tables = accessor.listTables(getMySQLDataBaseName(), null);
         Assert.assertTrue(tables != null && tables.size() > 0);
     }
