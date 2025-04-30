@@ -140,10 +140,18 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
-    public void listAllMVs_Success() {
+    public void listAllMViewsLike_InputIsEmptyString_Success() {
         if (isSupportMaterializedView) {
             List<DBObjectIdentity> dbObjectIdentities = accessor.listAllMViewsLike("");
             Assert.assertTrue(dbObjectIdentities.size() >= 9);
+        }
+    }
+
+    @Test
+    public void listAllMViewsLike_InputIsNonEmptyString_Success() {
+        if (isSupportMaterializedView) {
+            List<DBObjectIdentity> mViewsContains_ = accessor.listAllMViewsLike("TEST_");
+            Assert.assertTrue(mViewsContains_.stream().allMatch(o -> o.getName().contains("TEST_")));
         }
     }
 

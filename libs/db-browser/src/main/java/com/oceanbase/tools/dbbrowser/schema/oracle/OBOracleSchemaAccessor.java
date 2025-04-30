@@ -1167,13 +1167,14 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     }
 
     @Override
-    public List<DBObjectIdentity> listAllMViewsLike(String viewNameLike) {
+    public List<DBObjectIdentity> listAllMViewsLike(String mViewNameLike) {
         OracleSqlBuilder sb = new OracleSqlBuilder();
         sb.append("select OWNER AS schema_name, MVIEW_NAME AS name,'MATERIALIZED_VIEW' AS type FROM ")
-                .append(dataDictTableNames.MVIEWS())
-                .append(" WHERE MVIEW_NAME LIKE ")
-                .like("MVIEW_NAME", viewNameLike)
-                .append(" ORDER BY name ASC;");
+                .append(dataDictTableNames.MVIEWS());
+        if (StringUtils.isNotBlank(mViewNameLike)) {
+            sb.append(" WHERE ").like("MVIEW_NAME", mViewNameLike);
+        }
+        sb.append(" ORDER BY name ASC;");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
     }
 

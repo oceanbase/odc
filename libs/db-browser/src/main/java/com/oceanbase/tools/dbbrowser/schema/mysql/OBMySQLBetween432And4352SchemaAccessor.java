@@ -47,7 +47,7 @@ public class OBMySQLBetween432And4352SchemaAccessor extends OBMySQLSchemaAccesso
     }
 
     @Override
-    public List<DBObjectIdentity> listAllMViewsLike(String viewNameLike) {
+    public List<DBObjectIdentity> listAllMViewsLike(String mViewNameLike) {
         throw new UnsupportedOperationException("not support yet");
     }
 
