@@ -510,7 +510,6 @@ public class AuditEventAspect {
              * If sid represents dynamic session id
              */
             ConnectionSession session = sessionService.nullSafeGet(SidUtils.getSessionId(sid));
-            System.out.println("session: " + session);
             Object value = ConnectionSessionUtil.getConnectionConfig(session);
             if (value instanceof ConnectionConfig) {
                 ConnectionConfig config = (ConnectionConfig) value;
