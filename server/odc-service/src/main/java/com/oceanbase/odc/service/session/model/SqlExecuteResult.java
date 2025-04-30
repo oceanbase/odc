@@ -500,7 +500,8 @@ public class SqlExecuteResult {
         }
         List<JdbcColumnMetaData> columnList = resultSetMetaData.getFieldMetaDataList();
         Set<JdbcColumnMetaData> columnSet = columnList.stream()
-                .collect(Collectors.toMap(jcmd -> jcmd.getCatalogName() + "." + jcmd.getTableName(), jcmd -> jcmd))
+                .collect(Collectors.toMap(jcmd -> jcmd.getCatalogName() + "." + jcmd.getTableName(), jcmd -> jcmd,
+                    (jcmd1, jcmd2) -> jcmd2))
                 .values().stream().collect(Collectors.toSet());
 
         Set<String> tableNames = columnSet.stream()
