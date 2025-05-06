@@ -87,6 +87,7 @@ import com.oceanbase.odc.metadb.schedule.LatestTaskMappingRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity_;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
+import com.oceanbase.odc.metadb.schedule.ScheduleRepository.ScheduleTypeCount;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
@@ -1091,14 +1092,15 @@ public class ScheduleService {
             type2ScheduleStats.get(ScheduleType.PARTITION_PLAN).setTotalCount(
                     flowInstanceService.getPartitionPlanCount(new InnerQueryFlowInstanceParams()));
         }
-        Map<ScheduleType, Integer> scheduleType2Count =
-                listCronSchedules(QueryScheduleStatParams.builder().scheduleTypes(supportedScheduleTypes).build())
-                        .stream().collect(
-                                Collectors.groupingBy(
-                                        ScheduleEntity::getType, Collectors.summingInt(e -> 1)));
+        Map<String, Integer> scheduleType2Count = scheduleRepository.getScheduleCountByProjectIdInAndTypeIn(
+                authenticationFacade.currentOrganizationId(),
+                projectService.getMemberProjectIds(authenticationFacade.currentUserId()),
+                supportedScheduleTypes.stream().map(Enum::name).collect(Collectors.toSet())).stream()
+                .collect(
+                        Collectors.toMap(ScheduleTypeCount::getScheduleType, ScheduleTypeCount::getCount, (e, r) -> e));
         for (ScheduleType supportedScheduleType : supportedScheduleTypes) {
             type2ScheduleStats.computeIfAbsent(supportedScheduleType, k -> ScheduleStat.init(supportedScheduleType))
-                    .setTotalCount(scheduleType2Count.getOrDefault(supportedScheduleType, 0));
+                    .setTotalCount(scheduleType2Count.getOrDefault(supportedScheduleType.name(), 0));
         }
         return new ArrayList<>(type2ScheduleStats.values());
     }
@@ -1223,7 +1225,7 @@ public class ScheduleService {
 
     /**
      * This is a temporary method that only uses ODC 4.3.4
-     * 
+     *
      * @param params
      * @return
      */
