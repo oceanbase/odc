@@ -42,12 +42,15 @@ import lombok.experimental.Accessors;
 public class ScheduleStat {
     private ScheduleType type;
     private Integer successEnabledCount;
+    // The number of all states, including those that have been deleted
+    private Integer totalCount;
     private Set<ScheduleTaskStat> taskStats;
 
     public static ScheduleStat init(@NonNull ScheduleType type) {
         return ScheduleStat.builder()
                 .type(type)
                 .successEnabledCount(0)
+                .totalCount(0)
                 .taskStats(new HashSet<>())
                 .build();
     }
