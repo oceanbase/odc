@@ -41,6 +41,8 @@ import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.WebResponseUtils;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.schedule.ScheduleService;
+import com.oceanbase.odc.service.schedule.export.model.ScheduleTerminateCmd;
+import com.oceanbase.odc.service.schedule.export.model.ScheduleTerminateResult;
 import com.oceanbase.odc.service.schedule.model.ChangeScheduleResp;
 import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
 import com.oceanbase.odc.service.schedule.model.OperationType;
@@ -57,6 +59,8 @@ import com.oceanbase.odc.service.schedule.model.ScheduleTaskListOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.UpdateScheduleReq;
+import com.oceanbase.odc.service.state.model.StateName;
+import com.oceanbase.odc.service.state.model.StatefulRoute;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
@@ -282,5 +286,22 @@ public class ScheduleController {
     public SuccessResponse<RateLimitConfiguration> updateLimiterConfig(@PathVariable Long id,
             @RequestBody RateLimitConfiguration limiterConfig) {
         return Responses.single(scheduleService.updateDlmRateLimit(id, limiterConfig));
+    }
+
+    @RequestMapping(value = "/schedules/asyncTerminate", method = RequestMethod.POST)
+    public SuccessResponse<String> startTerminateScheduleAndTask(@RequestBody ScheduleTerminateCmd cmd) {
+        return Responses.ok(scheduleService.startTerminateScheduleAndTask(cmd));
+    }
+
+    @RequestMapping(value = "/schedules/asyncTerminateResult", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.UUID_STATEFUL_ID, stateIdExpression = "#terminateId")
+    public SuccessResponse<List<ScheduleTerminateResult>> getTerminateScheduleResult(String terminateId) {
+        return Responses.ok(scheduleService.getTerminateScheduleResult(terminateId));
+    }
+
+    @RequestMapping(value = "/schedules/asyncTerminateLog", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.UUID_STATEFUL_ID, stateIdExpression = "#terminateId")
+    public SuccessResponse<String> getTerminateScheduleLog(String terminateId) {
+        return Responses.ok(scheduleService.getTerminateLog(terminateId));
     }
 }
