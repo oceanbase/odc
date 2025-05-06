@@ -63,6 +63,8 @@ import com.oceanbase.odc.service.partitionplan.PartitionPlanScheduleService;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
+import com.oceanbase.odc.service.state.model.StateName;
+import com.oceanbase.odc.service.state.model.StatefulRoute;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
 import io.swagger.annotations.ApiOperation;
@@ -261,12 +263,14 @@ public class FlowInstanceController {
 
     @ApiOperation(value = "getBatchCancelResult", notes = "获取批量终止结果")
     @RequestMapping(value = "/asyncCancelResult", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.UUID_STATEFUL_ID, stateIdExpression = "#terminateId")
     public SuccessResponse<List<BatchTerminateFlowResult>> getBatchCancelResult(String terminateId) {
         return Responses.single(flowInstanceService.getBatchCancelResult(terminateId));
     }
 
     @ApiOperation(value = "getBatchCancelLog", notes = "获取批量终止日志")
     @RequestMapping(value = "/asyncCancelLog", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.UUID_STATEFUL_ID, stateIdExpression = "#terminateId")
     public SuccessResponse<String> getBatchCancelLog(String terminateId) {
         return Responses.single(flowInstanceService.getBatchCancelLog(terminateId));
     }

@@ -59,6 +59,8 @@ import com.oceanbase.odc.service.schedule.model.ScheduleTaskListOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskOverview;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.UpdateScheduleReq;
+import com.oceanbase.odc.service.state.model.StateName;
+import com.oceanbase.odc.service.state.model.StatefulRoute;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
@@ -292,11 +294,13 @@ public class ScheduleController {
     }
 
     @RequestMapping(value = "/schedules/asyncTerminateResult", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.UUID_STATEFUL_ID, stateIdExpression = "#terminateId")
     public SuccessResponse<List<ScheduleTerminateResult>> getTerminateScheduleResult(String terminateId) {
         return Responses.ok(scheduleService.getTerminateScheduleResult(terminateId));
     }
 
     @RequestMapping(value = "/schedules/asyncTerminateLog", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.UUID_STATEFUL_ID, stateIdExpression = "#terminateId")
     public SuccessResponse<String> getTerminateScheduleLog(String terminateId) {
         return Responses.ok(scheduleService.getTerminateLog(terminateId));
     }
