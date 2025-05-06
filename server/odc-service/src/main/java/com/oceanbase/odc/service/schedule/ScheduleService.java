@@ -62,6 +62,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
@@ -1105,7 +1106,7 @@ public class ScheduleService {
     }
 
     private Set<ScheduleType> getLandingPageSupportedScheduleTypes() {
-        return Sets.newHashSet(ScheduleType.SQL_PLAN, ScheduleType.DATA_DELETE, ScheduleType.DATA_ARCHIVE);
+        return ImmutableSet.of(ScheduleType.SQL_PLAN, ScheduleType.DATA_DELETE, ScheduleType.DATA_ARCHIVE);
     }
 
     private List<ScheduleEntity> listCronSchedules(@NonNull QueryScheduleStatParams params) {
