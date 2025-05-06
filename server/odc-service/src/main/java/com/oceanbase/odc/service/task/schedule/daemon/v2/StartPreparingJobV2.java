@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.task.schedule.daemon.v2;
 
 import java.text.MessageFormat;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -39,6 +40,7 @@ import com.oceanbase.odc.service.task.caller.ResourceIDUtil;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
+import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
 import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.enums.TaskMonitorMode;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
@@ -231,8 +233,11 @@ public class StartPreparingJobV2 implements Job {
         if (null != jobContext.getJobProperties()) {
             JobPropertiesUtils.setMonitorMode(jobContext.getJobProperties(), TaskMonitorMode.PULL);
         }
+        Map<String, String> defaultEnv =  new JobEnvironmentFactory().build(jobContext, TaskRunMode.PROCESS, configuration, logPath);
+        // correct it to real mode
+        defaultEnv.put(JobEnvKeyConstants.ODC_TASK_RUN_MODE, properties.getRunMode().name());
         ProcessJobCaller jobCaller = JobCallerBuilder.buildProcessCaller(jobContext,
-                new JobEnvironmentFactory().build(jobContext, TaskRunMode.PROCESS, configuration, logPath),
+                defaultEnv,
                 configuration);
         return jobCaller.getProcessConfig();
     }
