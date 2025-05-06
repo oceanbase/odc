@@ -140,10 +140,19 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
-    public void listAllMVs_Success() {
+    public void listAllMViewsLike_InputIsEmptyString_Success() {
         if (isSupportMaterializedView) {
             List<DBObjectIdentity> dbObjectIdentities = accessor.listAllMViewsLike("");
             Assert.assertTrue(dbObjectIdentities.size() >= 9);
+        }
+    }
+
+    @Test
+    public void listAllMViewsLike_InputIsNonEmptyString_Success() {
+        if (isSupportMaterializedView) {
+            List<DBObjectIdentity> mViewsContains_ = accessor.listAllMViewsLike("_");
+            Assert.assertTrue(mViewsContains_.size() > 0);
+            Assert.assertTrue(mViewsContains_.stream().allMatch(o -> o.getName().contains("_")));
         }
     }
 
@@ -816,11 +825,26 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void showTablesLike_InputIsNonEmptyString_Success() {
+        List<DBObjectIdentity> tables = accessor.listTables(getOBOracleSchema(), "_");
+        Assert.assertTrue(tables.size() > 0);
+        Assert.assertTrue(tables.stream().allMatch(table -> table.getName().contains("_")));
+    }
+
+
+    @Test
     public void listTables_Success() {
         List<DBObjectIdentity> tables =
                 accessor.listTables(getOBOracleSchema(), null);
         Assert.assertTrue(tables.size() > 0);
         tables.forEach(table -> Assert.assertTrue(!table.getName().startsWith("__idx_")));
+    }
+
+    @Test
+    public void listTables_InputIsNonEmptyString_Success() {
+        List<DBObjectIdentity> tables = accessor.listTables(getOBOracleSchema(), "_");
+        Assert.assertTrue(tables.size() > 0);
+        Assert.assertTrue(tables.stream().allMatch(table -> table.getName().contains("_")));
     }
 
     @Test

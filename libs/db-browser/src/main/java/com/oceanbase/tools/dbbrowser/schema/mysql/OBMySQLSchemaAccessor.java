@@ -91,12 +91,14 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     }
 
     @Override
-    public List<DBObjectIdentity> listAllMViewsLike(String viewNameLike) {
+    public List<DBObjectIdentity> listAllMViewsLike(String mViewNameLike) {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
         sb.append(
-                "select OWNER AS schema_name, MVIEW_NAME AS name,'MATERIALIZED_VIEW' AS type FROM OCEANBASE.DBA_MVIEWS")
-                .append(" WHERE ").like("MVIEW_NAME", viewNameLike)
-                .append(" ORDER BY name ASC;");
+                "select OWNER AS schema_name, MVIEW_NAME AS name,'MATERIALIZED_VIEW' AS type FROM OCEANBASE.DBA_MVIEWS");
+        if (StringUtils.isNotBlank(mViewNameLike)) {
+            sb.append(" WHERE ").like("MVIEW_NAME", mViewNameLike);
+        }
+        sb.append(" ORDER BY name ASC;");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
     }
 

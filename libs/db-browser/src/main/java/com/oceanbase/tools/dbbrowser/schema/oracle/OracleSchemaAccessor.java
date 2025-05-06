@@ -284,9 +284,11 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     public List<DBObjectIdentity> listAllViews(String viewNameLike) {
         OracleSqlBuilder sb = new OracleSqlBuilder();
         sb.append("select OWNER as schema_name, VIEW_NAME as name, 'VIEW' as type from ")
-                .append(dataDictTableNames.VIEWS())
-                .append(" WHERE ").like("VIEW_NAME", viewNameLike)
-                .append("  order by name asc");
+                .append(dataDictTableNames.VIEWS());
+        if (StringUtils.isNotBlank(viewNameLike)) {
+            sb.append(" WHERE ").like("VIEW_NAME", viewNameLike);
+        }
+        sb.append("  order by name asc");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
     }
 
@@ -326,7 +328,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public List<DBObjectIdentity> listAllMViewsLike(String viewNameLike) {
+    public List<DBObjectIdentity> listAllMViewsLike(String mViewNameLike) {
         throw new UnsupportedOperationException("not support yet");
     }
 

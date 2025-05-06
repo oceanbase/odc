@@ -141,7 +141,7 @@ public interface DBSchemaAccessor {
     /**
      * List all materialized view as DBObjectIdentity in current datasource
      */
-    List<DBObjectIdentity> listAllMViewsLike(String viewNameLike);
+    List<DBObjectIdentity> listAllMViewsLike(String mViewNameLike);
 
     /**
      * Synchronize materialized view data
