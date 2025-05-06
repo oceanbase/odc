@@ -239,7 +239,6 @@ public class StartPreparingJobV2 implements Job {
             // introduce upload log tag to tell agent should upload log if needed
             defaultEnv.put(JobEnvKeyConstants.ODC_UPLOAD_LOG, "true");
         }
-        defaultEnv.put(JobEnvKeyConstants.ODC_TASK_RUN_MODE, properties.getRunMode().name());
         ProcessJobCaller jobCaller = JobCallerBuilder.buildProcessCaller(jobContext,
                 defaultEnv,
                 configuration);
