@@ -160,7 +160,6 @@ import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 
-import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.map.MapUtil;
 import cn.hutool.core.util.ObjectUtil;
 import lombok.NonNull;
@@ -1054,7 +1053,7 @@ public class ScheduleService {
          * Currently, only the following statistics alter schedule types are supported to query table of
          * schedule_schedule
          */
-        Set<ScheduleType> supportedScheduleTypes = getStatSupportedScheduleTypes();
+        Set<ScheduleType> supportedScheduleTypes = getLandingPageSupportedScheduleTypes();
         params.setScheduleTypes(ObjectUtil.defaultIfNull(params.getScheduleTypes(), Collections.emptySet()));
         boolean containPartitionPlan = params.getScheduleTypes().contains(ScheduleType.PARTITION_PLAN);
         params.getScheduleTypes()
@@ -1105,8 +1104,8 @@ public class ScheduleService {
         return new ArrayList<>(type2ScheduleStats.values());
     }
 
-    private Set<ScheduleType> getStatSupportedScheduleTypes() {
-        return CollUtil.set(false, ScheduleType.SQL_PLAN, ScheduleType.DATA_DELETE, ScheduleType.DATA_ARCHIVE);
+    private Set<ScheduleType> getLandingPageSupportedScheduleTypes() {
+        return Sets.newHashSet(ScheduleType.SQL_PLAN, ScheduleType.DATA_DELETE, ScheduleType.DATA_ARCHIVE);
     }
 
     private List<ScheduleEntity> listCronSchedules(@NonNull QueryScheduleStatParams params) {
