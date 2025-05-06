@@ -55,7 +55,7 @@ public class OBOracleDateBasedPartitionNameGenerator extends OBMySQLDateBasedPar
         }
         SimpleDateFormat sdf = new SimpleDateFormat(namingSuffixExpression);
         try {
-            return sdf.parse(unquoteValue(upperBound));
+            return sdf.parse(unquoteValue(upperBound).substring(0, namingSuffixExpression.length()));
         } catch (ParseException e) {
             throw new IllegalStateException(
                     "naming suffix expression is not a valid date format, please check the format as same as the partition key.");
