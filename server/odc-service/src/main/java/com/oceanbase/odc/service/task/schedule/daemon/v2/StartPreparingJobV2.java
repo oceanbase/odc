@@ -233,8 +233,12 @@ public class StartPreparingJobV2 implements Job {
         if (null != jobContext.getJobProperties()) {
             JobPropertiesUtils.setMonitorMode(jobContext.getJobProperties(), TaskMonitorMode.PULL);
         }
-        Map<String, String> defaultEnv =  new JobEnvironmentFactory().build(jobContext, TaskRunMode.PROCESS, configuration, logPath);
-        // correct it to real mode
+        Map<String, String> defaultEnv =
+                new JobEnvironmentFactory().build(jobContext, TaskRunMode.PROCESS, configuration, logPath);
+        if (properties.getRunMode() == TaskRunMode.K8S) {
+            // introduce upload log tag to tell agent should upload log if needed
+            defaultEnv.put(JobEnvKeyConstants.ODC_UPLOAD_LOG, "true");
+        }
         defaultEnv.put(JobEnvKeyConstants.ODC_TASK_RUN_MODE, properties.getRunMode().name());
         ProcessJobCaller jobCaller = JobCallerBuilder.buildProcessCaller(jobContext,
                 defaultEnv,
