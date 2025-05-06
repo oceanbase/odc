@@ -499,10 +499,13 @@ public class SqlExecuteResult {
             return false;
         }
         List<JdbcColumnMetaData> columnList = resultSetMetaData.getFieldMetaDataList();
-        Set<JdbcColumnMetaData> columnSet = columnList.stream()
-                .collect(Collectors.toMap(jcmd -> jcmd.getCatalogName() + "." + jcmd.getTableName(), jcmd -> jcmd,
-                        (jcmd1, jcmd2) -> jcmd2))
-                .values().stream().collect(Collectors.toSet());
+        Set<JdbcColumnMetaData> columnSet = new HashSet<>(
+                columnList.stream()
+                        .collect(Collectors.toMap(
+                                jcmd -> jcmd.getCatalogName() + "." + jcmd.getTableName(),
+                                jcmd -> jcmd,
+                                (existing, current) -> existing))
+                        .values());
 
         Set<String> tableNames = columnSet.stream()
                 .map(JdbcColumnMetaData::getTableName)
