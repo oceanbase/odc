@@ -62,7 +62,7 @@ public class IndexedLinkedPageList implements List<Page> {
         return elementCounter.get() == 0;
     }
 
-    public boolean addFirst(Page page) {
+    public boolean addToFirst(Page page) {
         Validate.notNull(page, "Page can not be null");
         this.writeLock.lock();
         try {
@@ -107,7 +107,7 @@ public class IndexedLinkedPageList implements List<Page> {
         }
     }
 
-    public boolean addLast(Page page) {
+    public boolean addToLast(Page page) {
         return add(page);
     }
 
