@@ -69,7 +69,6 @@ public class R42017RuleMetadataMigrate implements JdbcMigratable {
                 actual.stream().filter(metadata -> !expected.contains(metadata)).collect(Collectors.toList());
 
         for (MetadataEntity metadata : toAdd) {
-            metadata.setId(null);
             if (CollectionUtils.isNotEmpty(metadata.getPropertyMetadatas())) {
                 metadata.getPropertyMetadatas().stream()
                         .forEach(propertyMetadata -> propertyMetadata.setRuleMetadata(metadata));

@@ -20,6 +20,9 @@ import java.util.List;
 
 import org.hibernate.annotations.Generated;
 import org.hibernate.annotations.GenerationTime;
+import org.hibernate.annotations.Type;
+
+import com.oceanbase.odc.config.jpa.type.JsonType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -51,8 +54,8 @@ public class DatabaseChangeChangingOrderTemplateEntity {
     @Column(name = "project_id", nullable = false)
     private Long projectId;
 
-    // TODO JsonType
     @Column(name = "database_sequences", nullable = false)
+    @Type(value = JsonType.class)
     private List<List<Long>> databaseSequences;
 
     @Column(name = "is_enabled", nullable = false)

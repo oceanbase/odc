@@ -10,14 +10,18 @@ spring:
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
     driver-class-name: org.h2.Driver
-    url: jdbc:h2:mem:odc2.0;MODE=MySQL
+    url: jdbc:h2:mem:odc2.0;MODE=MySQL;DATABASE_TO_UPPER=false
     username: sa
     password:
-    schema: classpath:schema.sql
-    data: classpath:data.sql
-    initialization-mode: always
+  sql:
+    init:
+      schema-locations: classpath:schema.sql
+      data-locations: classpath:data.sql
+      mode: always
   jpa:
     show-sql: true
+    hibernate:
+      ddl-auto: none
     properties:
       hibernate:
         format_sql: true

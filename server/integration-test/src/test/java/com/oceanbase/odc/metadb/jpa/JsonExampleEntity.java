@@ -17,6 +17,10 @@ package com.oceanbase.odc.metadb.jpa;
 
 import java.util.List;
 
+import org.hibernate.annotations.Type;
+
+import com.oceanbase.odc.config.jpa.type.JsonType;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -26,7 +30,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-// @TypeDefs({@TypeDef(name = "Json", typeClass = JsonType.class)})
 @Data
 @Table(name = "json_example_entity")
 class JsonExampleEntity {
@@ -34,11 +37,11 @@ class JsonExampleEntity {
     @Id
     private Long id;
 
-    // @Type(type = "Json")
+    @Type(value = JsonType.class)
     @Column(name = "json_example")
     private JsonExampleNested jsonExample;
 
-    // @Type(type = "Json")
+    @Type(value = JsonType.class)
     @Column(name = "json_array")
     private List<List<String>> jsonArray;
 

@@ -56,6 +56,10 @@
             <artifactId>odc-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.hibernate.common</groupId>
+            <artifactId>hibernate-commons-annotations</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>odc-common</artifactId>
         </dependency>
