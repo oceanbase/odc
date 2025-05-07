@@ -253,7 +253,7 @@ class TaskMonitor {
             logMetaData.putAll(logMap);
         }
         if (cloudObjectStorageService != null && cloudObjectStorageService.supported()
-                && JobUtils.isK8sRunModeOfEnv()) {
+                && JobUtils.isUploadLogNeeded()) {
             logMetaData.putAll(new LogBizImpl().uploadLogFileToCloudStorage(finalResult.getJobIdentity(),
                     cloudObjectStorageService));
         } else {
