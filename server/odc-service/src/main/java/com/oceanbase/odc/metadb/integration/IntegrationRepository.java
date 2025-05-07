@@ -39,6 +39,8 @@ public interface IntegrationRepository extends OdcJpaRepository<IntegrationEntit
     List<IntegrationEntity> findByTypeAndEnabledAndOrganizationIdIn(IntegrationType type, Boolean enabled,
             Collection<Long> organizationIds);
 
+    List<IntegrationEntity> findByOrganizationId(Long organizationId);
+
     Optional<IntegrationEntity> findByTypeAndOrganizationIdAndName(IntegrationType type, Long organizationId,
             String name);
 

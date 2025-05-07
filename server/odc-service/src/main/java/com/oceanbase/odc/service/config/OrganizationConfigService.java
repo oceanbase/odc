@@ -46,10 +46,13 @@ import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.metadb.config.OrganizationConfigDAO;
 import com.oceanbase.odc.metadb.config.OrganizationConfigEntity;
+import com.oceanbase.odc.metadb.iam.OrganizationEntity;
 import com.oceanbase.odc.metadb.iam.OrganizationRepository;
 import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.config.model.ConfigurationMeta;
 import com.oceanbase.odc.service.connection.ConnectionService;
+import com.oceanbase.odc.service.git.GitIntegrationService;
+import com.oceanbase.odc.service.integration.IntegrationService;
 import com.oceanbase.odc.service.session.SessionProperties;
 
 import cn.hutool.core.codec.Caesar;
@@ -78,6 +81,10 @@ public class OrganizationConfigService {
     private ConnectionService connectionService;
     @Autowired
     private TransactionTemplate transactionTemplate;
+    @Autowired
+    private IntegrationService integrationService;
+    @Autowired
+    private GitIntegrationService gitIntegrationService;
 
     private List<Configuration> defaultConfigurations;
     private Map<String, ConfigurationMeta> configKeyToConfigMeta;
@@ -143,7 +150,7 @@ public class OrganizationConfigService {
         String customDataSourceKey = getCustomDataSourceKey(configurations);
         transactionTemplate.execute(status -> {
             try {
-                migrateExistedDataSourcePassword(organizationId, customDataSourceKey);
+                migrateExistedEncryptionRelated2OrganizationSecret(organizationId, customDataSourceKey);
 
                 List<OrganizationConfigEntity> organizationConfigEntities = configurations.stream()
                         .map(record -> record.convert2DO(organizationId, userId))
@@ -151,6 +158,7 @@ public class OrganizationConfigService {
                 int affectRows = organizationConfigDAO.batchUpsert(organizationConfigEntities);
                 log.info("Update organization configurations, organizationId={}, affectRows={}, configurations={}",
                         organizationId, affectRows, configurations);
+
                 evictOrgConfigurationsCache(organizationId);
                 return null;
             } catch (Exception e) {
@@ -217,7 +225,7 @@ public class OrganizationConfigService {
                 .collect(Collectors.toMap(Configuration::getKey, c -> c));
     }
 
-    private void migrateExistedDataSourcePassword(Long organizationId, String customKey) {
+    private void migrateExistedEncryptionRelated2OrganizationSecret(Long organizationId, String customKey) {
         OrganizationConfigEntity customKeyConfigInDB = organizationConfigDAO
                 .queryByOrganizationIdAndKey(organizationId, DEFAULT_CUSTOM_DATA_SOURCE_ENCRYPTION_KEY);
 
@@ -231,15 +239,24 @@ public class OrganizationConfigService {
         if (customKey.isEmpty()) {
             customKey = PasswordUtils.random(32);
         }
-        String finalCustomKey = customKey;
+        String newSecret = customKey;
         transactionTemplate.execute(status -> {
             try {
-                log.info("Start migrate existed datasource password, organizationId={}", organizationId);
-                connectionService.updatePasswordEncrypted(organizationId, finalCustomKey);
-                log.info("Success migrate existed datasource password, organizationId={}", organizationId);
-                String secret = Caesar.encode(finalCustomKey, 8);
-                int updateRows = organizationRepo.updateOrganizationSecretById(organizationId, secret);
-                log.info("Update organization secret, organization={}, affectRows={}", organizationId, updateRows);
+                log.info("Start migrate existed secret and datasource password, organizationId={}", organizationId);
+                OrganizationEntity organization = organizationRepo.findById(organizationId)
+                        .orElseThrow(() -> new IllegalArgumentException("Organization not found"));
+                String oldSecret = Caesar.decode(organization.getSecret(), 8);
+
+                // Step1: update connection password
+                connectionService.updatePasswordEncrypted(organizationId, oldSecret, newSecret);
+                // Step2: update integration secret
+                integrationService.attachedUpdateIntegrationSecret(organizationId, oldSecret, newSecret);
+                // The community version has been removed, Multi-cloud adaptation is required.
+                // gitIntegrationService.attachedUpdateGitPersonalToken(organizationId, oldSecret, newSecret);
+
+                // Step3: update organization secret
+                organization.setSecret(Caesar.encode(newSecret, 8));
+                organizationRepo.save(organization);
             } catch (Exception e) {
                 log.error("Failed to migrate existed datasource password, organizationId={}", organizationId, e);
                 status.setRollbackOnly();

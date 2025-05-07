@@ -1558,7 +1558,7 @@ public class FlowInstanceService {
                 new BeanPropertyRowMapper<>(ServiceTaskInstanceEntity.class));
     }
 
-    public int getEnabledPartitionPlanCount(@NotNull InnerQueryFlowInstanceParams params) {
+    public int getPartitionPlanCount(@NotNull InnerQueryFlowInstanceParams params) {
         Set<Long> joinedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
         if (CollectionUtils.isEmpty(joinedProjectIds)) {
             return 0;
@@ -1574,7 +1574,7 @@ public class FlowInstanceService {
                     .organizationIdEquals(authenticationFacade.currentOrganizationId())
                     .and(FlowInstanceSpecs.idIn(partitionPlanFlowInstanceIds))
                     .and(FlowInstanceSpecs.projectIdIn(joinedProjectIds))
-                    .and(FlowInstanceSpecs.statusIn(Collections.singleton(FlowStatus.EXECUTION_SUCCEEDED)));
+                    .and(FlowInstanceSpecs.statusIn(params.getFlowStatus()));
             return flowInstanceRepository.findAll(spec).size();
         }
         return 0;

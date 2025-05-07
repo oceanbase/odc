@@ -17,18 +17,18 @@ package com.oceanbase.odc.service.db;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.stereotype.Service;
@@ -37,7 +37,6 @@ import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
-import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.core.shared.model.TableIdentity;
 import com.oceanbase.odc.plugin.schema.api.MViewExtensionPoint;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
@@ -49,7 +48,6 @@ import com.oceanbase.odc.service.connection.table.model.Table;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.db.model.AllMVBaseTables;
 import com.oceanbase.odc.service.db.model.DatabaseAndMVs;
-import com.oceanbase.odc.service.db.model.DatabaseAndTables;
 import com.oceanbase.odc.service.db.model.GenerateTableDDLResp;
 import com.oceanbase.odc.service.db.model.GenerateUpdateMViewDDLReq;
 import com.oceanbase.odc.service.db.model.MViewRefreshReq;
@@ -104,33 +102,9 @@ public class DBMaterializedViewService {
             @NonNull String tableNameLike) {
         AllMVBaseTables allResult = new AllMVBaseTables();
         DBSchemaAccessor accessor = DBSchemaAccessors.create(connectionSession);
-        List<String> databases = accessor.showDatabases();
-        List<DatabaseAndTables> tables = databases.stream().map(schema -> {
-            List<String> tablesLike = accessor.showTablesLike(schema, tableNameLike).stream()
-                    .filter(name -> !StringUtils.endsWith(name.toUpperCase(),
-                            OdcConstants.VALIDATE_DDL_TABLE_POSTFIX)
-                            && !StringUtils.startsWithIgnoreCase(name, OdcConstants.CONTAINER_TABLE_PREFIX)
-                            && !StringUtils.startsWithIgnoreCase(name, OdcConstants.MATERIALIZED_VIEW_LOG_PREFIX))
-                    .collect(Collectors.toList());
-            return tablesLike.size() != 0 ? new DatabaseAndTables(schema, tablesLike)
-                    : new DatabaseAndTables();
-        }).filter(item -> item.getDatabaseName() != null)
-                .sorted(Comparator.comparing(DatabaseAndTables::getDatabaseName)).collect(Collectors.toList());
-        List<DBObjectIdentity> mvIdentities = accessor.listAllMViewsLike(tableNameLike);
-        Map<String, List<String>> schema2mvs = new HashMap<>();
-        mvIdentities.forEach(item -> {
-            List<String> views = schema2mvs.computeIfAbsent(item.getSchemaName(), t -> new ArrayList<>());
-            views.add(item.getName());
-        });
-        List<DatabaseAndMVs> mvs = new ArrayList<>();
-        schema2mvs.forEach((schema, viewNames) -> {
-            DatabaseAndMVs view = new DatabaseAndMVs();
-            view.setDatabaseName(schema);
-            view.setMvs(viewNames);
-            mvs.add(view);
-        });
-        allResult.setTables(tables);
-        allResult.setMvs(mvs);
+        List<String> existedDatabases = accessor.showDatabases();
+        allResult.setTables(dbTableService.generateDatabaseAndTables(accessor, tableNameLike, existedDatabases));
+        allResult.setMvs(generateDatabaseAndMVs(accessor, tableNameLike, existedDatabases));
         return allResult;
     }
 
@@ -183,6 +157,20 @@ public class DBMaterializedViewService {
 
     private MViewExtensionPoint getDBMViewExtensionPoint(@NonNull ConnectionSession session) {
         return SchemaPluginUtil.getMViewExtension(session.getDialectType());
+    }
+
+    private List<DatabaseAndMVs> generateDatabaseAndMVs(@NotNull DBSchemaAccessor accessor,
+            @NotNull String mViewNameLike,
+            @NonNull List<String> existedDatabases) {
+        List<DBObjectIdentity> existedMViewIdentities = accessor.listAllMViewsLike(mViewNameLike);
+        Map<String, List<String>> schema2ExistedMViews = new HashMap<>();
+        existedMViewIdentities.forEach(item -> {
+            schema2ExistedMViews.computeIfAbsent(item.getSchemaName(), t -> new ArrayList<>()).add(item.getName());
+        });
+        return existedDatabases.stream()
+                .map(schema -> new DatabaseAndMVs(schema, Optional.ofNullable(schema2ExistedMViews.get(schema))
+                        .orElse(Collections.emptyList())))
+                .collect(Collectors.toList());
     }
 
 }

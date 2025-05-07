@@ -34,4 +34,5 @@ public class QueryScheduleStatParams {
     private Set<ScheduleType> scheduleTypes;
     private Date startTime;
     private Date endTime;
+    private Set<ScheduleStatus> statuses;
 }

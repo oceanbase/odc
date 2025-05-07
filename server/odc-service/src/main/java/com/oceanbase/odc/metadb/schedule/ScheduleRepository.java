@@ -65,6 +65,15 @@ public interface ScheduleRepository extends OdcJpaRepository<ScheduleEntity, Lon
             nativeQuery = true)
     int getEnabledScheduleCountByProjectId(@Param("projectId") Long projectId);
 
+    @Query(value = "SELECT job_type as scheduleType, COUNT(*) as count FROM schedule_schedule " +
+            "WHERE organization_id = :organizationId " +
+            "  AND project_id IN (:projectIds) " +
+            "  AND job_type IN (:types) " +
+            "GROUP BY job_type",
+            nativeQuery = true)
+    List<ScheduleTypeCount> getScheduleCountByProjectIdInAndTypeIn(@Param("organizationId") Long organizationId,
+            @Param("projectIds") Set<Long> projectIds, @Param("types") Set<String> types);
+
     default Page<ScheduleEntity> find(@NotNull Pageable pageable, @NotNull QueryScheduleParams params) {
         Specification<ScheduleEntity> specification = Specification
                 .where(OdcJpaRepository.between(ScheduleEntity_.createTime, params.getStartTime(), params.getEndTime()))
@@ -86,4 +95,10 @@ public interface ScheduleRepository extends OdcJpaRepository<ScheduleEntity, Lon
 
     List<ScheduleEntity> findByOrganizationIdAndProjectIdInAndTypeIn(Long organizationId, Collection<Long> projectIds,
             Collection<ScheduleType> types);
+
+    interface ScheduleTypeCount {
+        String getScheduleType();
+
+        int getCount();
+    }
 }

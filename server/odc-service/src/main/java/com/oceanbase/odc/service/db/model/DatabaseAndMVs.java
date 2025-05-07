@@ -17,7 +17,9 @@ package com.oceanbase.odc.service.db.model;
 
 import java.util.List;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
@@ -28,6 +30,8 @@ import lombok.Setter;
  */
 @Setter
 @Getter
+@AllArgsConstructor
+@NoArgsConstructor
 public class DatabaseAndMVs {
     private String databaseName;
     private List<String> mvs;

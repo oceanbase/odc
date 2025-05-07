@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -127,10 +128,19 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
-    public void listAllMVs_Success() {
+    public void listAllMViewsLike_InputIsEmptyString_Success() {
         if (isSupportMaterializedView) {
             List<DBObjectIdentity> dbObjectIdentities = accessor.listAllMViewsLike("");
             Assert.assertTrue(dbObjectIdentities.size() >= 9);
+        }
+    }
+
+    @Test
+    public void listAllMViewsLike_InputIsNonEmptyString_Success() {
+        if (isSupportMaterializedView) {
+            List<DBObjectIdentity> mViewsContains_ = accessor.listAllMViewsLike("_");
+            Assert.assertTrue(mViewsContains_.size() > 0);
+            Assert.assertTrue(mViewsContains_.stream().allMatch(o -> o.getName().contains("_")));
         }
     }
 
@@ -427,8 +437,16 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listAllSystemViews_Success() {
-        List<DBObjectIdentity> sysViews = accessor.listAllSystemViews();
+        List<DBObjectIdentity> sysViews = accessor.listAllSystemViews(null);
         Assert.assertTrue(sysViews != null && sysViews.size() > 0);
+    }
+
+    @Test
+    public void listSystemViewsWhenViewNameLikeNotNull_Success() {
+        List<DBObjectIdentity> sysViews = accessor.listAllSystemViews("TABLE");
+        if (CollectionUtils.isNotEmpty(sysViews)) {
+            Assert.assertTrue(sysViews.stream().allMatch(o -> o.getName().toUpperCase().contains("TABLE")));
+        }
     }
 
     @Test
@@ -463,6 +481,12 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     public void listTables_Success() {
         List<DBObjectIdentity> tables = accessor.listTables(getOBMySQLDataBaseName(), null);
         Assert.assertTrue(tables != null && tables.size() > 0);
+    }
+
+    @Test
+    public void listTables_InputIsNonEmptyString_Success() {
+        List<DBObjectIdentity> tables = accessor.listTables(getOBMySQLDataBaseName(), "_");
+        Assert.assertTrue(tables.stream().allMatch(o -> o.getName().contains("_")));
     }
 
     @Test

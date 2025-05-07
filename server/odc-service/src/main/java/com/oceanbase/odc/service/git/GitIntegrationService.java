@@ -26,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.common.crypto.TextEncryptor;
@@ -121,6 +122,29 @@ public class GitIntegrationService {
         return entityToModel(updated);
     }
 
+    /**
+     * Adaptive multi-cloud is required.
+     * 
+     * @param organizationId
+     * @param oldSecret
+     * @param newSecret
+     */
+    @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("odc internal usage")
+    public void attachedUpdateGitPersonalToken(@NotNull Long organizationId, String oldSecret, String newSecret) {
+        List<GitRepositoryEntity> entities = gitRepoRepository.findByOrganizationId(organizationId);
+        if (entities.isEmpty()) {
+            return;
+        }
+        List<GitRepositoryEntity> saved = entities.stream()
+                .map(entity -> migrateTokenFromOld2New(entity, oldSecret, newSecret))
+                .collect(Collectors.toList());
+        gitRepoRepository.saveAllAndFlush(saved);
+        int affectedRows = saved.size();
+
+        log.info("attached update git repository from organization config completed, total={}", affectedRows);
+    }
+
     public GitRepository delete(@NotNull Long projectId, @NotNull Long id) {
         GitRepositoryEntity entity = nullSafeGet(id);
         gitRepoRepository.delete(entity);
@@ -152,6 +176,23 @@ public class GitIntegrationService {
         entity.setPersonalAccessToken(encryptor.encrypt(repo.getPersonalAccessToken()));
         entity.setSalt(salt);
         return entity;
+    }
+
+    private GitRepositoryEntity migrateTokenFromOld2New(GitRepositoryEntity entity, String oldSecret,
+            String newSecret) {
+        TextEncryptor encryptor = encryptionFacade.passwordEncryptor(oldSecret, entity.getSalt());
+        String rawToken = encryptor.decrypt(entity.getPersonalAccessToken());
+        String reEncodeToken = attachedEncodeToken(rawToken, entity.getSalt(), newSecret);
+        entity.setPersonalAccessToken(reEncodeToken);
+        return entity;
+    }
+
+    private String attachedEncodeToken(String rawToken, String salt, String organizationSecret) {
+        if (rawToken == null) {
+            return null;
+        }
+        TextEncryptor encryptor = encryptionFacade.passwordEncryptor(organizationSecret, salt);
+        return encryptor.encrypt(rawToken);
     }
 
     TextEncryptor getEncryptor(@NonNull Long organizationId, @NonNull String salt) {

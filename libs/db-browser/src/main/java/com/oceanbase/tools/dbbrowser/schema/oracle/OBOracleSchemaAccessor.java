@@ -92,7 +92,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * applicable to OB [4.3.5.1, ~)
+ * applicable to OB [4.3.5.2, ~)
  * 
  * @author jingtian
  */
@@ -1076,8 +1076,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
             sb.value(schemaName);
         }
         if (StringUtils.isNotBlank(tableNameLike)) {
-            sb.append(" AND TABLE_NAME LIKE ");
-            sb.value("%" + tableNameLike + "%");
+            sb.append(" AND ").like("TABLE_NAME", tableNameLike);
         }
         sb.append(" ORDER BY schema_name, type, name");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
@@ -1111,8 +1110,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
             sb.value(schemaName);
         }
         if (StringUtils.isNotBlank(tableNameLike)) {
-            sb.append(" AND TABLE_NAME LIKE ");
-            sb.value("%" + tableNameLike + "%");
+            sb.append(" AND ").like("TABLE_NAME", tableNameLike);
         }
         sb.append(" ORDER BY schema_name, type, name");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
@@ -1152,8 +1150,7 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
             sb.value(schemaName);
         }
         if (StringUtils.isNotBlank(tableNameLike)) {
-            sb.append(" AND TABLE_NAME LIKE ");
-            sb.value("%" + tableNameLike + "%");
+            sb.append(" AND ").like("TABLE_NAME", tableNameLike);
         }
         sb.append(" ORDER BY TABLE_NAME ASC");
         return jdbcOperations.queryForList(sb.toString(), String.class);
@@ -1170,13 +1167,14 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
     }
 
     @Override
-    public List<DBObjectIdentity> listAllMViewsLike(String viewNameLike) {
+    public List<DBObjectIdentity> listAllMViewsLike(String mViewNameLike) {
         OracleSqlBuilder sb = new OracleSqlBuilder();
         sb.append("select OWNER AS schema_name, MVIEW_NAME AS name,'MATERIALIZED_VIEW' AS type FROM ")
-                .append(dataDictTableNames.MVIEWS())
-                .append(" WHERE MVIEW_NAME LIKE ")
-                .value('%' + viewNameLike + '%')
-                .append(" ORDER BY name ASC;");
+                .append(dataDictTableNames.MVIEWS());
+        if (StringUtils.isNotBlank(mViewNameLike)) {
+            sb.append(" WHERE ").like("MVIEW_NAME", mViewNameLike);
+        }
+        sb.append(" ORDER BY name ASC;");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
     }
 

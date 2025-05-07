@@ -54,7 +54,7 @@ public interface UserTaskInstanceRepository
             + "fai.id=faci.approval_instance_id WHERE fai.status not in (:statuses) and (faci.user_id=:userId or faci.resource_role_identifier in (:resourceRoleIdentifiers))",
             nativeQuery = true)
     List<UserTaskInstanceEntity> findByStatusNotInAndCandidateUserIdOrResourceRoleIdentifier(
-            @Param("statuses") Collection<FlowNodeStatus> statuses,
+            @Param("statuses") Collection<String> statuses,
             @Param("userId") Long userId,
             @Param("resourceRoleIdentifiers") Collection<String> resourceRoleIdentifiers);
 
@@ -62,7 +62,7 @@ public interface UserTaskInstanceRepository
             + "fai.id=faci.approval_instance_id WHERE fai.status not in (:statuses) and faci.resource_role_identifier in (:resourceRoleIdentifier)",
             nativeQuery = true)
     List<UserTaskInstanceEntity> findByStatusNotInAndResourceRoleIdentifierIn(
-            @Param("statuses") Collection<FlowNodeStatus> statuses,
+            @Param("statuses") Collection<String> statuses,
             @Param("resourceRoleIdentifier") Collection<String> resourceRoleIdentifier);
 
     @Query(value = "SELECT distinct(fai.*) FROM flow_instance_node_approval fai INNER JOIN flow_instance_node_approval_candidate faci "
