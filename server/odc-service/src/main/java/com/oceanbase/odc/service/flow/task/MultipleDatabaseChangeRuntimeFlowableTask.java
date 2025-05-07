@@ -30,6 +30,7 @@ import org.springframework.data.domain.Pageable;
 
 import com.oceanbase.odc.common.i18n.I18n;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.core.shared.constant.TaskType;
@@ -149,8 +150,10 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
                 createFlowInstanceReq.setParentFlowInstanceId(FlowTaskUtil.getFlowInstanceId(execution));
                 createFlowInstanceReq.setParameters(multipleDatabaseChangeParameters
                         .convertIntoDatabaseChangeParameters(multipleDatabaseChangeParameters));
-                createFlowInstanceReq.setDescription(
-                        generateDescription(locale, map.get(batchDatabaseId), getFlowInstanceId(), this.batchId));
+                String description = StringUtils.isEmpty(detail.getDescription())
+                        ? generateDescription(locale, map.get(batchDatabaseId), getFlowInstanceId(), this.batchId)
+                        : detail.getDescription();
+                createFlowInstanceReq.setDescription(description);
                 List<FlowInstanceDetailResp> individualFlowInstance = flowInstanceService.createWithoutApprovalNode(
                         createFlowInstanceReq);
                 flowInstanceIds.add(individualFlowInstance.get(0).getId());
