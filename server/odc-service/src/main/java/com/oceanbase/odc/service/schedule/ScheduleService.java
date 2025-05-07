@@ -62,6 +62,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
@@ -70,6 +71,7 @@ import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -86,6 +88,7 @@ import com.oceanbase.odc.metadb.schedule.LatestTaskMappingRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity_;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
+import com.oceanbase.odc.metadb.schedule.ScheduleRepository.ScheduleTypeCount;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
@@ -1051,11 +1054,12 @@ public class ScheduleService {
          * Currently, only the following statistics alter schedule types are supported to query table of
          * schedule_schedule
          */
-        List<ScheduleType> supportedScheduleTypes =
-                Arrays.asList(ScheduleType.SQL_PLAN, ScheduleType.DATA_DELETE, ScheduleType.DATA_ARCHIVE);
+        Set<ScheduleType> supportedScheduleTypes = getLandingPageSupportedScheduleTypes();
         params.setScheduleTypes(ObjectUtil.defaultIfNull(params.getScheduleTypes(), Collections.emptySet()));
+        boolean containPartitionPlan = params.getScheduleTypes().contains(ScheduleType.PARTITION_PLAN);
         params.getScheduleTypes()
                 .retainAll(supportedScheduleTypes.stream().filter(Objects::nonNull).collect(Collectors.toSet()));
+        params.setStatuses(Collections.singleton(ScheduleStatus.ENABLED));
         if (CollectionUtils.isEmpty(params.getScheduleTypes())) {
             return Collections.emptyList();
         }
@@ -1065,15 +1069,47 @@ public class ScheduleService {
                         .collect(Collectors.toMap(ScheduleTaskStat::getType, Function.identity(), (e, r) -> e));
 
         Map<ScheduleType, Integer> scheduleType2EnabledScheduleCount =
-                listEnabledCronSchedules(params).stream().collect(Collectors.groupingBy(
+                listCronSchedules(params).stream().collect(Collectors.groupingBy(
                         ScheduleEntity::getType,
                         Collectors.summingInt(e -> 1)));
-        scheduleType2EnabledScheduleCount.computeIfAbsent(ScheduleType.PARTITION_PLAN,
-                k -> flowInstanceService.getEnabledPartitionPlanCount(new InnerQueryFlowInstanceParams()));
-        return listScheduleStats(scheduleTaskType2TaskStats, scheduleType2EnabledScheduleCount);
+        if (containPartitionPlan) {
+            scheduleType2EnabledScheduleCount.computeIfAbsent(ScheduleType.PARTITION_PLAN,
+                    k -> flowInstanceService
+                            .getPartitionPlanCount(
+                                    new InnerQueryFlowInstanceParams().setFlowStatus(Collections.singleton(
+                                            FlowStatus.EXECUTION_SUCCEEDED))));
+        }
+        ArrayList<ScheduleStat> scheduleStats = new ArrayList<>(
+                listScheduleStats(scheduleTaskType2TaskStats, scheduleType2EnabledScheduleCount));
+        return fillScheduleTotalCount(scheduleStats, params.getScheduleTypes(), containPartitionPlan);
     }
 
-    private List<ScheduleEntity> listEnabledCronSchedules(@NonNull QueryScheduleStatParams params) {
+    private List<ScheduleStat> fillScheduleTotalCount(@NonNull List<ScheduleStat> scheduleStats,
+            @NonNull Set<ScheduleType> supportedScheduleTypes, boolean containPartitionPlan) {
+        Map<ScheduleType, ScheduleStat> type2ScheduleStats = scheduleStats.stream()
+                .collect(Collectors.toMap(ScheduleStat::getType, Function.identity(), (e, r) -> e));
+        if (containPartitionPlan && type2ScheduleStats.containsKey(ScheduleType.PARTITION_PLAN)) {
+            type2ScheduleStats.get(ScheduleType.PARTITION_PLAN).setTotalCount(
+                    flowInstanceService.getPartitionPlanCount(new InnerQueryFlowInstanceParams()));
+        }
+        Map<String, Integer> scheduleType2Count = scheduleRepository.getScheduleCountByProjectIdInAndTypeIn(
+                authenticationFacade.currentOrganizationId(),
+                projectService.getMemberProjectIds(authenticationFacade.currentUserId()),
+                supportedScheduleTypes.stream().map(Enum::name).collect(Collectors.toSet())).stream()
+                .collect(
+                        Collectors.toMap(ScheduleTypeCount::getScheduleType, ScheduleTypeCount::getCount, (e, r) -> e));
+        for (ScheduleType supportedScheduleType : supportedScheduleTypes) {
+            type2ScheduleStats.computeIfAbsent(supportedScheduleType, k -> ScheduleStat.init(supportedScheduleType))
+                    .setTotalCount(scheduleType2Count.getOrDefault(supportedScheduleType.name(), 0));
+        }
+        return new ArrayList<>(type2ScheduleStats.values());
+    }
+
+    private Set<ScheduleType> getLandingPageSupportedScheduleTypes() {
+        return ImmutableSet.of(ScheduleType.SQL_PLAN, ScheduleType.DATA_DELETE, ScheduleType.DATA_ARCHIVE);
+    }
+
+    private List<ScheduleEntity> listCronSchedules(@NonNull QueryScheduleStatParams params) {
         Set<Long> joinedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
         if (CollectionUtils.isEmpty(joinedProjectIds)) {
             return Collections.emptyList();
@@ -1082,8 +1118,10 @@ public class ScheduleService {
         Specification<ScheduleEntity> scheduleSpec = Specification
                 .where(OdcJpaRepository.eq(ScheduleEntity_.organizationId,
                         authenticationFacade.currentOrganizationId()))
-                .and(OdcJpaRepository.in(ScheduleEntity_.projectId, joinedProjectIds))
-                .and(OdcJpaRepository.eq(ScheduleEntity_.status, ScheduleStatus.ENABLED));
+                .and(OdcJpaRepository.in(ScheduleEntity_.projectId, joinedProjectIds));
+        if (CollectionUtils.isNotEmpty(params.getStatuses())) {
+            scheduleSpec = scheduleSpec.and(OdcJpaRepository.in(ScheduleEntity_.status, params.getStatuses()));
+        }
         if (CollectionUtils.isNotEmpty(params.getScheduleTypes())) {
             scheduleSpec = scheduleSpec.and(OdcJpaRepository.in(ScheduleEntity_.type, params.getScheduleTypes()));
         }
@@ -1187,7 +1225,7 @@ public class ScheduleService {
 
     /**
      * This is a temporary method that only uses ODC 4.3.4
-     * 
+     *
      * @param params
      * @return
      */

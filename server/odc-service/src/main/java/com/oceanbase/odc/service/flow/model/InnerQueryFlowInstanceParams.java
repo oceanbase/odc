@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.flow.model;
 import java.util.Date;
 import java.util.Set;
 
+import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 
 import lombok.Data;
@@ -38,5 +39,6 @@ public class InnerQueryFlowInstanceParams {
     private Set<TaskType> taskTypes;
     private Date startTime;
     private Date endTime;
+    private Set<FlowStatus> flowStatus;
 
 }
