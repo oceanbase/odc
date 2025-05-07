@@ -180,7 +180,7 @@ public class DoFinishJobV2 implements Job {
         TaskCallerResult taskCallerResult = configuration.getTaskSupervisorJobCaller().destroyTask(supervisorEndpoint,
                 executorEndpoint, jobContext);
         if (null != taskCallerResult.getE()) {
-            throw new JobException("destroy task failed for job id = " + jobEntity.getId(), taskCallerResult.getE());
+            log.warn("destroy task failed for job id = " + jobEntity.getId(), taskCallerResult.getE());
         }
     }
 
