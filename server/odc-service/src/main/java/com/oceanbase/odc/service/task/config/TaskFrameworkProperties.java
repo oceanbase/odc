@@ -104,4 +104,6 @@ public interface TaskFrameworkProperties {
 
     int getSupervisorEndpointKeepAliveSeconds();
 
+    int getSupervisorReleaseBackSeconds();
+
 }
