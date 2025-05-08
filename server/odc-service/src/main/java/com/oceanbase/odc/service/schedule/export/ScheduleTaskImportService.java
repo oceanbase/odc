@@ -61,7 +61,7 @@ public class ScheduleTaskImportService {
     private String logPath;
 
     public String startPreviewImportTask(ScheduleTaskImportRequest request) {
-        String previewId = statefulUuidStateIdGenerator.generateStateId("scheduleImportReview");
+        String previewId = statefulUuidStateIdGenerator.generateCurrentUserIdStateId("scheduleImportReview");
         User user = authenticationFacade.currentUser();
         Future<List<ImportScheduleTaskView>> future = scheduleImportExecutor.submit(
                 () -> {
@@ -73,6 +73,7 @@ public class ScheduleTaskImportService {
     }
 
     public List<ImportScheduleTaskView> getPreviewTaskResults(String previewId) {
+        statefulUuidStateIdGenerator.checkCurrentUserId(previewId);
         Future<?> future = futureCache.get(previewId);
         if (future == null) {
             return null;
@@ -95,7 +96,7 @@ public class ScheduleTaskImportService {
     }
 
     public String startImportTask(ScheduleTaskImportRequest request) {
-        String previewId = statefulUuidStateIdGenerator.generateStateId("scheduleImport");
+        String previewId = statefulUuidStateIdGenerator.generateCurrentUserIdStateId("scheduleImport");
         User user = authenticationFacade.currentUser();
 
         Future<List<ImportTaskResult>> future = scheduleImportExecutor.submit(
@@ -105,6 +106,7 @@ public class ScheduleTaskImportService {
     }
 
     public List<ImportTaskResult> getImportTaskResults(String importId) {
+        statefulUuidStateIdGenerator.checkCurrentUserId(importId);
         Future<?> future = futureCache.get(importId);
         if (future == null) {
             return null;
@@ -127,6 +129,7 @@ public class ScheduleTaskImportService {
 
 
     public String getImportLog(String importId) {
+        statefulUuidStateIdGenerator.checkCurrentUserId(importId);
         String filePath = String.format(LOG_PATH_PATTERN, logPath, ScheduleTaskImportCallable.WORK_SPACE, importId,
                 ScheduleTaskImportCallable.LOG_NAME);
         File logFile = new File(filePath);
