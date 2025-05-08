@@ -93,6 +93,7 @@ public class OrganizationConfigService {
             .build(this::internalQuery);
 
     @PostConstruct
+    @SkipAuthorize("odc internal usage")
     public void init() {
         List<ConfigurationMeta> organizationConfigMetas = organizationConfigMetaService.listAllConfigMetas();
 
@@ -170,6 +171,7 @@ public class OrganizationConfigService {
         return queryList(organizationId);
     }
 
+    @SkipAuthorize("odc internal usage")
     public Map<String, Configuration> getOrgConfigurationsFromCache(Long organizationId) {
         return orgIdToConfigurationsCache.get(organizationId);
     }
