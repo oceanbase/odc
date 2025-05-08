@@ -142,6 +142,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
             Map<Long, DatabaseChangeDatabase> map = multipleDatabaseChangeParameters.getDatabases().stream()
                     .collect(Collectors.toMap(DatabaseChangeDatabase::getId, Function.identity()));
             Locale locale = multipleDatabaseChangeParameters.getLocale();
+            boolean descriptionIsEmpty = StringUtils.isEmpty(detail.getDescription());
             for (Long batchDatabaseId : batchDatabaseIds) {
                 CreateFlowInstanceReq createFlowInstanceReq = new CreateFlowInstanceReq();
                 createFlowInstanceReq.setDatabaseId(batchDatabaseId);
@@ -150,7 +151,7 @@ public class MultipleDatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDe
                 createFlowInstanceReq.setParentFlowInstanceId(FlowTaskUtil.getFlowInstanceId(execution));
                 createFlowInstanceReq.setParameters(multipleDatabaseChangeParameters
                         .convertIntoDatabaseChangeParameters(multipleDatabaseChangeParameters));
-                String description = StringUtils.isEmpty(detail.getDescription())
+                String description = descriptionIsEmpty
                         ? generateDescription(locale, map.get(batchDatabaseId), getFlowInstanceId(), this.batchId)
                         : detail.getDescription();
                 createFlowInstanceReq.setDescription(description);
