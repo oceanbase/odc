@@ -69,6 +69,7 @@ public class StatefulUuidStateIdGenerator {
         checkOriginId(stateId, authenticationFacade.currentUserIdStr());
     }
 
+    @SkipAuthorize("internal usage")
     public void checkOriginId(String stateId, String originId) {
         StatefulUuidStateId statefulUuidStateId = parseStateId(stateId);
         Verify.equals(statefulUuidStateId.getOriginId(), originId, "Illegal stateId");
