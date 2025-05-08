@@ -28,6 +28,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.service.common.FutureCache;
 import com.oceanbase.odc.service.exporter.exception.ExtractFileException;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -60,6 +61,7 @@ public class ScheduleTaskImportService {
     @Value("${odc.log.directory:./log}")
     private String logPath;
 
+    @SkipAuthorize("internal usage")
     public String startPreviewImportTask(ScheduleTaskImportRequest request) {
         String previewId = statefulUuidStateIdGenerator.generateCurrentUserIdStateId("scheduleImportReview");
         User user = authenticationFacade.currentUser();
@@ -72,6 +74,7 @@ public class ScheduleTaskImportService {
         return previewId;
     }
 
+    @SkipAuthorize("internal usage")
     public List<ImportScheduleTaskView> getPreviewTaskResults(String previewId) {
         statefulUuidStateIdGenerator.checkCurrentUserId(previewId);
         Future<?> future = futureCache.get(previewId);
@@ -95,6 +98,7 @@ public class ScheduleTaskImportService {
         }
     }
 
+    @SkipAuthorize("internal usage")
     public String startImportTask(ScheduleTaskImportRequest request) {
         String previewId = statefulUuidStateIdGenerator.generateCurrentUserIdStateId("scheduleImport");
         User user = authenticationFacade.currentUser();
@@ -105,6 +109,7 @@ public class ScheduleTaskImportService {
         return previewId;
     }
 
+    @SkipAuthorize("internal usage")
     public List<ImportTaskResult> getImportTaskResults(String importId) {
         statefulUuidStateIdGenerator.checkCurrentUserId(importId);
         Future<?> future = futureCache.get(importId);
@@ -127,7 +132,7 @@ public class ScheduleTaskImportService {
         }
     }
 
-
+    @SkipAuthorize("internal usage")
     public String getImportLog(String importId) {
         statefulUuidStateIdGenerator.checkCurrentUserId(importId);
         String filePath = String.format(LOG_PATH_PATTERN, logPath, ScheduleTaskImportCallable.WORK_SPACE, importId,
