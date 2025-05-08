@@ -27,6 +27,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.common.security.PasswordUtils;
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.SingleOrganizationResource;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
@@ -54,6 +55,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Service
+@SkipAuthorize
 public class ScheduleExportService {
     public static final String ASYNC_TASK_BASE_BUCKET = "scheduleexport";
     private static final Logger log = LoggerFactory.getLogger(ScheduleExportService.class);

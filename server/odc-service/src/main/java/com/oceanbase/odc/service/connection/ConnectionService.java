@@ -791,6 +791,7 @@ public class ConnectionService {
         return repository.findByIdIn(ids).stream().map(mapper::entityToModel).collect(Collectors.toList());
     }
 
+    @SkipAuthorize("odc internal usages")
     public List<ConnectionConfig> innerListByIdsWithAttribute(Collection<Long> ids) {
         List<ConnectionConfig> connectionConfigs = innerListByIds(ids);
         fullFillAttributes(connectionConfigs);
@@ -903,6 +904,7 @@ public class ConnectionService {
         return innerList(params, Pageable.unpaged()).toList();
     }
 
+    @SkipAuthorize("odc internal usage")
     public Set<Long> innerGetIdsIfAnyOfCondition(@NotNull InnerQueryConnectionParams params) {
         Specification<ConnectionEntity> spec = null;
         int conditionCount = 0;
