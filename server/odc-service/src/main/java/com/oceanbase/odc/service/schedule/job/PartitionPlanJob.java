@@ -16,7 +16,9 @@
 
 package com.oceanbase.odc.service.schedule.job;
 
+import java.text.MessageFormat;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -25,6 +27,8 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.quartz.JobExecutionContext;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.core.alarm.AlarmEventNames;
+import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.core.shared.constant.TaskType;
@@ -138,7 +142,7 @@ public class PartitionPlanJob implements OdcJob {
                     resps.stream().flatMap(i -> i.getSqls().stream()).collect(Collectors.toList()),
                     paramemters.getTimeoutMillis(), paramemters.getErrorStrategy());
         } catch (Exception e) {
-            log.warn("Failed to execute a partition plan task", e);
+            doAlarm(e, scheduleEntity, paramemters);
             if (this.notificationProperties.isEnabled()) {
                 try {
                     Event event = this.eventBuilder.ofFailedTask(this.flowInstanceService
@@ -158,6 +162,18 @@ public class PartitionPlanJob implements OdcJob {
             }
             PartitionPlanTaskTraceContextHolder.clear();
         }
+    }
+
+    private static void doAlarm(Exception e, ScheduleEntity scheduleEntity, PartitionPlanConfig paramemters) {
+        log.warn("Failed to execute a partition plan task", e);
+        Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
+                .item(AlarmUtils.SCHEDULE_ID_NAME, scheduleEntity.getId().toString())
+                .item(AlarmUtils.FLOW_INSTANCE_ID_NAME, paramemters.getFlowInstanceId().toString())
+                .item(AlarmUtils.MESSAGE_NAME,
+                        MessageFormat.format(
+                                "PartitionPlan execute failed, msg={0}", e.getMessage()))
+                .build();
+        AlarmUtils.alarm(AlarmEventNames.TASK_EXECUTION_FAILED, eventMessage);
     }
 
     private void submitSubDatabaseChangeTask(Long parentFlowInstanceId, Long databaseId,
