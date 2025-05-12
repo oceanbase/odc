@@ -63,6 +63,7 @@ public class DLMJobStore implements IJobStore {
         try {
             DruidDataSourceFactory druidDataSourceFactory = new DruidDataSourceFactory(metaDBConfig);
             dataSource = (DruidDataSource) druidDataSourceFactory.getDataSource();
+            enableBreakpointRecovery = true;
             log.info("Connect to the meta database success.");
         } catch (Exception e) {
             log.warn("Failed to connect to the meta database and closing save point.");
@@ -139,7 +140,7 @@ public class DLMJobStore implements IJobStore {
             sb.append(
                     "processed_row_count=values(processed_row_count),processed_data_size=values(processed_data_size),primary_key_save_point=values(primary_key_save_point)");
             sb.append(",partition_min_key=values(partition_min_key),partition_max_key=values(partition_max_key)");
-            log.debug("start to store task generator:{}", taskGenerator);
+            log.info("start to store task generator:{}", taskGenerator);
             try (Connection conn = dataSource.getConnection();
                     PreparedStatement ps = conn.prepareStatement(sb.toString())) {
                 ps.setString(1, taskGenerator.getId());
