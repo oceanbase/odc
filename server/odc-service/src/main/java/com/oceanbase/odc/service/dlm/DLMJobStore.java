@@ -155,6 +155,8 @@ public class DLMJobStore implements IJobStore {
                 ps.setString(9, taskGenerator.getPartitionSavePoint());
                 ps.setString(10, JsonUtils.toJson(taskGenerator.getPartName2MinKey()));
                 ps.setString(11, JsonUtils.toJson(taskGenerator.getPartName2MaxKey()));
+            } catch (Exception e) {
+                log.error("Store task generator failed", e);
             }
         }
     }
