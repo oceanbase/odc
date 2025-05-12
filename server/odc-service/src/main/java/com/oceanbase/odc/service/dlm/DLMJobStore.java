@@ -147,6 +147,7 @@ public class DLMJobStore implements IJobStore {
                 ps.setString(9, taskGenerator.getPartitionSavePoint());
                 ps.setString(10, JsonUtils.toJson(taskGenerator.getPartName2MinKey()));
                 ps.setString(11, JsonUtils.toJson(taskGenerator.getPartName2MaxKey()));
+                ps.execute();
             }
         }
     }
@@ -219,6 +220,7 @@ public class DLMJobStore implements IJobStore {
                 ps.setString(7,
                         taskMeta.getCursorPrimaryKey() == null ? "" : taskMeta.getCursorPrimaryKey().toSqlString());
                 ps.setString(8, taskMeta.getPartitionName());
+                ps.execute();
             }
         }
     }
