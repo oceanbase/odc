@@ -69,6 +69,8 @@ public class DLMJobStore implements IJobStore {
             log.warn("Failed to connect to the meta database and closing save point.");
             enableBreakpointRecovery = false;
         }
+        log.info("Enable breakpoint recovery = {},auto commit = {}", enableBreakpointRecovery,
+                dataSource.isDefaultAutoCommit());
 
     }
 
