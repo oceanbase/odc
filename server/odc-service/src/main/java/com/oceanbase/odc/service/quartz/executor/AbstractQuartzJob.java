@@ -105,6 +105,15 @@ public abstract class AbstractQuartzJob implements InterruptableJob {
     public OdcJob getOdcJob(JobExecutionContext context) {
         JobKey key = context.getJobDetail().getKey();
         ScheduleTaskType taskType = ScheduleTaskType.valueOf(key.getGroup());
+        if (taskType == ScheduleTaskType.DATA_ARCHIVE && context.getResult() != null) {
+            try {
+                ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) context.getResult();
+                taskType = ScheduleTaskType.valueOf(taskEntity.getJobGroup());
+                log.info("Recovery task,scheduleTaskId={}", taskEntity.getId());
+            } catch (Exception e) {
+                log.warn("Load history task failed,jobKey={}", key);
+            }
+        }
         switch (taskType) {
             case SQL_PLAN:
                 return new SqlPlanJob();

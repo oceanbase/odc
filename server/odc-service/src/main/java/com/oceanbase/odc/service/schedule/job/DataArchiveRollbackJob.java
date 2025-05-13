@@ -15,15 +15,18 @@
  */
 package com.oceanbase.odc.service.schedule.job;
 
+import java.util.Map;
 import java.util.Optional;
 
 import org.quartz.JobExecutionContext;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.schedule.model.DataArchiveRollbackParameters;
+import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 
@@ -58,20 +61,29 @@ public class DataArchiveRollbackJob extends AbstractDlmJob {
         DataArchiveParameters dataArchiveParameters = JsonUtils.fromJson(dataArchiveTask.getParametersJson(),
                 DataArchiveParameters.class);
         // execute in task framework.
-        DLMJobReq parameters = getDLMJobReq(dataArchiveTask.getJobId());
-        parameters.setJobType(JobType.ROLLBACK);
-        DataSourceInfo tempDataSource = parameters.getSourceDs();
-        parameters.setSourceDs(parameters.getTargetDs());
-        parameters.setTargetDs(tempDataSource);
-        parameters.setFireTime(context.getFireTime());
+        DLMJobReq parameters;
+        if (taskEntity.getJobId() != null) {
+            parameters = JsonUtils.fromJson(JsonUtils.fromJson(
+                    taskFrameworkService.find(taskEntity.getJobId()).getJobParametersJson(),
+                    new TypeReference<Map<String, String>>() {})
+                    .get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
+                    DLMJobReq.class);
+        } else {
+            parameters = getDLMJobReq(dataArchiveTask.getJobId());
+            parameters.setJobType(JobType.ROLLBACK);
+            DataSourceInfo tempDataSource = parameters.getSourceDs();
+            parameters.setSourceDs(parameters.getTargetDs());
+            parameters.setTargetDs(tempDataSource);
+            parameters.setFireTime(context.getFireTime());
+            parameters.getTables().forEach(o -> {
+                String temp = o.getTableName();
+                o.setTableName(o.getTargetTableName());
+                o.setTargetTableName(temp);
+            });
+            parameters.setScheduleTaskId(taskEntity.getId());
+        }
         parameters
                 .setRateLimit(limiterService.getByOrderIdOrElseDefaultConfig(Long.parseLong(taskEntity.getJobName())));
-        parameters.getTables().forEach(o -> {
-            String temp = o.getTableName();
-            o.setTableName(o.getTargetTableName());
-            o.setTargetTableName(temp);
-        });
-        parameters.setScheduleTaskId(taskEntity.getId());
         Long jobId = publishJob(parameters, dataArchiveParameters.getTimeoutMillis(),
                 dataArchiveParameters.getSourceDatabaseId());
         log.info("Publish DLM job to task framework succeed,scheduleTaskId={},jobIdentity={}", taskEntity.getId(),
