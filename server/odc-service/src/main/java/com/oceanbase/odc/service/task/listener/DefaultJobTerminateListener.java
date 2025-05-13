@@ -68,12 +68,12 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
             TaskStatus taskStatus = TerminateProcessor.correctTaskStatus(terminateProcessors, jobEntity.getJobType(),
                     scheduleTask, event.getStatus().convertTaskStatus());
             // correct current local variable to right status
-            scheduleTask.setStatus(taskStatus);
             scheduleTaskService.updateStatusById(scheduleTask.getId(), taskStatus,
                     TaskStatus.getProcessingStatus().stream().map(TaskStatus::name).collect(
                             Collectors.toList()));
             log.info("Update schedule task status from {} to {} succeed,scheduleTaskId={}", scheduleTask.getStatus(),
                     taskStatus, scheduleTask.getId());
+            scheduleTask.setStatus(taskStatus);
             // Refresh the schedule status after the task is completed.
             scheduleService.refreshScheduleStatus(Long.parseLong(scheduleTask.getJobName()));
             // Trigger the alarm if the task is failed or canceled.
