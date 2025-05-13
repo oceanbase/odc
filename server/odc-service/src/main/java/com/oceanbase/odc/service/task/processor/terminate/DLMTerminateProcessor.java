@@ -59,7 +59,7 @@ public class DLMTerminateProcessor extends DLMProcessorMatcher implements Termin
             }
         });
         dlmService.createOrUpdateDlmTableUnits(dlmTableUnits);
-        return currentStatus == TaskStatus.EXEC_TIMEOUT || currentStatus == TaskStatus.CANCELED ? currentStatus
+        return currentStatus == TaskStatus.EXEC_TIMEOUT || currentStatus == TaskStatus.CANCELED ? TaskStatus.CANCELED
                 : dlmService.getFinalTaskStatus(scheduleTask.getId());
     }
 
