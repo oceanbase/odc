@@ -27,10 +27,13 @@ import lombok.NoArgsConstructor;
 public class CompleteMultipartUploadRequest extends GenericRequest {
     private String uploadId;
     private List<PartETag> partETags;
+    private ObjectMetadata objectMetadata;
 
-    public CompleteMultipartUploadRequest(String bucketName, String key, String uploadId, List<PartETag> partETags) {
+    public CompleteMultipartUploadRequest(String bucketName, String key, String uploadId, List<PartETag> partETags,
+            ObjectMetadata objectMetadata) {
         super(bucketName, key);
         this.uploadId = uploadId;
         this.partETags = partETags;
+        this.objectMetadata = objectMetadata;
     }
 }

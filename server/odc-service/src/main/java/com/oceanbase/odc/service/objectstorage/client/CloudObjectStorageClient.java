@@ -290,7 +290,7 @@ public class CloudObjectStorageClient implements ObjectStorageClient {
             }
         }
         CompleteMultipartUploadRequest completeMultipartUploadRequest =
-                new CompleteMultipartUploadRequest(bucketName, objectName, uploadId, partTags);
+                new CompleteMultipartUploadRequest(bucketName, objectName, uploadId, partTags, metadata);
         CompleteMultipartUploadResult completeMultipartUploadResult =
                 internalEndpointCloudObjectStorage.completeMultipartUpload(completeMultipartUploadRequest);
         log.info("Complete multipart upload, result={}", completeMultipartUploadResult);
@@ -325,9 +325,11 @@ public class CloudObjectStorageClient implements ObjectStorageClient {
             String location = publicEndpointCloudObjectStorage.getBucketLocation(bucketName);
             log.info("location={},region={},cloudProvider={}", location, region,
                     objectStorageConfiguration.getCloudProvider());
-            Verify.verify(StringUtils.equals(region, location) || StringUtils.endsWith(location, region),
-                    "object storage bucket region does not match location, location=" + location + ", region="
-                            + region);
+            if (StringUtils.isNotEmpty(location)) {
+                Verify.verify(StringUtils.equals(region, location) || StringUtils.endsWith(location, region),
+                        "object storage bucket region does not match location, location=" + location + ", region="
+                                + region);
+            }
         }
     }
 
