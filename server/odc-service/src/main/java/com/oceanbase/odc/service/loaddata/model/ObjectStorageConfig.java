@@ -189,6 +189,7 @@ public class ObjectStorageConfig {
         // while azure use the account name as one component in endpoint.
         // GCS need neither region nor access key to concat the endpoint.
         if (cloudProvider == CloudProvider.AZURE) {
+            // for azure, accessKey is account name, secretKey is the secret key
             this.endpoint = concatEndpoint(cloudProvider, accessKey);
         } else if (cloudProvider == CloudProvider.GOOGLE_CLOUD) {
             this.endpoint = GCS_ENDPOINT;
@@ -217,7 +218,7 @@ public class ObjectStorageConfig {
         return config;
     }
 
-    private static String concatEndpoint(CloudProvider cloudProvider, String component) {
+    public static String concatEndpoint(CloudProvider cloudProvider, String component) {
         switch (cloudProvider) {
             case TENCENT_CLOUD:
                 return MessageFormat.format(COS_ENDPOINT_PATTERN, component);

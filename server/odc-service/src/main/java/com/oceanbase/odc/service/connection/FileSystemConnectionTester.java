@@ -32,6 +32,7 @@ import com.oceanbase.odc.plugin.connect.api.TestResult;
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.ConnectionTestResult;
+import com.oceanbase.odc.service.loaddata.model.ObjectStorageConfig;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudResourceConfigurations;
 import com.oceanbase.odc.service.objectstorage.cloud.client.CloudClient;
 import com.oceanbase.odc.service.objectstorage.cloud.client.CloudException;
@@ -70,7 +71,7 @@ public class FileSystemConnectionTester {
         storageConfig.setBucketName(uri.getAuthority());
         storageConfig.setRegion(config.getRegion());
         storageConfig.setCloudProvider(getCloudProvider(config.getType()));
-        storageConfig.setPublicEndpoint(getEndPointByRegion(config.getType(), config.getRegion()));
+        storageConfig.setPublicEndpoint(getEndPoint(config.getType(), config.getRegion(), config.getUsername()));
         try {
             CloudClient cloudClient =
                     new CloudResourceConfigurations.CloudClientBuilder().generateCloudClient(storageConfig);
@@ -123,7 +124,7 @@ public class FileSystemConnectionTester {
         }
     }
 
-    private static String getEndPointByRegion(ConnectType type, String region) {
+    private static String getEndPoint(ConnectType type, String region, String userName) {
         switch (type) {
             case COS:
                 return MessageFormat.format(COS_ENDPOINT_PATTERN, region);
@@ -137,6 +138,8 @@ public class FileSystemConnectionTester {
                     return MessageFormat.format(S3_ENDPOINT_CN_PATTERN, region);
                 }
                 return MessageFormat.format(S3_ENDPOINT_GLOBAL_PATTERN, region);
+            case BLOB:
+                return ObjectStorageConfig.concatEndpoint(CloudProvider.AZURE, userName);
             default:
                 throw new IllegalArgumentException("regionToEndpoint is not applicable for storageType " + type);
         }

@@ -39,11 +39,15 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
+import com.azure.storage.blob.BlobServiceClient;
+import com.azure.storage.blob.BlobServiceClientBuilder;
+import com.azure.storage.common.StorageSharedKeyCredential;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
 import com.oceanbase.odc.service.objectstorage.cloud.client.AlibabaCloudClient;
 import com.oceanbase.odc.service.objectstorage.cloud.client.AmazonCloudClient;
+import com.oceanbase.odc.service.objectstorage.cloud.client.AzureCloudClient;
 import com.oceanbase.odc.service.objectstorage.cloud.client.CloudClient;
 import com.oceanbase.odc.service.objectstorage.cloud.client.GoogleCloudClient;
 import com.oceanbase.odc.service.objectstorage.cloud.client.NullCloudClient;
@@ -111,6 +115,8 @@ public class CloudResourceConfigurations {
                     return createAmazonCloudClient(configuration);
                 case GOOGLE_CLOUD:
                     return createGoogleCloudClient(configuration);
+                case AZURE:
+                    return createAzureCloudClient(configuration);
                 default:
                     return new NullCloudClient();
             }
@@ -197,6 +203,18 @@ public class CloudResourceConfigurations {
         String roleSessionName = configuration.getRoleSessionName();
         String roleArn = configuration.getRoleArn();
         return new GoogleCloudClient(s3, sts, roleSessionName, roleArn);
+    }
+
+    static AzureCloudClient createAzureCloudClient(ObjectStorageConfiguration configuration) {
+        // for azure, accessKey is account name, secretKey is the secret key
+        String accountName = configuration.getAccessKeyId();
+        String accountKey = configuration.getAccessKeySecret();
+        StorageSharedKeyCredential credential = new StorageSharedKeyCredential(accountName, accountKey);
+        BlobServiceClient serviceClient = new BlobServiceClientBuilder()
+                .endpoint(configuration.getPublicEndpoint())
+                .credential(credential)
+                .buildClient();
+        return new AzureCloudClient(serviceClient, configuration.getRegion());
     }
 
     private static OSS getInternalOss(ObjectStorageConfiguration objectStorageConfiguration) {

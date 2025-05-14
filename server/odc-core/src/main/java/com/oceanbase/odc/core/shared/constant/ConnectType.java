@@ -39,6 +39,8 @@ public enum ConnectType {
     OBS(DialectType.FILE_SYSTEM),
     COS(DialectType.FILE_SYSTEM),
     S3A(DialectType.FILE_SYSTEM),
+    // microsoft azure blob service
+    BLOB(DialectType.FILE_SYSTEM),
     UNKNOWN(DialectType.UNKNOWN),
 
     ;
