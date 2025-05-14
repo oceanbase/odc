@@ -119,6 +119,8 @@ public class FileSystemConnectionTester {
                 return CloudProvider.AWS;
             case OSS:
                 return CloudProvider.ALIBABA_CLOUD;
+            case BLOB:
+                return CloudProvider.AZURE;
             default:
                 throw new UnExpectedException();
         }
