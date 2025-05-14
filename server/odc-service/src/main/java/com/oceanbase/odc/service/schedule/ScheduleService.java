@@ -84,7 +84,6 @@ import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
-import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.common.FutureCache;
@@ -98,7 +97,6 @@ import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
-import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.iam.OrganizationService;
@@ -188,8 +186,6 @@ public class ScheduleService {
     private ObjectStorageFacade objectStorageFacade;
     @Autowired
     private FlowInstanceRepository flowInstanceRepository;
-    @Autowired
-    private FlowInstanceService flowInstanceService;
     @Autowired
     private PartitionPlanScheduleService partitionPlanScheduleService;
     @Autowired
@@ -747,7 +743,10 @@ public class ScheduleService {
         log.info("Start to terminate schedule, type={}, scheduleIds={}", cmd.getScheduleType(), cmd.getIds());
         List<ScheduleTerminateResult> results = new ArrayList<>();
         if (ScheduleType.PARTITION_PLAN.equals(cmd.getScheduleType())) {
-            processTerminatePartitionPlan(cmd, results);
+            // The partition plan uses Schedule, but it is created through flow, and the front end also displays
+            // it through flow.
+            // To ensure that the customer see the same id, the flowInstanceId is used
+            partitionPlanScheduleService.processTerminatePartitionPlan(cmd, results);
             return results;
         }
         List<ScheduleEntity> scheduleEntities = scheduleRepository.findByIdIn(cmd.getIds());
@@ -805,25 +804,6 @@ public class ScheduleService {
                         throw new RuntimeException(e);
                     }
                 });
-    }
-
-    // The partition plan uses Schedule, but it is created through flow, and the front end also displays
-    // it through flow.
-    // To ensure that the customer see the same id, the flowInstanceId is used
-    private void processTerminatePartitionPlan(ScheduleTerminateCmd cmd, List<ScheduleTerminateResult> results) {
-        Map<Long, TaskEntity> flowInstanceId2TaskEntity = flowInstanceService.getTaskByFlowInstanceIds(cmd.getIds());
-        for (Map.Entry<Long, TaskEntity> entry : flowInstanceId2TaskEntity.entrySet()) {
-            Long flowInstanceId = entry.getKey();
-            TaskEntity taskEntity = entry.getValue();
-            try {
-                partitionPlanScheduleService.disablePartitionPlan(taskEntity.getDatabaseId());
-                results.add(ScheduleTerminateResult.ofSuccess(cmd.getScheduleType(), flowInstanceId));
-                log.info("PartitionPlan task stop success, flowInstanceId={}", flowInstanceId);
-            } catch (Exception e) {
-                results.add(ScheduleTerminateResult.ofFailed(cmd.getScheduleType(), flowInstanceId, e.getMessage()));
-                log.info("PartitionPlan task stop failed, flowInstanceId={}", flowInstanceId, e);
-            }
-        }
     }
 
     /**
