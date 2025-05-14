@@ -46,24 +46,4 @@ public class CloudProviderUtil {
                 throw new IllegalArgumentException("Unsupported scheme: " + scheme);
         }
     }
-
-    public static String getObjectUri(CloudProvider provider, String bucket, String objectName) {
-        switch (provider) {
-            case ALIBABA_CLOUD:
-                return "oss://" + bucket + "/" + objectName;
-            case TENCENT_CLOUD:
-                return "cos://" + bucket + "/" + objectName;
-            case HUAWEI_CLOUD:
-                return "obs://" + bucket + "/" + objectName;
-            case AWS:
-                return "s3://" + bucket + "/" + objectName;
-            case AZURE:
-                return "azblob://" + bucket + "/" + objectName;
-            case GOOGLE_CLOUD:
-                return "gcs://" + bucket + "/" + objectName;
-            default:
-                throw new IllegalArgumentException("Unsupported cloud provider: " + provider);
-        }
-    }
-
 }
