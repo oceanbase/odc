@@ -57,6 +57,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+import com.oceanbase.odc.common.concurrent.ExecutorUtils;
 import com.oceanbase.odc.common.event.LocalEventPublisher;
 import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.permission.Permission;
@@ -567,32 +568,33 @@ public class DatabaseService {
         List<String> excludeSchemas = dbSchemaSyncProperties.getExcludeSchemas(connection.getDialectType());
         DataSource teamDataSource = getDataSourceFactory(connection).getDataSource();
         ExecutorService executorService = Executors.newFixedThreadPool(1);
-        Future<List<DatabaseEntity>> future = executorService.submit(() -> {
-            try (Connection conn = teamDataSource.getConnection()) {
-                return dbSchemaService.listDatabases(connection.getDialectType(), conn).stream().map(database -> {
-                    DatabaseEntity entity = new DatabaseEntity();
-                    entity.setDatabaseId(com.oceanbase.odc.common.util.StringUtils.uuid());
-                    entity.setConnectType(connection.getType());
-                    entity.setExisted(Boolean.TRUE);
-                    entity.setName(database.getName());
-                    entity.setCharsetName(database.getCharset());
-                    entity.setCollationName(database.getCollation());
-                    entity.setTableCount(0L);
-                    entity.setOrganizationId(connection.getOrganizationId());
-                    entity.setEnvironmentId(connection.getEnvironmentId());
-                    entity.setConnectionId(connection.getId());
-                    entity.setSyncStatus(DatabaseSyncStatus.SUCCEEDED);
-                    entity.setProjectId(currentProjectId);
-                    entity.setObjectSyncStatus(DBObjectSyncStatus.INITIALIZED);
-                    if (blockExcludeSchemas && excludeSchemas.contains(database.getName())) {
-                        entity.setProjectId(null);
-                    }
-                    entity.setLastSyncTime(new Date(System.currentTimeMillis()));
-                    return entity;
-                }).collect(Collectors.toList());
-            }
-        });
+
         try {
+            Future<List<DatabaseEntity>> future = executorService.submit(() -> {
+                try (Connection conn = teamDataSource.getConnection()) {
+                    return dbSchemaService.listDatabases(connection.getDialectType(), conn).stream().map(database -> {
+                        DatabaseEntity entity = new DatabaseEntity();
+                        entity.setDatabaseId(com.oceanbase.odc.common.util.StringUtils.uuid());
+                        entity.setConnectType(connection.getType());
+                        entity.setExisted(Boolean.TRUE);
+                        entity.setName(database.getName());
+                        entity.setCharsetName(database.getCharset());
+                        entity.setCollationName(database.getCollation());
+                        entity.setTableCount(0L);
+                        entity.setOrganizationId(connection.getOrganizationId());
+                        entity.setEnvironmentId(connection.getEnvironmentId());
+                        entity.setConnectionId(connection.getId());
+                        entity.setSyncStatus(DatabaseSyncStatus.SUCCEEDED);
+                        entity.setProjectId(currentProjectId);
+                        entity.setObjectSyncStatus(DBObjectSyncStatus.INITIALIZED);
+                        if (blockExcludeSchemas && excludeSchemas.contains(database.getName())) {
+                            entity.setProjectId(null);
+                        }
+                        entity.setLastSyncTime(new Date(System.currentTimeMillis()));
+                        return entity;
+                    }).collect(Collectors.toList());
+                }
+            });
             List<DatabaseEntity> latestDatabases = future.get(10, TimeUnit.SECONDS);
             Map<String, List<DatabaseEntity>> latestDatabaseName2Database =
                     latestDatabases.stream().filter(Objects::nonNull)
@@ -702,12 +704,17 @@ public class DatabaseService {
             throws ExecutionException, InterruptedException, TimeoutException {
         DataSource individualDataSource = getDataSourceFactory(connection).getDataSource();
         ExecutorService executorService = Executors.newFixedThreadPool(1);
-        Future<Set<String>> future = executorService.submit(() -> {
-            try (Connection conn = individualDataSource.getConnection()) {
-                return dbSchemaService.showDatabases(connection.getDialectType(), conn);
-            }
-        });
         try {
+            Future<Set<String>> future = executorService.submit(() -> {
+                log.debug("Start to sync individual data source, connectionId={}, type={}", connection.getId(),
+                        connection.getType());
+                try (Connection conn = individualDataSource.getConnection()) {
+                    return dbSchemaService.showDatabases(connection.getDialectType(), conn);
+                } catch (Exception ex) {
+                    log.debug("Failed to get connection data source, ex=", ex);
+                    throw ex;
+                }
+            });
             Set<String> latestDatabaseNames = future.get(10, TimeUnit.SECONDS);
             List<DatabaseEntity> existedDatabasesInDb = databaseRepository.findByConnectionId(connection.getId())
                     .stream().filter(DatabaseEntity::getExisted).collect(Collectors.toList());
@@ -748,11 +755,7 @@ public class DatabaseService {
             connectionSyncHistoryService.upsert(connection.getId(), ConnectionSyncResult.SUCCESS,
                     connection.getOrganizationId(), null, null);
         } finally {
-            try {
-                executorService.shutdownNow();
-            } catch (Exception e) {
-                // eat the exception
-            }
+            ExecutorUtils.gracefulShutdown(executorService, Thread.currentThread().getName(), 10);
             if (individualDataSource instanceof AutoCloseable) {
                 try {
                     ((AutoCloseable) individualDataSource).close();
