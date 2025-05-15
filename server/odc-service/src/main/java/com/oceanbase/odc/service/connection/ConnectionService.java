@@ -57,6 +57,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.validation.annotation.Validated;
 
+import com.oceanbase.odc.common.crypto.TextEncryptor;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.model.DefaultSecurityResource;
@@ -109,12 +110,14 @@ import com.oceanbase.odc.service.connection.database.DatabaseSyncManager;
 import com.oceanbase.odc.service.connection.event.UpsertDatasourceEvent;
 import com.oceanbase.odc.service.connection.model.ConnectProperties;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.connection.model.InnerQueryConnectionParams;
 import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
 import com.oceanbase.odc.service.connection.model.QueryConnectionParams;
 import com.oceanbase.odc.service.connection.ssl.ConnectionSSLAdaptor;
 import com.oceanbase.odc.service.connection.util.ConnectionIdList;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
 import com.oceanbase.odc.service.db.schema.syncer.DBSchemaSyncProperties;
+import com.oceanbase.odc.service.encryption.EncryptionFacade;
 import com.oceanbase.odc.service.flow.model.BinaryDataResult;
 import com.oceanbase.odc.service.flow.model.ByteArrayDataResult;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
@@ -225,6 +228,9 @@ public class ConnectionService {
 
     @Autowired
     private ConnectionEventPublisher connectionEventPublisher;
+
+    @Autowired
+    private EncryptionFacade encryptionFacade;
 
     @Value("${odc.integration.bastion.enabled:false}")
     private boolean bastionEnabled;
@@ -581,6 +587,12 @@ public class ConnectionService {
         User user = authenticationFacade.currentUser();
         Long userId = user.getId();
         if (params.getRelatedUserId() != null) {
+            Permission requiredPermission =
+                    securityManager.getPermissionByActions(new DefaultSecurityResource(params.getRelatedUserId() + "",
+                            ResourceType.ODC_USER.code()), Collections.singletonList("read"));
+            if (!securityManager.isPermitted(requiredPermission)) {
+                throw new AccessDeniedException();
+            }
             userId = params.getRelatedUserId();
         }
         connectionIdList = getConnectionIdList(userId, params.getMinPrivilege(), params.getPermittedActions());
@@ -744,9 +756,10 @@ public class ConnectionService {
         if (org.springframework.util.CollectionUtils.isEmpty(ids)) {
             return Collections.emptyMap();
         }
-        return entitiesToModels(repository.findAllById(ids), authenticationFacade.currentOrganizationId(), true, true)
-                .stream()
-                .collect(Collectors.groupingBy(ConnectionConfig::getId));
+        List<ConnectionConfig> connectionConfigs = entitiesToModels(repository.findAllById(ids),
+                authenticationFacade.currentOrganizationId(), true, true);
+        fullFillAttributes(connectionConfigs);
+        return connectionConfigs.stream().collect(Collectors.groupingBy(ConnectionConfig::getId));
     }
 
     @SkipAuthorize("odc internal usages")
@@ -778,6 +791,7 @@ public class ConnectionService {
         return repository.findByIdIn(ids).stream().map(mapper::entityToModel).collect(Collectors.toList());
     }
 
+    @SkipAuthorize("odc internal usages")
     public List<ConnectionConfig> innerListByIdsWithAttribute(Collection<Long> ids) {
         List<ConnectionConfig> connectionConfigs = innerListByIds(ids);
         fullFillAttributes(connectionConfigs);
@@ -798,6 +812,39 @@ public class ConnectionService {
         return connection;
     }
 
+    @SkipAuthorize("internal usage")
+    public void updatePasswordEncrypted(@NotNull Long organizationId, String oldSecret, String newSecret) {
+        List<ConnectionConfig> connectionList = listByOrganizationId(organizationId);
+        // No connection need to be encrypted
+        if (connectionList.isEmpty()) {
+            return;
+        }
+        txTemplate.execute(status -> {
+            try {
+                List<ConnectionEntity> reEncryptedList = connectionList.stream()
+                        .map(config -> mapper.modelToEntity(getReEncryptedConfig(config, oldSecret, newSecret)))
+                        .collect(Collectors.toList());
+                repository.saveAll(reEncryptedList);
+                return (reEncryptedList.size());
+            } catch (Exception e) {
+                status.setRollbackOnly();
+                throw new UnexpectedException("Failed to update connection config", e);
+            }
+        });
+    }
+
+    @SkipAuthorize("internal usage")
+    public ConnectionConfig getReEncryptedConfig(@NotNull ConnectionConfig config, String oldSecret, String newSecret) {
+        PreConditions.notNull(config.getCipher(), "connection.cipher");
+        PreConditions.notEmpty(config.getSalt(), "connection.salt");
+        TextEncryptor decrypt = encryptionFacade.passwordEncryptor(oldSecret, config.getSalt());
+        String rawPassword = decrypt.decrypt(config.getPasswordEncrypted());
+        String rawSysPassword = decrypt.decrypt(config.getSysTenantPasswordEncrypted());
+        TextEncryptor encryptor = encryptionFacade.passwordEncryptor(newSecret, config.getSalt());
+        config.setPasswordEncrypted(encryptor.encrypt(rawPassword));
+        config.setSysTenantPasswordEncrypted(encryptor.encrypt(rawSysPassword));
+        return config;
+    }
 
     @SkipAuthorize("internal usage")
     public List<ConnectionConfig> listForConnectionSkipPermissionCheck(@NotNull Collection<Long> ids) {
@@ -855,6 +902,30 @@ public class ConnectionService {
     @SkipAuthorize("odc internal usage")
     public List<ConnectionConfig> listSkipPermissionCheck(@NotNull QueryConnectionParams params) {
         return innerList(params, Pageable.unpaged()).toList();
+    }
+
+    @SkipAuthorize("odc internal usage")
+    public Set<Long> innerGetIdsIfAnyOfCondition(@NotNull InnerQueryConnectionParams params) {
+        Specification<ConnectionEntity> spec = null;
+        int conditionCount = 0;
+        if (StringUtils.isNotBlank(params.getDataSourceName())) {
+            spec = Specification.where(ConnectionSpecs.nameLike(params.getDataSourceName()));
+            ++conditionCount;
+        }
+        if (StringUtils.isNotBlank(params.getTenantName())) {
+            spec = Specification.where(ConnectionSpecs.tenantNameLike(params.getTenantName()));
+            ++conditionCount;
+        }
+        if (StringUtils.isNotBlank(params.getClusterName())) {
+            spec = Specification.where(ConnectionSpecs.clusterNameLike(params.getClusterName()));
+            ++conditionCount;
+        }
+        if (spec == null) {
+            return Collections.emptySet();
+        }
+        Verify.equalsExactlyOne(conditionCount, "InnerQueryConnectionParams");
+        return this.repository.findAll(spec, Pageable.unpaged()).stream().map(ConnectionEntity::getId)
+                .collect(Collectors.toSet());
     }
 
     private Page<ConnectionConfig> innerList(@NotNull QueryConnectionParams params, @NotNull Pageable pageable) {

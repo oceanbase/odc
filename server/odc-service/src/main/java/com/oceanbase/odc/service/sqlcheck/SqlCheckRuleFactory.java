@@ -15,9 +15,6 @@
  */
 package com.oceanbase.odc.service.sqlcheck;
 
-import java.util.Map;
-
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 
 import lombok.NonNull;
@@ -26,7 +23,7 @@ public interface SqlCheckRuleFactory {
 
     SqlCheckRuleType getSupportsType();
 
-    SqlCheckRule generate(@NonNull DialectType dialectType, Map<String, Object> parameters);
+    SqlCheckRule generate(@NonNull SqlCheckRuleContext sqlCheckRuleContext);
 
     default String getParameterNameKey(String parameterName) {
         return "${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check."

@@ -41,4 +41,6 @@ public class TimeIncreaseGeneratorConfig {
     private int intervalPrecision;
     private boolean fromCurrentTime;
 
+    private String timeFormat;
+
 }

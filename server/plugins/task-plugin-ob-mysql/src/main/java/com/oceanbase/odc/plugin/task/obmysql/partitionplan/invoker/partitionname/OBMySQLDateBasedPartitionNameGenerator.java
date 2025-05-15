@@ -16,10 +16,12 @@
 package com.oceanbase.odc.plugin.task.obmysql.partitionplan.invoker.partitionname;
 
 import java.sql.Connection;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.plugin.task.api.partitionplan.invoker.partitionname.DateBasedPartitionNameGenerator;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.DateBasedPartitionNameGeneratorConfig;
 import com.oceanbase.odc.plugin.task.api.partitionplan.model.NamingSuffixStrategy;
@@ -58,7 +60,8 @@ public class OBMySQLDateBasedPartitionNameGenerator implements DateBasedPartitio
             baseDef = targets.get(targetPartitionIndex);
         }
         Date baseDate = getPartitionUpperBound(
-                connection, config.getRefPartitionKey(), baseDef.getMaxValues().get(index));
+                connection, config.getRefPartitionKey(), baseDef.getMaxValues().get(index),
+                config.getNamingSuffixExpression());
         return config.getNamingPrefix() + new SimpleDateFormat(config.getNamingSuffixExpression()).format(baseDate);
     }
 
@@ -67,13 +70,24 @@ public class OBMySQLDateBasedPartitionNameGenerator implements DateBasedPartitio
     }
 
     protected Date getPartitionUpperBound(@NonNull Connection connection,
-            @NonNull String partitionKey, @NonNull String upperBound) {
+            @NonNull String partitionKey, @NonNull String upperBound, String namingSuffixExpression) {
         SqlExprCalculator calculator = new OBMySQLExprCalculator(connection);
         SqlExprResult value = calculator.calculate("convert(" + upperBound + ", datetime)");
-        if (!(value.getValue() instanceof Date)) {
-            throw new IllegalStateException(upperBound + " isn't a date, " + value.getDataType().getDataTypeName());
+        if ((value.getValue() instanceof Date)) {
+            return (Date) value.getValue();
         }
-        return (Date) value.getValue();
+        SimpleDateFormat sdf = new SimpleDateFormat(namingSuffixExpression);
+        try {
+            return sdf.parse(unquoteValue(upperBound).substring(0, namingSuffixExpression.length()));
+        } catch (ParseException e) {
+            throw new IllegalStateException(
+                    "naming suffix expression is not a valid date format, please check the format as same as the partition key.");
+        }
     }
+
+    protected String unquoteValue(String value) {
+        return StringUtils.unquoteMysqlValue(value);
+    }
+
 
 }

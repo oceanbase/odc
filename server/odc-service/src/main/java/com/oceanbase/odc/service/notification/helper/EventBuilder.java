@@ -44,13 +44,16 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
@@ -83,7 +86,6 @@ import com.oceanbase.odc.service.notification.model.EventLabels;
 import com.oceanbase.odc.service.notification.model.EventStatus;
 import com.oceanbase.odc.service.notification.model.TaskEvent;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter;
-import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter.ApplyDatabase;
 import com.oceanbase.odc.service.permission.project.ApplyProjectParameter;
 import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter;
 import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter.ApplyTable;
@@ -91,6 +93,7 @@ import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleTask;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -107,7 +110,6 @@ public class EventBuilder {
             "${com.oceanbase.odc.builtin-resource.regulation.approval.flow.config.auto-approval.name}";
     private static final String TICKET_URL_TEMPLATE =
             "%s/#/task?taskId=%s&taskType=%s&organizationId=%s";
-
     @Autowired
     private ConnectionService connectionService;
     @Autowired
@@ -213,22 +215,36 @@ public class EventBuilder {
         if (Objects.nonNull(task.getDatabaseId())) {
             Database database = databaseService.getBasicSkipPermissionCheck(task.getDatabaseId());
             labels.putIfNonNull(DATABASE_ID, database.id());
-            labels.putIfNonNull(DATABASE_NAME, database.getName());
+            labels.putIfNonNull(DATABASE_NAME,
+                    String.format("%s%s", database.getName(), decorateDatabaseRemark(database.getRemark())));
             labels.putIfNonNull(PROJECT_ID, database.getProject().id());
             projectId = database.getProject().id();
         } else if (task.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION) {
             ApplyDatabaseParameter parameter =
                     JsonUtils.fromJson(task.getParametersJson(), ApplyDatabaseParameter.class);
-            String dbNames =
-                    parameter.getDatabases().stream().map(ApplyDatabase::getName).collect(Collectors.joining(","));
+            Set<Long> databaseIds = parameter.getDatabases().stream().map(e -> e.getId()).collect(Collectors.toSet());
+            Map<Long, String> dbId2DatabaseRemark =
+                    nullSafeGetDbIdMappingRemark(databaseService.listBasicSkipPermissionCheckByIds(databaseIds));
+            String dbNames = parameter.getDatabases().stream().map(d -> {
+                String dbName = d.getName();
+                String dbRemark = decorateDatabaseRemark(dbId2DatabaseRemark.get(d.getId()));
+                return "\n\t" + dbName + dbRemark;
+            }).collect(Collectors.joining(StringUtils.EMPTY));
             labels.putIfNonNull(DATABASE_NAME, dbNames);
             projectId = parameter.getProject().getId();
             labels.putIfNonNull(PROJECT_ID, projectId);
         } else if (task.getTaskType() == TaskType.APPLY_TABLE_PERMISSION) {
             ApplyTableParameter parameter =
                     JsonUtils.fromJson(task.getParametersJson(), ApplyTableParameter.class);
-            List<String> dbNames =
-                    parameter.getTables().stream().map(ApplyTable::getDatabaseName).collect(Collectors.toList());
+            Set<Long> databaseIds =
+                    parameter.getTables().stream().map(ApplyTable::getDatabaseId).collect(Collectors.toSet());
+            Map<Long, String> dbId2DatabaseRemark =
+                    nullSafeGetDbIdMappingRemark(databaseService.listBasicSkipPermissionCheckByIds(databaseIds));
+            String dbNames = parameter.getTables().stream().map(d -> {
+                String dbName = d.getDatabaseName();
+                String dbRemark = decorateDatabaseRemark(dbId2DatabaseRemark.get(d.getDatabaseId()));
+                return "\n\t" + dbName + dbRemark;
+            }).collect(Collectors.joining(StringUtils.EMPTY));
             labels.putIfNonNull(DATABASE_NAME, dbNames);
             projectId = parameter.getProject().getId();
             labels.putIfNonNull(PROJECT_ID, projectId);
@@ -244,10 +260,16 @@ public class EventBuilder {
             MultipleDatabaseChangeParameters parameter =
                     JsonUtils.fromJson(task.getParametersJson(), MultipleDatabaseChangeParameters.class);
             projectId = parameter.getProjectId();
+            Set<Long> databaseIds = parameter.getDatabases().stream().map(e -> e.getId()).collect(Collectors.toSet());
+            Map<Long, String> dbId2DatabaseRemark =
+                    nullSafeGetDbIdMappingRemark(databaseService.listBasicSkipPermissionCheckByIds(databaseIds));
             labels.putIfNonNull(DATABASE_NAME, parameter.getDatabases().stream()
-                    .map(database -> String.format("【%s】%s", database.getEnvironment() == null ? ""
-                            : database.getEnvironment().getName(), database.getName()))
-                    .collect(Collectors.joining(",")));
+                    .map(database -> {
+                        String dbName = String.format("【%s】%s", database.getEnvironment() == null ? ""
+                                : database.getEnvironment().getName(), database.getName());
+                        String dbRemark = decorateDatabaseRemark(dbId2DatabaseRemark.get(database.getId()));
+                        return "\n\t" + dbName + dbRemark;
+                    }).collect(Collectors.joining(StringUtils.EMPTY)));
             labels.putIfNonNull(PROJECT_ID, projectId);
         } else if (task.getTaskType() == TaskType.ALTER_SCHEDULE) {
             AlterScheduleParameters parameter = JsonUtils.fromJson(task.getParametersJson(),
@@ -257,10 +279,12 @@ public class EventBuilder {
             ScheduleEntity schedule = scheduleRepository.findById(scheduleChangeParams.getScheduleId())
                     .orElseThrow(() -> new NotFoundException(ResourceType.ODC_SCHEDULE, "id",
                             scheduleChangeParams.getScheduleId()));
+            Database database = databaseService.getBasicSkipPermissionCheck(schedule.getDatabaseId());
             projectId = schedule.getProjectId();
             labels.putIfNonNull(PROJECT_ID, projectId);
             labels.putIfNonNull(DATABASE_ID, schedule.getDatabaseId());
-            labels.putIfNonNull(DATABASE_NAME, schedule.getDatabaseName());
+            labels.putIfNonNull(DATABASE_NAME, String.format("%s%s", schedule.getDatabaseName(),
+                    decorateDatabaseRemark(database.getRemark())));
             labels.putIfNonNull(TASK_TYPE, schedule.getType().name());
         } else {
             throw new UnexpectedException("task.databaseId should not be null");
@@ -280,6 +304,7 @@ public class EventBuilder {
     private Event ofScheduleTask(ScheduleTask scheduleTask, TaskEvent status) {
 
         ScheduleEntity schedule = scheduleRepository.findById(Long.valueOf(scheduleTask.getJobName())).get();
+        Database db = databaseService.getBasicSkipPermissionCheck(schedule.getDatabaseId());
         EventLabels labels = new EventLabels();
         labels.putIfNonNull(TASK_STATUS, status.name());
         labels.putIfNonNull(TRIGGER_TIME, LocalDateTime.now().format(DATE_FORMATTER));
@@ -293,7 +318,8 @@ public class EventBuilder {
         labels.putIfNonNull(CREATOR_ID, schedule.getCreatorId());
         labels.putIfNonNull(PROJECT_ID, schedule.getProjectId());
         labels.putIfNonNull(DATABASE_ID, schedule.getDatabaseId());
-        labels.putIfNonNull(DATABASE_NAME, schedule.getDatabaseName());
+        labels.putIfNonNull(DATABASE_NAME,
+                String.format("%s%s", schedule.getDatabaseName(), decorateDatabaseRemark(db.getRemark())));
 
         return Event.builder()
                 .status(EventStatus.CREATED)
@@ -307,7 +333,7 @@ public class EventBuilder {
 
 
     private Event ofSchedule(ScheduleEntity schedule, TaskEvent status) {
-
+        Database db = databaseService.getBasicSkipPermissionCheck(schedule.getDatabaseId());
         EventLabels labels = new EventLabels();
         labels.putIfNonNull(TASK_STATUS, status.name());
         labels.putIfNonNull(TRIGGER_TIME, LocalDateTime.now().format(DATE_FORMATTER));
@@ -320,7 +346,8 @@ public class EventBuilder {
         labels.putIfNonNull(CREATOR_ID, schedule.getCreatorId());
         labels.putIfNonNull(PROJECT_ID, schedule.getProjectId());
         labels.putIfNonNull(DATABASE_ID, schedule.getDatabaseId());
-        labels.putIfNonNull(DATABASE_NAME, schedule.getDatabaseName());
+        labels.putIfNonNull(DATABASE_NAME,
+                String.format("%s%s", schedule.getDatabaseName(), decorateDatabaseRemark(db.getRemark())));
 
         return Event.builder()
                 .status(EventStatus.CREATED)
@@ -443,4 +470,15 @@ public class EventBuilder {
         return String.format(TICKET_URL_TEMPLATE, odcSite, taskId, taskType, organizationIdStr);
     }
 
+    private String decorateDatabaseRemark(String databaseRemark) {
+        if (StringUtils.isBlank(databaseRemark)) {
+            return StringUtils.EMPTY;
+        }
+        return "（" + databaseRemark + "）";
+    }
+
+    private Map<Long, String> nullSafeGetDbIdMappingRemark(@NonNull List<Database> databases) {
+        return databases.stream().collect(Collectors.toMap(Database::getId,
+                d -> StringUtils.defaultString(d.getRemark(), StringUtils.EMPTY), (e, r) -> e));
+    }
 }

@@ -19,6 +19,7 @@ import java.util.Map;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
+import com.oceanbase.odc.service.sqlcheck.SqlCheckRuleContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRuleFactory;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLTooManyAlterStatement;
@@ -34,7 +35,9 @@ public class TooManyAlterStatementFactory implements SqlCheckRuleFactory {
     }
 
     @Override
-    public SqlCheckRule generate(@NonNull DialectType dialectType, Map<String, Object> parameters) {
+    public SqlCheckRule generate(@NonNull SqlCheckRuleContext sqlCheckRuleContext) {
+        DialectType dialectType = sqlCheckRuleContext.getDialectType();
+        Map<String, Object> parameters = sqlCheckRuleContext.getParameters();
         int max;
         String key = getParameterNameKey("max-alter-count");
         if (parameters == null || parameters.isEmpty() || parameters.get(key) == null) {

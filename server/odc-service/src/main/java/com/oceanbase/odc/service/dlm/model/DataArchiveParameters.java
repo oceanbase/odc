@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.dlm.model;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import javax.validation.constraints.NotNull;
@@ -24,10 +23,8 @@ import javax.validation.constraints.NotNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.migrator.common.enums.MigrationInsertAction;
-import com.oceanbase.tools.migrator.common.enums.ShardingStrategy;
 
 import lombok.Data;
 
@@ -37,9 +34,7 @@ import lombok.Data;
  * @Descripition:
  */
 @Data
-public class DataArchiveParameters implements ScheduleTaskParameters {
-
-    private String name;
+public class DataArchiveParameters extends DLMBaseParameters {
 
     @NotNull
     private Long sourceDatabaseId;
@@ -53,47 +48,13 @@ public class DataArchiveParameters implements ScheduleTaskParameters {
     @JsonProperty(access = Access.READ_ONLY)
     private Database targetDatabase;
 
-    private List<OffsetConfig> variables;
-
-    private List<DataArchiveTableConfig> tables;
-
     private boolean deleteAfterMigration = false;
-
-    private boolean deleteTemporaryTable = false;
-
-    private boolean needPrintSqlTrace = false;
-
-    private int readThreadCount;
-
-    private int writeThreadCount;
-
-    private int queryTimeout;
-
-    private int scanBatchSize;
-
-    private Long timeoutMillis;
 
     private Set<DBObjectType> syncTableStructure = new HashSet<>();
 
     private MigrationInsertAction migrationInsertAction = MigrationInsertAction.INSERT_NORMAL;
 
-    private ShardingStrategy shardingStrategy;
-
-    private RateLimitConfiguration rateLimit;
-
     private boolean fullDatabase = false;
-
-    /**
-     * Only used in version 4.3.2, it will be deleted after version 4.3.3
-     */
-    @JsonProperty(access = Access.READ_ONLY)
-    private String sourceDatabaseName;
-    @JsonProperty(access = Access.READ_ONLY)
-    private String targetDatabaseName;
-    @JsonProperty(access = Access.READ_ONLY)
-    private String sourceDataSourceName;
-    @JsonProperty(access = Access.READ_ONLY)
-    private String targetDataSourceName;
 
     public String getSourceDatabaseName() {
         return sourceDatabase == null ? null : sourceDatabase.getName();

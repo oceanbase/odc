@@ -5,7 +5,7 @@
     <parent>
         <artifactId>starter-parent</artifactId>
         <groupId>com.oceanbase</groupId>
-        <version>4.3.3-SNAPSHOT</version>
+        <version>4.3.4-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>web-starter</artifactId>
@@ -42,6 +42,10 @@
         <dependency>
             <groupId>com.fasterxml.woodstox</groupId>
             <artifactId>woodstox-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>info.picocli</groupId>
+            <artifactId>picocli</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.tika</groupId>

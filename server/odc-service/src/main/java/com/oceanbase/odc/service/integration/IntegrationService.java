@@ -244,6 +244,33 @@ public class IntegrationService {
         return new IntegrationConfig(entity);
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("odc internal usage")
+    public void attachedUpdateIntegrationSecret(@NotNull Long organizationId, String oldSecret, String newSecret) {
+        List<IntegrationEntity> entities = this.listByOrganizationId(organizationId);
+        if (entities.isEmpty()) {
+            return;
+        }
+        List<IntegrationEntity> saved = entities.stream()
+                .map(entity -> migrateSecretFromOld2New(entity, oldSecret, newSecret))
+                .collect(Collectors.toList());
+        integrationRepository.saveAllAndFlush(saved);
+        int affectedRows = saved.size();
+
+        log.info("attached update integration secret from organization config completed, total: {}", affectedRows);
+    }
+
+    private IntegrationEntity migrateSecretFromOld2New(IntegrationEntity entity, String oldSecret, String newSecret) {
+        IntegrationConfig integrationConfig = new IntegrationConfig(entity);
+        String rawSecret = decodeSecret(entity.getSecret(), entity.getSalt(), oldSecret);
+        Encryption encryption = integrationConfig.getEncryption();
+        if (!encryption.getEnabled() || StringUtils.isNotBlank(encryption.getSecret())) {
+            entity.setSalt(encryptionFacade.generateSalt());
+            entity.setSecret(attachedEncodeSecret(rawSecret, entity.getSalt(), newSecret));
+        }
+        return entity;
+    }
+
     @SkipAuthorize("odc internal usage")
     public IntegrationConfig getDecodeConfig(IntegrationEntity entity) {
         IntegrationConfig integrationConfig = new IntegrationConfig(entity);
@@ -298,6 +325,11 @@ public class IntegrationService {
     public List<IntegrationEntity> listByTypeAndEnabled(@NotNull IntegrationType type, boolean enabled) {
         long organizationId = authenticationFacade.currentOrganizationId();
         return integrationRepository.findByTypeAndEnabledAndOrganizationId(type, enabled, organizationId);
+    }
+
+    @SkipAuthorize("odc internal usage")
+    public List<IntegrationEntity> listByOrganizationId(@NotNull Long organizationId) {
+        return integrationRepository.findByOrganizationId(organizationId);
     }
 
     @SkipAuthorize("odc internal usage")
@@ -362,6 +394,22 @@ public class IntegrationService {
         }
         TextEncryptor encryptor = encryptionFacade.organizationEncryptor(organizationId, salt);
         return encryptor.encrypt(plainSecret);
+    }
+
+    private String attachedEncodeSecret(String plainSecret, String salt, String organizationSecret) {
+        if (plainSecret == null) {
+            return null;
+        }
+        TextEncryptor encryptor = encryptionFacade.passwordEncryptor(organizationSecret, salt);
+        return encryptor.encrypt(plainSecret);
+    }
+
+    private String decodeSecret(String encryptedSecret, String salt, String secret) {
+        if (encryptedSecret == null) {
+            return null;
+        }
+        TextEncryptor encryptor = encryptionFacade.passwordEncryptor(secret, salt);
+        return encryptor.decrypt(encryptedSecret);
     }
 
     @SkipAuthorize("odc internal usage")

@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.plugin.task.obmysql.datatransfer.task;
 
+import java.io.File;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -28,7 +30,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.MoreObjects;
 import com.oceanbase.odc.common.util.ExceptionUtils;
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.plugin.task.api.datatransfer.DataTransferJob;
@@ -55,6 +59,9 @@ import lombok.NonNull;
  */
 public abstract class BaseOceanBaseTransferJob<T extends BaseParameter> implements DataTransferJob {
     private static final Logger LOGGER = LoggerFactory.getLogger("DataTransferLogger");
+    private static final String HADOOP_PATH =
+            Paths.get(MoreObjects.firstNonNull(SystemUtils.getEnvOrProperty("libraries.others.file.path"), ""),
+                    "hadoop-3.3.6").toString();
 
     protected final T parameter;
     protected final boolean transferData;
@@ -149,10 +156,13 @@ public abstract class BaseOceanBaseTransferJob<T extends BaseParameter> implemen
         try {
             status = TaskStatus.RUNNING;
             System.clearProperty("logging.level");
-            String fileSuffix = parameter.getFileSuffix();
+            if (SystemUtils.isOnWindows()) {
+                checkHadoopPath();
+            }
+            List<String> fileSuffixes = parameter.getFileSuffixes();
             if (transferSchema) {
                 LOGGER.info("Begin transferring schema");
-                parameter.setFileSuffix(DataFormat.SQL.getDefaultFileSuffix());
+                parameter.setFileSuffixes(DataFormat.SQL.getFileSuffixes());
                 schemaContext = startTransferSchema();
                 if (schemaContext == null) {
                     throw new NullPointerException("Data task context is null");
@@ -162,7 +172,7 @@ public abstract class BaseOceanBaseTransferJob<T extends BaseParameter> implemen
 
             if (transferData) {
                 LOGGER.info("Begin transferring data");
-                parameter.setFileSuffix(fileSuffix);
+                parameter.setFileSuffixes(fileSuffixes);
                 dataContext = startTransferData();
                 if (dataContext == null) {
                     throw new NullPointerException("Data task context is null");
@@ -214,11 +224,11 @@ public abstract class BaseOceanBaseTransferJob<T extends BaseParameter> implemen
     @SuppressWarnings("all")
     private void syncWaitFinished(@NonNull TaskContext context, boolean isTransferSchema) throws InterruptedException {
         while (!Thread.currentThread().isInterrupted() && !status.isTerminated()) {
-            if (context.isAllTasksSuccessed()) {
+            if (context.isAllTasksFinished()) {
                 shutdownContext(context);
-                return;
-            } else if (context.isAllTasksFinished()) {
-                shutdownContext(context);
+                if (context.isAllTasksSuccessed()) {
+                    return;
+                }
                 Collection<TaskDetail> failedTasks = context.getFailureTaskDetails();
                 if (CollectionUtils.isEmpty(failedTasks)) {
                     throw new IllegalStateException("No failed task details");
@@ -328,6 +338,14 @@ public abstract class BaseOceanBaseTransferJob<T extends BaseParameter> implemen
     private boolean isCreateExistsObjectError(String error) {
         return StringUtils.containsIgnoreCase(error, "already exist") ||
                 StringUtils.containsIgnoreCase(error, "already used by an existing object");
+    }
+
+    private void checkHadoopPath() {
+        File hadoop = new File(HADOOP_PATH);
+        if (!hadoop.exists()) {
+            throw new IllegalArgumentException("HADOOP_HOME is not set or not exists");
+        }
+        System.setProperty("hadoop.home.dir", hadoop.getAbsolutePath());
     }
 
 }

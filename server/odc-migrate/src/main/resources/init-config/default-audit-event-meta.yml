@@ -188,7 +188,7 @@
 # 系统配置
 - type: "ORGANIZATION_CONFIGURATION"
   action: "UPDATE_ORGANIZATION_CONFIGURATION"
-  method_signature: "com.oceanbase.odc.server.web.controller.v2.OrganizationConfigController.batchUpdate"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.OrganizationConfigController.updateOrganizationConfigs"
   sid_extract_expression: ""
   in_connection: 0
   enabled: 1

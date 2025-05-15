@@ -23,6 +23,9 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.session.factory.StateHostGenerator;
 import com.oceanbase.odc.service.state.model.StatefulUuidStateId;
 
@@ -32,15 +35,44 @@ public class StatefulUuidStateIdGenerator {
     @Autowired
     private StateHostGenerator stateHostGenerator;
 
+    @Autowired
+    private AuthenticationFacade authenticationFacade;
+
+    @SkipAuthorize("internal usage")
+    public static StatefulUuidStateId parseStateId(String stateId) {
+        return JsonUtils.fromJson(new String(Base64.getDecoder().decode(stateId)),
+                StatefulUuidStateId.class);
+    }
+
+    @SkipAuthorize("internal usage")
     public String generateStateId(String type) {
         StatefulUuidStateId uuidStateId = StatefulUuidStateId.createTypeUuidStateId(type, StringUtils.uuidNoHyphen(),
                 stateHostGenerator.getHost());
         return Base64.getEncoder().encodeToString(JsonUtils.toJson(uuidStateId).getBytes(StandardCharsets.UTF_8));
     }
 
-    public static StatefulUuidStateId parseStateId(String stateId) {
-        return JsonUtils.fromJson(new String(Base64.getDecoder().decode(stateId)),
-                StatefulUuidStateId.class);
+    @SkipAuthorize("internal usage")
+    public String generateOriginIdStateId(String type, String originId) {
+        StatefulUuidStateId uuidStateId =
+                StatefulUuidStateId.createUuidStateId(type, originId, StringUtils.uuidNoHyphen(),
+                        stateHostGenerator.getHost());
+        return Base64.getEncoder().encodeToString(JsonUtils.toJson(uuidStateId).getBytes(StandardCharsets.UTF_8));
+    }
+
+    @SkipAuthorize("internal usage")
+    public String generateCurrentUserIdStateId(String type) {
+        return generateOriginIdStateId(type, authenticationFacade.currentUserIdStr());
+    }
+
+    @SkipAuthorize("internal usage")
+    public void checkCurrentUserId(String stateId) {
+        checkOriginId(stateId, authenticationFacade.currentUserIdStr());
+    }
+
+    @SkipAuthorize("internal usage")
+    public void checkOriginId(String stateId, String originId) {
+        StatefulUuidStateId statefulUuidStateId = parseStateId(stateId);
+        Verify.equals(statefulUuidStateId.getOriginId(), originId, "Illegal stateId");
     }
 
 }

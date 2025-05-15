@@ -104,6 +104,41 @@ sqls:
     ORDER BY
       TABLE_NAME ASC,
       COLUMN_ID ASC
+  list-basic-materialized-view-columns: |-
+    SELECT
+      OWNER,
+      TABLE_NAME,
+      COLUMN_NAME,
+      DATA_TYPE,
+      COMMENTS
+    FROM
+      SYS.ALL_TAB_COLS NATURAL JOIN SYS.ALL_COL_COMMENTS
+    WHERE
+      OWNER = ? AND TABLE_NAME = ? AND USER_GENERATED='YES'
+    ORDER BY
+      COLUMN_ID ASC
+  list-basic-schema-materialized-view-columns: |-
+    SELECT
+      OWNER,
+      TABLE_NAME,
+      COLUMN_NAME,
+      DATA_TYPE,
+      COMMENTS
+    FROM
+      SYS.ALL_TAB_COLS NATURAL JOIN SYS.ALL_COL_COMMENTS
+    WHERE
+      OWNER = ?
+      AND TABLE_NAME IN (
+        SELECT
+          MVIEW_NAME
+        FROM
+          SYS.ALL_MVIEWS
+        WHERE
+          OWNER = ?
+      ) AND USER_GENERATED='YES'
+    ORDER BY
+      TABLE_NAME ASC,
+      COLUMN_ID ASC
   list-basic-schema-columns-info: |-
     SELECT
       OWNER,

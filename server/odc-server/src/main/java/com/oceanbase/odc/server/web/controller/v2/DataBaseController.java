@@ -17,6 +17,8 @@ package com.oceanbase.odc.server.web.controller.v2;
 
 import java.util.List;
 
+import javax.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
@@ -29,16 +31,19 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.core.shared.constant.ConnectType;
+import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.PaginatedResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.DatabaseSyncManager;
 import com.oceanbase.odc.service.connection.database.model.CreateDatabaseReq;
+import com.oceanbase.odc.service.connection.database.model.DBAccessHistoryReq;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.connection.database.model.DeleteDatabasesReq;
 import com.oceanbase.odc.service.connection.database.model.ModifyDatabaseOwnerReq;
+import com.oceanbase.odc.service.connection.database.model.ModifyDatabaseRemarkReq;
 import com.oceanbase.odc.service.connection.database.model.QueryDatabaseParams;
 import com.oceanbase.odc.service.connection.database.model.TransferDatabasesReq;
 
@@ -69,6 +74,8 @@ public class DataBaseController {
     @RequestMapping(value = "/databases", method = RequestMethod.GET)
     public PaginatedResponse<Database> listDatabases(
             @RequestParam(required = false, name = "name") String name,
+            @RequestParam(required = false, name = "tenantName") String tenantName,
+            @RequestParam(required = false, name = "clusterName") String clusterName,
             @RequestParam(required = false, name = "type") List<DatabaseType> types,
             @RequestParam(required = false, name = "existed") Boolean existed,
             @RequestParam(required = false, name = "dataSourceName") String dataSourceName,
@@ -90,6 +97,9 @@ public class DataBaseController {
                 .existed(existed)
                 .environmentId(environmentId)
                 .schemaName(name)
+                .tenantName(tenantName)
+                .clusterName(clusterName)
+                .dataSourceName(dataSourceName)
                 .containsUnassigned(containsUnassigned)
                 .includesPermittedAction(includesPermittedAction)
                 .projectId(projectId).build();
@@ -119,5 +129,20 @@ public class DataBaseController {
     public SuccessResponse<Boolean> modifyDatabasesOwners(@PathVariable Long projectId,
             @RequestBody ModifyDatabaseOwnerReq req) {
         return Responses.success(databaseService.modifyDatabasesOwners(projectId, req));
+    }
+
+    @ApiOperation(value = "listDatabaseAccessHistories", notes = "list accessed database histories ")
+    @RequestMapping(value = "/databaseAccessHistories", method = RequestMethod.GET)
+    public ListResponse<Database> listDatabaseAccessHistories(
+            @RequestParam(name = "limit", defaultValue = "10") Integer historiesLimit) {
+        DBAccessHistoryReq req = new DBAccessHistoryReq().setHistoryCount(historiesLimit);
+        return Responses.list(databaseService.listDatabaseAccessHistory(req));
+    }
+
+    @ApiOperation(value = "updateDatabaseRemark", notes = "update databases remark")
+    @RequestMapping(value = "/databases/batchUpdateRemarks", method = RequestMethod.POST)
+    public SuccessResponse<Boolean> modifyDatabaseRemark(@Valid @RequestBody ModifyDatabaseRemarkReq req) {
+        return Responses
+                .success(databaseService.modifyDatabaseRemark(req.getDatabaseIds(), req.getDatabaseRemark()));
     }
 }

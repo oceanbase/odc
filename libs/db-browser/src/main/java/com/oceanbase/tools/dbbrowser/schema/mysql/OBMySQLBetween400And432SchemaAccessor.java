@@ -29,7 +29,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
  * @date: 2024/8/27 14:55
  * @since: 4.3.3
  */
-public class OBMySQLBetween400And432SchemaAccessor extends OBMySQLSchemaAccessor {
+public class OBMySQLBetween400And432SchemaAccessor extends OBMySQLBetween432And4352SchemaAccessor {
 
 
     public OBMySQLBetween400And432SchemaAccessor(JdbcOperations jdbcOperations) {

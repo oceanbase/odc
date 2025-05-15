@@ -54,8 +54,9 @@ public class DummyTask extends TaskBase<String> {
         while (!stopped.get() && loopCount.get() < maxLoopCount) {
             Thread.sleep(1000);
             log.info("dummy task loop for to {}", loopCount.get());
+            loopCount.incrementAndGet();
         }
-        return !stopped.get();
+        return true;
     }
 
     @Override

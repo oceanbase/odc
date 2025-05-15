@@ -49,12 +49,15 @@ public class DBMetadataController {
     @GetMapping(value = {"/{sessionId}/metadata/identities"})
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public ListResponse<SchemaIdentities> listIdentities(@PathVariable String sessionId,
-            @RequestParam(required = false, name = "type") List<DBObjectType> types) {
+            @RequestParam(required = false, name = "type") List<DBObjectType> types,
+            @RequestParam(required = false, name = "schemaName") String schemaName,
+            @RequestParam(required = false, name = "identityNameLike") String identityNameLike) {
         ConnectionSession session = sessionService.nullSafeGet(SidUtils.getSessionId(sessionId), true);
         if (ConnectionSessionUtil.isLogicalSession(session)) {
             return Responses.list(ListUtils.EMPTY_LIST);
         }
-        return Responses.list(identitiesService.list(session, types));
+        return Responses
+                .list(identitiesService.list(session, schemaName, identityNameLike, types));
     }
 
 }

@@ -85,7 +85,20 @@ public abstract class AbstractDlmJob extends AbstractOdcJob {
                 srcDatabaseId);
     }
 
-    public DLMJobReq getDLMJobReq(Long jobId) {
+    public DLMJobReq getDLMJobReqWhenRetry(Long jobId) {
+        DLMJobReq dlmJobReq = JsonUtils.fromJson(JsonUtils.fromJson(
+                taskFrameworkService.find(jobId).getJobParametersJson(),
+                new TypeReference<Map<String, String>>() {}).get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
+                DLMJobReq.class);
+        Map<String, DlmTableUnit> tableName2Unit =
+                dlmService.findByScheduleTaskId(dlmJobReq.getScheduleTaskId()).stream()
+                        .collect(
+                                Collectors.toMap(DlmTableUnit::getTableName, o -> o));
+        dlmJobReq.getTables().forEach(o -> o.setLastProcessedStatus(tableName2Unit.get(o.getTableName()).getStatus()));
+        return dlmJobReq;
+    }
+
+    public DLMJobReq getDLMJobReqWithArchiveRange(Long jobId) {
         DLMJobReq dlmJobReq = JsonUtils.fromJson(JsonUtils.fromJson(
                 taskFrameworkService.find(jobId).getJobParametersJson(),
                 new TypeReference<Map<String, String>>() {}).get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),

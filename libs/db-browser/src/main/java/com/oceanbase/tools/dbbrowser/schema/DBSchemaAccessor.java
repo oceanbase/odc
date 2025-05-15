@@ -21,6 +21,10 @@ import java.util.Map;
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecord;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBPackage;
@@ -117,17 +121,52 @@ public interface DBSchemaAccessor {
     /**
      * List all user view as DBObjectIdentity
      */
-    List<DBObjectIdentity> listAllUserViews();
+    List<DBObjectIdentity> listAllUserViews(String viewNameLike);
 
     /**
      * List all system view as DBObjectIdentity
      */
-    List<DBObjectIdentity> listAllSystemViews();
+    List<DBObjectIdentity> listAllSystemViews(String viewNameLike);
 
     /**
      * Show all system view names list
      */
     List<String> showSystemViews(String schemaName);
+
+    /**
+     * List all materialized view as DBObjectIdentity in the specified schema
+     */
+    List<DBObjectIdentity> listMViews(String schemaName);
+
+    /**
+     * List all materialized view as DBObjectIdentity in current datasource
+     */
+    List<DBObjectIdentity> listAllMViewsLike(String mViewNameLike);
+
+    /**
+     * Synchronize materialized view data
+     */
+    Boolean refreshMVData(DBMViewRefreshParameter parameter);
+
+    /**
+     * Get materialized view details
+     */
+    DBMaterializedView getMView(String schemaName, String mViewName);
+
+    /**
+     * Get constraints in the specified materialized view
+     */
+    List<DBTableConstraint> listMViewConstraints(String schemaName, String mViewName);
+
+    /**
+     * Gets refresh records for the specified materialized view
+     */
+    List<DBMViewRefreshRecord> listMViewRefreshRecords(DBMViewRefreshRecordParam param);
+
+    /**
+     * Gets all indexes in the specified materialized view
+     */
+    List<DBTableIndex> listMViewIndexes(String schemaName, String mViewName);
 
     /**
      * List all variables
@@ -233,6 +272,17 @@ public interface DBSchemaAccessor {
      * Get all external table columns(hold only basic info) in the specified schema and view
      */
     List<DBTableColumn> listBasicExternalTableColumns(String schemaName, String externalTableName);
+
+    /**
+     * Get all materialized view columns(hold only basic info) in the specified schema
+     */
+    Map<String, List<DBTableColumn>> listBasicMViewColumns(String schemaName);
+
+    /**
+     * Get all materialized view columns(hold only basic info) in the specified schema and materialized
+     * view
+     */
+    List<DBTableColumn> listBasicMViewColumns(String schemaName, String externalTableName);
 
     /**
      * Get all table and view columns info (hold only basic info: schema, table and column name) in the

@@ -181,3 +181,13 @@
   default_value: 'true'
   nullable: false
   description: 'Whether enable global database object search.'
+- id: 19
+  category: 'user'
+  key: 'odc.user.guidePromptEnabled'
+  type: 'boolean'
+  max_value: ~
+  min_value: ~
+  allowed_values: [ 'true','false' ]
+  default_value: 'true'
+  nullable: false
+  description: 'Whether the new user guide prompt is enabled for the user.'

@@ -37,6 +37,7 @@ import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.common.CharacterType;
 import com.oceanbase.tools.sqlparser.statement.common.DataType;
 import com.oceanbase.tools.sqlparser.statement.common.RelationFactor;
+import com.oceanbase.tools.sqlparser.statement.createmview.CreateMaterializedView;
 import com.oceanbase.tools.sqlparser.statement.createtable.ColumnDefinition;
 import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
 import com.oceanbase.tools.sqlparser.statement.delete.Delete;
@@ -64,6 +65,23 @@ import com.oceanbase.tools.sqlparser.statement.update.UpdateAssign;
  * @since sqlparser_1.0.0_SNAPSHOT
  */
 public class OBOracleSQLParserTest {
+
+    @Test
+    public void parse_createMViewStatement_parseSucceed() {
+        SQLParser parser = new OBOracleSQLParser();
+        Statement actual = parser.parse(
+                new StringReader(
+                        "CREATE MATERIALIZED VIEW zijia.test_mv_allsyntax AS SELECT col.* abc FROM test_table;\n"));
+
+        RelationReference r = new RelationReference("col", new RelationReference("*", null));
+        Projection p = new Projection(r, "abc");
+        NameReference from = new NameReference(null, "test_table", null);
+        Select asSelect = new Select(new SelectBody(Collections.singletonList(p), Collections.singletonList(from)));
+        RelationFactor viewName = new RelationFactor("test_mv_allsyntax");
+        viewName.setSchema("zijia");
+        CreateMaterializedView expect = new CreateMaterializedView(viewName, asSelect);
+        Assert.assertEquals(expect, actual);
+    }
 
     @Test
     public void parse_selectStatement_parseSucceed() {
