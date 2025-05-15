@@ -136,4 +136,7 @@ public class DefaultTaskFrameworkProperties implements TaskFrameworkProperties {
 
     // keep supervisor endpoint alive for a period if there is no task running on it or release it
     private int supervisorReleaseBackSeconds = 300;
+
+    // only query task create time in recent days, -1 means query all created jobs
+    private int queryJobInRecentDays = -1;
 }
