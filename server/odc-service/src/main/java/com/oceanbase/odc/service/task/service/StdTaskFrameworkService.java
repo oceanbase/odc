@@ -112,8 +112,6 @@ import lombok.extern.slf4j.Slf4j;
 @SkipAuthorize("odc internal usage")
 public class StdTaskFrameworkService implements TaskFrameworkService {
 
-    private static final int RECENT_DAY = 30;
-
     @Autowired
     private JobRepository jobRepository;
     @Autowired
@@ -167,79 +165,90 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
     @Override
     public Page<JobEntity> find(List<JobStatus> status, int page, int size) {
-        Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
-                .and(SpecificationUtil.columnIn(JobEntityColumn.STATUS, status));
+        Specification<JobEntity> condition =
+                Specification.where(getRecentDaySpec(taskFrameworkProperties.getQueryJobInRecentDays()))
+                        .and(SpecificationUtil.columnIn(JobEntityColumn.STATUS, status));
         return page(condition, page, size);
     }
 
     @Override
     public Page<JobEntity> findCancelingJob(int page, int size) {
-        Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
-                .and(SpecificationUtil.columnEqual(JobEntityColumn.STATUS, JobStatus.CANCELING))
-                .and(getExecutorSpec());
+        Specification<JobEntity> condition =
+                Specification.where(getRecentDaySpec(taskFrameworkProperties.getQueryJobInRecentDays()))
+                        .and(SpecificationUtil.columnEqual(JobEntityColumn.STATUS, JobStatus.CANCELING))
+                        .and(getExecutorSpec());
         return page(condition, page, size);
     }
 
     @Override
     public Page<JobEntity> findNeedStoppedJobs(int page, int size) {
-        Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
-                .and(SpecificationUtil.columnIn(JobEntityColumn.STATUS,
-                        Lists.newArrayList(JobStatus.CANCELING, JobStatus.TIMEOUT)))
-                .and(getExecutorSpec());
+        Specification<JobEntity> condition =
+                Specification.where(getRecentDaySpec(taskFrameworkProperties.getQueryJobInRecentDays()))
+                        .and(SpecificationUtil.columnIn(JobEntityColumn.STATUS,
+                                Lists.newArrayList(JobStatus.CANCELING, JobStatus.TIMEOUT)))
+                        .and(getExecutorSpec());
         return page(condition, page, size);
     }
 
     @Override
     public Page<JobEntity> findNeedPullResultJobs(int page, int size) {
-        Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
-                .and(SpecificationUtil.columnIn(JobEntityColumn.STATUS,
-                        Lists.newArrayList(JobStatus.DO_CANCELING, JobStatus.RUNNING)))
-                .and(getExecutorSpec());
+        Specification<JobEntity> condition =
+                Specification.where(getRecentDaySpec(taskFrameworkProperties.getQueryJobInRecentDays()))
+                        .and(SpecificationUtil.columnIn(JobEntityColumn.STATUS,
+                                Lists.newArrayList(JobStatus.DO_CANCELING, JobStatus.RUNNING)))
+                        .and(getExecutorSpec());
         return page(condition, page, size);
     }
 
     @Override
     public Page<JobEntity> findTerminalJob(int page, int size) {
-        Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
-                .and(SpecificationUtil.columnIn(JobEntityColumn.STATUS,
-                        Lists.newArrayList(JobStatus.EXEC_TIMEOUT, JobStatus.CANCELED, JobStatus.DONE,
-                                JobStatus.FAILED)))
-                .and(SpecificationUtil.columnIsNull(JobEntityColumn.EXECUTOR_DESTROYED_TIME))
-                .and(getExecutorSpec());
+        Specification<JobEntity> condition =
+                Specification.where(getRecentDaySpec(taskFrameworkProperties.getQueryJobInRecentDays()))
+                        .and(SpecificationUtil.columnIn(JobEntityColumn.STATUS,
+                                Lists.newArrayList(JobStatus.EXEC_TIMEOUT, JobStatus.CANCELED, JobStatus.DONE,
+                                        JobStatus.FAILED)))
+                        .and(SpecificationUtil.columnIsNull(JobEntityColumn.EXECUTOR_DESTROYED_TIME))
+                        .and(getExecutorSpec());
         return page(condition, page, size);
     }
 
     @Override
     public Page<ResourceEntity> findAbandonedResource(int page, int size) {
-        Specification<ResourceEntity> specification = SpecificationUtil.columnLate(ResourceEntity.CREATE_TIME,
-                JobDateUtils.getCurrentDateSubtractDays(RECENT_DAY));
-        Specification<ResourceEntity> condition = Specification.where(specification)
-                .and(SpecificationUtil.columnEqual(ResourceEntity.STATUS, ResourceState.ABANDONED))
-                .and(SpecificationUtil.columnEqual(ResourceEntity.TYPE,
-                        AbstractK8sResourceOperatorBuilder.CLOUD_K8S_POD_TYPE));
+        int recentDay = taskFrameworkProperties.getQueryJobInRecentDays();
+        Specification<ResourceEntity> condition =
+                Specification.where(SpecificationUtil.columnEqual(ResourceEntity.STATUS, ResourceState.ABANDONED));
+        condition = condition.and(SpecificationUtil.columnEqual(ResourceEntity.TYPE,
+                AbstractK8sResourceOperatorBuilder.CLOUD_K8S_POD_TYPE));
+        if (recentDay > 0) {
+            condition = condition.and(SpecificationUtil.columnLate(ResourceEntity.CREATE_TIME,
+                    JobDateUtils.getCurrentDateSubtractDays(recentDay)));
+        }
         return resourceRepository.findAll(condition, PageRequest.of(page, size));
     }
 
     @Override
     public Page<JobEntity> findHeartTimeTimeoutJobs(int timeoutSeconds, int page, int size) {
-        Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
-                .and(SpecificationUtil.columnEqual(JobEntityColumn.STATUS, JobStatus.RUNNING))
-                .and((root, query, cb) -> getHeartTimeoutPredicate(root, cb, timeoutSeconds));
+        Specification<JobEntity> condition =
+                Specification.where(getRecentDaySpec(taskFrameworkProperties.getQueryJobInRecentDays()))
+                        .and(SpecificationUtil.columnEqual(JobEntityColumn.STATUS, JobStatus.RUNNING))
+                        .and((root, query, cb) -> getHeartTimeoutPredicate(root, cb, timeoutSeconds));
         return page(condition, page, size);
     }
 
     @Override
     public Page<JobEntity> findIncompleteJobs(int page, int size) {
-        Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
-                .and(SpecificationUtil.columnIn(JobEntityColumn.STATUS,
-                        Lists.newArrayList(JobStatus.PREPARING, JobStatus.RUNNING)));
+        Specification<JobEntity> condition =
+                Specification.where(getRecentDaySpec(taskFrameworkProperties.getQueryJobInRecentDays()))
+                        .and(SpecificationUtil.columnIn(JobEntityColumn.STATUS,
+                                Lists.newArrayList(JobStatus.PREPARING, JobStatus.RUNNING)));
         return page(condition, page, size);
     }
 
     @Override
     public Page<JobEntity> findRunningJobs(int page, int size) {
-        Specification<JobEntity> condition = Specification.where(getRecentDaySpec(RECENT_DAY))
-                .and(SpecificationUtil.columnEqual(JobEntityColumn.STATUS, JobStatus.RUNNING));
+        Specification<JobEntity> condition =
+                Specification.where(getRecentDaySpec(taskFrameworkProperties.getQueryJobInRecentDays()))
+                        .and(SpecificationUtil.columnEqual(JobEntityColumn.STATUS, JobStatus.RUNNING));
         return page(condition, page, size);
     }
 
@@ -258,13 +267,22 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
         Root<JobEntity> root = query.from(JobEntity.class);
         query.select(cb.count(root));
-        query.where(
-                cb.greaterThan(root.get(JobEntityColumn.CREATE_TIME),
-                        JobDateUtils.getCurrentDateSubtractDays(RECENT_DAY)),
-                cb.equal(root.get(JobEntityColumn.RUN_MODE), runMode),
-                root.get(JobEntityColumn.STATUS).in(JobStatus.PREPARING).not(),
-                cb.isNull(root.get(JobEntityColumn.EXECUTOR_DESTROYED_TIME)),
-                executorPredicate(root, cb));
+        int recentDay = taskFrameworkProperties.getQueryJobInRecentDays();
+        if (recentDay > 0) {
+            query.where(
+                    cb.greaterThan(root.get(JobEntityColumn.CREATE_TIME),
+                            JobDateUtils.getCurrentDateSubtractDays(recentDay)),
+                    cb.equal(root.get(JobEntityColumn.RUN_MODE), runMode),
+                    root.get(JobEntityColumn.STATUS).in(JobStatus.PREPARING).not(),
+                    cb.isNull(root.get(JobEntityColumn.EXECUTOR_DESTROYED_TIME)),
+                    executorPredicate(root, cb));
+        } else {
+            query.where(
+                    cb.equal(root.get(JobEntityColumn.RUN_MODE), runMode),
+                    root.get(JobEntityColumn.STATUS).in(JobStatus.PREPARING).not(),
+                    cb.isNull(root.get(JobEntityColumn.EXECUTOR_DESTROYED_TIME)),
+                    executorPredicate(root, cb));
+        }
         return entityManager.createQuery(query).getSingleResult();
     }
 
@@ -290,7 +308,15 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
     }
 
     private Specification<JobEntity> getRecentDaySpec(int days) {
-        return SpecificationUtil.columnLate(JobEntityColumn.CREATE_TIME, JobDateUtils.getCurrentDateSubtractDays(days));
+        if (days > 0) {
+            return SpecificationUtil.columnLate(JobEntityColumn.CREATE_TIME,
+                    JobDateUtils.getCurrentDateSubtractDays(days));
+        } else {
+            // return always true like true = true
+            return (root, query, cb) -> {
+                return cb.isTrue(cb.literal(true));
+            };
+        }
     }
 
     @Override
