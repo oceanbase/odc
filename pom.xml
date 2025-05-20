@@ -47,7 +47,7 @@
         <springframework.version>6.2.3</springframework.version>
         <spring-security.version>6.4.3</spring-security.version>
         <spring-security-web.version>6.4.3</spring-security-web.version>
-        <opensaml.version>5.1.4</opensaml.version>
+        <opensaml.version>4.3.2</opensaml.version>
 
         <spring-integration.version>6.2.3</spring-integration.version>
         <springboot.version>3.4.3</springboot.version>
