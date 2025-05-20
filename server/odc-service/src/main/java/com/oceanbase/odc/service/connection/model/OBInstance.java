@@ -64,4 +64,9 @@ public class OBInstance {
      * 云储存类型
      */
     private CloudProvider cloudProvider;
+
+    /**
+     * 所属的 obcloud 的项目 ID，非 ODC 的 Project.id
+     */
+    private String obCloudProjectId;
 }
