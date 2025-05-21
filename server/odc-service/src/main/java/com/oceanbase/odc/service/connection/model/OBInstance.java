@@ -69,4 +69,9 @@ public class OBInstance {
      * 所属的 obcloud 的项目 ID，非 ODC 的 Project.id
      */
     private String obCloudProjectId;
+
+    /**
+     * 可选值: olap/express_oltp/complex_oltp 目前会用这个字段来区分是 AP 实例 or TP 实例
+     */
+    private String scenario;
 }
