@@ -42,8 +42,11 @@ public class CloudMetadataController {
     @ApiOperation(value = "listInstances", notes = "Cloud Metadata list instances")
     @RequestMapping(value = "/clusters", method = RequestMethod.GET)
     public ListResponse<OBInstance> listInstances(
-            @RequestParam(required = false, name = "organizationId") Long organizationId) {
-        if (Objects.nonNull(organizationId)) {
+            @RequestParam(required = false, name = "organizationId") Long organizationId,
+            @RequestParam(required = false, name = "projectId") String projectId) {
+        if (Objects.nonNull(projectId)) {
+            return Responses.list(cloudMetadataClient.listInstancesByProjectId(projectId));
+        } else if (Objects.nonNull(organizationId)) {
             return Responses.list(cloudMetadataClient.listInstances(organizationId));
         } else {
             return Responses.list(cloudMetadataClient.listInstances());
