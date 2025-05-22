@@ -19,6 +19,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -29,6 +30,9 @@ import org.springframework.context.ConfigurableApplicationContext;
 import com.oceanbase.odc.server.module.Modules;
 import com.oceanbase.odc.server.starter.Starters;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class PluginSpringApplication extends SpringApplication {
 
     public PluginSpringApplication(Class<?>... primarySources) {
@@ -43,6 +47,35 @@ public class PluginSpringApplication extends SpringApplication {
         return new PluginSpringApplication(primarySources).run(args);
     }
 
+    public static void addUrlToClassLoader(List<URL> addToPath, ClassLoader classLoader)
+            throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException, NoSuchMethodException,
+            InvocationTargetException {
+
+        if (classLoader instanceof URLClassLoader urlClassLoader) {
+            Method method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
+            method.setAccessible(true);
+            for (URL url : addToPath) {
+                method.invoke(urlClassLoader, url);
+                log.info("Starter has been added to classpath, url={}", url);
+            }
+
+        } else if (classLoader instanceof jdk.internal.loader.BuiltinClassLoader) {
+            Class<?> builtinClassLoaderClass = Class.forName("jdk.internal.loader.BuiltinClassLoader");
+            Field ucpField = builtinClassLoaderClass.getDeclaredField("ucp");
+            ucpField.setAccessible(true);
+            Object ucp = ucpField.get(classLoader);
+            Class<?> urlClassPathClass = Class.forName("jdk.internal.loader.URLClassPath");
+            Method addURL = urlClassPathClass.getMethod("addURL", URL.class);
+            addURL.setAccessible(true);
+            for (URL url : addToPath) {
+                addURL.invoke(ucp, url);
+            }
+        }
+
+
+
+    }
+
     @Override
     protected void logStartupProfileInfo(ConfigurableApplicationContext context) {
         super.logStartupProfileInfo(context);
@@ -51,25 +84,6 @@ public class PluginSpringApplication extends SpringApplication {
         if (activeProfiles.length != 0) {
             Starters.load(new HashSet<>(Arrays.asList(activeProfiles)));
         }
-    }
-
-    public static void addUrlToClassLoader(List<URL> addToPath,ClassLoader classLoader)
-            throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException, NoSuchMethodException,
-            InvocationTargetException {
-
-        Class<?> builtinClassLoaderClass = Class.forName("jdk.internal.loader.BuiltinClassLoader");
-        Field ucpField = builtinClassLoaderClass.getDeclaredField("ucp");
-        ucpField.setAccessible(true);
-
-        Object ucp = ucpField.get(classLoader);
-
-        Class<?> urlClassPathClass = Class.forName("jdk.internal.loader.URLClassPath");
-        Method addURL = urlClassPathClass.getMethod("addURL", URL.class);
-        addURL.setAccessible(true);
-        for (URL url : addToPath) {
-            addURL.invoke(ucp, url);
-        }
-
     }
 
 }
