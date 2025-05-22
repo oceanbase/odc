@@ -53,16 +53,15 @@ public class PluginSpringApplication extends SpringApplication {
         }
     }
 
-    public static void addUrlToClassLoader(List<URL> addToPath)
+    public static void addUrlToClassLoader(List<URL> addToPath,ClassLoader classLoader)
             throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException, NoSuchMethodException,
             InvocationTargetException {
-        ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
 
         Class<?> builtinClassLoaderClass = Class.forName("jdk.internal.loader.BuiltinClassLoader");
         Field ucpField = builtinClassLoaderClass.getDeclaredField("ucp");
         ucpField.setAccessible(true);
 
-        Object ucp = ucpField.get(systemClassLoader);
+        Object ucp = ucpField.get(classLoader);
 
         Class<?> urlClassPathClass = Class.forName("jdk.internal.loader.URLClassPath");
         Method addURL = urlClassPathClass.getMethod("addURL", URL.class);

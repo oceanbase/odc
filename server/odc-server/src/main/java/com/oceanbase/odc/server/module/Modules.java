@@ -29,6 +29,8 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.oceanbase.odc.server.starter.Starters;
+
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -48,7 +50,7 @@ public class Modules {
             return;
         }
         try {
-            addUrlToClassLoader(moduleUrls);
+            addUrlToClassLoader(moduleUrls, Modules.class.getClassLoader());
         } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException | ClassNotFoundException
                 | NoSuchFieldException e) {
             log.warn("Failed to add module to classpath", e);

@@ -36,6 +36,8 @@ import java.util.stream.Stream;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import com.oceanbase.odc.server.module.Modules;
+
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -67,7 +69,7 @@ public class Starters {
             return;
         }
         try {
-            addUrlToClassLoader(starterUrls);
+            addUrlToClassLoader(starterUrls, Starters.class.getClassLoader());
         } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException | ClassNotFoundException
                 | NoSuchFieldException e) {
             log.warn("Failed to add starter to classpath", e);
