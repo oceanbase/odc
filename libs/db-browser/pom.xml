@@ -101,7 +101,7 @@
         <commons-text.version>1.10.0</commons-text.version>
         <jackson.version>2.14.1</jackson.version>
         <mysql.jdbc.version>8.0.30</mysql.jdbc.version>
-        <maven-javadoc-plugin.version>2.9.1</maven-javadoc-plugin.version>
+        <maven-javadoc-plugin.version>3.5.0</maven-javadoc-plugin.version>
         <maven-source-plugin.version>2.2.1</maven-source-plugin.version>
         <license-maven-plugin.version>3.0</license-maven-plugin.version>
         <oracle.jdbc.version>21.1.0.0</oracle.jdbc.version>
