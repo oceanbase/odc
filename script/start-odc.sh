@@ -12,7 +12,7 @@ install_directory=$(dirname $bin_directory)
 app_log_config_file="${install_directory}/conf/log4j2.xml"
 current_work_directory="$(pwd)"
 default_server_port=8989
-gc_basic_options="-XX:+UseZGC -XX:+PrintAdaptiveSizePolicy -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps"
+gc_basic_options="-XX:+UseZGC -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps"
 gc_log_options="-Xloggc:${install_directory}/log/gc.log -XX:+UseGCLogFileRotation -XX:GCLogFileSize=50M -XX:NumberOfGCLogFiles=5"
 default_heap_options="-XX:MaxRAMPercentage=45.0 -XX:InitialRAMPercentage=45.0"
 default_gc_options="${gc_basic_options} ${gc_log_options}"
