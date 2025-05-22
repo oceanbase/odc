@@ -19,13 +19,9 @@
             <dependency>
                 <groupId>org.jetbrains.pty4j</groupId>
                 <artifactId>pty4j</artifactId>
-                <version>0.11.4</version>
+                <version>0.13.0</version>
             </dependency>
-            <dependency>
-                <groupId>org.jetbrains.pty4j</groupId>
-                <artifactId>purejavacomm</artifactId>
-                <version>0.0.11.1</version>
-            </dependency>
+
             <dependency>
                 <groupId>org.jetbrains</groupId>
                 <artifactId>annotations</artifactId>
@@ -259,10 +255,6 @@
         <dependency>
             <groupId>org.jetbrains.pty4j</groupId>
             <artifactId>pty4j</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.jetbrains.pty4j</groupId>
-            <artifactId>purejavacomm</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jetbrains</groupId>
