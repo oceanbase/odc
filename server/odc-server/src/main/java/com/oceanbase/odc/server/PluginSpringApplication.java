@@ -58,9 +58,10 @@ public class PluginSpringApplication extends SpringApplication {
                 method.invoke(urlClassLoader, url);
                 log.info("Starter has been added to classpath, url={}", url);
             }
-
-        } else if (classLoader instanceof jdk.internal.loader.BuiltinClassLoader) {
-            Class<?> builtinClassLoaderClass = Class.forName("jdk.internal.loader.BuiltinClassLoader");
+            return;
+        }
+        Class<?> builtinClassLoaderClass = Class.forName("jdk.internal.loader.BuiltinClassLoader");
+        if (builtinClassLoaderClass.isInstance(classLoader)) {
             Field ucpField = builtinClassLoaderClass.getDeclaredField("ucp");
             ucpField.setAccessible(true);
             Object ucp = ucpField.get(classLoader);
