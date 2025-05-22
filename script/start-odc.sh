@@ -12,12 +12,11 @@ install_directory=$(dirname $bin_directory)
 app_log_config_file="${install_directory}/conf/log4j2.xml"
 current_work_directory="$(pwd)"
 default_server_port=8989
-gc_basic_options="-XX:+UseZGC"
+gc_basic_options="-XX:+UseZGC --add-opens java.base/jdk.internal.loader=ALL-UNNAMED"
 gc_log_options="-Xloggc:${install_directory}/log/gc.log"
 default_heap_options="-XX:MaxRAMPercentage=45.0 -XX:InitialRAMPercentage=45.0"
 default_gc_options="${gc_basic_options} ${gc_log_options}"
 default_oom_options="-XX:+ExitOnOutOfMemoryError"
-default_vm_option = '--add-opens java.base/jdk.internal.loader=ALL-UNNAMED'
 
 # define some helper functions
 function usage() {
@@ -210,7 +209,7 @@ main() {
     export ODC_DATABASE_PASSWORD=${DATABASE_PASSWORD:-""}
     export ODC_DATABASE_NAME=${DATABASE_NAME}
 
-    local cmd="${java_exec} ${remote_debug_options} ${spacev_java_agent_options} ${gc_options} ${heap_options} ${oom_options} ${default_vm_option}
+    local cmd="${java_exec} ${remote_debug_options} ${spacev_java_agent_options} ${gc_options} ${heap_options} ${oom_options}
     ${extra_options} ${app_options} -jar
     ${jar_file} ${app_args}"
     log_info "cmd=${cmd}"
