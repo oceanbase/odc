@@ -12,7 +12,7 @@ install_directory=$(dirname $bin_directory)
 app_log_config_file="${install_directory}/conf/log4j2.xml"
 current_work_directory="$(pwd)"
 default_server_port=8989
-gc_basic_options="-XX:+UseZGC --add-opens java.base/jdk.internal.loader=ALL-UNNAMED"
+gc_basic_options="-XX:+UseZGC --add-opens java.base/jdk.internal.loader=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED"
 gc_log_options="-Xloggc:${install_directory}/log/gc.log"
 default_heap_options="-XX:MaxRAMPercentage=45.0 -XX:InitialRAMPercentage=45.0"
 default_gc_options="${gc_basic_options} ${gc_log_options}"
