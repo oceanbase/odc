@@ -69,6 +69,7 @@ public class PluginSpringApplication extends SpringApplication {
             addURL.setAccessible(true);
             for (URL url : addToPath) {
                 addURL.invoke(ucp, url);
+                log.info("Starter has been added to classpath, url={}", url);
             }
         }
 

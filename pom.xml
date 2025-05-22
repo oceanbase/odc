@@ -1393,6 +1393,8 @@
                         <arg>-Xlint:-options</arg>
                         <arg>-Xlint:-processing</arg>
                         <arg>-Xlint:-serial</arg>
+                        <arg>--add-exports</arg>
+                        <arg>java.base/jdk.internal.loader=ALL-UNNAMED</arg>
                     </compilerArgs>
                     <showWarnings>true</showWarnings>
                     <source>${java.version}</source>
