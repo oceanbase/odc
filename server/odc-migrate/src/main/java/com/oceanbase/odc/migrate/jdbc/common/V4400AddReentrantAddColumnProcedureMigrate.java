@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.migrate.jdbc.common;
 
 import javax.sql.DataSource;
@@ -32,70 +31,84 @@ public class V4400AddReentrantAddColumnProcedureMigrate implements JdbcMigratabl
     public void migrate(DataSource dataSource) {
         JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 
-        String sql = "CREATE PROCEDURE if not exist AddColumnIfNotExists(\n"
-                     + "  IN tableName VARCHAR(255),\n"
-                     + "  IN columnName VARCHAR(255),\n"
-                     + "  IN columnDefinition VARCHAR(255)\n"
-                     + ")\n"
-                     + "BEGIN\n"
-                     + "    DECLARE column_exists INT;\n"
-                     + "\n"
-                     + "    SELECT COUNT(*)\n"
-                     + "    INTO column_exists\n"
-                     + "    FROM INFORMATION_SCHEMA.COLUMNS\n"
-                     + "    WHERE TABLE_SCHEMA = DATABASE()\n"
-                     + "      AND TABLE_NAME = tableName\n"
-                     + "      AND COLUMN_NAME = columnName;\n"
-                     + "\n"
-                     + "    IF column_exists = 0 THEN\n"
-                     + "        SET @sql = CONCAT('ALTER TABLE ', tableName, ' ADD COLUMN ', columnName, ' ', columnDefinition);\n"
-                     + "    ELSE\n"
-                     + "        SET @sql = 'SELECT ''Column already exists'' AS status';\n"
-                     + "    END IF;\n"
-                     + "\n"
-                     + "    PREPARE stmt FROM @sql;\n"
-                     + "    EXECUTE stmt;\n"
-                     + "    DEALLOCATE PREPARE stmt;\n"
-                     + "END";
+
+        String sql = """
+            CREATE PROCEDURE  AddColumnIfNotExists(
+                IN tableName VARCHAR(255),
+                IN columnName VARCHAR(255),
+                IN columnDefinition VARCHAR(255)
+            )
+            BEGIN
+                DECLARE column_exists INT;
+            
+                -- 检查列是否存在
+                SET @table_name = tableName;
+                SET @column_name = columnName;
+            
+                SELECT COUNT(*)
+                INTO column_exists
+                FROM INFORMATION_SCHEMA.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND TABLE_NAME = @table_name
+                  AND COLUMN_NAME = @column_name;
+            
+                -- 如果列不存在，则添加列
+                IF column_exists = 0 THEN
+                    SET @sql = CONCAT('ALTER TABLE ', @table_name, ' ADD COLUMN ', @column_name, ' ', columnDefinition);
+                    PREPARE stmt FROM @sql;
+                    EXECUTE stmt;
+                    DEALLOCATE PREPARE stmt;
+                    SELECT CONCAT('Column "', @column_name, '" added successfully.') AS Message;
+                ELSE
+                    SELECT CONCAT('Column "', @column_name, '" already exists.') AS Message;
+                END IF;
+            END;
+            """;
+
 
         jdbcTemplate.execute(sql);
 
-        String foreignKeysql = "CREATE PROCEDURE if not exist AddForeignKeyIfNotExists(\n"
-                      + "    IN tableName VARCHAR(255),\n"
-                      + "    IN constraintName VARCHAR(255),\n"
-                      + "    IN columnName VARCHAR(255),\n"
-                      + "    IN referencedTable VARCHAR(255),\n"
-                      + "    IN referencedColumn VARCHAR(255)\n"
-                      + ")\n"
-                      + "BEGIN\n"
-                      + "    DECLARE foreignKeyCount INT;\n"
-                      + "\n"
-                      + "    -- 检查外键是否存在\n"
-                      + "    SELECT COUNT(*)\n"
-                      + "    INTO foreignKeyCount\n"
-                      + "    FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc\n"
-                      + "    JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE kcu\n"
-                      + "      ON tc.CONSTRAINT_NAME = kcu.CONSTRAINT_NAME\n"
-                      + "    WHERE tc.TABLE_SCHEMA = DATABASE()\n"
-                      + "      AND tc.TABLE_NAME = tableName\n"
-                      + "      AND tc.CONSTRAINT_NAME = constraintName;\n"
-                      + "\n"
-                      + "    -- 如果外键不存在，则添加外键\n"
-                      + "    IF foreignKeyCount = 0 THEN\n"
-                      + "        SET @sql = CONCAT(\n"
-                      + "            'ALTER TABLE ', tableName,\n"
-                      + "            ' ADD CONSTRAINT ', constraintName,\n"
-                      + "            ' FOREIGN KEY (', columnName, ')',\n"
-                      + "            ' REFERENCES ', referencedTable, '(', referencedColumn, ')'\n"
-                      + "        );\n"
-                      + "        PREPARE stmt FROM @sql;\n"
-                      + "        EXECUTE stmt;\n"
-                      + "        DEALLOCATE PREPARE stmt;\n"
-                      + "        SELECT CONCAT('Foreign key \"', constraintName, '\" added successfully.') AS Message;\n"
-                      + "    ELSE\n"
-                      + "        SELECT CONCAT('Foreign key \"', constraintName, '\" already exists.') AS Message;\n"
-                      + "    END IF;\n"
-                      + "END";
+        String foreignKeysql = """
+            CREATE PROCEDURE AddForeignKeyIfNotExists(
+                IN tableName VARCHAR(255),
+                IN constraintName VARCHAR(255),
+                IN columnName VARCHAR(255),
+                IN referencedTable VARCHAR(255),
+                IN referencedColumn VARCHAR(255)
+            )
+            BEGIN
+                DECLARE foreignKeyCount INT;
+
+                -- 检查外键是否存在
+                SET @table_name = tableName;
+                SET @constraint_name = constraintName;
+
+                SELECT COUNT(*)
+                INTO foreignKeyCount
+                FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc
+                JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE kcu
+                  ON tc.CONSTRAINT_NAME = kcu.CONSTRAINT_NAME
+                WHERE tc.TABLE_SCHEMA = DATABASE()
+                  AND tc.TABLE_NAME = @table_name
+                  AND tc.CONSTRAINT_NAME = @constraint_name;
+
+                -- 如果外键不存在，则添加外键
+                IF foreignKeyCount = 0 THEN
+                    SET @sql = CONCAT(
+                        'ALTER TABLE ', @table_name,
+                        ' ADD CONSTRAINT ', @constraint_name,
+                        ' FOREIGN KEY (', columnName, ')',
+                        ' REFERENCES ', referencedTable, '(', referencedColumn, ')'
+                    );
+                    PREPARE stmt FROM @sql;
+                    EXECUTE stmt;
+                    DEALLOCATE PREPARE stmt;
+                    SELECT CONCAT('Foreign key "', @constraint_name, '" added successfully.') AS Message;
+                ELSE
+                    SELECT CONCAT('Foreign key "', @constraint_name, '" already exists.') AS Message;
+                END IF;
+            END;
+            """;
 
         jdbcTemplate.execute(foreignKeysql);
 
