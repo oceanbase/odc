@@ -23,6 +23,7 @@ import com.amazonaws.regions.RegionUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
+import com.oceanbase.odc.service.loaddata.model.ObjectStorageConfig;
 
 import lombok.Data;
 
@@ -50,20 +51,25 @@ public class ObjectStorageConfiguration {
      * for aws s3, if endpoint not set, get by region
      */
     public String getPublicEndpoint() {
-        if (StringUtils.isBlank(publicEndpoint) && StringUtils.isNotBlank(region)) {
-            if (CloudProvider.AWS == cloudProvider) {
-                return RegionUtils.getRegion(region).getServiceEndpoint("s3");
-            } else if (CloudProvider.ALIBABA_CLOUD == cloudProvider) {
-                try {
-                    ResolveEndpointRequest request = new ResolveEndpointRequest(region, "oss", null, null);
-                    EndpointResolver endpointResolver = new LocalConfigRegionalEndpointResolver();
-                    return endpointResolver.resolve(request);
-                } catch (ClientException e) {
-                    throw new UnexpectedException("getProfile failed with region=" + region, e);
-                }
-            }
+        // return if set
+        if (!StringUtils.isBlank(publicEndpoint)) {
+            return publicEndpoint;
         }
-        return this.publicEndpoint;
+        if (CloudProvider.AWS == cloudProvider && StringUtils.isNotBlank(region)) {
+            return RegionUtils.getRegion(region).getServiceEndpoint("s3");
+        } else if (CloudProvider.ALIBABA_CLOUD == cloudProvider && StringUtils.isNotBlank(region)) {
+            try {
+                ResolveEndpointRequest request = new ResolveEndpointRequest(region, "oss", null, null);
+                EndpointResolver endpointResolver = new LocalConfigRegionalEndpointResolver();
+                return endpointResolver.resolve(request);
+            } catch (ClientException e) {
+                throw new UnexpectedException("getProfile failed with region=" + region, e);
+            }
+        } else if (CloudProvider.AZURE == cloudProvider) {
+            // for azure compute as it's endpoint
+            return ObjectStorageConfig.concatEndpoint(cloudProvider, accessKeySecret);
+        }
+        return publicEndpoint;
     }
 
     public String getInternalEndpoint() {
