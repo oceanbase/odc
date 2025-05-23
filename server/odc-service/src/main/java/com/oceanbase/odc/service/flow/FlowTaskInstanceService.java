@@ -783,7 +783,10 @@ public class FlowTaskInstanceService {
             return;
         }
         for (FlowTaskResult result : results) {
-            TaskDownloadUrls urls = databaseChangeOssUrlCache.get(taskId);
+            TaskDownloadUrls urls = getTaskDownloadUrls(taskId);
+            if (urls == null) {
+                return;
+            }
             if (result instanceof AbstractFlowTaskResult) {
                 ((AbstractFlowTaskResult) result)
                         .setFullLogDownloadUrl(urls.getLogDownloadUrl());
@@ -795,6 +798,15 @@ public class FlowTaskInstanceService {
                             .setResultFileDownloadUrl(urls.getRollBackPlanResultFileDownloadUrl());
                 }
             }
+        }
+    }
+
+    private TaskDownloadUrls getTaskDownloadUrls(Long taskId) {
+        try {
+            return databaseChangeOssUrlCache.get(taskId);
+        } catch (Exception e) {
+            log.warn("Failed to retrieve task download urls from cloud object storage, taskId={}", taskId, e);
+            return null;
         }
     }
 
