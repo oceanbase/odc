@@ -34,6 +34,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -801,6 +802,7 @@ public class FlowTaskInstanceService {
         }
     }
 
+    @Nullable
     private TaskDownloadUrls getTaskDownloadUrls(Long taskId) {
         try {
             return databaseChangeOssUrlCache.get(taskId);
