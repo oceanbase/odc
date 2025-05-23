@@ -804,7 +804,7 @@ public class FlowTaskInstanceService {
     private TaskDownloadUrls getTaskDownloadUrls(Long taskId) {
         try {
             return databaseChangeOssUrlCache.get(taskId);
-        } catch (Exception e) {
+        } catch (NotFoundException e) {
             log.warn("Failed to retrieve task download urls from cloud object storage, taskId={}", taskId, e);
             return null;
         }
