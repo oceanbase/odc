@@ -242,6 +242,7 @@ public class ScheduleTaskImporter implements InitializingBean {
                         targetDatabaseId);
         log.info("Start to create schedule, createFlowInstanceReq={}, rowId={}", JsonUtils.toJson(createScheduleReq),
                 baseScheduleRowData.getRowId());
+        scheduleExportImportFacade.processParamsBeforeImport(createScheduleReq, currentRow);
         scheduleService.changeSchedule(createScheduleReq);
         log.info("Create schedule success, rowId={}", baseScheduleRowData.getRowId());
         results.add(ImportTaskResult.success(baseScheduleRowData.getRowId(), null));

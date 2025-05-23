@@ -26,6 +26,7 @@ import javax.annotation.Nullable;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.data.jpa.domain.Specification;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableSet;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.core.shared.Verify;
@@ -46,6 +47,7 @@ import com.oceanbase.odc.service.schedule.export.model.ImportDatabaseView;
 import com.oceanbase.odc.service.schedule.export.model.ImportScheduleTaskView;
 import com.oceanbase.odc.service.schedule.export.model.ScheduleNonImportableType;
 import com.oceanbase.odc.service.schedule.export.model.ScheduleRowPreviewDto;
+import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 
 import lombok.AllArgsConstructor;
@@ -122,6 +124,11 @@ public class DefaultScheduleFacade implements ScheduleExportImportFacade {
             result.add(importScheduleTaskView);
         }
         return result;
+    }
+
+    @Override
+    public void processParamsBeforeImport(ScheduleChangeParams scheduleChangeParams, JsonNode rowData) {
+
     }
 
     @Override
