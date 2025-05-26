@@ -114,17 +114,12 @@ class SqlMigrator implements Migrator {
 
     @Override
     public boolean doMigrate() {
-        try (Connection conn = dataSource.getConnection()) {
-            ByteArrayInputStream inputStream = new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
-            InputStreamResource resource = new InputStreamResource(inputStream);
-            ResourceDatabasePopulator databasePopulator = new ResourceDatabasePopulator(resource);
-            databasePopulator.setSqlScriptEncoding("UTF-8");
-            conn.setAutoCommit(false);
-            databasePopulator.populate(conn);
-            IOUtils.closeQuietly(inputStream);
-            return true;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
+        InputStreamResource resource = new InputStreamResource(inputStream);
+        ResourceDatabasePopulator databasePopulator = new ResourceDatabasePopulator(resource);
+        databasePopulator.setSqlScriptEncoding("UTF-8");
+        databasePopulator.execute(dataSource);
+        IOUtils.closeQuietly(inputStream);
+        return true;
     }
 }
