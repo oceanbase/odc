@@ -48,7 +48,8 @@ public class ObjectStorageConfig {
     private static final String S3_ENDPOINT_GLOBAL_PATTERN = "s3.{0}.amazonaws.com";
     private static final String S3_ENDPOINT_CN_PATTERN = "s3.{0}.amazonaws.com.cn";
     private static final String AZURE_ENDPOINT_PATTERN = "https://{0}.blob.core.windows.net";
-
+    // use s3 endpoint for baidu cloud storage.
+    private static final String BAIDU_ENDPOINT_PATTERN = "https://s3.{0}.bcebos.com";
     private static final String GCS_ENDPOINT = "storage.googleapis.com";
     protected static final Configuration fsConf = new Configuration();
 
@@ -189,6 +190,7 @@ public class ObjectStorageConfig {
         // while azure use the account name as one component in endpoint.
         // GCS need neither region nor access key to concat the endpoint.
         if (cloudProvider == CloudProvider.AZURE) {
+            // for azure, accessKey is account name, secretKey is the secret key
             this.endpoint = concatEndpoint(cloudProvider, accessKey);
         } else if (cloudProvider == CloudProvider.GOOGLE_CLOUD) {
             this.endpoint = GCS_ENDPOINT;
@@ -217,7 +219,7 @@ public class ObjectStorageConfig {
         return config;
     }
 
-    private static String concatEndpoint(CloudProvider cloudProvider, String component) {
+    public static String concatEndpoint(CloudProvider cloudProvider, String component) {
         switch (cloudProvider) {
             case TENCENT_CLOUD:
                 return MessageFormat.format(COS_ENDPOINT_PATTERN, component);
@@ -229,6 +231,8 @@ public class ObjectStorageConfig {
                 return GCS_ENDPOINT;
             case AZURE:
                 return MessageFormat.format(AZURE_ENDPOINT_PATTERN, component);
+            case BAIDU_CLOUD:
+                return MessageFormat.format(BAIDU_ENDPOINT_PATTERN, component);
             case AWS:
             case AWSCN:
                 // Note there is a difference of Top-Level Domain between cn and global regions.

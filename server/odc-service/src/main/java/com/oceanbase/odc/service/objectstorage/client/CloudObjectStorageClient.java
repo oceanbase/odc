@@ -290,7 +290,7 @@ public class CloudObjectStorageClient implements ObjectStorageClient {
             }
         }
         CompleteMultipartUploadRequest completeMultipartUploadRequest =
-                new CompleteMultipartUploadRequest(bucketName, objectName, uploadId, partTags);
+                new CompleteMultipartUploadRequest(bucketName, objectName, uploadId, partTags, metadata);
         CompleteMultipartUploadResult completeMultipartUploadResult =
                 internalEndpointCloudObjectStorage.completeMultipartUpload(completeMultipartUploadRequest);
         log.info("Complete multipart upload, result={}", completeMultipartUploadResult);
