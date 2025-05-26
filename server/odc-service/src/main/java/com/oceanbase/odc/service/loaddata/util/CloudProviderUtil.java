@@ -35,6 +35,8 @@ public class CloudProviderUtil {
             case "s3":
             case "s3a":
                 return CloudProvider.AWS;
+            case "bos":
+                return CloudProvider.BAIDU_CLOUD;
             case "azure":
             case "azblob":
                 return CloudProvider.AZURE;

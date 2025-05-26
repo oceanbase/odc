@@ -112,6 +112,7 @@ public class CloudResourceConfigurations {
                 case TENCENT_CLOUD:
                 case HUAWEI_CLOUD:
                 case AWSCN:
+                case BAIDU_CLOUD:
                     return createAmazonCloudClient(configuration);
                 case GOOGLE_CLOUD:
                     return createGoogleCloudClient(configuration);
