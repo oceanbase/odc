@@ -74,4 +74,14 @@ public class OBInstance {
      * 可选值: olap/express_oltp/complex_oltp 目前会用这个字段来区分是 AP 实例 or TP 实例
      */
     private String scenario;
+
+    /**
+     * follow ocp-cloud naming style, gmtCreate is the time when the instance was created
+     */
+    private long gmtCreate;
+
+    /**
+     * follow ocp-cloud naming style, gmtModified is the time when the instance was last modified
+     */
+    private long gmtModified;
 }
