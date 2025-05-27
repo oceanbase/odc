@@ -171,11 +171,12 @@ public class ProjectStepResultChecker {
         switch (name) {
             case INCR_TRANSFER:
                 Long chkInTimestamp = progressResponse.getIncrSyncCheckpoint();
-                return status == OmsStepStatus.MONITORING && competedFunc.apply(progress)
-                // why set check value to 25 seconds. cause oms collect checkpoint every 10 seconds and oms writer
-                // save checkpoint
-                // every 10 seconds
-                // max gap time is 20, we set to 25 to let it pass.
+                return status == OmsStepStatus.MONITORING
+                        // why set check value to 25 seconds. cause oms collect checkpoint every 10 seconds and oms
+                        // writer
+                        // save checkpoint
+                        // every 10 seconds
+                        // max gap time is 20, we set to 25 to let it pass.
                         && (null != chkInTimestamp && (chkInTimestamp > currentSeconds
                                 || Math.abs(currentSeconds - chkInTimestamp) <= 25));
             case FULL_VERIFIER:
