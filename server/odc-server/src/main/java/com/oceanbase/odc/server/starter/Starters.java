@@ -83,7 +83,7 @@ public class Starters {
         return System.getenv(key);
     }
 
-    public static List<URL> getStarters(Set<String> activeProfiles) {
+    private static List<URL> getStarters(Set<String> activeProfiles) {
         StarterProperties properties = new StarterProperties();
         return properties.getStarterDirs().stream().map(Path::toFile).flatMap(file -> {
             if (!file.exists()) {

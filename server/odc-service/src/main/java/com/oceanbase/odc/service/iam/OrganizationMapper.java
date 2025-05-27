@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.iam;
 
+import org.mapstruct.InheritInverseConfiguration;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
@@ -29,6 +30,6 @@ public interface OrganizationMapper {
     @Mapping(source = "builtIn", target = "builtin")
     Organization entityToModel(OrganizationEntity entity);
 
-    // @InheritInverseConfiguration
+    @InheritInverseConfiguration
     OrganizationEntity modelToEntity(Organization model);
 }

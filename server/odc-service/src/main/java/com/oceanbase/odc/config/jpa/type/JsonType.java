@@ -113,23 +113,19 @@ public class JsonType implements UserType<Object>, DynamicParameterizedType {
         if (value == null) {
             return null;
         }
-        // 将对象序列化为 JSON 字符串
         return JsonUtils.toJson(value);
     }
 
     @Override
     public Object assemble(Serializable cached, Object owner) {
-        // 如果缓存数据为 null，直接返回 null
         if (cached == null) {
             return null;
         }
 
-        // 检查缓存数据的类型是否匹配
         if (!(cached instanceof String json)) {
             throw new IllegalArgumentException("Cached data must be a JSON string");
         }
 
-        // 将缓存的 JSON 字符串反序列化为目标对象
         return JsonUtils.fromJson(json, returnedClass());
     }
 

@@ -47,6 +47,21 @@ public class PluginSpringApplication extends SpringApplication {
         return new PluginSpringApplication(primarySources).run(args);
     }
 
+    /**
+     * Different startup methods will use different default class loaders. For example, java -jar by
+     * default uses LaunchedURLClassLoader, while when executing by specifying directories through
+     * classPath or -cp parameters, it will directly use AppClassLoader.
+     *
+     * Since Spring 3.x, AppClassLoader no longer extends from URLClassLoader, so compatibility handling is performed here.
+     * Note: must add --add-opens java.base/jdk.internal.loader=ALL-UNNAMED to startup command
+     * @param addToPath
+     * @param classLoader
+     * @throws ClassNotFoundException
+     * @throws NoSuchFieldException
+     * @throws IllegalAccessException
+     * @throws NoSuchMethodException
+     * @throws InvocationTargetException
+     */
     public static void addUrlToClassLoader(List<URL> addToPath, ClassLoader classLoader)
             throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException, NoSuchMethodException,
             InvocationTargetException {
@@ -56,10 +71,11 @@ public class PluginSpringApplication extends SpringApplication {
             method.setAccessible(true);
             for (URL url : addToPath) {
                 method.invoke(urlClassLoader, url);
-                log.info("Starter has been added to classpath, url={}", url);
+                log.info("Jar has been added to classpath, url={}", url);
             }
             return;
         }
+
         Class<?> builtinClassLoaderClass = Class.forName("jdk.internal.loader.BuiltinClassLoader");
         if (builtinClassLoaderClass.isInstance(classLoader)) {
             Field ucpField = builtinClassLoaderClass.getDeclaredField("ucp");
@@ -70,7 +86,7 @@ public class PluginSpringApplication extends SpringApplication {
             addURL.setAccessible(true);
             for (URL url : addToPath) {
                 addURL.invoke(ucp, url);
-                log.info("Starter has been added to classpath, url={}", url);
+                log.info("Jar has been added to classpath, url={}", url);
             }
         }
 

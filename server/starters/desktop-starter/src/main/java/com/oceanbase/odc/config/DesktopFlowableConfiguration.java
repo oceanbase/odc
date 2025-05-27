@@ -21,6 +21,7 @@ import org.flowable.engine.ProcessEngineConfiguration;
 import org.flowable.spring.SpringProcessEngineConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -36,15 +37,5 @@ import org.springframework.transaction.PlatformTransactionManager;
 @Configuration
 @Profile("clientMode")
 public class DesktopFlowableConfiguration extends BaseFlowableConfiguration {
-
-    @Override
-    public SpringProcessEngineConfiguration springProcessEngineConfiguration(
-            @Autowired @Qualifier("metadbTransactionManager") PlatformTransactionManager platformTransactionManager,
-            DataSource dataSource) {
-        SpringProcessEngineConfiguration processEngineCfg =
-                super.springProcessEngineConfiguration(platformTransactionManager, dataSource);
-        processEngineCfg.setDatabaseSchemaUpdate(ProcessEngineConfiguration.DB_SCHEMA_UPDATE_TRUE);
-        return processEngineCfg;
-    }
 
 }

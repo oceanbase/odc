@@ -101,3 +101,6 @@ management:
       enabled: false
     shutdown:
       enabled: false
+
+flowable:
+  database-schema-update: true

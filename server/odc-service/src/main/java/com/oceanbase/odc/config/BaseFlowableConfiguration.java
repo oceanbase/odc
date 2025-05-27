@@ -30,6 +30,7 @@ import org.flowable.job.service.impl.asyncexecutor.DefaultAsyncJobExecutor;
 import org.flowable.spring.SpringProcessEngineConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.transaction.PlatformTransactionManager;
 
@@ -60,11 +61,11 @@ public abstract class BaseFlowableConfiguration {
 
     @Bean
     public SpringProcessEngineConfiguration springProcessEngineConfiguration(
-            @Autowired @Qualifier("metadbTransactionManager") PlatformTransactionManager platformTransactionManager,
+            @Autowired @Qualifier("metadbTransactionManager") PlatformTransactionManager platformTransactionManager,@Value("${flowable.database-schema-update:false}") boolean schemaUpdate,
             DataSource dataSource) {
         SpringProcessEngineConfiguration processEngineCfg =
                 new OdcProcessEngineConfiguration(flowInstanceRepository, serviceRepository,
-                        MAX_CONCURRENT_SIZE, MIN_CONCURRENT_SIZE);
+                        MAX_CONCURRENT_SIZE, MIN_CONCURRENT_SIZE,schemaUpdate);
         processEngineCfg.setAsyncExecutorAsyncJobAcquisitionEnabled(false)
                 .setDataSource(dataSource)
                 .setCreateDiagramOnDeploy(false)
@@ -89,7 +90,7 @@ public abstract class BaseFlowableConfiguration {
 
         public OdcProcessEngineConfiguration(@NonNull FlowInstanceRepository flowInstanceRepository,
                 @NonNull ServiceTaskInstanceRepository serviceTaskRepository, int maxConcurrentSize,
-                int minConcurrentSize) {
+                int minConcurrentSize, boolean databaseSchemaUpdate) {
             this.flowInstanceRepository = flowInstanceRepository;
             this.serviceRepository = serviceTaskRepository;
             if (maxConcurrentSize <= minConcurrentSize) {
@@ -97,7 +98,7 @@ public abstract class BaseFlowableConfiguration {
             }
             this.maxConcurrentSize = maxConcurrentSize;
             this.minConcurrentSize = minConcurrentSize;
-            super.databaseSchemaUpdate = DB_SCHEMA_UPDATE_TRUE;
+            super.databaseSchemaUpdate = String.valueOf(databaseSchemaUpdate);
         }
 
         @Override

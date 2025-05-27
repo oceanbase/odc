@@ -47,11 +47,12 @@
         <springframework.version>6.2.3</springframework.version>
         <spring-security.version>6.4.3</spring-security.version>
         <spring-security-web.version>6.4.3</spring-security-web.version>
-        <opensaml.version>5.1.4</opensaml.version>
+        <opensaml.version>4.3.2</opensaml.version>
 
         <spring-integration.version>6.2.3</spring-integration.version>
         <springboot.version>3.4.3</springboot.version>
         <hibernate.jpamodelgen.version>6.2.14.Final</hibernate.jpamodelgen.version>
+        <hibernate-commons-annotations.version>6.0.6.Final</hibernate-commons-annotations.version>
         <mybatis-spring-boot.version>3.0.4</mybatis-spring-boot.version>
         <mybatis.version>3.5.6</mybatis.version>
         <tomcat-embed.version>10.1.36</tomcat-embed.version>
@@ -107,7 +108,7 @@
         <org.locationtech.jts.version>1.16.1</org.locationtech.jts.version>
         <org.json.version>20230618</org.json.version>
         <jakarta.persistence.version>3.1.0</jakarta.persistence.version>
-
+        <byte-buddy.version>1.14.7</byte-buddy.version>
         <!-- aliyun-sdk version -->
         <aliyun-sdk.version>4.6.2</aliyun-sdk.version>
         <aliyun-sdk-sts.version>3.1.0</aliyun-sdk-sts.version>
@@ -161,6 +162,11 @@
         <registry-prometheus.version>1.9.5</registry-prometheus.version>
         <actuator.version>3.1.5</actuator.version>
         <picocli.version>4.7.0</picocli.version>
+
+        <jakarta.validation-api.version>3.0.2</jakarta.validation-api.version>
+        <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
+        <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
+        <versions-maven-plugin.version>2.7</versions-maven-plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -204,7 +210,7 @@
             <dependency>
                 <groupId>org.codehaus.groovy</groupId>
                 <artifactId>groovy-all</artifactId>
-                <version>2.4.7</version>
+                <version>${groovy-all.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-codec</groupId>
@@ -224,7 +230,7 @@
             <dependency>
                 <groupId>net.bytebuddy</groupId>
                 <artifactId>byte-buddy</artifactId>
-                <version>1.14.7</version> <!-- 使用 Hibernate 6.6.8 推荐的版本 -->
+                <version>${byte-buddy.version}</version> <!-- 使用 Hibernate 6.6.8 推荐的版本 -->
             </dependency>
             <dependency>
                 <groupId>org.flowable</groupId>
@@ -400,7 +406,7 @@
             <dependency>
                 <groupId>org.hibernate.common</groupId>
                 <artifactId>hibernate-commons-annotations</artifactId>
-                <version>6.0.6.Final</version>
+                <version>${hibernate-commons-annotations.version}</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.persistence</groupId>
@@ -972,7 +978,7 @@
             <dependency>
                 <groupId>jakarta.validation</groupId>
                 <artifactId>jakarta.validation-api</artifactId>
-                <version>3.0.2</version>
+                <version>${jakarta.validation-api.version}</version>
             </dependency>
 
             <!-- RAM dependency -->
@@ -1302,20 +1308,13 @@
         </dependencies>
     </dependencyManagement>
 
-    <repositories>
-        <repository>
-            <id>shibboleth-releases</id>
-            <url>https://build.shibboleth.net/maven/releases</url>
-        </repository>
-    </repositories>
-
     <build>
         <pluginManagement>
             <plugins>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.14.0</version>
+                    <version>${maven-compiler-plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1325,7 +1324,7 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>versions-maven-plugin</artifactId>
-                    <version>2.7</version>
+                    <version>${versions-maven-plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.springframework.boot</groupId>
@@ -1417,7 +1416,7 @@
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok-mapstruct-binding</artifactId>
-                            <version>0.2.0</version>
+                            <version>${lombok-mapstruct-binding.version}</version>
                         </path>
                         <path>
                             <groupId>org.pf4j</groupId>

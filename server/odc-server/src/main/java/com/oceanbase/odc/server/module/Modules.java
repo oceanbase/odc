@@ -56,7 +56,7 @@ public class Modules {
         }
     }
 
-    public static List<URL> getModules() {
+    private static List<URL> getModules() {
         ModuleProperties properties = new ModuleProperties();
         return properties.getModuleDirs().stream().map(Path::toFile).flatMap(file -> {
             if (!file.exists()) {

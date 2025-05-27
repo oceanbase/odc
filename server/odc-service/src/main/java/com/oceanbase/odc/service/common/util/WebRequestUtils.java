@@ -91,22 +91,13 @@ public class WebRequestUtils {
                 || "0:0:0:0:0:0:0:1".equals(remoteAddr) || "::1".equals(remoteAddr);
     }
 
-    // Todo
     private static UriComponents getRequestUriComponents(HttpServletRequest request) {
-        // 检查请求是否为空
         PreConditions.notNull(request, "request");
-
-        // 获取完整的请求 URL
         String requestURL = request.getRequestURL().toString();
-
-        // 使用 UriComponentsBuilder 从请求 URL 构建 UriComponents
         UriComponents uriComponents = UriComponentsBuilder.fromUriString(requestURL).build();
-
-        // 如果构建的 UriComponents 缺少主机信息，则重新构建
         if (StringUtils.isEmpty(uriComponents.getHost())) {
             uriComponents = UriComponentsBuilder.fromUriString(requestURL).build();
         }
-
         return uriComponents;
     }
 
