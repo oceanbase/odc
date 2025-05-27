@@ -49,7 +49,7 @@ public interface MessageRepository extends OdcJpaRepository<MessageEntity, Long>
             + " `last_sent_time`=now(), `retry_times`=retry_times+1 where `id`=:id",
             nativeQuery = true)
     @Transactional
-
+    @Modifying
     int updateStatusAndRetryTimesAndErrorMessageById(@Param("id") Long id, @Param("status") MessageSendingStatus status,
             @Param("errorMessage") String errorMessage);
 

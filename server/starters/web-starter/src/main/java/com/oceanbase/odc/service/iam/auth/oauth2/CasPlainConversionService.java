@@ -64,7 +64,6 @@ public class CasPlainConversionService implements ConversionService {
     }
 
 
-    // todo cas plain
     private OAuth2AccessTokenResponse convert(Object source) {
         if (!source.getClass().isAssignableFrom(String.class)) {
             throw new HttpMessageConversionException(
