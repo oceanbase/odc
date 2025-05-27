@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.shared.OrganizationIsolated;
@@ -50,6 +51,7 @@ public class BatchSchedulePermissionValidator {
     private ProjectPermissionValidator projectPermissionValidator;
 
     @Autowired
+    @Lazy
     private FlowInstanceService flowInstanceService;
 
     @Autowired
