@@ -17,8 +17,7 @@ LABEL description="OceanBase Developer Center (ODC)"
 # parameters
 ARG ODC_INSTALL_DIR=/opt/odc
 ARG JDK_VERSION="java-1.8.0-openjdk-headless java-1.8.0-openjdk java-1.8.0-openjdk-devel"
-ARG PYTHON_VERSION=python3
-ARG PYTHON_PIP_VERSION=python3-pip
+ARG PYTHON_VERSION=python38
 ARG PYTHON_PIP_UPGRADE_VERSION=23.3.1
 
 ENV LC_ALL=en_US.UTF-8
@@ -26,7 +25,7 @@ ENV LANG=en_US.utf-8
 
 # install jdk/supervisor, tcpdump, supervisor (install by python pip)
 RUN yum clean all && yum makecache \
-    && yum install -y --exclude=ali-jdk ${JDK_VERSION} ${PYTHON_VERSION} ${PYTHON_PIP_VERSION} tcpdump passwd langpacks-en glibc-all-langpacks glibc-locale-source glibc-langpack-en \
+    && yum install -y --exclude=ali-jdk ${JDK_VERSION} ${PYTHON_VERSION} tcpdump passwd langpacks-en glibc-all-langpacks glibc-locale-source glibc-langpack-en \
     && ln -sf /usr/share/zoneinfo/Asia/Shanghai  /etc/localtime \
     && localedef -i en_US -f UTF-8 en_US.UTF-8 \
     && yum update -y --exclude=ali-jdk \
