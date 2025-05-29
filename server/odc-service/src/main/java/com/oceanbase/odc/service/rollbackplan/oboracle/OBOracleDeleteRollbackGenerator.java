@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.rollbackplan.oboracle;
 
+import java.util.function.Supplier;
+
 import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.odc.service.rollbackplan.model.RollbackProperties;
@@ -42,8 +44,9 @@ public class OBOracleDeleteRollbackGenerator extends AbstractOBOracleRollBackGen
 
     public OBOracleDeleteRollbackGenerator(@NonNull String sql, @NonNull Delete delete,
             @NonNull JdbcOperations jdbcOperations,
-            @NonNull RollbackProperties rollbackProperties, Long timeOutMilliSeconds) {
-        super(sql, jdbcOperations, rollbackProperties, timeOutMilliSeconds);
+            @NonNull RollbackProperties rollbackProperties, Long timeOutMilliSeconds,
+            @NonNull Supplier<Boolean> interruptSupplier) {
+        super(sql, jdbcOperations, rollbackProperties, timeOutMilliSeconds, interruptSupplier);
         this.sqlParser = new OBOracleSQLParser();
         this.delete = delete;
     }

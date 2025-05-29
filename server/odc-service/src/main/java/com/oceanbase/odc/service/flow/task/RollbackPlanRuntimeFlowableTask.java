@@ -18,7 +18,9 @@ package com.oceanbase.odc.service.flow.task;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -31,6 +33,7 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.Verify;
+import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.core.sql.split.SqlStatementIterator;
@@ -40,6 +43,7 @@ import com.oceanbase.odc.service.common.FileManager;
 import com.oceanbase.odc.service.common.model.FileBucket;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
@@ -80,6 +84,8 @@ public class RollbackPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Rol
     private CloudObjectStorageService cloudObjectStorageService;
     @Autowired
     private ObjectStorageFacade storageFacade;
+    @Autowired
+    private FlowInstanceService flowInstanceService;
     private volatile boolean isSuccess = false;
     private String resultFileDownloadUrl;
     private String resultFileId;
@@ -140,8 +146,10 @@ public class RollbackPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Rol
                                     .append(", generate rollback plan will be stopped. */\n");
                             return handleRollbackResult(rollbackPlans.toString());
                         }
+                        FlowCanceledWatcher flowCanceledWatcher =
+                                new FlowCanceledWatcher(flowInstanceService, flowInstanceId, 5000L);
                         GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, rollbackProperties,
-                                session, timeoutForCurrentSql);
+                                session, timeoutForCurrentSql, flowCanceledWatcher::isCanceled);
                         RollbackPlan result = rollbackPlan.generate();
                         totalChangeLineConunt += result.getChangeLineCount();
                         rollbackPlans.append(result.toString());
@@ -289,5 +297,48 @@ public class RollbackPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Rol
     @Override
     public boolean isCancelled() {
         return false;
+    }
+
+    protected static final class FlowCanceledWatcher {
+        private final FlowInstanceService flowInstanceService;
+        private final Long flowInstanceId;
+        private final long statusUpdateIntervalMs;
+        private long lastStatusQueryTimeMs;
+        private FlowStatus status;
+
+        public FlowCanceledWatcher(FlowInstanceService flowInstanceService, Long flowInstanceId,
+                Long statusUpdateIntervalMs) {
+            this.flowInstanceService = flowInstanceService;
+            this.flowInstanceId = flowInstanceId;
+            this.lastStatusQueryTimeMs = System.currentTimeMillis();
+            this.statusUpdateIntervalMs = statusUpdateIntervalMs;
+            this.status = null;
+        }
+
+        public synchronized boolean isCanceled() {
+            // canceled not query any more
+            if (FlowStatus.CANCELLED == status) {
+                return true;
+            }
+            // if query interval is not enough, return false
+            if (System.currentTimeMillis() - lastStatusQueryTimeMs < statusUpdateIntervalMs) {
+                return FlowStatus.CANCELLED == status;
+            }
+            lastStatusQueryTimeMs = System.currentTimeMillis();
+            log.info("try query flow status for id = {}", flowInstanceId);
+            try {
+                Map<Long, FlowStatus> entity = flowInstanceService.getStatus(Collections.singleton(flowInstanceId));
+                FlowStatus tmp = entity.get(flowInstanceId);
+                if (null == tmp) {
+                    throw new RuntimeException(
+                            "query flow entity for id = " + flowInstanceId + " failed, ret = " + entity);
+                }
+                status = tmp;
+                return FlowStatus.CANCELLED == status;
+            } catch (Throwable e) {
+                log.warn("query flow instance for {} failed, cause {}", flowInstanceId, e.getMessage());
+                return false;
+            }
+        }
     }
 }
