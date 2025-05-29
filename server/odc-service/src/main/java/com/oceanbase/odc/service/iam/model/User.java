@@ -40,6 +40,7 @@ import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.UserType;
 import com.oceanbase.odc.metadb.iam.UserEntity;
+import com.oceanbase.odc.metadb.iam.UserLoginViewEntity;
 
 import lombok.Data;
 import lombok.ToString;
@@ -141,6 +142,24 @@ public class User implements Principal, UserDetails, SecurityResource, MultiOrga
         this.name = userEntity.getName();
         this.accountName = userEntity.getAccountName();
         this.password = userEntity.getPassword();
+        this.active = userEntity.isActive();
+        this.enabled = userEntity.isEnabled();
+        this.creatorId = userEntity.getCreatorId();
+        this.createTime = userEntity.getUserCreateTime();
+        this.updateTime = userEntity.getUserUpdateTime();
+        this.description = userEntity.getDescription();
+        this.organizationId = userEntity.getOrganizationId();
+        this.lastLoginTime = userEntity.getLastLoginTime();
+        this.loginTime = userEntity.getLastLoginTime();
+        this.builtIn = userEntity.getBuiltIn();
+        this.extraProperties = userEntity.getExtraPropertiesJson();
+    }
+
+    public User(UserLoginViewEntity userEntity) {
+        this.id = userEntity.getId();
+        this.type = userEntity.getType();
+        this.name = userEntity.getName();
+        this.accountName = userEntity.getAccountName();
         this.active = userEntity.isActive();
         this.enabled = userEntity.isEnabled();
         this.creatorId = userEntity.getCreatorId();

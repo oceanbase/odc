@@ -45,11 +45,7 @@ import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.Sort.Order;
-import org.springframework.data.jpa.domain.JpaSort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -80,7 +76,6 @@ import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
-import com.oceanbase.odc.metadb.iam.LastSuccessLoginHistory;
 import com.oceanbase.odc.metadb.iam.LoginHistoryRepository;
 import com.oceanbase.odc.metadb.iam.PermissionEntity;
 import com.oceanbase.odc.metadb.iam.PermissionRepository;
@@ -89,6 +84,8 @@ import com.oceanbase.odc.metadb.iam.RolePermissionEntity;
 import com.oceanbase.odc.metadb.iam.RolePermissionRepository;
 import com.oceanbase.odc.metadb.iam.RoleRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
+import com.oceanbase.odc.metadb.iam.UserLoginViewEntity;
+import com.oceanbase.odc.metadb.iam.UserLoginViewRepository;
 import com.oceanbase.odc.metadb.iam.UserOrganizationEntity;
 import com.oceanbase.odc.metadb.iam.UserOrganizationRepository;
 import com.oceanbase.odc.metadb.iam.UserPermissionEntity;
@@ -134,6 +131,9 @@ public class UserService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private UserLoginViewRepository userLoginViewRepository;
 
     @Autowired
     private UserRoleRepository userRoleRepository;
@@ -654,26 +654,7 @@ public class UserService {
             return new PaginatedData<>(Collections.emptyList(), CustomPage.empty());
         }
 
-        List<LastSuccessLoginHistory> loginHistories = loginHistoryRepository.lastSuccessLoginHistory();
-        Map<Long, LastSuccessLoginHistory> userId2LoginHistory =
-                loginHistories.stream().collect(Collectors.toMap(LastSuccessLoginHistory::getUserId, t -> t));
-        List<Order> orderList = pageable.getSort().get().map(order -> {
-            if ("lastLoginTime".equals(order.getProperty())) {
-                StringBuilder orderByConditionSQL = new StringBuilder("(CASE");
-                int index;
-                for (index = 0; index < loginHistories.size(); index++) {
-                    orderByConditionSQL.append(" WHEN id = ").append(loginHistories.get(index).getUserId())
-                            .append(" THEN ").append(index);
-                }
-                orderByConditionSQL.append(" ELSE ").append(index).append(" END )");
-                return JpaSort.unsafe(order.getDirection(), orderByConditionSQL.toString()).get()
-                        .collect(Collectors.toList()).get(0);
-            } else {
-                return order;
-            }
-        }).collect(Collectors.toList());
-
-        Specification<UserEntity> spec = Specification.where(UserSpecs.enabledEqual(params.getEnabled()))
+        Specification<UserLoginViewEntity> spec = Specification.where(UserSpecs.enabledEqual(params.getEnabled()))
                 .and(UserSpecs.namesLike(params.getNames())
                         .or(UserSpecs.accountNamesLike(params.getAccountNames())));
 
@@ -685,20 +666,12 @@ public class UserService {
         } else {
             spec = spec.and(UserSpecs.userIdIn(userIdsInOrg));
         }
-        spec = spec.and(UserSpecs.sort(Sort.by(orderList)));
-        Pageable page = pageable.equals(Pageable.unpaged()) ? pageable
-                : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
-        Page<UserEntity> userEntityPage = userRepository.findAll(spec, page);
+
+        Page<UserLoginViewEntity> userEntityPage = userLoginViewRepository.findAll(spec, pageable);
         List<User> users = userEntityPage.getContent().stream().map(User::new).collect(Collectors.toList());
         acquireRolesAndRoleIds(users);
         if (Objects.nonNull(params.getIncludePermissions()) && params.getIncludePermissions()) {
             acquirePermissions(users);
-        }
-        for (User user : users) {
-            if (userId2LoginHistory.containsKey(user.getId())) {
-                user.setLastLoginTime(
-                        new Timestamp(userId2LoginHistory.get(user.getId()).getLastLoginTime().toEpochSecond() * 1000));
-            }
         }
         return new PaginatedData<>(users, CustomPage.from(userEntityPage));
     }

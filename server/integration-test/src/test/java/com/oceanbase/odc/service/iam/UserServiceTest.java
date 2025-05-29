@@ -15,6 +15,9 @@
  */
 package com.oceanbase.odc.service.iam;
 
+import static org.mockito.ArgumentMatchers.any;
+
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -35,6 +38,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -49,9 +53,13 @@ import com.oceanbase.odc.core.shared.constant.RoleType;
 import com.oceanbase.odc.core.shared.constant.UserType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
+import com.oceanbase.odc.metadb.iam.LoginHistoryEntity;
+import com.oceanbase.odc.metadb.iam.LoginHistoryRepository;
 import com.oceanbase.odc.metadb.iam.RoleEntity;
 import com.oceanbase.odc.metadb.iam.RoleRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
+import com.oceanbase.odc.metadb.iam.UserOrganizationEntity;
+import com.oceanbase.odc.metadb.iam.UserOrganizationRepository;
 import com.oceanbase.odc.metadb.iam.UserRepository;
 import com.oceanbase.odc.metadb.iam.UserRoleEntity;
 import com.oceanbase.odc.metadb.iam.UserRoleRepository;
@@ -84,24 +92,28 @@ public class UserServiceTest extends MockedAuthorityTestEnv {
     private UserRoleRepository userRoleRepository;
     @Autowired
     private RoleRepository roleRepository;
+    @Autowired
+    private LoginHistoryRepository loginHistoryRepository;
     @MockBean
     private AuthorizationFacade authorizationFacade;
     @MockBean
     private ProjectService projectService;
     @MockBean
     private AuthenticationFacade authenticationFacade;
+    @MockBean
+    private UserOrganizationRepository userOrganizationRepository;
 
     @Before
     public void setUp() {
         userRepository.deleteAll();
         userRoleRepository.deleteAll();
         roleRepository.deleteAll();
-        Mockito.when(authorizationFacade.isImpliesPermissions(Mockito.any(), Mockito.anyCollection())).thenReturn(true);
+        Mockito.when(authorizationFacade.isImpliesPermissions(any(), Mockito.anyCollection())).thenReturn(true);
         Mockito.when(authenticationFacade.currentOrganizationId()).thenReturn(ORGANIZATION_ID);
         Mockito.when(authenticationFacade.currentUserId()).thenReturn(ADMIN_USER_ID);
         Map<SecurityResource, Set<String>> returnValue = new HashMap<>();
         returnValue.put(new DefaultSecurityResource(ResourceType.ODC_USER.name()), Collections.singleton("*"));
-        Mockito.when(authorizationFacade.getRelatedResourcesAndActions(Mockito.any())).thenReturn(returnValue);
+        Mockito.when(authorizationFacade.getRelatedResourcesAndActions(any())).thenReturn(returnValue);
         grantAllPermissions(ResourceType.ODC_USER, ResourceType.ODC_ROLE);
         initRole();
     }
@@ -294,6 +306,53 @@ public class UserServiceTest extends MockedAuthorityTestEnv {
         Assert.assertEquals(1, userEntities.size());
         Assert.assertEquals(userEntity.getId(), userEntities.get(0).getId());
     }
+
+    @Test
+    public void test_listUserWithQueryParams_order() {
+        UserEntity userEntity = createUserEntity();
+        userEntity.setEnabled(false);
+        UserEntity userEntity1 = userRepository.saveAndFlush(userEntity);
+
+        LoginHistoryEntity loginHistoryEntity = new LoginHistoryEntity();
+        loginHistoryEntity.setLoginTime(OffsetDateTime.now());
+        loginHistoryEntity.setUserId(userEntity1.getId());
+        loginHistoryEntity.setOrganizationId(userEntity1.getOrganizationId());
+        loginHistoryEntity.setAccountName(userEntity1.getAccountName());
+        loginHistoryEntity.setSuccess(true);
+        loginHistoryRepository.save(loginHistoryEntity);
+
+        UserEntity u2 = createUserEntity();
+        userEntity.setEnabled(false);
+        UserEntity userEntity2 = userRepository.saveAndFlush(u2);
+
+        LoginHistoryEntity loginHistoryEntity2 = new LoginHistoryEntity();
+        loginHistoryEntity2.setLoginTime(OffsetDateTime.now().minusDays(1));
+        loginHistoryEntity2.setUserId(userEntity2.getId());
+        loginHistoryEntity2.setOrganizationId(userEntity2.getOrganizationId());
+        loginHistoryEntity2.setAccountName(userEntity2.getAccountName());
+        loginHistoryEntity2.setSuccess(true);
+        loginHistoryRepository.save(loginHistoryEntity2);
+
+        QueryUserParams queryParams = new QueryUserParams();
+        Pageable pageable = PageRequest.of(0, 10, Sort.by(Direction.DESC, "lastLoginTime"));
+        UserOrganizationEntity uo1 = new UserOrganizationEntity();
+        uo1.setUserId(userEntity1.getId());
+        UserOrganizationEntity uo2 = new UserOrganizationEntity();
+        uo2.setUserId(userEntity2.getId());
+        Mockito.when(userOrganizationRepository.findByOrganizationId(any())).thenReturn(Arrays.asList(uo1, uo2));
+
+        PaginatedData<User> userPaginatedData = userService.listUserWithQueryParams(queryParams, pageable, false);
+        Assert.assertEquals(userPaginatedData.getContents().get(0).getId(), userEntity1.getId());
+        Assert.assertEquals(userPaginatedData.getContents().get(1).getId(), userEntity2.getId());
+
+        Pageable pageable2 = PageRequest.of(0, 10, Sort.by(Direction.ASC, "lastLoginTime"));
+        PaginatedData<User> userPaginatedData2 = userService.listUserWithQueryParams(queryParams, pageable2, false);
+        Assert.assertEquals(userPaginatedData2.getContents().get(1).getId(), userEntity1.getId());
+        Assert.assertEquals(userPaginatedData2.getContents().get(0).getId(), userEntity2.getId());
+
+    }
+
+
 
     @Test
     public void listByUserIdsAndRoleIds_MatchRoleNullEnabledUser_ReturnNotEmpty() {
@@ -691,7 +750,7 @@ public class UserServiceTest extends MockedAuthorityTestEnv {
         request.setNewPassword("Ab654321");
 
         Mockito.when(authenticationFacade.currentUserId()).thenReturn(user.getId());
-        Mockito.when(authorizationFacade.isImpliesPermissions(Mockito.any(), Mockito.anyCollection())).thenReturn(true);
+        Mockito.when(authorizationFacade.isImpliesPermissions(any(), Mockito.anyCollection())).thenReturn(true);
 
         User changePasswordUser = userService.changePassword(request);
 

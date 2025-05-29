@@ -66,7 +66,7 @@ public interface TaskRepository extends JpaRepository<TaskEntity, Long>, JpaSpec
     Optional<TaskEntity> findByJobId(Long jobId);
 
     @Transactional
-    @Query("update TaskEntity set job_id=:jobId where id=:id")
+    @Query("update TaskEntity set jobId=:jobId where id=:id")
     @Modifying
     void updateJobId(@Param("id") Long id, @Param("jobId") Long jobId);
 

@@ -48,7 +48,6 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
@@ -956,13 +955,10 @@ public class ConnectionService {
         if (Objects.nonNull(params.getUsername())) {
             spec = spec.and(ConnectionSpecs.usernameEqual(params.getUsername()));
         }
-        spec = spec.and(ConnectionSpecs.sort(pageable.getSort()));
-        Pageable page = pageable.equals(Pageable.unpaged()) ? pageable
-                : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
-        Page<ConnectionEntity> entities = this.repository.findAll(spec, page);
+        Page<ConnectionEntity> entities = this.repository.findAll(spec, pageable);
         List<ConnectionConfig> models = entitiesToModels(entities.getContent(), currentOrganizationId(), true, true);
         fullFillAttributes(models);
-        return new PageImpl<>(models, page, entities.getTotalElements());
+        return new PageImpl<>(models, pageable, entities.getTotalElements());
     }
 
     private String[] getHostPort(String hostPort) {

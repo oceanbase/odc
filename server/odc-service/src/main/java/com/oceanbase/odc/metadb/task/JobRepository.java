@@ -79,7 +79,7 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>,
 
     @Transactional
     @Query("update JobEntity set "
-            + " executorIdentifier=:#{#param.executorIdentifier}, jobProperties =:#{#param.jobProperties}, last_heart_time= CURRENT_TIMESTAMP "
+            + " executorIdentifier=:#{#param.executorIdentifier}, jobProperties =:#{#param.jobProperties}, lastHeartTime= CURRENT_TIMESTAMP "
             + " where id=:#{#param.id}")
     @Modifying
     int updateJobExecutorIdentifierById(@Param("param") JobEntity entity);
