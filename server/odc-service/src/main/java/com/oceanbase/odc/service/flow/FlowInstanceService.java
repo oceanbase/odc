@@ -763,7 +763,7 @@ public class FlowInstanceService {
             }
             // Cancel external process instance when related ODC flow instance is cancelled
             cancelAllRelatedExternalInstance(flowInstance);
-            deleteFlowProcessInstance(flowInstance.getProcessInstanceId());
+            deleteFlowProcessInstance(flowInstance.getProcessInstanceId(), flowInstance.getId());
             flowInstanceRepository.updateStatusById(flowInstance.getId(), FlowStatus.CANCELLED);
             return FlowInstanceDetailResp.withIdAndType(id, taskTypeHolder.getValue());
         }
@@ -783,7 +783,7 @@ public class FlowInstanceService {
                 } else {
                     log.info("flowInstance = {} canceled and not dispatched", taskInstance.getId());
                 }
-                deleteFlowProcessInstance(flowInstance.getProcessInstanceId());
+                deleteFlowProcessInstance(flowInstance.getProcessInstanceId(), flowInstance.getId());
                 serviceTaskRepository.updateStatusById(taskInstance.getId(), FlowNodeStatus.CANCELLED);
                 flowInstanceRepository.updateStatusById(taskInstance.getFlowInstanceId(), FlowStatus.CANCELLED);
                 return FlowInstanceDetailResp.withIdAndType(id, taskInstance.getTaskType());
@@ -1475,6 +1475,9 @@ public class FlowInstanceService {
         HistoricProcessInstanceQuery historyQuery = historyService.createHistoricProcessInstanceQuery()
                 .processInstanceIds(Collections.singleton(flowInstance.getProcessInstanceId()))
                 .includeProcessVariables();
+        if (CollectionUtils.isEmpty(historyQuery.list())) {
+            return;
+        }
         HistoricProcessInstance processInstance = historyQuery.list().get(0);
         TemplateVariables variables = FlowTaskUtil.getTemplateVariables(processInstance.getProcessVariables());
         externalApprovalInstance.forEach(inst -> {
@@ -1635,7 +1638,11 @@ public class FlowInstanceService {
         return partitionPlanFlowInstanceStates;
     }
 
-    private void deleteFlowProcessInstance(String processInstanceID) {
+    private void deleteFlowProcessInstance(String processInstanceID, Long flowInstanceId) {
+        if (null == processInstanceID) {
+            log.info("processInstanceID is null for instance id {}, return", flowInstanceId);
+            return;
+        }
         runtimeService.deleteProcessInstance(String.valueOf(processInstanceID), "flow is canceled");
     }
 
