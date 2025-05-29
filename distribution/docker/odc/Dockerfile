@@ -69,4 +69,4 @@ RUN rpm -ivh ${ODC_INSTALL_DIR}/tmp/*.rpm \
 
 EXPOSE 8989
 
-ENTRYPOINT ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
+ENTRYPOINT ["/usr/local/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
