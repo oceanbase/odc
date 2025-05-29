@@ -65,7 +65,8 @@ public class OBMySqlDeleteRollbackGeneratorTest {
         properties.setEachSqlMaxChangeLines(100000);
         properties.setQueryDataBatchSize(2);
         String sql = "DELETE FROM rollback_tab2 PARTITION(p2) WHERE c1>1 ORDER BY c2 LIMIT 2;";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
 
         RollbackPlan actual = rollbackPlan.generate();
         List<String> rollbackSql = new ArrayList<>();
@@ -85,7 +86,8 @@ public class OBMySqlDeleteRollbackGeneratorTest {
         properties.setQueryDataBatchSize(2);
         String sql =
                 "DELETE rollback_tab1, rollback_tab2 FROM rollback_tab1, rollback_tab2 WHERE rollback_tab1.c1 = rollback_tab2.c1;";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
 
         RollbackPlan actual = rollbackPlan.generate();
         List<String> rollbackSql = new ArrayList<>();
@@ -110,7 +112,8 @@ public class OBMySqlDeleteRollbackGeneratorTest {
         properties.setQueryDataBatchSize(3);
         String sql =
                 "DELETE v1, v2 FROM rollback_tab1 v1 INNER JOIN rollback_tab2 v2 on v1.c1 = v2.c1 and v1.c2=v2.c2;";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
 
         RollbackPlan actual = rollbackPlan.generate();
         List<String> rollbackSql = new ArrayList<>();
@@ -134,7 +137,8 @@ public class OBMySqlDeleteRollbackGeneratorTest {
         properties.setEachSqlMaxChangeLines(100000);
         properties.setQueryDataBatchSize(2);
         String sql = "DELETE FROM v1, v2 USING rollback_tab1 AS v1 INNER JOIN rollback_tab2 AS v2 WHERE v1.c1=v2.c1;";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
 
         RollbackPlan actual = rollbackPlan.generate();
         List<String> rollbackSql = new ArrayList<>();
@@ -159,7 +163,8 @@ public class OBMySqlDeleteRollbackGeneratorTest {
         properties.setEachSqlMaxChangeLines(100000);
         properties.setQueryDataBatchSize(2);
         String sql = "DELETE FROM rollback_tab3;";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
 
         RollbackPlan actual = rollbackPlan.generate();
         List<String> rollbackSql = new ArrayList<>();
@@ -179,7 +184,8 @@ public class OBMySqlDeleteRollbackGeneratorTest {
         properties.setEachSqlMaxChangeLines(100000);
         properties.setQueryDataBatchSize(2);
         String sql = "DELETE FROM rollback_unsupportedType;";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
 
         RollbackPlan actual = rollbackPlan.generate();
         RollbackPlan expect = new RollbackPlan(sql, DialectType.OB_MYSQL,
@@ -196,7 +202,8 @@ public class OBMySqlDeleteRollbackGeneratorTest {
         properties.setEachSqlMaxChangeLines(5);
         properties.setQueryDataBatchSize(2);
         String sql = "delete a, b from rollback_tab1 as a inner join rollback_tab2 as b where a.c1=b.c1;";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
         RollbackPlan actual = rollbackPlan.generate();
         RollbackPlan expect = new RollbackPlan(sql, DialectType.OB_MYSQL,
                 Arrays.asList("SELECT b.* FROM rollback_tab1 as a inner join rollback_tab2 as b WHERE a.c1=b.c1;",

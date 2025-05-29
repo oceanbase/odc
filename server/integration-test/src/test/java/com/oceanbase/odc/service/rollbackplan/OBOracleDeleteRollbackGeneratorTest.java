@@ -76,7 +76,8 @@ public class OBOracleDeleteRollbackGeneratorTest {
         properties.setQueryDataBatchSize(2);
         properties.setDefaultTimeZone("Asia/Shanghai");
         String sql = "DELETE FROM \"ROLLBACK_TAB1\" WHERE C1=1;";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
 
         RollbackPlan actual = rollbackPlan.generate();
         List<String> rollbackSql = new ArrayList<>();
@@ -95,7 +96,8 @@ public class OBOracleDeleteRollbackGeneratorTest {
         properties.setQueryDataBatchSize(2);
         properties.setDefaultTimeZone("Asia/Shanghai");
         String sql = "DELETE FROM (SELECT * FROM ROLLBACK_TAB1 WHERE ROLLBACK_TAB1.C1>0) V WHERE V.C2>1;";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
 
         RollbackPlan actual = rollbackPlan.generate();
         List<String> rollbackSql = new ArrayList<>();
@@ -118,7 +120,8 @@ public class OBOracleDeleteRollbackGeneratorTest {
         properties.setDefaultTimeZone("Asia/Shanghai");
         String sql =
                 "DELETE FROM (SELECT \"ROLLBACK_TAB1\".* FROM ROLLBACK_TAB1, ROLLBACK_TAB1 WHERE ROLLBACK_TAB1.C1=ROLLBACK_TAB1.C1) V WHERE V.C2=4;";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
 
         RollbackPlan actual = rollbackPlan.generate();
         RollbackPlan expect = new RollbackPlan(sql, DialectType.OB_ORACLE,
@@ -135,7 +138,8 @@ public class OBOracleDeleteRollbackGeneratorTest {
         properties.setQueryDataBatchSize(2);
         properties.setDefaultTimeZone("Asia/Shanghai");
         String sql = "DELETE FROM ROLLBACK_TAB1 WHERE C1=1 RETURNING C2;";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
 
         RollbackPlan actual = rollbackPlan.generate();
         List<String> rollbackSql = new ArrayList<>();
@@ -155,7 +159,8 @@ public class OBOracleDeleteRollbackGeneratorTest {
         properties.setQueryDataBatchSize(2);
         properties.setDefaultTimeZone("Asia/Shanghai");
         String sql = "SELECT * FROM ROLLBACK_TAB1;";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
     }
 
     @Test
@@ -165,7 +170,8 @@ public class OBOracleDeleteRollbackGeneratorTest {
         properties.setQueryDataBatchSize(2);
         properties.setDefaultTimeZone("Asia/Shanghai");
         String sql = "DELETE FROM ROLLBACK_UNSUPPORTED_TYPE;";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
 
         RollbackPlan actual = rollbackPlan.generate();
         RollbackPlan expect = new RollbackPlan(sql, DialectType.OB_ORACLE,
