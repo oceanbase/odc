@@ -40,6 +40,7 @@ import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.event.ServiceTaskStartedEvent;
@@ -125,7 +126,13 @@ public abstract class BaseRuntimeFlowableDelegate<T> extends BaseFlowableDelegat
             latch.countDown();
             throw new ServiceTaskError(e);
         }
+
         try {
+            // instance has been canceled, do not execute the task
+            if (isFlowInstanceCanceled()) {
+                log.info("flowInstanceId = {} has been canceled, ignore task execute", flowInstanceId);
+                return;
+            }
             preHandle(execution);
             returnObject = callable.call();
         } catch (Exception e) {
@@ -196,6 +203,15 @@ public abstract class BaseRuntimeFlowableDelegate<T> extends BaseFlowableDelegat
         this.targetTaskId = flowTaskInstance.getTargetTaskId();
         this.strategyConfig = flowTaskInstance.getStrategyConfig();
         flowTaskInstance.dealloc();
+    }
+
+    // check flow status before run
+    private boolean isFlowInstanceCanceled() {
+        Optional<FlowInstanceEntity> flowInstance = this.flowInstanceRepository.findById(flowInstanceId);
+        if (!flowInstance.isPresent()) {
+            return false;
+        }
+        return (flowInstance.get().getStatus() == FlowStatus.CANCELLED);
     }
 
     public void bindToFlowTaskInstance(@NonNull FlowTaskInstance taskInstance) {

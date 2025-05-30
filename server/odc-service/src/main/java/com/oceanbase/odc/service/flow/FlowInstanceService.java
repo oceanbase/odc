@@ -44,6 +44,7 @@ import javax.validation.constraints.Size;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.engine.HistoryService;
+import org.flowable.engine.RuntimeService;
 import org.flowable.engine.history.HistoricProcessInstance;
 import org.flowable.engine.history.HistoricProcessInstanceQuery;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -222,6 +223,8 @@ public class FlowInstanceService {
     private ConnectionService connectionService;
     @Autowired
     private TaskService taskService;
+    @Autowired
+    private RuntimeService runtimeService;
     @Autowired
     private FlowFactory flowFactory;
     @Autowired
@@ -744,7 +747,8 @@ public class FlowInstanceService {
             if (instance instanceof FlowTaskInstance) {
                 taskTypeHolder.setValue(((FlowTaskInstance) instance).getTaskType());
             }
-            return instance.getStatus() == FlowNodeStatus.EXECUTING
+            return instance.getStatus() == FlowNodeStatus.CREATED
+                    || instance.getStatus() == FlowNodeStatus.EXECUTING
                     || instance.getStatus() == FlowNodeStatus.PENDING;
         });
         Verify.notNull(taskTypeHolder.getValue(), "TaskType");
@@ -754,14 +758,13 @@ public class FlowInstanceService {
                     return (FlowApprovalInstance) instance;
                 }).collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(approvalInstances)) {
-            Verify.singleton(approvalInstances, "FlowApprovalInstance");
-            FlowApprovalInstance instance = approvalInstances.get(0);
-            Verify.verify(instance.isPresentOnThisMachine(), "Approval instance is not on this machine");
+            for (FlowApprovalInstance instance : approvalInstances) {
+                tryCancelFlowApprovalInstance(flowInstance.getId(), instance, skipAuth);
+            }
             // Cancel external process instance when related ODC flow instance is cancelled
             cancelAllRelatedExternalInstance(flowInstance);
-            instance.disApprove(null, !skipAuth);
-            flowInstanceRepository.updateStatusById(instance.getFlowInstanceId(), FlowStatus.CANCELLED);
-            userTaskInstanceRepository.updateStatusById(instance.getId(), FlowNodeStatus.CANCELLED);
+            deleteFlowProcessInstance(flowInstance.getProcessInstanceId(), flowInstance.getId());
+            flowInstanceRepository.updateStatusById(flowInstance.getId(), FlowStatus.CANCELLED);
             return FlowInstanceDetailResp.withIdAndType(id, taskTypeHolder.getValue());
         }
 
@@ -773,6 +776,19 @@ public class FlowInstanceService {
         if (CollectionUtils.isNotEmpty(taskInstances)) {
             Verify.singleton(taskInstances, "FlowTaskInstance");
             FlowTaskInstance taskInstance = taskInstances.get(0);
+            // waiting to execute, cancel flow directly
+            if (taskInstance.getStatus() == FlowNodeStatus.CREATED || null == taskInstance.getTargetTaskId()) {
+                if (null == taskInstance.getTargetTaskId()) {
+                    log.info("flowInstance = {} canceled, task has not dispatched", taskInstance.getId());
+                } else {
+                    log.info("flowInstance = {} canceled and not dispatched", taskInstance.getId());
+                }
+                deleteFlowProcessInstance(flowInstance.getProcessInstanceId(), flowInstance.getId());
+                serviceTaskRepository.updateStatusById(taskInstance.getId(), FlowNodeStatus.CANCELLED);
+                flowInstanceRepository.updateStatusById(taskInstance.getFlowInstanceId(), FlowStatus.CANCELLED);
+                return FlowInstanceDetailResp.withIdAndType(id, taskInstance.getTaskType());
+            }
+
             if (taskInstance.getStatus() == FlowNodeStatus.PENDING) {
                 taskInstance.abort();
                 serviceTaskRepository.updateStatusById(taskInstance.getId(), FlowNodeStatus.CANCELLED);
@@ -780,11 +796,6 @@ public class FlowInstanceService {
                 return FlowInstanceDetailResp.withIdAndType(id, taskInstance.getTaskType());
             }
             Long taskId = taskInstance.getTargetTaskId();
-            if (taskId == null) {
-                throw new UnsupportedException(ErrorCodes.FlowTaskNotSupportCancel,
-                        new Object[] {taskTypeHolder.getValue().getLocalizedMessage()},
-                        "The currently executing task does not support cancellation.");
-            }
             TaskEntity taskEntity = taskService.detail(taskId);
             if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
                 /**
@@ -826,6 +837,19 @@ public class FlowInstanceService {
                     "The current task has been completed and cannot be terminated");
         }
         return FlowInstanceDetailResp.withIdAndType(id, taskTypeHolder.getValue());
+    }
+
+    private void tryCancelFlowApprovalInstance(Long flowInstanceID, FlowApprovalInstance instance, boolean skipAuth) {
+        try {
+            if (instance.isPresentOnThisMachine()) {
+                instance.disApprove(null, !skipAuth);
+                userTaskInstanceRepository.updateStatusById(instance.getId(), FlowNodeStatus.CANCELLED);
+            } else {
+                log.info("Approval instance {} it not on this machine", instance.getId());
+            }
+        } catch (Throwable e) {
+            log.warn("cancel flow instance failed, flowInstanceId={}, nodeID={}", flowInstanceID, instance.getId());
+        }
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -1451,6 +1475,9 @@ public class FlowInstanceService {
         HistoricProcessInstanceQuery historyQuery = historyService.createHistoricProcessInstanceQuery()
                 .processInstanceIds(Collections.singleton(flowInstance.getProcessInstanceId()))
                 .includeProcessVariables();
+        if (CollectionUtils.isEmpty(historyQuery.list())) {
+            return;
+        }
         HistoricProcessInstance processInstance = historyQuery.list().get(0);
         TemplateVariables variables = FlowTaskUtil.getTemplateVariables(processInstance.getProcessVariables());
         externalApprovalInstance.forEach(inst -> {
@@ -1609,6 +1636,14 @@ public class FlowInstanceService {
                     .add(new FlowInstanceState(TaskType.PARTITION_PLAN, flowInstance.getStatus()));
         });
         return partitionPlanFlowInstanceStates;
+    }
+
+    private void deleteFlowProcessInstance(String processInstanceID, Long flowInstanceId) {
+        if (null == processInstanceID) {
+            log.info("processInstanceID is null for instance id {}, return", flowInstanceId);
+            return;
+        }
+        runtimeService.deleteProcessInstance(String.valueOf(processInstanceID), "flow is canceled");
     }
 
     /**
