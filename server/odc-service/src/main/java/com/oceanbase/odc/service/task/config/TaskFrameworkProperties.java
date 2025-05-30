@@ -106,4 +106,8 @@ public interface TaskFrameworkProperties {
 
     int getSupervisorReleaseBackSeconds();
 
+    /**
+     * only query task create time in recent days, -1 means query all created jobs
+     */
+    int getQueryJobInRecentDays();
 }
