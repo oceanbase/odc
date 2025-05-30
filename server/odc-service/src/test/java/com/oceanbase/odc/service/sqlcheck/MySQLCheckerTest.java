@@ -1261,6 +1261,72 @@ public class MySQLCheckerTest {
     }
 
     @Test
+    public void check_offlineDdl_Ob4xChangeColumnDataType_createTable_Null() {
+        /* create table sql ddl */
+        String createTableSql = "";
+        /* alter table sql list[String] */
+        String[] sqls = {
+            // alarm section
+            "alter table ddltest change column c1 c1s bigint(10) default 123",
+            "alter table ddltest change column c1 c1s int(10) default 234",
+            "alter table ddltest change column c1 c1s varchar(20) default '123'",
+            "alter table ddltest change column c11 c11s int GENERATED ALWAYS AS (c1 + 2)",
+            "alter table ddltest change column c11 c11s int",
+            "alter table ddltest change column c2 c2s bigint comment 'this is com'",
+            "alter table ddltest change column c3 c3s varchar(10) charset gbk",
+            "alter table ddltest change column c3 c3s varchar(10) collate gbk_bin",
+            "alter table ddltest change column c3 c3s varchar(64) check (c3 is not null)",
+            "alter table ddltest change column c5 c5s decimal(5, 1) default 'this is com'",
+            "alter table ddltest change column c5 c5s decimal(10, 2) default 'this is com'",
+            "alter table ddltest change column c333 c333s varchar(10) charset utf8mb4 collate utf8mb4_bin",
+            "alter table ddltest change column c333 c333s varchar(10) collate utf8mb4_bin",
+            "alter table ddltest change column c333 c333s varchar(20)",
+            "alter table ddltest change column c33 c33s varchar(10) charset utf8mb4",
+            };
+        JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
+        Mockito.when(jdbcTemplate.queryForObject(Mockito.anyString(), Mockito.any(RowMapper.class)))
+            .thenReturn(createTableSql);
+        DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_MYSQL,
+            null, Collections.singletonList(new MySQLOfflineDdlExists(defaulDbVersionSupplier, jdbcTemplate)));
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
+        SqlCheckRuleType type = SqlCheckRuleType.OFFLINE_SCHEMA_CHANGE_EXISTS;
+
+        CheckViolation c1 =
+            new CheckViolation(sqls[0], 1, 20, 20, 62, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+        CheckViolation c2 =
+            new CheckViolation(sqls[1], 1, 20, 20, 59, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+        CheckViolation c3 =
+            new CheckViolation(sqls[2], 1, 20, 20, 65, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+        CheckViolation c4 =
+            new CheckViolation(sqls[3], 1, 20, 20, 74, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+        CheckViolation c5 =
+            new CheckViolation(sqls[4], 1, 20, 20, 45, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+        CheckViolation c6 =
+            new CheckViolation(sqls[5], 1, 20, 20, 68, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+        CheckViolation c7 =
+            new CheckViolation(sqls[6], 1, 20, 20, 63, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+        CheckViolation c8 =
+            new CheckViolation(sqls[7], 1, 20, 20, 67, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+        CheckViolation c9 =
+            new CheckViolation(sqls[8], 1, 20, 20, 74, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+        CheckViolation c10 =
+            new CheckViolation(sqls[9], 1, 20, 20, 75, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+        CheckViolation c11 =
+            new CheckViolation(sqls[10], 1, 20, 20, 76, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+        CheckViolation c12 =
+            new CheckViolation(sqls[11], 1, 20, 20, 91, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+        CheckViolation c13 =
+            new CheckViolation(sqls[12], 1, 20, 20, 75, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+        CheckViolation c14 =
+            new CheckViolation(sqls[13], 1, 20, 20, 55, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+        CheckViolation c15 =
+            new CheckViolation(sqls[14], 1, 20, 20, 69, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+
+        List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void check_restrictIndexType_violationGenerated() {
         String[] sqls = new String[] {
                 "create table abcd (\n"
