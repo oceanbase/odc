@@ -184,7 +184,6 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
         });
     }
 
-
     // check if data type change is online ddl
     // 1. modify （add/remove/change）default value
     // 2. change null flag null / not null
@@ -200,11 +199,11 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
             }
             // check foreign key constraint define, reference and be referenced
             if (!objectEquals(origin.getForeignReference(), target.getForeignReference())
-                || !objectEquals(origin.getGenerateOption(), target.getGenerateOption())) {
+                    || !objectEquals(origin.getGenerateOption(), target.getGenerateOption())) {
                 return false;
             }
             return isDataTypePrecisionExtend(originDataType, targetDataType, tableOptions)
-                   || isDataTypeCompatible(originDataType, targetDataType);
+                    || isDataTypeCompatible(originDataType, targetDataType);
         } catch (Exception e) {
             return false;
         }
