@@ -1292,35 +1292,35 @@ public class MySQLCheckerTest {
         SqlCheckRuleType type = SqlCheckRuleType.OFFLINE_SCHEMA_CHANGE_EXISTS;
 
         CheckViolation c1 =
-            new CheckViolation(sqls[0], 1, 20, 20, 62, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+                new CheckViolation(sqls[0], 1, 20, 20, 62, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
         CheckViolation c2 =
-            new CheckViolation(sqls[1], 1, 20, 20, 59, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+                new CheckViolation(sqls[1], 1, 20, 20, 59, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
         CheckViolation c3 =
-            new CheckViolation(sqls[2], 1, 20, 20, 65, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+                new CheckViolation(sqls[2], 1, 20, 20, 65, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
         CheckViolation c4 =
-            new CheckViolation(sqls[3], 1, 20, 20, 74, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+                new CheckViolation(sqls[3], 1, 20, 20, 74, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
         CheckViolation c5 =
-            new CheckViolation(sqls[4], 1, 20, 20, 45, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+                new CheckViolation(sqls[4], 1, 20, 20, 45, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
         CheckViolation c6 =
-            new CheckViolation(sqls[5], 1, 20, 20, 68, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+                new CheckViolation(sqls[5], 1, 20, 20, 68, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
         CheckViolation c7 =
-            new CheckViolation(sqls[6], 1, 20, 20, 63, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+                new CheckViolation(sqls[6], 1, 20, 20, 63, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
         CheckViolation c8 =
-            new CheckViolation(sqls[7], 1, 20, 20, 67, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+                new CheckViolation(sqls[7], 1, 20, 20, 67, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
         CheckViolation c9 =
-            new CheckViolation(sqls[8], 1, 20, 20, 74, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+                new CheckViolation(sqls[8], 1, 20, 20, 74, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
         CheckViolation c10 =
-            new CheckViolation(sqls[9], 1, 20, 20, 75, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+                new CheckViolation(sqls[9], 1, 20, 20, 75, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
         CheckViolation c11 =
-            new CheckViolation(sqls[10], 1, 20, 20, 76, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+                new CheckViolation(sqls[10], 1, 20, 20, 76, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
         CheckViolation c12 =
-            new CheckViolation(sqls[11], 1, 20, 20, 91, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+                new CheckViolation(sqls[11], 1, 20, 20, 91, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
         CheckViolation c13 =
-            new CheckViolation(sqls[12], 1, 20, 20, 75, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+                new CheckViolation(sqls[12], 1, 20, 20, 75, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
         CheckViolation c14 =
-            new CheckViolation(sqls[13], 1, 20, 20, 55, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+                new CheckViolation(sqls[13], 1, 20, 20, 55, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
         CheckViolation c15 =
-            new CheckViolation(sqls[14], 1, 20, 20, 69, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
+                new CheckViolation(sqls[14], 1, 20, 20, 69, type, 0, new Object[] {"MODIFY COLUMN DATA TYPE"});
 
         List<CheckViolation> expect = Arrays.asList(c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15);
         Assert.assertEquals(expect, actual);

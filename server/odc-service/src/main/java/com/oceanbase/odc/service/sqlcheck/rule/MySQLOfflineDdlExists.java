@@ -172,7 +172,7 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
             if (isOb4x) {
                 if (Objects.isNull(target)) {
                     return SqlCheckUtil.buildViolation(statement.getText(), action, getType(),
-                        new Object[] {"MODIFY COLUMN DATA TYPE"});
+                            new Object[] {"MODIFY COLUMN DATA TYPE"});
                 }
                 if (isOnLineDDL(origin, changed, target.getTableOptions())) {
                     return null;
