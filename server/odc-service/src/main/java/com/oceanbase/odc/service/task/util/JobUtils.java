@@ -134,9 +134,10 @@ public class JobUtils {
         return runMode == TaskRunMode.PROCESS;
     }
 
-
-    public static boolean isK8sRunModeOfEnv() {
-        return TaskRunMode.K8S.name().equals(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_TASK_RUN_MODE));
+    public static boolean isUploadLogNeeded() {
+        return TaskRunMode.K8S.name().equals(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_TASK_RUN_MODE))
+                || StringUtils.equalsIgnoreCase("true",
+                        SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_UPLOAD_LOG));
     }
 
     public static boolean isProcessRunModeOfEnv() {
