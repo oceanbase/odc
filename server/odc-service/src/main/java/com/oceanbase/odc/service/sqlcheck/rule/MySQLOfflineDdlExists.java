@@ -170,7 +170,11 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
             ColumnDefinition origin = extractColumnDefFrom(target, changed.getColumnReference());
             // only ob 4.x check online feature
             if (isOb4x) {
-                if (isOnLineDDL(origin, changed, target.getTableOptions())) {
+                try {
+                    if (isOnLineDDL(origin, changed, target.getTableOptions())) {
+                        return null;
+                    }
+                } catch (Exception e) {
                     return null;
                 }
             } else if (origin == null || Objects.equals(origin.getDataType(), changed.getDataType())) {
@@ -187,20 +191,24 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
     // 2. change null flag null / not null
     // 3. increase precision of char/varchar/text/number
     protected boolean isOnLineDDL(ColumnDefinition origin, ColumnDefinition target, TableOptions tableOptions) {
-        // actually origin should not be bull
-        DataType originDataType = origin.getDataType();
-        DataType targetDataType = target.getDataType();
-        // check attribute
-        if (isAttributeChanged(origin, target)) {
-            return false;
+        try {
+            // actually origin should not be bull
+            DataType originDataType = origin.getDataType();
+            DataType targetDataType = target.getDataType();
+            // check attribute
+            if (isAttributeChanged(origin, target)) {
+                return false;
+            }
+            // check foreign key constraint define, reference and be referenced
+            if (!objectEquals(origin.getForeignReference(), target.getForeignReference())
+                    || !objectEquals(origin.getGenerateOption(), target.getGenerateOption())) {
+                return false;
+            }
+            return isDataTypePrecisionExtend(originDataType, targetDataType, tableOptions)
+                    || isDataTypeCompatible(originDataType, targetDataType);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-        // check foreign key constraint define, reference and be referenced
-        if (!objectEquals(origin.getForeignReference(), target.getForeignReference())
-                || !objectEquals(origin.getGenerateOption(), target.getGenerateOption())) {
-            return false;
-        }
-        return isDataTypePrecisionExtend(originDataType, targetDataType, tableOptions)
-                || isDataTypeCompatible(originDataType, targetDataType);
     }
 
     protected boolean isAttributeChanged(ColumnDefinition origin, ColumnDefinition target) {

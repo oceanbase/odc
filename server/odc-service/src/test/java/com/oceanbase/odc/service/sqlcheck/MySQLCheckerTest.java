@@ -1261,6 +1261,83 @@ public class MySQLCheckerTest {
     }
 
     @Test
+    public void check_offlineDdl_Ob4xChangeColumnDataType_violationNotGenerated() {
+        /* create table sql ddl */
+        String createTableSql = "create table ddltest(id int not null primary key,"
+                                + "c1 int default 123,"
+                                + "c11 int GENERATED ALWAYS AS (c1 + 1),"
+                                + "c2 bigint comment 'this is com' check (c2 > 10),"
+                                + "c3 varchar(10) default null,"
+                                + "c33 varchar(10) collate utf8mb4_bin default null,"
+                                + "c333 varchar(10) charset utf8mb4 default null,"
+                                + "c4 text(20),"
+                                + "c5 dec(10, 1) comment 'this is com',"
+                                + " foreign key (c2) references test2(id),"
+                                + " check(c1 > c2)"
+                                + ") DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin";
+        /* alter table sql list[String] */
+        String[] sqls = {
+            // alarm section
+            "alter table ddltest change column c1 c1s bigint(10) default 123",
+            "alter table ddltest change column c1 c1s int(10) default 234",
+            "alter table ddltest change column c1 c1s varchar(20) default '123'",
+            "alter table ddltest change column c11 c11s int GENERATED ALWAYS AS (c1 + 2)",
+            "alter table ddltest change column c11 c11s int",
+            "alter table ddltest change column c2 c2s bigint comment 'this is com'",
+            "alter table ddltest change column c3 c3s varchar(10) charset gbk",
+            "alter table ddltest change column c3 c3s varchar(10) collate gbk_bin",
+            "alter table ddltest change column c3 c3s varchar(64) check (c3 is not null)",
+            "alter table ddltest change column c5 c5s decimal(5, 1) default 'this is com'",
+            "alter table ddltest change column c5 c5s decimal(10, 2) default 'this is com'",
+            "alter table ddltest change column c333 c333s varchar(10) charset utf8mb4 collate utf8mb4_bin",
+            "alter table ddltest change column c333 c333s varchar(10) collate utf8mb4_bin",
+            "alter table ddltest change column c333 c333s varchar(20)",
+            "alter table ddltest change column c33 c33s varchar(10) charset utf8mb4",
+        };
+        JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
+        Mockito.when(jdbcTemplate.queryForObject(Mockito.anyString(), Mockito.any(RowMapper.class)))
+            .thenReturn(createTableSql);
+        DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_MYSQL,
+            null, Collections.singletonList(new MySQLOfflineDdlExists(defaulDbVersionSupplier, jdbcTemplate)));
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
+        List<CheckViolation> expect = Collections.emptyList();
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void check_offlineDdl_Ob4xChangeColumnDataType_createTable_Null() {
+        /* create table sql ddl */
+        String createTableSql = "";
+        /* alter table sql list[String] */
+        String[] sqls = {
+            // alarm section
+            "alter table ddltest change column c1 c1s bigint(10) default 123",
+            "alter table ddltest change column c1 c1s int(10) default 234",
+            "alter table ddltest change column c1 c1s varchar(20) default '123'",
+            "alter table ddltest change column c11 c11s int GENERATED ALWAYS AS (c1 + 2)",
+            "alter table ddltest change column c11 c11s int",
+            "alter table ddltest change column c2 c2s bigint comment 'this is com'",
+            "alter table ddltest change column c3 c3s varchar(10) charset gbk",
+            "alter table ddltest change column c3 c3s varchar(10) collate gbk_bin",
+            "alter table ddltest change column c3 c3s varchar(64) check (c3 is not null)",
+            "alter table ddltest change column c5 c5s decimal(5, 1) default 'this is com'",
+            "alter table ddltest change column c5 c5s decimal(10, 2) default 'this is com'",
+            "alter table ddltest change column c333 c333s varchar(10) charset utf8mb4 collate utf8mb4_bin",
+            "alter table ddltest change column c333 c333s varchar(10) collate utf8mb4_bin",
+            "alter table ddltest change column c333 c333s varchar(20)",
+            "alter table ddltest change column c33 c33s varchar(10) charset utf8mb4",
+            };
+        JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
+        Mockito.when(jdbcTemplate.queryForObject(Mockito.anyString(), Mockito.any(RowMapper.class)))
+            .thenReturn(createTableSql);
+        DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_MYSQL,
+            null, Collections.singletonList(new MySQLOfflineDdlExists(defaulDbVersionSupplier, jdbcTemplate)));
+        List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
+        List<CheckViolation> expect = Collections.emptyList();
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void check_restrictIndexType_violationGenerated() {
         String[] sqls = new String[] {
                 "create table abcd (\n"
