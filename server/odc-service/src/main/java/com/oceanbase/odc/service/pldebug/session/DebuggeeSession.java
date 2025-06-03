@@ -65,9 +65,10 @@ public class DebuggeeSession extends AbstractDebugSession {
         List<String> initSqls = Arrays.asList(
                 // Set the query timeout period, unit: microseconds, default value: 600*1000*1000us
                 String.format("set session ob_query_timeout = %s;",
-                        plDebugProperties.getObQueryTimeout() * 1000 * 1000),
+                        plDebugProperties.getObQueryTimeoutSeconds() * 1000 * 1000),
                 // Set the timeout of the debug worker thread, unit: seconds, default value:120s
-                String.format("select dbms_debug.set_timeout(%s) from dual;", plDebugProperties.getDebugTimeout()));
+                String.format("select dbms_debug.set_timeout(%s) from dual;",
+                        plDebugProperties.getDebugTimeoutSeconds()));
         acquireNewConnection(connectionSession, () -> acquireDataSource(connectionSession, initSqls));
         // OceanBaseConnection can accept null as executor
         // 0 for timeout means wait infinitely

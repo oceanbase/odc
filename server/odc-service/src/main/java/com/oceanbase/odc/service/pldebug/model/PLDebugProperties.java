@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.pldebug.model;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Configuration;
 
@@ -30,10 +30,10 @@ import lombok.Data;
 @Data
 @RefreshScope
 @Configuration
+@ConfigurationProperties(prefix = "odc.pldebug")
 public class PLDebugProperties {
-    @Value("${odc.pldebug.ob.query.timeout-seconds:600}")
-    private int obQueryTimeout;
-    @Value("${odc.pldebug.debug.timeout-seconds:120}")
-    private int debugTimeout;
+
+    private int obQueryTimeoutSeconds;
+    private int debugTimeoutSeconds;
 
 }

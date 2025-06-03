@@ -883,9 +883,9 @@ ON DUPLICATE KEY UPDATE `id` = `id`;
 --
 -- v4.3.4
 --
-INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES('odc.pldebug.ob.query.timeout-seconds',
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES('odc.pldebug.ob-query-timeout-seconds',
 '600','The query timeout of the two connections, debuggee and debugger. The unit is seconds. The default value is 600 seconds')
   ON DUPLICATE KEY UPDATE `id` = `id`;
-INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES('odc.pldebug.debug.timeout-seconds',
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES('odc.pldebug.debug-timeout-seconds',
 '120','The debug timeout of the debuggee. The unit is seconds. The default value is 120 seconds')
   ON DUPLICATE KEY UPDATE `id` = `id`;
