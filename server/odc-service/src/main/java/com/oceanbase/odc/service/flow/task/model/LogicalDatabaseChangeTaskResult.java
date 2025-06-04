@@ -16,16 +16,25 @@
 
 package com.oceanbase.odc.service.flow.task.model;
 
-import com.oceanbase.odc.core.flow.model.FlowTaskResult;
+import java.util.Map;
+
+import com.oceanbase.odc.core.flow.model.AbstractFlowTaskResult;
+import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalDatabaseResp;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 
 /**
  * @author Yizhuo
  * @date 2025/06/04 14:12:07
  */
-public class LogicalDatabaseChangeResult implements FlowTaskResult {
+public class LogicalDatabaseChangeTaskResult extends AbstractFlowTaskResult {
 
-    LogicalDatabaseChangeParameters parameters;
-    LogicalDatabaseChangeResult() {
-        this.parameters = new LogicalDatabaseChangeParameters();
-    }
+    private static final long                          serialVersionUID = 1L;
+    private              Long                          creatorId;
+    private              Long                          scheduleTaskId;
+    private              String                        sqlContent;
+    private String delimiter;
+    private              Long                          timeoutMillis;
+    private              DetailLogicalDatabaseResp     logicalDatabaseResp;
+    private              Map<String, ConnectionConfig> schemaName2ConnectionConfig;
+
 }
