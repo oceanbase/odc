@@ -9,17 +9,21 @@
 # - BUILD_PROFILE, default <empty>, set to maven -P if not empty, e.g. apsara
 
 rpm_release=${1:-""}
+rpm_type=${2:-"x86"}
+maven_extra_args=("${@:3}")
+
 if [ -z "$rpm_release" ]; then
     rpm_release="$(date +%Y%m%d)"
     echo "rpm release number not set in command line, use current date as default, rpm_release=${rpm_release}"
 fi
 
 # read environment variables
-sync_submodule_flag=${SYNC_SUBMODULE:-"1"}
+sync_submodule_flag=${SYNC_SUBMODULE:-"0"}
 build_frontend_flag=${BUILD_FRONTEND:-"1"}
 fetch_from_cdn_flag=${FETCH_FROM_CDN:-"0"}
 fetch_from_oss_flag=${FETCH_FROM_OSS:-"0"}
 build_profile=${BUILD_PROFILE:-""}
+build_libs_flag=${BUILD_LIBS:-"1"}
 
 if ! source $(dirname "$0")/functions.sh; then
     echo "source functions.sh failed"
@@ -38,13 +42,27 @@ function build_rpm() {
 
     log_info "build rpm package starting..."
 
+    if [ ! -z "$build_profile" ]; then
+            maven_extra_args+=("-P" ${build_profile[@]})
+            log_info "maven_extra_args=${maven_extra_args[@]}"
+        fi
+
     log_info "change version start"
-    ${ODC_SCRIPT_DIR}/change_version.sh set-release "${rpm_release}"
+    ${ODC_SCRIPT_DIR}/change_version.sh set-release "${rpm_release}" "${maven_extra_args[@]}"
     log_info "change version done"
 
     log_info "install dependencies start"
     install_dependencies
     log_info "install dependencies done"
+
+    if [ "${build_libs_flag}" == "1" ]; then
+        if ! maven_install_libs "${maven_extra_args[@]}"; then
+            log_error "maven build libs failed"
+            return 2
+        fi
+    else
+        log_info "skip maven build libs"
+    fi
 
     if [ "${sync_submodule_flag}" == "1" ]; then
         log_info "update submodule start"
@@ -74,11 +92,6 @@ function build_rpm() {
     fi
 
     log_info "maven build jar start"
-    local maven_extra_args=()
-    if [ ! -z "$build_profile" ]; then
-        maven_extra_args=("-P" ${build_profile[@]})
-        log_info "maven_extra_args=${maven_extra_args[@]}"
-    fi
 
     if ! maven_build_jar ${maven_extra_args[@]}; then
         log_error "maven build jar failed"
@@ -101,20 +114,21 @@ function build_rpm() {
     fi
 
     log_info "maven build rpm start"
-    if ! maven_build_rpm "${rpm_release}"; then
+    if ! maven_build_rpm "${rpm_release}" "${maven_extra_args[@]}"; then
         log_error "maven build rpm failed"
         return 6
     fi
     log_info "maven build rpm done"
 
     log_info "copy rpm resources start"
-    if ! copy_rpm_resources; then
+    if ! copy_rpm_resources "${rpm_type}"; then
         log_error "copy rpm resources failed"
         return 7
     fi
     log_info "copy rpm resources done"
 
     log_info "build rpm package completed."
+
 }
 
 build_rpm
