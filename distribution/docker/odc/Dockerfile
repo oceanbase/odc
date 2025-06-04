@@ -6,8 +6,8 @@
 # 2022-05-10：base image change to anolisos8 for avoid system vulnerabilities
 # 2023-11-09: one Dockerfile for different cpu architectures, amd64 and arm64
 ARG ARCH=amd64
-FROM docker.io/openanolis/anolisos:8.6-x86_64 AS amd64-base
-FROM docker.io/openanolis/anolisos:8.6-aarch64 AS arm64-base
+FROM reg.docker.alibaba-inc.com/openanolis/anolisos:8.4-x86_64 AS amd64-base
+FROM reg.docker.alibaba-inc.com/openanolis/anolisos:8.4-aarch64 AS arm64-base
 FROM ${ARCH}-base AS base
 
 # set labels

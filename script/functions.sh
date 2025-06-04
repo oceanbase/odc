@@ -17,12 +17,13 @@ export ODC_SCRIPT_DIR=$(dirname ${ODC_FUNCTION_SCRIPT_SOURCE})
 export ODC_DIR=$(dirname ${ODC_SCRIPT_DIR})
 
 # oss related environment variables
-export ODC_OSS_ENDPOINT=${oss_endpoint:-}
-export ODC_OSS_BUCKET_NAME=${oss_bucket_name:-}
-export ODC_OSS_ACCESS_KEY_ID=${oss_key_id:-}
-export ODC_OSS_ACCESS_KEY_SECRET=${oss_key_secret:-}
+export ODC_OSS_ENDPOINT=${ACI_VAR_oss_endpoint:-}
+export ODC_OSS_BUCKET_NAME=${ACI_VAR_oss_bucket_name:-}
+export ODC_OSS_ACCESS_KEY_ID=${ACI_VAR_oss_key_id:-}
+export ODC_OSS_ACCESS_KEY_SECRET=${ACI_VAR_oss_key_secret:-}
 export ODC_OSS_CONFIG_FILE_NAME=$(echo ~/.odcossutilconfig)
 export ODC_CDN_BASE_URL=${odc_cdn_base_url:-}
+
 
 function log_info() {
     echo "$(date +"%Y-%m-%dT%H:%M:%S.%Z") [INFO]" "$*"
@@ -211,6 +212,11 @@ function build_sqlconsole() {
         return 1
     fi
 
+    if ! run_upgrade_nodejs; then
+        func_echo "upgrade nodejs version failed"
+        return 2
+    fi
+
     if ! npm install pnpm@8 -g; then
         func_echo "npm install pnpm -g failed"
         return 2
@@ -246,6 +252,61 @@ function build_sqlconsole() {
     cp -vfR ${sqlconsole_path}/dist/renderer/* ${backend_static_path}
     return $?
 }
+
+function run_upgrade_nodejs() {
+    export NVM_DIR="$HOME/.nvm"
+    # 检查版本
+    if check_node_version; then
+        func_echo "node version is ok: $(node -v)"
+        return 0
+    fi
+
+    func_echo "Upgrading Node.js to version 16.14 or higher"
+
+    # 安装/检查 nvm
+    if [[ ! -d "${NVM_DIR}/.git" ]]; then
+        if ! install_nvm; then
+            return 1
+        fi
+    fi
+
+    # 加载 nvm 环境
+    func_echo "load nvm environment"
+    source "$NVM_DIR/nvm.sh"
+    func_echo "Installing Node.js using nvm..."
+    nvm install 16 || func_echo "nvm install failed"
+    nvm use 16
+}
+
+function check_node_version() {
+    local node_version=$(node -v 2>/dev/null | sed 's/^v//')
+        [[ -z "$node_version" ]] && return 1  # 未安装 Node.js
+    # 使用正则表达式提取主版本号
+    if [[ $node_version =~ ^([0-9]+) ]]; then
+        local major=${BASH_REMATCH[1]}
+        (( major > 16 )) && return 0
+    fi
+    return 1  # 需要升级
+}
+
+function install_nvm() {
+    declare -a mirrors=(
+            "https://gitee.com/mirrors/nvm.git"
+            "https://github.com/nvm-sh/nvm.git"
+        )
+
+    for mirror in "${mirrors[@]}"; do
+            func_echo "Cloning NVM repository using mirror: ${mirror}"
+            if git clone --depth 1 "$mirror" "$NVM_DIR" 2>/dev/null; then
+                return 0
+            fi
+        done
+
+    func_echo "Cloning NVM repository using mirrors failed"
+    return 1
+}
+
+
 
 #########################################################
 # use cdn integration for develop stage
@@ -388,7 +449,7 @@ function copy_obclient() {
 function maven_build_rpm() {
     local rpm_release=$1
     shift
-    local mvn_extra_args=$@
+    local maven_extra_args=$@
     if [ -z "$rpm_release" ]; then
         echo "Usage: maven_build_rpm <rpm_release>"
         return 1
@@ -397,7 +458,7 @@ function maven_build_rpm() {
     pushd "${ODC_DIR}" || return 2
 
     func_echo "maven build rpm package starting..."
-    if ! mvn ${mvn_extra_args[@]} --file server/odc-server/pom.xml rpm:rpm \
+    if ! mvn ${maven_extra_args[@]} --file server/odc-server/pom.xml rpm:rpm \
         -Drpm.prefix=${RPM_DEFAULT_INSTALL_PREFIX} \
         -Drpm.release=${rpm_release}; then
         func_echo "maven build rpm failed"
@@ -411,11 +472,23 @@ function maven_build_rpm() {
 }
 
 function copy_rpm_resources() {
-    echo "copy rpm package(s) to distribution/docker/resources"
-    rm -vf ${ODC_DIR}/distribution/docker/resources/odc-*.rpm
-    mkdir -p ${ODC_DIR}/distribution/docker/resources/
-    mv --verbose ${ODC_DIR}/server/odc-server/target/rpm/odc-server/RPMS/*/odc-*.rpm ${ODC_DIR}/distribution/docker/resources/
-    func_echo "odc server rpm package(s) copied to $(pwd)"
+    local rpm_type=$1
+
+    if [[ -z "${rpm_type}" ]]; then
+        # 参数为空逻辑
+        echo "copy rpm package(s) to distribution/docker/resources"
+        rm -vf ${ODC_DIR}/distribution/docker/resources/odc-*.rpm
+        mkdir -p ${ODC_DIR}/distribution/docker/resources/
+        mv --verbose ${ODC_DIR}/server/odc-server/target/rpm/odc-server/RPMS/*/odc-*.rpm ${ODC_DIR}/distribution/docker/resources/
+        func_echo "odc server rpm package(s) copied to $(pwd)"
+    else
+        # 参数非空逻辑
+        echo "copy rpm package(s) to distribution/docker/resources/${rpm_type}"
+        rm --force --recursive --verbose ${ODC_DIR}/distribution/docker/resources/${rpm_type}/odc-*.rpm
+        mkdir -p ${ODC_DIR}/distribution/docker/resources/${rpm_type}
+        mv --verbose ${ODC_DIR}/server/odc-server/target/rpm/odc-server/RPMS/*/odc-*.rpm ${ODC_DIR}/distribution/docker/resources/${rpm_type}
+    fi
+
     return $?
 }
 
