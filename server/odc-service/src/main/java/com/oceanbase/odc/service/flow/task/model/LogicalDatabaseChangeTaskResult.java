@@ -18,6 +18,10 @@ package com.oceanbase.odc.service.flow.task.model;
 
 import com.oceanbase.odc.core.flow.model.FlowTaskResult;
 
+/**
+ * @author Yizhuo
+ * @date 2025/06/04 14:12:07
+ */
 public class LogicalDatabaseChangeResult implements FlowTaskResult {
 
     LogicalDatabaseChangeParameters parameters;
