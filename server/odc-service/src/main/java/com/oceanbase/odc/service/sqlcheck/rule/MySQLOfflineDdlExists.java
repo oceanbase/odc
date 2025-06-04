@@ -170,7 +170,8 @@ public class MySQLOfflineDdlExists implements SqlCheckRule {
             ColumnDefinition origin = extractColumnDefFrom(target, changed.getColumnReference());
             // only ob 4.x check online feature
             if (isOb4x) {
-                if (Objects.nonNull(target) && isOnLineDDL(origin, changed, target.getTableOptions())) {
+                boolean isAllNonNull = (null != target) && (null != origin);
+                if (isAllNonNull && isOnLineDDL(origin, changed, target.getTableOptions())) {
                     return null;
                 }
             } else if (origin == null || Objects.equals(origin.getDataType(), changed.getDataType())) {
