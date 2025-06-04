@@ -100,6 +100,10 @@ public enum TaskType implements Translatable {
      */
     APPLY_TABLE_PERMISSION,
     /**
+     * Logical database change
+     */
+    LOGICAL_DATABASE_CHANGE,
+    /**
      * Structure comparison
      */
     STRUCTURE_COMPARISON;
@@ -116,7 +120,7 @@ public enum TaskType implements Translatable {
 
     public boolean needsPreCheck() {
         return this == ASYNC || this == ONLINE_SCHEMA_CHANGE || this == ALTER_SCHEDULE || this == EXPORT_RESULT_SET
-                || this == MULTIPLE_ASYNC;
+                || this == MULTIPLE_ASYNC || this == LOGICAL_DATABASE_CHANGE;
     }
 
     public boolean needForExecutionStrategy() {
