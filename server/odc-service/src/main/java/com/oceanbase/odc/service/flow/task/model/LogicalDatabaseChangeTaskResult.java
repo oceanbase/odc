@@ -22,10 +22,13 @@ import com.oceanbase.odc.core.flow.model.AbstractFlowTaskResult;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalDatabaseResp;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 
+import lombok.Data;
+
 /**
  * @author Yizhuo
  * @date 2025/06/04 14:12:07
  */
+@Data
 public class LogicalDatabaseChangeTaskResult extends AbstractFlowTaskResult {
 
     private static final long                          serialVersionUID = 1L;
