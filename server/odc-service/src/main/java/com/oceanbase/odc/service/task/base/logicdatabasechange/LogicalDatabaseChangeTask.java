@@ -79,7 +79,7 @@ public class LogicalDatabaseChangeTask extends TaskBase<Map<String, ExecutionRes
     public LogicalDatabaseChangeTask() {}
 
     @Override
-    protected void doInit(JobContext context) {
+    public void doInit(JobContext context) {
         Map<String, String> jobParameters = context.getJobParameters();
         taskParameters = JsonUtils.fromJson(jobParameters.get(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY),
                 PublishLogicalDatabaseChangeReq.class);
