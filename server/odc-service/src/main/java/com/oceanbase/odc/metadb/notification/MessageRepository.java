@@ -63,6 +63,8 @@ public interface MessageRepository extends OdcJpaRepository<MessageEntity, Long>
     @Query(value = "update notification_message set `status`='SENT_FAILED' where `status`='SENDING' and "
             + "`update_time` < DATE_SUB(now(), INTERVAL :timeoutSeconds SECOND)",
             nativeQuery = true)
+    @Modifying
+    @Transactional
     int failSendingTimeoutMessages(@Param("timeoutSeconds") long timeoutSeconds);
 
     default Page<MessageEntity> find(@NonNull QueryMessageParams queryParams, @NonNull Pageable pageable) {
