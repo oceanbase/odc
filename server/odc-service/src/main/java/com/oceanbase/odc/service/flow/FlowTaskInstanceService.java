@@ -90,6 +90,7 @@ import com.oceanbase.odc.service.flow.model.PreCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.OssTaskReferManager;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonTaskResult;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeResult;
+import com.oceanbase.odc.service.flow.task.model.LogicalDatabaseChangeTaskResult;
 import com.oceanbase.odc.service.flow.task.model.MockDataTaskResult;
 import com.oceanbase.odc.service.flow.task.model.MockProperties;
 import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeTaskResult;
@@ -247,6 +248,8 @@ public class FlowTaskInstanceService {
             results = getApplyDatabaseResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.APPLY_TABLE_PERMISSION) {
             results = getApplyTableResult(taskEntity);
+        } else if (taskEntity.getTaskType() == TaskType.LOGICAL_DATABASE_CHANGE) {
+            results = getLogicalDatabaseChangeTaskResult(taskEntity);
         } else if (taskEntity.getTaskType() == TaskType.STRUCTURE_COMPARISON) {
             results = getStructureComparisonResult(taskEntity);
         } else {
@@ -695,6 +698,10 @@ public class FlowTaskInstanceService {
 
     private List<ApplyDatabaseResult> getApplyDatabaseResult(@NonNull TaskEntity taskEntity) {
         return innerGetResult(taskEntity, ApplyDatabaseResult.class);
+    }
+
+    private List<LogicalDatabaseChangeTaskResult> getLogicalDatabaseChangeTaskResult(@NonNull TaskEntity taskEntity) {
+        return innerGetResult(taskEntity, LogicalDatabaseChangeTaskResult.class);
     }
 
     private List<DBStructureComparisonTaskResult> getStructureComparisonResult(@NonNull TaskEntity taskEntity) {

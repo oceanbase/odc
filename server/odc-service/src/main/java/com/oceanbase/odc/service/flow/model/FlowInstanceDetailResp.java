@@ -52,6 +52,7 @@ import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 import com.oceanbase.odc.service.flow.model.FlowNodeInstanceDetailResp.FlowNodeInstanceMapper;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
+import com.oceanbase.odc.service.flow.task.model.LogicalDatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.OdcMockTaskConfig;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskParameter;
@@ -291,6 +292,10 @@ public class FlowInstanceDetailResp {
                                 this.getDatabaseById.apply(dbStructureComparisonParameter.getTargetDatabaseId()));
                     }
                     break;
+                case LOGICAL_DATABASE_CHANGE:
+                    LogicalDatabaseChangeParameters logicalDatabaseChangeParameters = JsonUtils.fromJson(parameterJson,
+                            LogicalDatabaseChangeParameters.class);
+                    resp.setParameters(logicalDatabaseChangeParameters);
                 default:
                     throw new UnsupportedException("Unsupported task type " + taskEntity.getTaskType());
             }
