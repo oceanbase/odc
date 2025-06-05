@@ -31,6 +31,7 @@ import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.schedule.job.DLMJobReq;
 import com.oceanbase.odc.service.schedule.model.ScheduleTask;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
+import com.oceanbase.odc.service.task.executor.TaskResult;
 import com.oceanbase.odc.service.task.processor.matcher.DLMProcessorMatcher;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 
@@ -50,9 +51,14 @@ public class DLMTerminateProcessor extends DLMProcessorMatcher implements Termin
     @Autowired
     protected ScheduleTaskService scheduleTaskService;
 
-    public TaskStatus correctTaskStatus(ScheduleTask scheduleTask, TaskStatus currentStatus) {
+    public TaskStatus correctTaskStatus(ScheduleTask scheduleTask, TaskStatus currentStatus, TaskResult taskResult) {
         // correct sub task status
-        List<DlmTableUnit> dlmTableUnits = dlmService.findByScheduleTaskId(scheduleTask.getId());
+        List<DlmTableUnit> dlmTableUnits;
+        if (taskResult != null) {
+            dlmTableUnits = JsonUtils.fromJsonList(taskResult.getResultJson(), DlmTableUnit.class);
+        } else {
+            dlmTableUnits = dlmService.findByScheduleTaskId(scheduleTask.getId());
+        }
         dlmTableUnits.forEach(dlmTableUnit -> {
             if (!dlmTableUnit.getStatus().isTerminated()) {
                 dlmTableUnit.setStatus(TaskStatus.CANCELED);
@@ -60,7 +66,7 @@ public class DLMTerminateProcessor extends DLMProcessorMatcher implements Termin
         });
         dlmService.createOrUpdateDlmTableUnits(dlmTableUnits);
         return currentStatus == TaskStatus.EXEC_TIMEOUT || currentStatus == TaskStatus.CANCELED ? TaskStatus.CANCELED
-                : dlmService.getFinalTaskStatus(scheduleTask.getId());
+                : dlmService.getFinalTaskStatus(dlmTableUnits);
     }
 
     @Override

@@ -17,24 +17,29 @@
 package com.oceanbase.odc.service.task.listener;
 
 import java.text.MessageFormat;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.event.AbstractEventListener;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.alarm.AlarmEventNames;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.task.JobEntity;
+import com.oceanbase.odc.service.notification.Broker;
+import com.oceanbase.odc.service.notification.NotificationProperties;
+import com.oceanbase.odc.service.notification.helper.EventBuilder;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.schedule.alarm.ScheduleAlarmUtils;
 import com.oceanbase.odc.service.schedule.model.ScheduleTask;
 import com.oceanbase.odc.service.task.enums.JobStatus;
+import com.oceanbase.odc.service.task.executor.TaskResult;
 import com.oceanbase.odc.service.task.processor.terminate.TerminateProcessor;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
@@ -59,21 +64,36 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
     private ScheduleService scheduleService;
     @Autowired
     private List<TerminateProcessor> terminateProcessors;
+    @Autowired
+    private NotificationProperties notificationProperties;
+    @Autowired
+    private Broker broker;
+    @Autowired
+    private EventBuilder eventBuilder;
 
     @Override
     public void onEvent(JobTerminateEvent event) {
         JobEntity jobEntity = taskFrameworkService.find(event.getJi().getId());
         scheduleTaskService.findByJobId(jobEntity.getId()).ifPresent(scheduleTask -> {
+            TaskResult taskResult = JsonUtils.fromJson(jobEntity.getResultJson(), TaskResult.class);
             // correct status
             TaskStatus taskStatus = TerminateProcessor.correctTaskStatus(terminateProcessors, jobEntity.getJobType(),
-                    scheduleTask, event.getStatus().convertTaskStatus());
-            // correct current local variable to right status
-            scheduleTaskService.updateStatusById(scheduleTask.getId(), taskStatus,
-                    TaskStatus.getProcessingStatus().stream().map(TaskStatus::name).collect(
-                            Collectors.toList()));
-            log.info("Update schedule task status from {} to {} succeed,scheduleTaskId={}", scheduleTask.getStatus(),
-                    taskStatus, scheduleTask.getId());
-            scheduleTask.setStatus(taskStatus);
+                    scheduleTask, event.getStatus().convertTaskStatus(), taskResult);
+            if (scheduleTask.getStatus() != taskStatus) {
+                // CAS
+                int affectRows = scheduleTaskService.updateStatusById(scheduleTask.getId(), taskStatus,
+                        Collections.singletonList(scheduleTask.getStatus().name()));
+                if (affectRows > 0) {
+                    scheduleTask.setStatus(taskStatus);
+                    log.info("Update schedule task status from {} to {} succeed,scheduleTaskId={}",
+                            scheduleTask.getStatus(),
+                            taskStatus, scheduleTask.getId());
+                } else {
+                    log.info("Update schedule task status from {} to {} failed,scheduleTaskId={}",
+                            scheduleTask.getStatus(),
+                            taskStatus, scheduleTask.getId());
+                }
+            }
             // Refresh the schedule status after the task is completed.
             scheduleService.refreshScheduleStatus(Long.parseLong(scheduleTask.getJobName()));
             // Trigger the alarm if the task is failed or canceled.
@@ -84,6 +104,7 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
             if (event.getStatus() == JobStatus.EXEC_TIMEOUT) {
                 ScheduleAlarmUtils.timeout(scheduleTask.getId());
             }
+            notify(scheduleTask);
             // invoke task related processor
             doProcessor(jobEntity, scheduleTask);
         });
@@ -107,6 +128,18 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
             if (processor.interested(jobEntity.getJobType())) {
                 processor.process(scheduleTask, jobEntity);
             }
+        }
+    }
+
+    private void notify(ScheduleTask task) {
+        if (!notificationProperties.isEnabled()) {
+            return;
+        }
+        try {
+            broker.enqueueEvent(task.getStatus() == TaskStatus.DONE ? eventBuilder.ofSucceededTask(task)
+                    : eventBuilder.ofFailedTask(task));
+        } catch (Exception e) {
+            log.warn("Failed to enqueue event.", e);
         }
     }
 }
