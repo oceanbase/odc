@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.task.processor.terminate;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -56,6 +57,8 @@ public class DLMTerminateProcessor extends DLMProcessorMatcher implements Termin
         List<DlmTableUnit> dlmTableUnits;
         if (taskResult != null) {
             dlmTableUnits = JsonUtils.fromJsonList(taskResult.getResultJson(), DlmTableUnit.class);
+            log.info("Table status = {}", dlmTableUnits.stream()
+                    .collect(Collectors.toMap(DlmTableUnit::getTableName, DlmTableUnit::getStatus)));
         } else {
             dlmTableUnits = dlmService.findByScheduleTaskId(scheduleTask.getId());
         }
@@ -65,8 +68,11 @@ public class DLMTerminateProcessor extends DLMProcessorMatcher implements Termin
             }
         });
         dlmService.createOrUpdateDlmTableUnits(dlmTableUnits);
-        return currentStatus == TaskStatus.EXEC_TIMEOUT || currentStatus == TaskStatus.CANCELED ? TaskStatus.CANCELED
-                : dlmService.getFinalTaskStatus(dlmTableUnits);
+        TaskStatus correctStatus =
+                currentStatus == TaskStatus.EXEC_TIMEOUT || currentStatus == TaskStatus.CANCELED ? TaskStatus.CANCELED
+                        : dlmService.getFinalTaskStatus(dlmTableUnits);
+        log.info("Correct status to {}.", correctStatus);
+        return correctStatus;
     }
 
     @Override

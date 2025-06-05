@@ -84,10 +84,10 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
                 int affectRows = scheduleTaskService.updateStatusById(scheduleTask.getId(), taskStatus,
                         Collections.singletonList(scheduleTask.getStatus().name()));
                 if (affectRows > 0) {
-                    scheduleTask.setStatus(taskStatus);
                     log.info("Update schedule task status from {} to {} succeed,scheduleTaskId={}",
                             scheduleTask.getStatus(),
                             taskStatus, scheduleTask.getId());
+                    scheduleTask.setStatus(taskStatus);
                 } else {
                     log.info("Update schedule task status from {} to {} failed,scheduleTaskId={}",
                             scheduleTask.getStatus(),
