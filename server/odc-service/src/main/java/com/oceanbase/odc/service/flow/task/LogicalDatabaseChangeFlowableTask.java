@@ -32,8 +32,8 @@ import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.logicaldatabase.LogicalDatabaseService;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalDatabaseResp;
 import com.oceanbase.odc.service.flow.task.model.LogicalDatabaseChangeParameters;
+import com.oceanbase.odc.service.flow.task.model.LogicalDatabaseChangePublishReq;
 import com.oceanbase.odc.service.flow.task.model.LogicalDatabaseChangeTaskResult;
-import com.oceanbase.odc.service.schedule.model.PublishLogicalDatabaseChangeReq;
 import com.oceanbase.odc.service.task.TaskService;
 
 import com.oceanbase.odc.service.task.base.logicdatabasechange.LogicalDatabaseChangeTask;
@@ -72,7 +72,7 @@ public class LogicalDatabaseChangeFlowableTask extends BaseODCFlowTaskDelegate<V
     @Override
     protected Void start(Long taskId, TaskService taskService, DelegateExecution execution) throws Exception {
         try {
-            PublishLogicalDatabaseChangeReq req = buildPublishLogicalDatabaseChangeReq(taskId);
+            LogicalDatabaseChangePublishReq req = buildLogicalDatabaseChangePublishReq(taskId);
             JobContext jobContext = buildJobContext(req, req.getTimeoutMillis());
             logicalDatabaseChangeTask = new LogicalDatabaseChangeTask();
             logicalDatabaseChangeTask.doInit(jobContext);
@@ -88,7 +88,7 @@ public class LogicalDatabaseChangeFlowableTask extends BaseODCFlowTaskDelegate<V
         }
     }
 
-    public JobContext buildJobContext(PublishLogicalDatabaseChangeReq taskResult, Long timeoutMillis) {
+    public JobContext buildJobContext(LogicalDatabaseChangePublishReq taskResult, Long timeoutMillis) {
         Map<String, String> jobData = new HashMap<>();
         jobData.put(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY,
             JobUtils.toJson(taskResult));
@@ -109,12 +109,12 @@ public class LogicalDatabaseChangeFlowableTask extends BaseODCFlowTaskDelegate<V
         return context;
     }
 
-    private PublishLogicalDatabaseChangeReq buildPublishLogicalDatabaseChangeReq(Long taskID) {
+    private LogicalDatabaseChangePublishReq buildLogicalDatabaseChangePublishReq(Long taskID) {
         TaskEntity taskEntity = taskService.detail(taskID);
         LogicalDatabaseChangeParameters parameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
             LogicalDatabaseChangeParameters.class);
         // check and query parameters
-        PublishLogicalDatabaseChangeReq req = new PublishLogicalDatabaseChangeReq();
+        LogicalDatabaseChangePublishReq req = new LogicalDatabaseChangePublishReq();
         req.setSqlContent(parameters.getSqlContent());
         req.setCreatorId(taskEntity.getCreatorId());
         DetailLogicalDatabaseResp logicalDatabaseResp = logicalDatabaseService.detail(parameters.getDatabaseId());
