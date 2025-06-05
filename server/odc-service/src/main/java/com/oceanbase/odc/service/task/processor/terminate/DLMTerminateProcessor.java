@@ -57,8 +57,9 @@ public class DLMTerminateProcessor extends DLMProcessorMatcher implements Termin
         List<DlmTableUnit> dlmTableUnits;
         if (taskResult != null) {
             dlmTableUnits = JsonUtils.fromJsonList(taskResult.getResultJson(), DlmTableUnit.class);
-            log.info("Table status = {}", dlmTableUnits.stream()
-                    .collect(Collectors.toMap(DlmTableUnit::getTableName, DlmTableUnit::getStatus)));
+            log.info("Table status = {},scheduleTaskId={}", dlmTableUnits.stream()
+                    .collect(Collectors.toMap(DlmTableUnit::getTableName, DlmTableUnit::getStatus)),
+                    scheduleTask.getId());
         } else {
             dlmTableUnits = dlmService.findByScheduleTaskId(scheduleTask.getId());
         }
@@ -71,7 +72,7 @@ public class DLMTerminateProcessor extends DLMProcessorMatcher implements Termin
         TaskStatus correctStatus =
                 currentStatus == TaskStatus.EXEC_TIMEOUT || currentStatus == TaskStatus.CANCELED ? TaskStatus.CANCELED
                         : dlmService.getFinalTaskStatus(dlmTableUnits);
-        log.info("Correct status to {}.", correctStatus);
+        log.info("Correct status to {},scheduleTaskId={}", correctStatus, scheduleTask.getId());
         return correctStatus;
     }
 

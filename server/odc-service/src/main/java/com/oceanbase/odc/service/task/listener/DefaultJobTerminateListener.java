@@ -74,6 +74,7 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
     @Override
     public void onEvent(JobTerminateEvent event) {
         JobEntity jobEntity = taskFrameworkService.find(event.getJi().getId());
+        log.info(jobEntity.getResultJson());
         scheduleTaskService.findByJobId(jobEntity.getId()).ifPresent(scheduleTask -> {
             TaskResult taskResult = JsonUtils.fromJson(jobEntity.getResultJson(), TaskResult.class);
             // correct status
