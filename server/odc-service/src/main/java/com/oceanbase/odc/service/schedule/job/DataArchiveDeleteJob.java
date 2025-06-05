@@ -15,15 +15,18 @@
  */
 package com.oceanbase.odc.service.schedule.job;
 
+import java.util.Map;
 import java.util.Optional;
 
 import org.quartz.JobExecutionContext;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.schedule.model.DataArchiveClearParameters;
+import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 
 import lombok.extern.slf4j.Slf4j;
@@ -63,10 +66,19 @@ public class DataArchiveDeleteJob extends AbstractDlmJob {
             return;
         }
 
-        DLMJobReq parameters = getDLMJobReqWithArchiveRange(dataArchiveTask.getJobId());
-        parameters.setJobType(JobType.DELETE);
-        parameters.setFireTime(context.getFireTime());
-        parameters.setScheduleTaskId(taskEntity.getId());
+        DLMJobReq parameters;
+        if (taskEntity.getJobId() != null) {
+            parameters = JsonUtils.fromJson(JsonUtils.fromJson(
+                    taskFrameworkService.find(taskEntity.getJobId()).getJobParametersJson(),
+                    new TypeReference<Map<String, String>>() {})
+                    .get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
+                    DLMJobReq.class);
+        } else {
+            parameters = getDLMJobReqWithArchiveRange(dataArchiveTask.getJobId());
+            parameters.setJobType(JobType.DELETE);
+            parameters.setFireTime(context.getFireTime());
+            parameters.setScheduleTaskId(taskEntity.getId());
+        }
         parameters
                 .setRateLimit(limiterService.getByOrderIdOrElseDefaultConfig(Long.parseLong(taskEntity.getJobName())));
         Long jobId = publishJob(parameters, dataArchiveParameters.getTimeoutMillis(),
