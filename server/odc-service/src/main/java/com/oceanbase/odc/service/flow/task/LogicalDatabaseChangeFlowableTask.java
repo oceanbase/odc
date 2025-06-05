@@ -29,13 +29,10 @@ import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.connection.ConnectionService;
-import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.logicaldatabase.LogicalDatabaseService;
-import com.oceanbase.odc.service.connection.logicaldatabase.LogicalTableService;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionResult;
-import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.SqlExecutionResultWrapper;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalDatabaseResp;
-import com.oceanbase.odc.service.schedule.model.LogicalDatabaseChangeParameters;
+import com.oceanbase.odc.service.flow.task.model.LogicalDatabaseChangeParameters;
+import com.oceanbase.odc.service.flow.task.model.LogicalDatabaseChangeTaskResult;
 import com.oceanbase.odc.service.schedule.model.PublishLogicalDatabaseChangeReq;
 import com.oceanbase.odc.service.task.TaskService;
 
@@ -58,29 +55,18 @@ import lombok.extern.slf4j.Slf4j;
 public class LogicalDatabaseChangeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     @Autowired
     private TaskService taskService;
-
-    @Autowired
-    private DatabaseService databaseService;
-
     @Autowired
     private ConnectionService connectionService;
-
     @Autowired
     private LogicalDatabaseService logicalDatabaseService;
 
-    @Autowired
-    private LogicalTableService logicalTableService;
-
     private LogicalDatabaseChangeTask logicalDatabaseChangeTask;
+    private LogicalDatabaseChangeTaskResult taskResult;
 
     private AtomicBoolean isSuccessful = new AtomicBoolean(false);
-
     private AtomicBoolean isCancelled = new AtomicBoolean(false);
-
     private AtomicReference<Throwable> exception = new AtomicReference<>(null);
-
     private AtomicDouble lastProgress = new AtomicDouble(-1);
-
     private AtomicReference<String> lastResult = new AtomicReference<>(null);
 
     @Override
@@ -102,10 +88,10 @@ public class LogicalDatabaseChangeFlowableTask extends BaseODCFlowTaskDelegate<V
         }
     }
 
-    public JobContext buildJobContext(PublishLogicalDatabaseChangeReq publishReq, Long timeoutMillis) {
+    public JobContext buildJobContext(PublishLogicalDatabaseChangeReq taskResult, Long timeoutMillis) {
         Map<String, String> jobData = new HashMap<>();
         jobData.put(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY,
-            JobUtils.toJson(publishReq));
+            JobUtils.toJson(taskResult));
         if (timeoutMillis != null) {
             jobData.put(JobParametersKeyConstants.TASK_EXECUTION_END_TIME_MILLIS,
                 String.valueOf(System.currentTimeMillis() + timeoutMillis));
@@ -170,8 +156,8 @@ public class LogicalDatabaseChangeFlowableTask extends BaseODCFlowTaskDelegate<V
         }
         double previousProgress = lastProgress.get();
         double currentProgress = logicalDatabaseChangeTask.getProgress();
-        Map<String, ExecutionResult<SqlExecutionResultWrapper>> result = logicalDatabaseChangeTask.getTaskResult();
-        String currentResult = JsonUtils.toJson(result);
+        taskResult.setSqlExecutionResultMap(logicalDatabaseChangeTask.getTaskResult());
+        String currentResult = JsonUtils.toJson(taskResult);
 
         // check progress and result change
         if (currentProgress == previousProgress && StringUtils.equals(currentResult, lastResult.get())) {
@@ -183,7 +169,7 @@ public class LogicalDatabaseChangeFlowableTask extends BaseODCFlowTaskDelegate<V
         lastResult.set(currentResult);
         TaskEntity taskEntity = taskService.detail(taskId);
         taskEntity.setProgressPercentage(currentProgress);
-        taskEntity.setResultJson(JsonUtils.toJson(result));
+        taskEntity.setResultJson(JsonUtils.toJson(taskResult));
         taskService.update(taskEntity);
     }
 

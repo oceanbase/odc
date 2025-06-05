@@ -19,25 +19,20 @@ package com.oceanbase.odc.service.flow.task.model;
 import java.util.Map;
 
 import com.oceanbase.odc.core.flow.model.AbstractFlowTaskResult;
-import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalDatabaseResp;
-import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionResult;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.SqlExecutionResultWrapper;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * @author Yizhuo
  * @date 2025/06/04 14:12:07
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 public class LogicalDatabaseChangeTaskResult extends AbstractFlowTaskResult {
 
-    private static final long                          serialVersionUID = 1L;
-    private              Long                          creatorId;
-    private              Long                          scheduleTaskId;
-    private              String                        sqlContent;
-    private String delimiter;
-    private              Long                          timeoutMillis;
-    private              DetailLogicalDatabaseResp     logicalDatabaseResp;
-    private              Map<String, ConnectionConfig> schemaName2ConnectionConfig;
+    private Map<String, ExecutionResult<SqlExecutionResultWrapper>> sqlExecutionResultMap;
 
 }
