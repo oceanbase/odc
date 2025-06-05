@@ -26,7 +26,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.event.AbstractEventListener;
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.alarm.AlarmEventNames;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
@@ -39,7 +38,6 @@ import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.schedule.alarm.ScheduleAlarmUtils;
 import com.oceanbase.odc.service.schedule.model.ScheduleTask;
 import com.oceanbase.odc.service.task.enums.JobStatus;
-import com.oceanbase.odc.service.task.executor.TaskResult;
 import com.oceanbase.odc.service.task.processor.terminate.TerminateProcessor;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 
@@ -74,12 +72,10 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
     @Override
     public void onEvent(JobTerminateEvent event) {
         JobEntity jobEntity = taskFrameworkService.find(event.getJi().getId());
-        log.info(jobEntity.getResultJson());
         scheduleTaskService.findByJobId(jobEntity.getId()).ifPresent(scheduleTask -> {
-            TaskResult taskResult = JsonUtils.fromJson(jobEntity.getResultJson(), TaskResult.class);
             // correct status
             TaskStatus taskStatus = TerminateProcessor.correctTaskStatus(terminateProcessors, jobEntity.getJobType(),
-                    scheduleTask, event.getStatus().convertTaskStatus(), taskResult);
+                    scheduleTask, event.getStatus().convertTaskStatus(), event.getTaskResult());
             if (scheduleTask.getStatus() != taskStatus) {
                 // CAS
                 int affectRows = scheduleTaskService.updateStatusById(scheduleTask.getId(), taskStatus,

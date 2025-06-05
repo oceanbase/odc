@@ -59,7 +59,7 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>,
             + " progress_percentage=:#{#param.progressPercentage},result_json=:#{#param.resultJson},"
             + " finished_time=:#{#param.finishedTime},last_report_time=:#{#param.lastReportTime}"
             + " where id=:id and status =:#{#oldStatus.name()}", nativeQuery = true)
-    @Modifying(clearAutomatically = true)
+    @Modifying
     int updateReportResult(@Param("param") JobEntity entity, @Param("id") Long id,
             @Param("oldStatus") JobStatus oldStatus);
 
