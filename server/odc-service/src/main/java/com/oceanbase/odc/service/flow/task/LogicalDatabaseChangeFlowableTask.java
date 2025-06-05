@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.service.flow.task;
 
 import java.util.HashMap;
@@ -35,7 +34,6 @@ import com.oceanbase.odc.service.flow.task.model.LogicalDatabaseChangeParameters
 import com.oceanbase.odc.service.flow.task.model.LogicalDatabaseChangePublishReq;
 import com.oceanbase.odc.service.flow.task.model.LogicalDatabaseChangeTaskResult;
 import com.oceanbase.odc.service.task.TaskService;
-
 import com.oceanbase.odc.service.task.base.logicdatabasechange.LogicalDatabaseChangeTask;
 import com.oceanbase.odc.service.task.caller.DefaultJobContext;
 import com.oceanbase.odc.service.task.caller.JobContext;
@@ -91,10 +89,10 @@ public class LogicalDatabaseChangeFlowableTask extends BaseODCFlowTaskDelegate<V
     public JobContext buildJobContext(LogicalDatabaseChangePublishReq taskResult, Long timeoutMillis) {
         Map<String, String> jobData = new HashMap<>();
         jobData.put(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY,
-            JobUtils.toJson(taskResult));
+                JobUtils.toJson(taskResult));
         if (timeoutMillis != null) {
             jobData.put(JobParametersKeyConstants.TASK_EXECUTION_END_TIME_MILLIS,
-                String.valueOf(System.currentTimeMillis() + timeoutMillis));
+                    String.valueOf(System.currentTimeMillis() + timeoutMillis));
         }
         Map<String, String> jobProperties = new HashMap<>();
         SingleJobProperties singleJobProperties = new SingleJobProperties();
@@ -112,15 +110,15 @@ public class LogicalDatabaseChangeFlowableTask extends BaseODCFlowTaskDelegate<V
     private LogicalDatabaseChangePublishReq buildLogicalDatabaseChangePublishReq(Long taskID) {
         TaskEntity taskEntity = taskService.detail(taskID);
         LogicalDatabaseChangeParameters parameters = JsonUtils.fromJson(taskEntity.getParametersJson(),
-            LogicalDatabaseChangeParameters.class);
+                LogicalDatabaseChangeParameters.class);
         // check and query parameters
         LogicalDatabaseChangePublishReq req = new LogicalDatabaseChangePublishReq();
         req.setSqlContent(parameters.getSqlContent());
         req.setCreatorId(taskEntity.getCreatorId());
         DetailLogicalDatabaseResp logicalDatabaseResp = logicalDatabaseService.detail(parameters.getDatabaseId());
         logicalDatabaseResp.getPhysicalDatabases().stream().forEach(
-            database -> database.setDataSource(
-                connectionService.getForConnectionSkipPermissionCheck(database.getDataSource().getId())));
+                database -> database.setDataSource(
+                        connectionService.getForConnectionSkipPermissionCheck(database.getDataSource().getId())));
         req.setLogicalDatabaseResp(logicalDatabaseResp);
         req.setDelimiter(parameters.getDelimiter());
         req.setTimeoutMillis(parameters.getTimeoutMillis());
