@@ -212,7 +212,8 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             dlmTableUnit.setTargetDatasourceInfo(req.getTargetDs());
             dlmTableUnit.setFireTime(req.getFireTime());
             dlmTableUnit.setStatus(
-                    table.getLastProcessedStatus() == null ? TaskStatus.PREPARING : table.getLastProcessedStatus());
+                    table.getLastProcessedStatus() != TaskStatus.DONE ? TaskStatus.PREPARING
+                            : table.getLastProcessedStatus());
             dlmTableUnit.setType(req.getJobType());
             dlmTableUnit.setStatistic(new DlmTableUnitStatistic());
             dlmTableUnit.setSyncTableStructure(req.getSyncTableStructure());
