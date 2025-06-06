@@ -57,9 +57,6 @@ public class DLMTerminateProcessor extends DLMProcessorMatcher implements Termin
         List<DlmTableUnit> dlmTableUnits;
         if (taskResult != null) {
             dlmTableUnits = JsonUtils.fromJsonList(taskResult.getResultJson(), DlmTableUnit.class);
-            log.info("Table status = {},scheduleTaskId={}", dlmTableUnits.stream()
-                    .collect(Collectors.toMap(DlmTableUnit::getTableName, DlmTableUnit::getStatus)),
-                    scheduleTask.getId());
         } else {
             dlmTableUnits = dlmService.findByScheduleTaskId(scheduleTask.getId());
         }
