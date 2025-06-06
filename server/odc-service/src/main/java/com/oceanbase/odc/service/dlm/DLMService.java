@@ -130,6 +130,11 @@ public class DLMService {
     @SkipAuthorize("odc internal usage")
     public TaskStatus getFinalTaskStatus(Long scheduleTaskId) {
         List<DlmTableUnit> dlmTableUnits = findByScheduleTaskId(scheduleTaskId);
+        return getFinalTaskStatus(dlmTableUnits);
+    }
+
+    @SkipAuthorize("odc internal usage")
+    public TaskStatus getFinalTaskStatus(List<DlmTableUnit> dlmTableUnits) {
         Set<TaskStatus> collect = dlmTableUnits.stream().map(DlmTableUnit::getStatus).collect(
                 Collectors.toSet());
         // If the tables do not exist or any table fails, the task is considered a failure.
@@ -147,5 +152,6 @@ public class DLMService {
         }
         return TaskStatus.DONE;
     }
+
 
 }

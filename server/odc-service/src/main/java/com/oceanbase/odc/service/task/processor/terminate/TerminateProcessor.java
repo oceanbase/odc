@@ -23,6 +23,7 @@ import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.schedule.model.ScheduleTask;
+import com.oceanbase.odc.service.task.executor.TaskResult;
 import com.oceanbase.odc.service.task.processor.ProcessorMatcher;
 
 /**
@@ -38,7 +39,7 @@ public interface TerminateProcessor extends ProcessorMatcher {
      * @param currentStatus
      * @return
      */
-    default TaskStatus correctTaskStatus(ScheduleTask scheduleTask, TaskStatus currentStatus) {
+    default TaskStatus correctTaskStatus(ScheduleTask scheduleTask, TaskStatus currentStatus, TaskResult taskResult) {
         return currentStatus;
     }
 
@@ -48,12 +49,12 @@ public interface TerminateProcessor extends ProcessorMatcher {
     void process(ScheduleTask scheduleTask, JobEntity jobEntity);
 
     static TaskStatus correctTaskStatus(Collection<TerminateProcessor> terminateProcessors, String jobType,
-            ScheduleTask scheduleTask, TaskStatus currentStatus) {
+            ScheduleTask scheduleTask, TaskStatus currentStatus, TaskResult taskResult) {
         List<TaskStatus> correctedStatus = new ArrayList<>();
         // return first matched
         for (TerminateProcessor processor : terminateProcessors) {
             if (processor.interested(jobType)) {
-                correctedStatus.add(processor.correctTaskStatus(scheduleTask, currentStatus));
+                correctedStatus.add(processor.correctTaskStatus(scheduleTask, currentStatus, taskResult));
             }
         }
         if (correctedStatus.size() > 1) {

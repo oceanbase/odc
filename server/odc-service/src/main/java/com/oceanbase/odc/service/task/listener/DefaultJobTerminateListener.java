@@ -17,6 +17,7 @@
 package com.oceanbase.odc.service.task.listener;
 
 import java.text.MessageFormat;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -29,6 +30,9 @@ import com.oceanbase.odc.core.alarm.AlarmEventNames;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.task.JobEntity;
+import com.oceanbase.odc.service.notification.Broker;
+import com.oceanbase.odc.service.notification.NotificationProperties;
+import com.oceanbase.odc.service.notification.helper.EventBuilder;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.schedule.alarm.ScheduleAlarmUtils;
@@ -58,6 +62,12 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
     private ScheduleService scheduleService;
     @Autowired
     private List<TerminateProcessor> terminateProcessors;
+    @Autowired
+    private NotificationProperties notificationProperties;
+    @Autowired
+    private Broker broker;
+    @Autowired
+    private EventBuilder eventBuilder;
 
     @Override
     public void onEvent(JobTerminateEvent event) {
@@ -65,11 +75,22 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
         scheduleTaskService.findByJobId(jobEntity.getId()).ifPresent(scheduleTask -> {
             // correct status
             TaskStatus taskStatus = TerminateProcessor.correctTaskStatus(terminateProcessors, jobEntity.getJobType(),
-                    scheduleTask, event.getStatus().convertTaskStatus());
-            // correct current local variable to right status
-            scheduleTask.setStatus(taskStatus);
-            scheduleTaskService.updateStatusById(scheduleTask.getId(), taskStatus);
-            log.info("Update schedule task status to {} succeed,scheduleTaskId={}", taskStatus, scheduleTask.getId());
+                    scheduleTask, event.getStatus().convertTaskStatus(), event.getTaskResult());
+            if (scheduleTask.getStatus() != taskStatus) {
+                // CAS
+                int affectRows = scheduleTaskService.updateStatusById(scheduleTask.getId(), taskStatus,
+                        Collections.singletonList(scheduleTask.getStatus().name()));
+                if (affectRows > 0) {
+                    log.info("Update schedule task status from {} to {} succeed,scheduleTaskId={}",
+                            scheduleTask.getStatus(),
+                            taskStatus, scheduleTask.getId());
+                    scheduleTask.setStatus(taskStatus);
+                } else {
+                    log.info("Update schedule task status from {} to {} failed,scheduleTaskId={}",
+                            scheduleTask.getStatus(),
+                            taskStatus, scheduleTask.getId());
+                }
+            }
             // Refresh the schedule status after the task is completed.
             scheduleService.refreshScheduleStatus(Long.parseLong(scheduleTask.getJobName()));
             // Trigger the alarm if the task is failed or canceled.
@@ -80,6 +101,7 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
             if (event.getStatus() == JobStatus.EXEC_TIMEOUT) {
                 ScheduleAlarmUtils.timeout(scheduleTask.getId());
             }
+            notify(scheduleTask);
             // invoke task related processor
             doProcessor(jobEntity, scheduleTask);
         });
@@ -103,6 +125,18 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
             if (processor.interested(jobEntity.getJobType())) {
                 processor.process(scheduleTask, jobEntity);
             }
+        }
+    }
+
+    private void notify(ScheduleTask task) {
+        if (!notificationProperties.isEnabled()) {
+            return;
+        }
+        try {
+            broker.enqueueEvent(task.getStatus() == TaskStatus.DONE ? eventBuilder.ofSucceededTask(task)
+                    : eventBuilder.ofFailedTask(task));
+        } catch (Exception e) {
+            log.warn("Failed to enqueue event.", e);
         }
     }
 }
