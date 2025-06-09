@@ -417,7 +417,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
         if (publisher != null && result.getStatus() != null && result.getStatus().isTerminated()) {
             taskResultPublisherExecutor.execute(() -> publisher
-                    .publishEvent(new JobTerminateEvent(result.getJobIdentity(), expectedJobStatus)));
+                    .publishEvent(new JobTerminateEvent(result.getJobIdentity(), expectedJobStatus, result)));
 
             // TODO maybe we can destroy the pod there.
             if (result.getStatus() == TaskStatus.FAILED) {
