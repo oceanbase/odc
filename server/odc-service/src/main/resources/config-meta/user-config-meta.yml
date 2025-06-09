@@ -191,3 +191,13 @@
   default_value: 'true'
   nullable: false
   description: 'Whether the new user guide prompt is enabled for the user.'
+- id: 20
+  category: 'user'
+  key: 'odc.sqlexecute.querySqlResultDisplayMode'
+  type: 'string'
+  max_value: ~
+  min_value: ~
+  allowed_values: [ 'OVERWRITE','APPEND' ]
+  default_value: 'OVERWRITE'
+  nullable: false
+  description: 'When sql queries are executed multiple times, the result tab displays the configuration'
