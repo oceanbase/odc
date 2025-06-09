@@ -101,7 +101,6 @@ public class DestroyExecutorJob implements Job {
                 // executorIdentifier is null, otherwise, the job cannot be released.
                 log.info("Executor not found, updating executor to destroyed,jobId={}", lockedEntity.getId());
                 taskFrameworkService.updateExecutorToDestroyed(lockedEntity.getId());
-                configuration.getSupervisorAgentAllocator().deallocateSupervisorEndpoint(lockedEntity.getId());
             }
         });
     }
