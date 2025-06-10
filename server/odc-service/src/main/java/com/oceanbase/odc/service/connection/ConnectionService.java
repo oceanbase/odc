@@ -893,8 +893,7 @@ public class ConnectionService {
             if (input == null) {
                 throw new UnexpectedException(DATASOURCE_TEMPLATE_FILE_NAME + " is not found");
             }
-            byte[] buffer = new byte[input.available()];
-            IOUtils.read(input, buffer);
+            byte[] buffer = IOUtils.toByteArray(input);
             return new ByteArrayDataResult(DATASOURCE_TEMPLATE_FILE_NAME, buffer);
         }
     }
