@@ -17,7 +17,6 @@
 package com.oceanbase.odc.service.task.listener;
 
 import java.text.MessageFormat;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
