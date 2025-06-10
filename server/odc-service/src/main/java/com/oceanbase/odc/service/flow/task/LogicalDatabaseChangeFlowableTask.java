@@ -160,7 +160,8 @@ public class LogicalDatabaseChangeFlowableTask extends BaseODCFlowTaskDelegate<V
         // epsilon is used to avoid floating point precision issues
         final double EPSILON = 1e-6;
         // check progress and result change
-        if (Math.abs(currentProgress - previousProgress) < EPSILON && StringUtils.equals(currentResult, lastResult.get())) {
+        if (Math.abs(currentProgress - previousProgress) < EPSILON
+                && StringUtils.equals(currentResult, lastResult.get())) {
             return;
         }
 
