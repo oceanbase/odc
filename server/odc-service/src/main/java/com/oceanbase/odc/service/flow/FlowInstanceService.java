@@ -115,6 +115,7 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.DBResource;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.UnauthorizedDBResource;
+import com.oceanbase.odc.service.connection.logicaldatabase.LogicalDatabaseService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.OBTenant;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangeDatabase;
@@ -146,6 +147,7 @@ import com.oceanbase.odc.service.flow.task.BaseRuntimeFlowableDelegate;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.FlowTaskProperties;
+import com.oceanbase.odc.service.flow.task.model.LogicalDatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeTaskResult;
 import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
@@ -288,6 +290,8 @@ public class FlowInstanceService {
     private ProjectService projectService;
     @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+    @Autowired
+    private LogicalDatabaseService logicalDatabaseService;
 
     private static final long MAX_EXPORT_OBJECT_COUNT = 10000;
     private static final String ODC_SITE_URL = "odc.site.url";
@@ -974,6 +978,11 @@ public class FlowInstanceService {
             MultipleDatabaseChangeParameters parameters = (MultipleDatabaseChangeParameters) req.getParameters();
             databaseIds =
                     parameters.getOrderedDatabaseIds().stream().flatMap(Collection::stream).collect(Collectors.toSet());
+        } else if (taskType == TaskType.LOGICAL_DATABASE_CHANGE) {
+            LogicalDatabaseChangeParameters parameters = (LogicalDatabaseChangeParameters) req.getParameters();
+            databaseIds =
+                    logicalDatabaseService.listPhysicalDatabases(parameters.getDatabaseId())
+                        .stream().map(Database::getId).collect(Collectors.toSet());
         }
         permissionHelper.checkDBPermissions(databaseIds, DatabasePermissionType.from(req.getTaskType()));
     }
