@@ -17,7 +17,6 @@
 package com.oceanbase.odc.service.task.listener;
 
 import java.text.MessageFormat;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -76,21 +75,10 @@ public class DefaultJobTerminateListener extends AbstractEventListener<JobTermin
             // correct status
             TaskStatus taskStatus = TerminateProcessor.correctTaskStatus(terminateProcessors, jobEntity.getJobType(),
                     scheduleTask, event.getStatus().convertTaskStatus(), event.getTaskResult());
-            if (scheduleTask.getStatus() != taskStatus) {
-                // CAS
-                int affectRows = scheduleTaskService.updateStatusById(scheduleTask.getId(), taskStatus,
-                        Collections.singletonList(scheduleTask.getStatus().name()));
-                if (affectRows > 0) {
-                    log.info("Update schedule task status from {} to {} succeed,scheduleTaskId={}",
-                            scheduleTask.getStatus(),
-                            taskStatus, scheduleTask.getId());
-                    scheduleTask.setStatus(taskStatus);
-                } else {
-                    log.info("Update schedule task status from {} to {} failed,scheduleTaskId={}",
-                            scheduleTask.getStatus(),
-                            taskStatus, scheduleTask.getId());
-                }
-            }
+            // correct to final status
+            scheduleTaskService.updateStatusById(scheduleTask.getId(), taskStatus);
+            log.info("Update schedule task status to {} succeed,scheduleTaskId={}", taskStatus, scheduleTask.getId());
+            scheduleTask.setStatus(taskStatus);
             // Refresh the schedule status after the task is completed.
             scheduleService.refreshScheduleStatus(Long.parseLong(scheduleTask.getJobName()));
             // Trigger the alarm if the task is failed or canceled.
