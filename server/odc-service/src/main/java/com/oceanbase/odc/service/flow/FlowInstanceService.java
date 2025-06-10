@@ -974,8 +974,6 @@ public class FlowInstanceService {
             MultipleDatabaseChangeParameters parameters = (MultipleDatabaseChangeParameters) req.getParameters();
             databaseIds =
                     parameters.getOrderedDatabaseIds().stream().flatMap(Collection::stream).collect(Collectors.toSet());
-        } else if (taskType == TaskType.LOGICAL_DATABASE_CHANGE) {
-            return;
         }
         permissionHelper.checkDBPermissions(databaseIds, DatabasePermissionType.from(req.getTaskType()));
     }

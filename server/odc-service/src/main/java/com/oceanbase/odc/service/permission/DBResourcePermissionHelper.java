@@ -130,10 +130,12 @@ public class DBResourcePermissionHelper {
             if (e.getProjectId() == null) {
                 throw new AccessDeniedException("Database is not belong to any project");
             }
-            DialectType dialectType = id2Entity.get(e.getConnectionId()).getDialectType();
-            if (permissionCheckWhitelist.containsDatabase(e.getName(), dialectType)
+            if (!id2Entity.isEmpty()) {
+                DialectType dialectType = id2Entity.get(e.getConnectionId()).getDialectType();
+                if (permissionCheckWhitelist.containsDatabase(e.getName(), dialectType)
                     || projectIds.contains(e.getProjectId())) {
-                continue;
+                    continue;
+                }
             }
             toCheckDatabaseIds.add(e.getId());
         }
