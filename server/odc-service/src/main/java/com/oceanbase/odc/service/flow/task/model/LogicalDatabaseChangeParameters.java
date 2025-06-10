@@ -29,9 +29,21 @@ import lombok.Data;
  */
 @Data
 public class LogicalDatabaseChangeParameters implements Serializable, TaskParameters {
+    /**
+     * sql content, max size 16MB
+     **/
     @Size(max = 16777215, message = "The sql size should be less than 16,777,215 bytes")
     private String sqlContent;
+    /**
+     * sql delimiter default ';'
+     **/
     private String delimiter;
+    /**
+     * request timeout millis
+     **/
     private Long timeoutMillis;
+    /**
+     * logical database id
+     **/
     private Long databaseId;
 }
