@@ -86,10 +86,10 @@ public class LogicalDatabaseChangeFlowableTask extends BaseODCFlowTaskDelegate<V
         }
     }
 
-    public JobContext buildJobContext(LogicalDatabaseChangePublishReq taskResult, Long timeoutMillis) {
+    public JobContext buildJobContext(LogicalDatabaseChangePublishReq req, Long timeoutMillis) {
         Map<String, String> jobData = new HashMap<>();
         jobData.put(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY,
-                JobUtils.toJson(taskResult));
+                JobUtils.toJson(req));
         if (timeoutMillis != null) {
             jobData.put(JobParametersKeyConstants.TASK_EXECUTION_END_TIME_MILLIS,
                     String.valueOf(System.currentTimeMillis() + timeoutMillis));
@@ -154,6 +154,7 @@ public class LogicalDatabaseChangeFlowableTask extends BaseODCFlowTaskDelegate<V
         }
         double previousProgress = lastProgress.get();
         double currentProgress = logicalDatabaseChangeTask.getProgress();
+        taskResult = new LogicalDatabaseChangeTaskResult();
         taskResult.setSqlExecutionResultMap(logicalDatabaseChangeTask.getTaskResult());
         String currentResult = JsonUtils.toJson(taskResult);
 
