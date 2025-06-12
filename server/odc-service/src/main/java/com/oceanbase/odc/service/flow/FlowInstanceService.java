@@ -47,6 +47,7 @@ import org.flowable.engine.HistoryService;
 import org.flowable.engine.RuntimeService;
 import org.flowable.engine.history.HistoricProcessInstance;
 import org.flowable.engine.history.HistoricProcessInstanceQuery;
+import org.flowable.engine.runtime.ProcessInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
@@ -1643,7 +1644,16 @@ public class FlowInstanceService {
             log.info("processInstanceID is null for instance id {}, return", flowInstanceId);
             return;
         }
-        runtimeService.deleteProcessInstance(String.valueOf(processInstanceID), "flow is canceled");
+        try {
+            ProcessInstance processInstance =
+                    runtimeService.createProcessInstanceQuery().processInstanceId(processInstanceID).singleResult();
+            if (null != processInstance) {
+                runtimeService.deleteProcessInstance(processInstance.getId(), "flow is deleted");
+            }
+        } catch (Exception e) {
+            log.warn("Failed to delete external approval instance, flowInstanceId={}, processInstanceID={}",
+                    flowInstanceId, processInstanceID, e);
+        }
     }
 
     /**
