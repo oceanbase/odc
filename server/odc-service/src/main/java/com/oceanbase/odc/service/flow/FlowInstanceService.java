@@ -1648,7 +1648,7 @@ public class FlowInstanceService {
             ProcessInstance processInstance =
                     runtimeService.createProcessInstanceQuery().processInstanceId(processInstanceID).singleResult();
             if (null != processInstance) {
-                runtimeService.deleteProcessInstance(processInstance.getId(), "flow is deleted");
+                runtimeService.deleteProcessInstance(processInstanceID, "flow is deleted");
             }
         } catch (Exception e) {
             log.warn("Failed to delete external approval instance, flowInstanceId={}, processInstanceID={}",
