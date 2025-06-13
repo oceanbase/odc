@@ -39,7 +39,10 @@ import com.oceanbase.odc.service.schedule.export.model.ScheduleTaskImportRequest
 import com.oceanbase.odc.service.state.StatefulUuidStateIdGenerator;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
 public class ScheduleTaskImportService {
 
     @Autowired
@@ -65,8 +68,14 @@ public class ScheduleTaskImportService {
         User user = authenticationFacade.currentUser();
         Future<List<ImportScheduleTaskView>> future = commonAsyncTaskExecutor.submit(
                 () -> {
-                    SecurityContextUtils.setCurrentUser(user);
-                    return scheduleTaskImporter.preview(request);
+                    try {
+                        SecurityContextUtils.setCurrentUser(user);
+                        return scheduleTaskImporter.preview(request);
+                    } catch (Exception e) {
+                        log.info("Preview Import task failed", e);
+                        throw e;
+                    }
+
                 });
         futureCache.put(previewId, future);
         return previewId;
