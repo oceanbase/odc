@@ -277,6 +277,7 @@ public class ScheduleService {
                 createScheduleReq.setTriggerConfig(parameters.getTriggerConfig());
                 createScheduleReq.setType(parameters.getType());
                 createScheduleReq.setDescription(createReq.getDescription());
+                createScheduleReq.setAllowConcurrent(parameters.getAllowConcurrent());
                 scheduleChangeParams = ScheduleChangeParams.with(createScheduleReq);
                 break;
             }
@@ -286,6 +287,7 @@ public class ScheduleService {
                 updateScheduleReq.setTriggerConfig(parameters.getTriggerConfig());
                 updateScheduleReq.setType(parameters.getType());
                 updateScheduleReq.setDescription(createReq.getDescription());
+                updateScheduleReq.setAllowConcurrent(parameters.getAllowConcurrent());
                 scheduleChangeParams = ScheduleChangeParams.with(parameters.getTaskId(), updateScheduleReq);
                 break;
             }
@@ -323,7 +325,7 @@ public class ScheduleService {
 
             entity.setMisfireStrategy(MisfireStrategy.MISFIRE_INSTRUCTION_DO_NOTHING);
             entity.setStatus(ScheduleStatus.CREATING);
-            entity.setAllowConcurrent(false);
+            entity.setAllowConcurrent(req.getCreateScheduleReq().isAllowConcurrent());
             entity.setOrganizationId(authenticationFacade.currentOrganizationId());
             entity.setCreatorId(authenticationFacade.currentUserId());
             entity.setModifierId(authenticationFacade.currentUserId());
@@ -478,6 +480,7 @@ public class ScheduleService {
                         entity.setTriggerConfigJson(JsonUtils.toJson(req.getUpdateScheduleReq().getTriggerConfig()));
                         entity.setDescription(req.getUpdateScheduleReq().getDescription());
                         entity.setStatus(ScheduleStatus.ENABLED);
+                        entity.setAllowConcurrent(req.getUpdateScheduleReq().isAllowConcurrent());
                         PreConditions.notNull(req.getUpdateScheduleReq(), "req.updateScheduleReq");
                         if (req.getUpdateScheduleReq().getParameters() instanceof DataArchiveParameters) {
                             DataArchiveParameters parameters = (DataArchiveParameters) req.getUpdateScheduleReq()
