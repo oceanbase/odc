@@ -310,7 +310,7 @@ public class ScheduleTaskExporter {
     }
 
     private String getProjectName(Long projectId) {
-        if (projectId == null) {
+        if (projectId == null || projectId < 0) {
             return null;
         }
         return projectRepository.findById(projectId).map(ProjectEntity::getName).orElseThrow(NullPointerException::new);
