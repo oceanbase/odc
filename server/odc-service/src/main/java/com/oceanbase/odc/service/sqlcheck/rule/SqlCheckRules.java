@@ -36,6 +36,7 @@ import com.oceanbase.odc.service.regulation.ruleset.model.RuleType;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRuleContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRuleFactory;
+import com.oceanbase.odc.service.sqlcheck.factory.CheckRationalityForDBObjectsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.ColumnCalculationFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.ColumnCharsetExistsFactory;
 import com.oceanbase.odc.service.sqlcheck.factory.ColumnCollationExistsFactory;
@@ -160,6 +161,7 @@ public class SqlCheckRules {
         rules.add(new Unable2JudgeAffectedRowsFactory(jdbc));
         rules.add(new CreateTableLikeExistsFactory());
         rules.add(new CreateTableAsExistsFactory());
+        rules.add(new CheckRationalityForDBObjectsFactory());
         return rules;
     }
 

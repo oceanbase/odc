@@ -259,7 +259,11 @@ public enum SqlCheckRuleType implements Translatable {
     /**
      * Create as statement exists
      */
-    CREATE_TABLE_AS_EXISTS("create-table-as-exists");
+    CREATE_TABLE_AS_EXISTS("create-table-as-exists"),
+    /**
+     * Check the rationality of the database object
+     */
+    CHECK_RATIONALITY_FOR_DB_OBJECTS("check-rationality-for-db-objects");
 
 
     private final String name;
