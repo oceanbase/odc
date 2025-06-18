@@ -179,6 +179,11 @@ public class ScheduleService {
 
     @Value("${odc.task.trigger.minimum-interval:600}")
     private int minInterval;
+
+    @Autowired
+    @Qualifier("supportsRestartTaskTypes")
+    private Set<ScheduleTaskType> supportsRestartTaskTypes;
+
     @Autowired
     private ScheduleRepository scheduleRepository;
 
@@ -356,7 +361,8 @@ public class ScheduleService {
                         ErrorCodes.UpdateNotAllowed, null, "Update schedule is not allowed.");
             }
             if (req.getOperationType() == OperationType.PAUSE) {
-                PreConditions.validRequestState(!hasExecutingTask(targetSchedule.getId()), ErrorCodes.PauseNotAllowed,
+                PreConditions.validRequestState(!hasExecutingTask(targetSchedule.getId()),
+                        ErrorCodes.PauseNotAllowed,
                         null, "Pause schedule is not allowed.");
             }
             if (req.getOperationType() == OperationType.DELETE) {
@@ -638,7 +644,7 @@ public class ScheduleService {
             return true;
         }
         // skip execution if concurrent scheduling is not allowed
-        boolean rejectExecution = !schedule.getAllowConcurrent() && hasExecutingTask(schedule.getId());
+        boolean rejectExecution = !schedule.getAllowConcurrent() && rejectCurrentTaskRun(schedule.getId());
         if (rejectExecution) {
             Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
                     .item(AlarmUtils.ORGANIZATION_NAME, schedule.getOrganizationId().toString())
@@ -652,26 +658,70 @@ public class ScheduleService {
         return rejectExecution;
     }
 
+    // check if there are task not in terminate status
     private boolean hasExecutingTask(Long scheduleId) {
+        return validateScheduleTaskStatus(scheduleId, this::isScheduleTaskRunning);
+    }
+
+    // check if there are task in remaing status or nor int terminate status
+    private boolean rejectCurrentTaskRun(Long scheduleId) {
+        return validateScheduleTaskStatus(scheduleId, this::rejectScheduleTaskRun);
+    }
+
+    // validate function for queried scheduleTask
+    private boolean validateScheduleTaskStatus(Long scheduleId, Function<ScheduleTask, Boolean> validateFunctions) {
         Optional<LatestTaskMappingEntity> optional = latestTaskMappingRepository.findByScheduleId(scheduleId);
         if (optional.isPresent()) {
             Optional<ScheduleTask> taskEntityOptional =
                     scheduleTaskService.findById(optional.get().getLatestScheduleTaskId());
-            TaskStatus status = null;
-            if (taskEntityOptional.isPresent() && !taskEntityOptional.get().getStatus().isTerminated()) {
-                // correct the status of the task
-                if (taskEntityOptional.get().getJobId() == null) {
-                    scheduleTaskService.updateStatusById(taskEntityOptional.get().getId(), TaskStatus.FAILED);
-                    return false;
-                }
-                status = taskEntityOptional.get().getStatus();
-                log.info("Found executing task,scheduleId={},executingTaskId={},taskStatus={}", scheduleId,
-                        taskEntityOptional.get().getId(), status);
+            // resuming is a middle state means latest task is restarting, that is a valid state for latest task
+            if (!taskEntityOptional.isPresent()) {
+                return false;
+            }
+            ScheduleTask task = taskEntityOptional.get();
+            if (validateFunctions.apply(task)) {
                 return true;
             }
-            log.info("LatestTaskMapping={},LatestTaskStatus={}", optional.get(), status);
+            log.info("LatestTaskMapping={},LatestTaskStatus={}", optional.get(), task.getStatus());
         }
         return false;
+    }
+
+    private boolean isScheduleTaskRunning(ScheduleTask scheduleTask) {
+        TaskStatus status = scheduleTask.getStatus();
+        // terminate status means task is finished
+        if (status.isTerminated()) {
+            return false;
+        }
+        // correct the status of the task
+        // TODO(tinker): why this status will correct to failed
+        if (scheduleTask.getJobId() == null) {
+            scheduleTaskService.updateStatusById(scheduleTask.getId(), TaskStatus.FAILED);
+            return false;
+        }
+        log.info("Found executing task,scheduleId={},executingTaskId={},taskStatus={}", scheduleTask.getJobName(),
+                scheduleTask.getId(), status);
+        return true;
+    }
+
+    private boolean isScheduleTaskResuming(ScheduleTask scheduleTask) {
+        TaskStatus status = scheduleTask.getStatus();
+        // terminate status means task is finished
+        if (status.isTerminated()) {
+            return false;
+        }
+        if (status == TaskStatus.CANCELING) {
+            scheduleTaskService.updateStatusById(scheduleTask.getId(), TaskStatus.CANCELED);
+            return false;
+        }
+        return status == TaskStatus.RESUMING;
+    }
+
+    // if in resume status, return false, or if not in terminate status, return true
+    private boolean rejectScheduleTaskRun(ScheduleTask scheduleTask) {
+        boolean isResuming = isScheduleTaskResuming(scheduleTask);
+        boolean hasExistingTask = isScheduleTaskRunning(scheduleTask);
+        return !isResuming && hasExistingTask;
     }
 
     private boolean isValidSchedule(Schedule schedule) {
@@ -704,14 +754,15 @@ public class ScheduleService {
         return true;
     }
 
-    public void stopTask(Long scheduleId, Long scheduleTaskId) {
+    public void stopTask(Long scheduleId, Long scheduleTaskId, boolean isPause) {
         nullSafeGetByIdWithCheckPermission(scheduleId, true);
-        scheduleTaskService.nullSafeGetByIdAndScheduleId(scheduleTaskId, scheduleId);
         Lock lock = jdbcLockRegistry.obtain(getScheduleTaskLockKey(scheduleTaskId));
         try {
             if (!lock.tryLock(10, TimeUnit.SECONDS)) {
                 throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
             }
+            ScheduleTask scheduleTask = scheduleTaskService.nullSafeGetByIdAndScheduleId(scheduleTaskId, scheduleId);
+            processStopStatus(scheduleTask, isPause);
             scheduleTaskService.stop(scheduleTaskId);
         } catch (InterruptedException e) {
             log.error("Stop task failed", e);
@@ -721,18 +772,71 @@ public class ScheduleService {
         }
     }
 
+    protected void processStopStatus(ScheduleTask scheduleTask, boolean isPause) {
+        if (isPause) {
+            // check type
+            if (!doesTaskTypeSupportRestart(scheduleTask)) {
+                throw new UnsupportedException(scheduleTask.getJobGroup() + " not support pause operation");
+            }
+            // check status, only running status can be paused
+            if (scheduleTask.getStatus() != TaskStatus.RUNNING) {
+                throw new UnsupportedException(scheduleTask.getJobGroup()
+                        + " are not in running status, current status is " + scheduleTask.getStatus());
+            }
+            // update status to pausing
+            scheduleTaskService.updateStatusById(scheduleTask.getId(), TaskStatus.PAUSING);
+        } else {
+            if (scheduleTask.getStatus().isTerminated()) {
+                throw new UnsupportedException(scheduleTask.getJobGroup()
+                        + " are has in terminate status, current status is" + scheduleTask.getStatus());
+            }
+            if (scheduleTask.getStatus() == TaskStatus.CANCELING) {
+                throw new UnsupportedException(scheduleTask.getJobGroup()
+                        + " are has in canceling status");
+            }
+            if (scheduleTask.getStatus().isRecoverable()) {
+                // no task is running, correct to CANCELED
+                scheduleTaskService.updateStatusById(scheduleTask.getId(), TaskStatus.CANCELED);
+            } else {
+                // that's force terminate, every state can entry canceled state
+                // update status to canceling
+                scheduleTaskService.updateStatusById(scheduleTask.getId(), TaskStatus.CANCELING);
+            }
+        }
+    }
+
     /**
      * @param scheduleId the task must belong to a valid schedule,so this param is not be null.
      * @param scheduleTaskId the task uid. Start a paused or pending task.
      */
     @Transactional(rollbackFor = Exception.class)
-    public void startTask(Long scheduleId, Long scheduleTaskId) {
+    public void startTask(Long scheduleId, Long scheduleTaskId, boolean isResume) {
         nullSafeGetByIdWithCheckPermission(scheduleId, true);
-        scheduleTaskService.nullSafeGetByIdAndScheduleId(scheduleTaskId, scheduleId);
         Lock lock = jdbcLockRegistry.obtain(getScheduleTaskLockKey(scheduleTaskId));
         try {
             if (!lock.tryLock(10, TimeUnit.SECONDS)) {
                 throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
+            }
+            ScheduleTask scheduleTask = scheduleTaskService.nullSafeGetByIdAndScheduleId(scheduleTaskId, scheduleId);
+            if (isResume) {
+                if (!doesTaskTypeSupportRestart(scheduleTask)) {
+                    throw new UnsupportedException(scheduleTask.getJobGroup() + " not support resume operation");
+                }
+                if (null == scheduleTask.getStatus() || !scheduleTask.getStatus().isRecoverable()) {
+                    throw new UnsupportedException(scheduleTask.getJobGroup()
+                            + "are not in paused or abnormal status, current status is " + scheduleTask.getStatus());
+                }
+                // update status to resuming
+                scheduleTaskService.updateStatusById(scheduleTask.getId(), TaskStatus.RESUMING);
+            } else {
+                // compatible with old logic
+                if (!scheduleTask.getStatus().isRetryAllowed()) {
+                    log.warn(
+                            "The task cannot be restarted because it is currently in progress or has already completed,scheduleTaskId={}",
+                            scheduleTask.getId());
+                    throw new IllegalStateException(
+                            "The task cannot be restarted because it is currently in progress or has already completed.");
+                }
             }
             scheduleTaskService.start(scheduleTaskId);
         } catch (InterruptedException e) {
@@ -741,6 +845,13 @@ public class ScheduleService {
         } finally {
             lock.unlock();
         }
+    }
+
+    private boolean doesTaskTypeSupportRestart(ScheduleTask scheduleTask) {
+        if (null == scheduleTask) {
+            return true;
+        }
+        return supportsRestartTaskTypes.contains(ScheduleTaskType.valueOf(scheduleTask.getJobGroup()));
     }
 
     public void rollbackTask(Long scheduleId, Long scheduleTaskId) {

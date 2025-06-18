@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -215,12 +214,6 @@ public class ScheduleResponseMapperFactory {
                 id2Schedule.values().stream().map(ScheduleEntity::getCreatorId).collect(Collectors.toSet());
         Map<Long, List<UserEntity>> users = userRepository.findByUserIds(creatorIds).stream().collect(
                 Collectors.groupingBy(UserEntity::getId));
-
-        // get database info
-        Set<Long> databaseIds =
-                id2Schedule.values().stream().map(ScheduleEntity::getDatabaseId).collect(Collectors.toSet());
-        Map<Long, Database> id2Database = getDatabaseByIds(databaseIds).stream()
-                .collect(Collectors.toMap(Database::getId, Function.identity()));
 
         // get job result json
         List<Long> jobIds = taskEntities.stream().map(ScheduleTaskEntity::getJobId).filter(Objects::nonNull)

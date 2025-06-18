@@ -879,3 +879,7 @@ ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES('odc.task.isAutoRecoveryTimeoutJob', 'true',
 'Enable auto recovery timeout job or not, default value true' )
 ON DUPLICATE KEY UPDATE `id` = `id`;
+
+INSERT INTO config_system_configuration(`key`, application, profile, label, description, value) VALUES('odc.task-framework.task-restart-support-type',
+'odc', 'default', 'master', 'pause support config in json', '[\"DATA_ARCHIVE\", \"DATA_DELETE\"]')
+ON DUPLICATE KEY UPDATE `id` = `id`;

@@ -30,6 +30,7 @@ import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.schedule.job.DLMJobReq;
 import com.oceanbase.odc.service.schedule.model.ScheduleTask;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskType;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.processor.matcher.DLMProcessorMatcher;
 import com.oceanbase.tools.migrator.common.enums.JobType;
@@ -59,7 +60,8 @@ public class DLMTerminateProcessor extends DLMProcessorMatcher implements Termin
             }
         });
         dlmService.createOrUpdateDlmTableUnits(dlmTableUnits);
-        return dlmService.getFinalTaskStatus(scheduleTask.getId());
+        return dlmService.getFinalTaskStatus(scheduleTask,
+                ScheduleTaskType.valueOf(scheduleTask.getJobGroup()));
     }
 
     @Override

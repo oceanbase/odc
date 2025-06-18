@@ -82,7 +82,7 @@ public class DataDeleteJob extends AbstractDlmJob {
                 .setRateLimit(limiterService.getByOrderIdOrElseDefaultConfig(Long.parseLong(taskEntity.getJobName())));
         Long jobId =
                 publishJob(parameters, dataDeleteParameters.getTimeoutMillis(), dataDeleteParameters.getDatabaseId());
-        scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);
+        scheduleTaskService.updateJobIdByTaskIdWithCheckScheduleTaskCancelingStatus(taskEntity.getId(), jobId);
         scheduleTaskRepository.updateTaskResult(taskEntity.getId(), JsonUtils.toJson(parameters));
         log.info("Publish data-delete job to task framework succeed,scheduleTaskId={},jobIdentity={}",
                 taskEntity.getId(),

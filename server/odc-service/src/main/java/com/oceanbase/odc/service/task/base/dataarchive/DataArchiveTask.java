@@ -66,6 +66,7 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
     private List<DlmTableUnit> toDoList;
     private int currentIndex = -1;
     private boolean isToStop = false;
+    private boolean isTimeout = false;
 
     public DataArchiveTask() {}
 
@@ -290,11 +291,17 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
         if (toDoList != null) {
             toDoList.forEach(t -> {
                 if (!t.getStatus().isTerminated()) {
-                    t.setStatus(TaskStatus.CANCELED);
+                    t.setStatus(isTimeout ? TaskStatus.EXEC_TIMEOUT : TaskStatus.CANCELED);
                 }
             });
             log.info("Stop all table success.");
         }
+    }
+
+    @Override
+    public void timeout() throws Exception {
+        this.isTimeout = true;
+        stop();
     }
 
     @Override

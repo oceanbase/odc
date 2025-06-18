@@ -47,6 +47,13 @@ public interface Task<RESULT> {
     void stop() throws Exception;
 
     /**
+     * process timeout
+     */
+    default void timeout() throws Exception {
+        stop();
+    }
+
+    /**
      * close and clean resource of task
      */
     void close() throws Exception;

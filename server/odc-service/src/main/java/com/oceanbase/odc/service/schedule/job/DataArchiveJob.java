@@ -91,7 +91,7 @@ public class DataArchiveJob extends AbstractDlmJob {
 
         Long jobId = publishJob(parameters, dataArchiveParameters.getTimeoutMillis(),
                 dataArchiveParameters.getSourceDatabaseId());
-        scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);
+        scheduleTaskService.updateJobIdByTaskIdWithCheckScheduleTaskCancelingStatus(taskEntity.getId(), jobId);
         scheduleTaskRepository.updateTaskResult(taskEntity.getId(), JsonUtils.toJson(parameters));
         log.info("Publish data-archive job to task framework succeed,scheduleTaskId={},jobIdentity={}",
                 taskEntity.getId(),

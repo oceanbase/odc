@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.common.json.JsonUtils;
@@ -36,6 +37,8 @@ import com.oceanbase.odc.service.dlm.model.PreviewSqlStatementsReq;
 import com.oceanbase.odc.service.dlm.utils.DataArchiveConditionUtil;
 import com.oceanbase.odc.service.dlm.utils.DlmTableUnitMapper;
 import com.oceanbase.odc.service.schedule.model.DlmTableUnitExecutionDetail;
+import com.oceanbase.odc.service.schedule.model.ScheduleTask;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskType;
 
 /**
  * @Author：tinker
@@ -47,6 +50,9 @@ public class DLMService {
 
     @Autowired
     private DlmTableUnitRepository dlmTableUnitRepository;
+    @Autowired
+    @Qualifier("supportsRestartTaskTypes")
+    private Set<ScheduleTaskType> supportsRestartTaskTypes;
 
     @SkipAuthorize("do not access any resources")
     public List<String> previewSqlStatements(PreviewSqlStatementsReq req) {
@@ -128,13 +134,27 @@ public class DLMService {
      * generate final task status by scheduleTaskId when the task is finished
      */
     @SkipAuthorize("odc internal usage")
-    public TaskStatus getFinalTaskStatus(Long scheduleTaskId) {
-        List<DlmTableUnit> dlmTableUnits = findByScheduleTaskId(scheduleTaskId);
+    public TaskStatus getFinalTaskStatus(ScheduleTask scheduleTask, ScheduleTaskType scheduleTaskType) {
+        // if the task is pausing, return PAUSED as final status
+        if (scheduleTask.getStatus() == TaskStatus.PAUSING) {
+            return TaskStatus.PAUSED;
+        }
+        // if the task is canceling, return CANCELED as final status
+        if (scheduleTask.getStatus() == TaskStatus.CANCELING) {
+            return TaskStatus.CANCELED;
+        }
+        List<DlmTableUnit> dlmTableUnits = findByScheduleTaskId(scheduleTask.getId());
         Set<TaskStatus> collect = dlmTableUnits.stream().map(DlmTableUnit::getStatus).collect(
                 Collectors.toSet());
+        boolean enableRestart = supportsRestartTaskTypes.contains(scheduleTaskType);
+        // If any table is timeout, the task is considered timeout.
+        if (collect.contains(TaskStatus.EXEC_TIMEOUT)) {
+            return TaskStatus.EXEC_TIMEOUT;
+        }
         // If the tables do not exist or any table fails, the task is considered a failure.
         if (dlmTableUnits.isEmpty() || collect.contains(TaskStatus.FAILED)) {
-            return TaskStatus.FAILED;
+            // if enableRestart, return ABNORMAL instead of FAILED to let the task be restarted.
+            return enableRestart ? TaskStatus.ABNORMAL : TaskStatus.FAILED;
         }
         // If any table is canceled, the task is considered canceled.
         if (collect.contains(TaskStatus.CANCELED)) {
@@ -143,7 +163,8 @@ public class DLMService {
         // The task is considered failed if any table is still preparing or running when the task is
         // finished.
         if (collect.contains(TaskStatus.PREPARING) || collect.contains(TaskStatus.RUNNING)) {
-            return TaskStatus.FAILED;
+            // if enableRestart, return ABNORMAL instead of FAILED to let the task be restarted.
+            return enableRestart ? TaskStatus.ABNORMAL : TaskStatus.FAILED;
         }
         return TaskStatus.DONE;
     }

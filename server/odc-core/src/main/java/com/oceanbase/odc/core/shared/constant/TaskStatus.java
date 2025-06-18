@@ -27,6 +27,13 @@ public enum TaskStatus {
     RUNNING,
     // task not work, but can be recovered
     ABNORMAL,
+    // pausing or paused or resuming only support for task who implement restart logic
+    // that means task must save checkpoint for it's recovery
+    PAUSING,
+    PAUSED,
+    RESUMING,
+    // task is canceling, that will transfer to CANCELED status
+    CANCELING,
     // the following is terminate states
     FAILED,
     EXEC_TIMEOUT,
@@ -46,11 +53,26 @@ public enum TaskStatus {
                 || TaskStatus.EXEC_TIMEOUT == this;
     }
 
-    public boolean isRetryAllowed() {
-        return CANCELED == this || FAILED == this || EXEC_TIMEOUT == this;
+    public boolean isRecoverable() {
+        switch (this) {
+            case PAUSED:
+            case ABNORMAL:
+                return true;
+            default:
+                return false;
+        }
     }
 
+    public boolean isRetryAllowed() {
+        // TODO(lx): confirm CANCELED , FAILED , EXEC_TIMEOUT should be a terminate status?
+        return CANCELED == this || FAILED == this || EXEC_TIMEOUT == this
+                || isRecoverable();
+    }
+
+    // only paused and abnormal status can be recovered, this code will be removed in the future
+    @Deprecated
     public static List<String> getRetryAllowedStatus() {
-        return Arrays.asList(TaskStatus.FAILED.name(), TaskStatus.CANCELED.name(), TaskStatus.DONE.name());
+        return Arrays.asList(TaskStatus.FAILED.name(), TaskStatus.CANCELED.name(), TaskStatus.DONE.name(),
+                TaskStatus.PAUSED.name(), TaskStatus.ABNORMAL.name());
     }
 }

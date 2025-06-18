@@ -164,13 +164,6 @@ public class ScheduleTaskService {
     @Transactional(rollbackFor = Exception.class)
     public void start(Long id) {
         ScheduleTask scheduleTask = nullSafeGetModelById(id);
-        if (!scheduleTask.getStatus().isRetryAllowed()) {
-            log.warn(
-                    "The task cannot be restarted because it is currently in progress or has already completed,scheduleTaskId={}",
-                    id);
-            throw new IllegalStateException(
-                    "The task cannot be restarted because it is currently in progress or has already completed.");
-        }
         switch (ScheduleTaskType.valueOf(scheduleTask.getJobGroup())) {
             case DATA_ARCHIVE:
             case DATA_ARCHIVE_ROLLBACK:
@@ -235,14 +228,33 @@ public class ScheduleTaskService {
         try {
             DispatchResponse response =
                     requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
-            log.info("Remote interrupt task succeed,taskId={}", id);
+            log.info("Remote interrupt task succeed,taskId={}, response ={}", id, response);
         } catch (Exception e) {
             log.warn("Remote interrupt task failed, taskId={}", id, e);
             throw new UnexpectedException(String.format("Remote interrupt task failed, taskId=%s", id));
         }
     }
 
-
+    /**
+     * final check if schedule task has canceled, that will update job status to CANCELING
+     */
+    public void updateJobIdByTaskIdWithCheckScheduleTaskCancelingStatus(Long taskID, Long jobID) {
+        Optional<ScheduleTaskEntity> optionalTaskEntity = scheduleTaskRepository.findById(taskID);
+        if (!optionalTaskEntity.isPresent()) {
+            return;
+        }
+        ScheduleTaskEntity taskEntity = optionalTaskEntity.get();
+        scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobID);
+        boolean inCancelingStatus =
+                taskEntity.getStatus() == TaskStatus.CANCELING || taskEntity.getStatus() == TaskStatus.CANCELED;
+        if (inCancelingStatus) {
+            try {
+                jobScheduler.cancelJob(jobID);
+            } catch (Exception e) {
+                log.warn("Cancel task for taskID = {} failed", e);
+            }
+        }
+    }
 
     public void updateStatusById(Long id, TaskStatus status) {
         scheduleTaskRepository.updateStatusById(id, status);

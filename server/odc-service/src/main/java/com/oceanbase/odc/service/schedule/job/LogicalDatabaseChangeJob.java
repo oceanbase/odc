@@ -33,6 +33,7 @@ import com.oceanbase.odc.service.connection.logicaldatabase.LogicalTableService;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalDatabaseResp;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.ScheduleService;
+import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.schedule.model.LogicalDatabaseChangeParameters;
 import com.oceanbase.odc.service.schedule.model.PublishLogicalDatabaseChangeReq;
 import com.oceanbase.odc.service.task.base.logicdatabasechange.LogicalDatabaseChangeTask;
@@ -61,6 +62,7 @@ public class LogicalDatabaseChangeJob implements OdcJob {
     private final LogicalDatabaseService logicalDatabaseService;
     private final LogicalTableService logicalTableService;
     private final ScheduleRepository scheduleRepository;
+    private final ScheduleTaskService scheduleTaskService;
     private JobScheduler jobScheduler;
 
     public LogicalDatabaseChangeJob() {
@@ -72,7 +74,7 @@ public class LogicalDatabaseChangeJob implements OdcJob {
         this.logicalDatabaseService = SpringContextUtil.getBean(LogicalDatabaseService.class);
         this.logicalTableService = SpringContextUtil.getBean(LogicalTableService.class);
         this.scheduleRepository = SpringContextUtil.getBean(ScheduleRepository.class);
-
+        this.scheduleTaskService = SpringContextUtil.getBean(ScheduleTaskService.class);
         if (taskFrameworkProperties.isEnabled()) {
             jobScheduler = SpringContextUtil.getBean(JobScheduler.class);
         }
@@ -99,7 +101,7 @@ public class LogicalDatabaseChangeJob implements OdcJob {
         req.setTimeoutMillis(parameters.getTimeoutMillis());
         req.setScheduleTaskId(taskEntity.getId());
         Long jobId = publishJob(req, parameters.getTimeoutMillis());
-        scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);
+        scheduleTaskService.updateJobIdByTaskIdWithCheckScheduleTaskCancelingStatus(taskEntity.getId(), jobId);
         scheduleTaskRepository.updateTaskResult(taskEntity.getId(), JsonUtils.toJson(parameters));
         log.info("Publish data-archive job to task framework succeed,scheduleTaskId={},jobIdentity={}",
                 taskEntity.getId(), jobId);

@@ -186,9 +186,11 @@ public class StdJobScheduler implements JobScheduler {
     private void tryCanceling(Long jobId) throws JobException {
         JobEntity jobEntity = configuration.getTaskFrameworkService().findWithPessimisticLock(jobId);
         // not interrupt terminated or is terminating
+        // not throw exception, just log
         if (!jobEntity.getStatus().isExecuting() || jobEntity.getStatus().isTerminating()) {
-            throw new JobException(String.format("Cancel job failed, current job %d status is %s, can't be cancel.",
+            log.warn(String.format("Cancel job failed, current job %d status is %s, can't be cancel.",
                     jobEntity.getId(), jobEntity.getStatus()));
+            return;
         }
         log.info("Prepare cancel task, jobId={}.", jobEntity.getId());
         try {

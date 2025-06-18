@@ -19,9 +19,9 @@ import org.quartz.JobExecutionContext;
 
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
-import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.loaddata.LoadDataJobBuilder;
+import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
@@ -33,7 +33,7 @@ import com.oceanbase.odc.service.task.schedule.JobScheduler;
 public class LoadDataJob implements OdcJob {
     private final LoadDataJobBuilder jobBuilder;
     private final JobScheduler jobScheduler;
-    public final ScheduleTaskRepository scheduleTaskRepository;
+    public final ScheduleTaskService scheduleTaskService;
     private Long jobId;
 
     public LoadDataJob() {
@@ -41,14 +41,14 @@ public class LoadDataJob implements OdcJob {
                 "Load data is supported only when task framework enabled");
         jobScheduler = SpringContextUtil.getBean(JobScheduler.class);
         jobBuilder = SpringContextUtil.getBean(LoadDataJobBuilder.class);
-        scheduleTaskRepository = SpringContextUtil.getBean(ScheduleTaskRepository.class);
+        scheduleTaskService = SpringContextUtil.getBean(ScheduleTaskService.class);
     }
 
     @Override
     public void execute(JobExecutionContext jobExecutionContext) {
         jobId = jobScheduler.scheduleJobNow(jobBuilder.build(jobExecutionContext));
         ScheduleTaskEntity taskEntity = (ScheduleTaskEntity) jobExecutionContext.getResult();
-        scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);
+        scheduleTaskService.updateJobIdByTaskIdWithCheckScheduleTaskCancelingStatus(taskEntity.getId(), jobId);
     }
 
     @Override

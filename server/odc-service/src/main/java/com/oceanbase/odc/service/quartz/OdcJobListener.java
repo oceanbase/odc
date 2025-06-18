@@ -144,11 +144,14 @@ public class OdcJobListener implements JobListener {
             Long restartTaskId = targetTaskId;
             entity = taskRepository.findById(targetTaskId).orElseThrow(() -> new NotFoundException(
                     ResourceType.ODC_SCHEDULE_TASK, "id", restartTaskId));
-            int affectRows =
-                    taskRepository.updateStatusById(entity.getId(), TaskStatus.PREPARING,
-                            TaskStatus.getRetryAllowedStatus());
-            if (affectRows < 1) {
-                throw new IllegalStateException(String.format("Task is running,taskId=%s", entity.getId()));
+            // compatible with old logic,
+            if (entity.getStatus() != TaskStatus.PREPARING && entity.getStatus() != TaskStatus.RESUMING) {
+                int affectRows =
+                        taskRepository.updateStatusById(entity.getId(), TaskStatus.PREPARING,
+                                TaskStatus.getRetryAllowedStatus());
+                if (affectRows < 1) {
+                    throw new IllegalStateException(String.format("Task is running,taskId=%s", entity.getId()));
+                }
             }
         }
         ScheduleTaskContextHolder.trace(scheduleEntity.getId(), entity.getJobGroup(), entity.getId());

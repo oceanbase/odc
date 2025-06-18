@@ -31,5 +31,4 @@ public interface OdcJob {
     void after(JobExecutionContext context);
 
     void interrupt();
-
 }

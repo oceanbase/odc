@@ -52,8 +52,9 @@ public class DefaultJobProcessUpdateListener extends AbstractEventListener<Defau
         JobEntity jobEntity = stdTaskFrameworkService.find(identity.getId());
         scheduleTaskService.findByJobId(jobEntity.getId())
                 .ifPresent(taskEntity -> {
-                    if (taskEntity.getStatus() == TaskStatus.PREPARING) {
-                        updateScheduleTaskStatus(taskEntity.getId(), TaskStatus.RUNNING, TaskStatus.PREPARING);
+                    if (taskEntity.getStatus() == TaskStatus.PREPARING
+                            || taskEntity.getStatus() == TaskStatus.RESUMING) {
+                        updateScheduleTaskStatus(taskEntity.getId(), TaskStatus.RUNNING, taskEntity.getStatus());
                     }
                 });
     }

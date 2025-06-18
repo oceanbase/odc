@@ -46,6 +46,7 @@ import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.ScheduleService;
+import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
 import com.oceanbase.odc.service.task.base.sqlplan.SqlPlanTask;
@@ -75,6 +76,7 @@ public class SqlPlanJob implements OdcJob {
     public final JobScheduler jobScheduler;
     public final SystemConfigService systemConfigService;
     public final ConnectionService datasourceService;
+    private final ScheduleTaskService scheduleTaskService;
 
 
     public SqlPlanJob() {
@@ -86,6 +88,7 @@ public class SqlPlanJob implements OdcJob {
         this.jobScheduler = SpringContextUtil.getBean(JobScheduler.class);
         this.systemConfigService = SpringContextUtil.getBean(SystemConfigService.class);
         this.datasourceService = SpringContextUtil.getBean(ConnectionService.class);
+        this.scheduleTaskService = SpringContextUtil.getBean(ScheduleTaskService.class);
     }
 
     @Override
@@ -180,7 +183,7 @@ public class SqlPlanJob implements OdcJob {
                 .build();
 
         Long jobId = jobScheduler.scheduleJobNow(jd);
-        scheduleTaskRepository.updateJobIdById(taskEntity.getId(), jobId);
+        scheduleTaskService.updateJobIdByTaskIdWithCheckScheduleTaskCancelingStatus(taskEntity.getId(), jobId);
         log.info("Publish sql plan job to task framework success, scheduleTaskId={}, jobId={}",
                 taskEntity.getId(),
                 jobId);

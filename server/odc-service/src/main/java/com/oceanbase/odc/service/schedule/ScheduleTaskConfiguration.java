@@ -15,10 +15,18 @@
  */
 package com.oceanbase.odc.service.schedule;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.metadb.connection.ConnectionConfigRepository;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.service.exporter.ImportService;
@@ -28,6 +36,7 @@ import com.oceanbase.odc.service.schedule.alarm.ScheduleAlarmClient;
 import com.oceanbase.odc.service.schedule.export.DefaultScheduleFacade;
 import com.oceanbase.odc.service.schedule.flowtask.ApprovalFlowClient;
 import com.oceanbase.odc.service.schedule.flowtask.NoApprovalFlowClient;
+import com.oceanbase.odc.service.schedule.model.ScheduleTaskType;
 import com.oceanbase.odc.service.schedule.submitter.DefaultJobSubmitter;
 import com.oceanbase.odc.service.schedule.submitter.JobSubmitter;
 import com.oceanbase.odc.service.schedule.util.DefaultScheduleDescriptionGenerator;
@@ -74,5 +83,26 @@ public class ScheduleTaskConfiguration {
             ImportService importService) {
         return new DefaultScheduleFacade(connectionConfigRepository, databaseRepository, authenticationFacade,
                 importService);
+    }
+
+    @Bean("supportsRestartTaskTypes")
+    public Set<ScheduleTaskType> supportsRestartTaskTypes(
+            @Value("${odc.task-framework.task-restart-support-type:}") String taskRestartSupportType) {
+        Set<ScheduleTaskType> ret = new HashSet<>();
+        List<String> supported = JsonUtils.fromJson(taskRestartSupportType, List.class);
+        if (CollectionUtils.isEmpty(supported)) {
+            ret.add(ScheduleTaskType.DATA_ARCHIVE);
+            ret.add(ScheduleTaskType.DATA_DELETE);
+            return ret;
+        } else {
+            for (String type : supported) {
+                if (StringUtils.isEmpty(type)) {
+                    continue;
+                }
+                ScheduleTaskType scheduleTaskType = ScheduleTaskType.valueOf(type);
+                ret.add(scheduleTaskType);
+            }
+            return ret;
+        }
     }
 }

@@ -129,7 +129,7 @@ final class TaskContainer<RESULT> implements ExceptionListener {
             if (getStatus().isTerminated()) {
                 log.warn("Task is already finished and cannot be timeout, id={}, status={}.", getJobId(), getStatus());
             } else {
-                task.stop();
+                task.timeout();
                 updateStatus(TaskStatus.EXEC_TIMEOUT);
             }
             return true;

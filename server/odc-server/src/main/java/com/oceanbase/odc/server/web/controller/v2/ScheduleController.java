@@ -98,18 +98,36 @@ public class ScheduleController {
         throw new UnsupportedException();
     }
 
+    // this action do as cancel semantics
     @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/executions/latest/stop",
             method = RequestMethod.POST)
-    public SuccessResponse<Boolean> stopTask(@PathVariable Long scheduleId, @PathVariable Long taskId) {
-        scheduleService.stopTask(scheduleId, taskId);
+    public SuccessResponse<Boolean> cancelTask(@PathVariable Long scheduleId, @PathVariable Long taskId) {
+        scheduleService.stopTask(scheduleId, taskId, false);
         return Responses.success(Boolean.TRUE);
     }
 
+    @ApiOperation(value = "pauseTask", notes = "暂停任务")
+    @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/pause",
+            method = RequestMethod.POST)
+    public SuccessResponse<Boolean> pauseTask(@PathVariable Long scheduleId, @PathVariable Long taskId) {
+        scheduleService.stopTask(scheduleId, taskId, true);
+        return Responses.ok(Boolean.TRUE);
+    }
+
+    @Deprecated
     @ApiOperation(value = "StartTask", notes = "启动任务")
     @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/start",
             method = RequestMethod.POST)
     public SuccessResponse<Boolean> startTask(@PathVariable Long scheduleId, @PathVariable Long taskId) {
-        scheduleService.startTask(scheduleId, taskId);
+        scheduleService.startTask(scheduleId, taskId, false);
+        return Responses.success(Boolean.TRUE);
+    }
+
+    @ApiOperation(value = "Resume", notes = "恢复任务")
+    @RequestMapping(value = "/schedules/{scheduleId:[\\d]+}/tasks/{taskId:[\\d]+}/resume",
+            method = RequestMethod.POST)
+    public SuccessResponse<Boolean> resumeTask(@PathVariable Long scheduleId, @PathVariable Long taskId) {
+        scheduleService.startTask(scheduleId, taskId, true);
         return Responses.success(Boolean.TRUE);
     }
 

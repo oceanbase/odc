@@ -34,6 +34,7 @@ import com.oceanbase.odc.service.dlm.DlmLimiterService;
 import com.oceanbase.odc.service.dlm.model.DlmTableUnit;
 import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.ScheduleService;
+import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.executor.task.TaskDescription;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
@@ -50,6 +51,7 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class AbstractDlmJob extends AbstractOdcJob {
 
     public final ScheduleTaskRepository scheduleTaskRepository;
+    public final ScheduleTaskService scheduleTaskService;
     public final DatabaseService databaseService;
     public final ScheduleService scheduleService;
     public final DlmLimiterService limiterService;
@@ -62,6 +64,7 @@ public abstract class AbstractDlmJob extends AbstractOdcJob {
 
     public AbstractDlmJob() {
         scheduleTaskRepository = SpringContextUtil.getBean(ScheduleTaskRepository.class);
+        scheduleTaskService = SpringContextUtil.getBean(ScheduleTaskService.class);
         databaseService = SpringContextUtil.getBean(DatabaseService.class);
         scheduleService = SpringContextUtil.getBean(ScheduleService.class);
         limiterService = SpringContextUtil.getBean(DlmLimiterService.class);
