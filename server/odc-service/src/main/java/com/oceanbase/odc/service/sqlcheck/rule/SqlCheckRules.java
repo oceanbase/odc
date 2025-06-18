@@ -161,7 +161,7 @@ public class SqlCheckRules {
         rules.add(new Unable2JudgeAffectedRowsFactory(jdbc));
         rules.add(new CreateTableLikeExistsFactory());
         rules.add(new CreateTableAsExistsFactory());
-        rules.add(new CheckRationalityForDBObjectsFactory());
+        rules.add(new CheckRationalityForDBObjectsFactory(schemaSupplier, jdbc));
         return rules;
     }
 

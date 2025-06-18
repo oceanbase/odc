@@ -17,22 +17,23 @@ package com.oceanbase.odc.service.sqlcheck.rule;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.function.Supplier;
 
-import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
+import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
+import com.oceanbase.odc.service.sqlcheck.rule.checkRationality.DBColumnCheckRationalityChecker;
+import com.oceanbase.odc.service.sqlcheck.rule.checkRationality.DBObjectCheckRationalityContext;
+import com.oceanbase.odc.service.sqlcheck.rule.checkRationality.DBTableCheckRationalityChecker;
+import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
+import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.sqlparser.statement.Statement;
-import com.oceanbase.tools.sqlparser.statement.expression.ColumnReference;
-import com.oceanbase.tools.sqlparser.statement.select.Projection;
-import com.oceanbase.tools.sqlparser.statement.select.Select;
-import com.oceanbase.tools.sqlparser.statement.select.SelectBody;
 
 import lombok.NonNull;
 
@@ -43,6 +44,19 @@ import lombok.NonNull;
  * @since: 4.3.4
  */
 public class MySQLCheckRationalityForDBObjects implements SqlCheckRule {
+
+    private final Supplier<String> schemaSupplier;
+
+    private final JdbcOperations jdbcOperations;
+    // 前端勾选的数据库对象类型，勾选后就做此数据库对象类型的存在合理性校验
+    // 目前写死做测试用，后续需要从前端动态赋值
+    List<DBObjectType> supportedDBObjectType = Arrays.asList(DBObjectType.TABLE, DBObjectType.COLUMN);
+
+    public MySQLCheckRationalityForDBObjects(Supplier<String> schemaSupplier, JdbcOperations jdbcOperations) {
+        this.schemaSupplier = schemaSupplier;
+        this.jdbcOperations = jdbcOperations;
+    }
+
     @Override
     public SqlCheckRuleType getType() {
         return SqlCheckRuleType.CHECK_RATIONALITY_FOR_DB_OBJECTS;
@@ -50,31 +64,71 @@ public class MySQLCheckRationalityForDBObjects implements SqlCheckRule {
 
     @Override
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
-        String text = statement.getText();
-        if (statement.getClass() == Select.class) {
-            Select select = (Select) statement;
-            SelectBody selectBody = select.getSelectBody();
-            List<Projection> selectItems = selectBody.getSelectItems();
-            List<String> shouldExistedColumns = new ArrayList<>();
-            if (CollectionUtils.isNotEmpty(selectItems)) {
-
-                for (Projection selectItem : selectItems) {
-                    if (selectItem.isStar()) {
-                        continue;
-                    }
-                    if (null != selectItem.getColumn()) {
-                        ColumnReference column = (ColumnReference) selectItem.getColumn();
-                        String column1 = column.getColumn();
-
-                    }
+        // todo 获取需要校验存在的表对象
+        List<CheckViolation> checkViolationlist = new ArrayList<>();
+        DBObjectCheckRationalityContext dbObjectCheckRationalityContext = context.getDbObjectCheckRationalityContext();
+        // todo 这里校验表对象存在的合理性
+        if (supportedDBObjectType.contains(DBObjectType.TABLE)) {
+            DBTableCheckRationalityChecker dbTableCheckRationalityChecker = new DBTableCheckRationalityChecker();
+            // todo 获取需要校验存在的表对象
+            List<DBObjectIdentity> shouldExistedTable =
+                    dbTableCheckRationalityChecker.ExtractShouldExistedDBObjects(schemaSupplier, statement);
+            // todo 校验表对象是否存在
+            for (DBObjectIdentity dbObjectIdentity : shouldExistedTable) {
+                Boolean existed = dbTableCheckRationalityChecker.checkObjectExistence(dbObjectIdentity, jdbcOperations);
+                if (Boolean.FALSE.equals(existed)) {
+                    checkViolationlist.add(
+                            SqlCheckUtil.buildViolation(statement.getText(), statement, getType(),
+                                    new Object[] {}));
                 }
-                shouldExistedColumns.addAll(selectItems.stream().map(Projection::getText).collect(Collectors.toList()));
             }
-
-            List<String> shouldNotExistedColumns = new ArrayList<>();
-
+            // todo 获取需要检验不存在的表对象
+            List<DBObjectIdentity> shouldNotExistedTables =
+                    dbTableCheckRationalityChecker.ExtractShouldExistedDBObjects(schemaSupplier, statement);
+            // todo 执行校验表对象不存在逻辑
+            for (DBObjectIdentity shouldNotExistedTable : shouldNotExistedTables) {
+                Boolean existed =
+                        dbTableCheckRationalityChecker.checkObjectNonExistence(shouldNotExistedTable, jdbcOperations);
+                if (Boolean.FALSE.equals(existed)) {
+                    checkViolationlist.add(
+                            SqlCheckUtil.buildViolation(statement.getText(), statement, getType(),
+                                    new Object[] {}));
+                }
+            }
         }
-        return Collections.emptyList();
+        // todo 这里校验列对象存在的合理性
+        else if (supportedDBObjectType.contains(DBObjectType.COLUMN)) {
+            DBColumnCheckRationalityChecker dbColumnCheckRationalityChecker = new DBColumnCheckRationalityChecker();
+            // todo 获取需要校验存在的表对象
+            List<DBObjectIdentity> shouldExistedColumn =
+                    dbColumnCheckRationalityChecker.ExtractShouldExistedDBObjects(schemaSupplier, statement);
+            // todo 校验表对象是否存在
+            for (DBObjectIdentity dbObjectIdentity : shouldExistedColumn) {
+                Boolean existed =
+                        dbColumnCheckRationalityChecker.checkObjectExistence(dbObjectIdentity, jdbcOperations);
+                if (Boolean.FALSE.equals(existed)) {
+                    checkViolationlist.add(
+                            SqlCheckUtil.buildViolation(statement.getText(), statement, getType(),
+                                    new Object[] {}));
+                }
+            }
+            // todo 获取需要检验不存在的表对象
+            List<DBObjectIdentity> shouldNotExistedColumn =
+                    dbColumnCheckRationalityChecker.ExtractShouldExistedDBObjects(schemaSupplier, statement);
+            // todo 执行校验表对象不存在逻辑
+            for (DBObjectIdentity shouldNotExistedTable : shouldNotExistedColumn) {
+                Boolean existed =
+                        dbColumnCheckRationalityChecker.checkObjectNonExistence(shouldNotExistedTable, jdbcOperations);
+                if (Boolean.FALSE.equals(existed)) {
+                    checkViolationlist.add(
+                            SqlCheckUtil.buildViolation(statement.getText(), statement, getType(),
+                                    new Object[] {}));
+                }
+            }
+        } else if (supportedDBObjectType.contains(DBObjectType.INDEX)) {
+            // todo 这里校验索引对象存在的合理性
+        }
+        return checkViolationlist;
     }
 
     @Override

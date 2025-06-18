@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 
 import com.oceanbase.odc.common.lang.Pair;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
+import com.oceanbase.odc.service.sqlcheck.rule.checkRationality.DBObjectCheckRationalityContext;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 
 import lombok.Getter;
@@ -44,6 +45,8 @@ public class SqlCheckContext {
     @Setter
     Long currentStmtStartOffset;
     private final List<Pair<Pair<Statement, Integer>, List<CheckViolation>>> stmt2Violations;
+    @Getter
+    DBObjectCheckRationalityContext dbObjectCheckRationalityContext;
 
     public SqlCheckContext() {
         this.stmt2Violations = new ArrayList<>();

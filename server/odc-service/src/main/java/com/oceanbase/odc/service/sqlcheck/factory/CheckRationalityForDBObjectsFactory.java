@@ -15,7 +15,11 @@
  */
 package com.oceanbase.odc.service.sqlcheck.factory;
 
+import java.util.function.Supplier;
+
 import javax.annotation.Nullable;
+
+import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
@@ -33,6 +37,16 @@ import lombok.NonNull;
  * @since: 4.3.4
  */
 public class CheckRationalityForDBObjectsFactory implements SqlCheckRuleFactory {
+
+    private final Supplier<String> schemaSupplier;
+
+    private final JdbcOperations jdbcOperations;
+
+    public CheckRationalityForDBObjectsFactory(Supplier<String> schemaSupplier, JdbcOperations jdbcOperations) {
+        this.schemaSupplier = schemaSupplier;
+        this.jdbcOperations = jdbcOperations;
+    }
+
     @Override
     public SqlCheckRuleType getSupportsType() {
         return SqlCheckRuleType.CHECK_RATIONALITY_FOR_DB_OBJECTS;
@@ -43,7 +57,7 @@ public class CheckRationalityForDBObjectsFactory implements SqlCheckRuleFactory 
     public SqlCheckRule generate(@NonNull SqlCheckRuleContext sqlCheckRuleContext) {
         DialectType dialectType = sqlCheckRuleContext.getDialectType();
         if (dialectType == DialectType.OB_MYSQL) {
-            return new MySQLCheckRationalityForDBObjects();
+            return new MySQLCheckRationalityForDBObjects(schemaSupplier, jdbcOperations);
         }
         return null;
     }
