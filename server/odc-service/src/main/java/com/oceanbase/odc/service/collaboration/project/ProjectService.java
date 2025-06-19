@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -251,7 +252,8 @@ public class ProjectService {
         ProjectEntity entity = repository.findByIdAndOrganizationId(projectId, organizationId)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_PROJECT, "id", projectId));
         List<UserResourceRole> userResourceRoles =
-                resourceRoleService.listByResourceTypeAndResourceId(ResourceType.ODC_PROJECT, entity.getId());
+                resourceRoleService.listByResourceTypeAndResourceId(ResourceType.ODC_PROJECT, entity.getId(),
+                        organizationId);
         return userResourceRoles.stream().map(this::fromUserResourceRole).filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
@@ -503,7 +505,9 @@ public class ProjectService {
         ProjectEntity project = repository.findByIdAndOrganizationId(projectId, organizationId)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_PROJECT, "id", projectId));
         Map<Long, List<UserResourceRole>> userId2ResourceRoles =
-                resourceRoleService.listByResourceTypeAndResourceId(ResourceType.ODC_PROJECT, project.getId()).stream()
+                resourceRoleService
+                        .listByResourceTypeAndResourceId(ResourceType.ODC_PROJECT, project.getId(), organizationId)
+                        .stream()
                         .collect(Collectors.groupingBy(UserResourceRole::getUserId));
         if (CollectionUtils.isEmpty(userId2ResourceRoles.keySet())) {
             return false;
@@ -524,12 +528,12 @@ public class ProjectService {
     }
 
     @SkipAuthorize("internal usage")
-    public Map<Long, List<Project>> mapByIdIn(Set<Long> ids) {
+    public Map<Long, Project> mapByIdIn(Set<Long> ids) {
         if (CollectionUtils.isEmpty(ids)) {
             return Collections.emptyMap();
         }
         return repository.findAllById(ids).stream().map(projectMapper::entityToModel)
-                .collect(Collectors.groupingBy(Project::getId));
+                .collect(Collectors.toMap(Project::getId, Function.identity()));
     }
 
     @SkipAuthorize("permission check inside")

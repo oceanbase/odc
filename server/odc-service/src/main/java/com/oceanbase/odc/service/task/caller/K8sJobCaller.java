@@ -16,6 +16,7 @@
 
 package com.oceanbase.odc.service.task.caller;
 
+import java.util.Date;
 import java.util.Optional;
 
 import com.oceanbase.odc.common.util.StringUtils;
@@ -29,6 +30,7 @@ import com.oceanbase.odc.service.task.resource.K8sPodResource;
 import com.oceanbase.odc.service.task.resource.K8sResourceContext;
 import com.oceanbase.odc.service.task.resource.PodConfig;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
+import com.oceanbase.odc.service.task.supervisor.endpoint.ExecutorEndpoint;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -46,11 +48,13 @@ public class K8sJobCaller extends BaseJobCaller {
     private final PodConfig defaultPodConfig;
     private final ResourceManager resourceManager;
     private final String resourceType;
+    private final Date jobCreateTime;
 
-    public K8sJobCaller(PodConfig podConfig, ResourceManager resourceManager, String resourceType) {
+    public K8sJobCaller(PodConfig podConfig, ResourceManager resourceManager, String resourceType, Date jobCreateTime) {
         this.defaultPodConfig = podConfig;
         this.resourceManager = resourceManager;
         this.resourceType = resourceType;
+        this.jobCreateTime = jobCreateTime;
     }
 
     @Override
@@ -61,17 +65,23 @@ public class K8sJobCaller extends BaseJobCaller {
                     resourceManager.create(resourceLocation, buildK8sResourceContext(context, resourceLocation));
             K8sPodResource k8sPodResource = resource.getResource();
             String arn = k8sPodResource.resourceID().getIdentifier();
-
-            return new ExecutorInfo(k8sPodResource.resourceID(),
+            ExecutorIdentifier executorIdentifier =
                     DefaultExecutorIdentifier.builder().namespace(resource.getResource().getNamespace())
-                            .executorName(arn).build());
+                            .host(resource.getResource().getPodIpAddress())
+                            .port(Integer.valueOf(resource.getResource().getServicePort()))
+                            .executorName(arn).build();
+            ExecutorEndpoint executorEndpoint = new ExecutorEndpoint("k8s", resource.getResource().getPodIpAddress(),
+                    -1, -1,
+                    Integer.valueOf(resource.getResource().getServicePort()), executorIdentifier.toString());
+            return new ExecutorInfo(k8sPodResource.resourceID(),
+                    executorEndpoint);
         } catch (Throwable e) {
             throw new JobException("doStart failed for " + context, e);
         }
     }
 
     protected K8sResourceContext buildK8sResourceContext(JobContext context, ResourceLocation resourceLocation) {
-        String jobName = JobUtils.generateExecutorName(context.getJobIdentity());
+        String jobName = JobUtils.generateExecutorName(context.getJobIdentity(), jobCreateTime);
         return new K8sResourceContext(defaultPodConfig, jobName, resourceLocation.getRegion(),
                 resourceLocation.getGroup(),
                 resourceType, context);
@@ -88,9 +98,6 @@ public class K8sJobCaller extends BaseJobCaller {
                 ResourceIDUtil.GROUP_PROP_NAME, ResourceIDUtil.DEFAULT_PROP_VALUE);
         return new ResourceLocation(region, group);
     }
-
-    @Override
-    public void doStop(JobIdentity ji) throws JobException {}
 
     @Override
     protected void doFinish(JobIdentity ji, ExecutorIdentifier ei, ResourceID resourceID)

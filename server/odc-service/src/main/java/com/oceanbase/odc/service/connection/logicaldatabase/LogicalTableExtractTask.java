@@ -109,13 +109,19 @@ public class LogicalTableExtractTask implements Runnable {
 
         List<LogicalTable> logicalTables = new LogicalTableFinder(physicalDatabases, dbObjectRepository).find();
         if (CollectionUtils.isEmpty(logicalTables)) {
+            log.info("Logical tables not found for database id={}", logicalDatabase.getId());
             databaseService.updateObjectLastSyncTimeAndStatus(logicalDatabase.getId(), DBObjectSyncStatus.SYNCED);
             return;
         }
+        log.info("Logical tables found for database id={}, logical tables={}, physical databases={}",
+                logicalDatabase.getId(), logicalTables.stream().map(LogicalTable::getName).collect(Collectors.toList()),
+                physicalDatabases.stream().map(Database::getName).collect(Collectors.toList()));
         // remove logical tables that have the same name
         logicalTables = logicalTables.stream().collect(Collectors.toMap(LogicalTable::getName, table -> table,
                 (table1, table2) -> table1)).values().stream().collect(Collectors.toList());
-
+        log.info("Logical tables after removing duplicates for database id={}, logical tables={}",
+                logicalDatabase.getId(),
+                logicalTables.stream().map(LogicalTable::getName).collect(Collectors.toList()));
         Lock lock = jdbcLockRegistry.obtain("logicaltable-extract-database-id-" + logicalDatabase.getId());
 
         try {
@@ -130,7 +136,8 @@ public class LogicalTableExtractTask implements Runnable {
         try {
             Set<String> existedTables = dbObjectRepository.findByDatabaseIdAndType(logicalDatabase.getId(),
                     DBObjectType.LOGICAL_TABLE).stream().map(DBObjectEntity::getName).collect(Collectors.toSet());
-
+            log.info("Existed tables for database id={}, logical tables={}", logicalDatabase.getId(),
+                    existedTables.stream().collect(Collectors.toList()));
             logicalTables.stream()
                     .filter(table -> !existedTables.contains(table.getName()) && table.getActualDataNodes().size() > 1)
                     .forEach(table -> {
@@ -155,6 +162,10 @@ public class LogicalTableExtractTask implements Runnable {
                             physicalTableEntity.setConsistent(true);
                             physicalTableEntities.add(physicalTableEntity);
                         });
+                        log.info("Create logical table for database id={}, logical table={}, physical tables={}",
+                                logicalDatabase.getId(), savedTableEntity.getName(),
+                                physicalTableEntities.stream().map(TableMappingEntity::getPhysicalTableName)
+                                        .collect(Collectors.toList()));
                         tableRelationRepository.batchCreate(physicalTableEntities);
                         databaseService.updateObjectLastSyncTimeAndStatus(logicalDatabase.getId(),
                                 DBObjectSyncStatus.SYNCED);

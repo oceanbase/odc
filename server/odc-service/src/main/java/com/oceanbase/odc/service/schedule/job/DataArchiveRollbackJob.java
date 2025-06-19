@@ -69,7 +69,7 @@ public class DataArchiveRollbackJob extends AbstractDlmJob {
                     .get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
                     DLMJobReq.class);
         } else {
-            parameters = getDLMJobReq(dataArchiveTask.getJobId());
+            parameters = getDLMJobReqWithArchiveRange(dataArchiveTask.getJobId());
             parameters.setJobType(JobType.ROLLBACK);
             DataSourceInfo tempDataSource = parameters.getSourceDs();
             parameters.setSourceDs(parameters.getTargetDs());

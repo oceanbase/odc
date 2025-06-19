@@ -73,7 +73,7 @@ public class DataArchiveDeleteJob extends AbstractDlmJob {
                     .get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
                     DLMJobReq.class);
         } else {
-            parameters = getDLMJobReq(dataArchiveTask.getJobId());
+            parameters = getDLMJobReqWithArchiveRange(dataArchiveTask.getJobId());
             parameters.setJobType(JobType.DELETE);
             parameters.setFireTime(context.getFireTime());
             parameters.setScheduleTaskId(taskEntity.getId());

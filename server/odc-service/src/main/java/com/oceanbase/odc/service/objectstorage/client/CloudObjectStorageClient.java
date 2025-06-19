@@ -321,7 +321,7 @@ public class CloudObjectStorageClient implements ObjectStorageClient {
             return;
         }
         String region = objectStorageConfiguration.getRegion();
-        if (StringUtils.isNotEmpty(region)) {
+        if (StringUtils.isNotEmpty(region) && !StringUtils.containsIgnoreCase(region, "finance")) {
             String location = publicEndpointCloudObjectStorage.getBucketLocation(bucketName);
             log.info("location={},region={},cloudProvider={}", location, region,
                     objectStorageConfiguration.getCloudProvider());

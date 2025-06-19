@@ -148,6 +148,14 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
 
         sessionConfig.setJdbcOption("sendConnectionAttributes", "true");
         sessionConfig.setJdbcOption("defaultConnectionAttributesBanList", "__client_ip");
+
+        if (StringUtils.isNotBlank(transferConfig.getConnectionInfo().getProxyHost())
+                && Objects.nonNull(transferConfig.getConnectionInfo().getProxyPort())) {
+            sessionConfig.setJdbcOption("socksProxyHost", transferConfig.getConnectionInfo().getProxyHost());
+            sessionConfig.setJdbcOption("socksProxyPort",
+                    String.valueOf(transferConfig.getConnectionInfo().getProxyPort()));
+        }
+
         Optional.ofNullable(transferConfig.getExecutionTimeoutSeconds())
                 .ifPresent(timeout -> {
                     sessionConfig.setJdbcOption("socketTimeout", timeout * 1000 + "");
@@ -175,28 +183,7 @@ public abstract class BaseParameterFactory<T extends BaseParameter> {
             return;
         }
         parameter.setColumnSeparator(csvConfig.getColumnSeparator());
-        String lineSeparator = csvConfig.getLineSeparator();
-        StringBuilder realLineSeparator = new StringBuilder();
-        int length = lineSeparator.length();
-        boolean transferFlag = false;
-        for (int i = 0; i < length; i++) {
-            char item = lineSeparator.charAt(i);
-            if (item == '\\') {
-                transferFlag = true;
-                continue;
-            }
-            if (transferFlag) {
-                if (item == 'n') {
-                    realLineSeparator.append('\n');
-                } else if (item == 'r') {
-                    realLineSeparator.append('\r');
-                }
-                transferFlag = false;
-            } else {
-                realLineSeparator.append(item);
-            }
-        }
-        parameter.setLineSeparator(realLineSeparator.toString());
+        parameter.setLineSeparator(csvConfig.getLineSeparator());
         parameter.setSkipHeader(csvConfig.isSkipHeader());
         parameter.setColumnDelimiter(csvConfig.getColumnDelimiter());
         /*

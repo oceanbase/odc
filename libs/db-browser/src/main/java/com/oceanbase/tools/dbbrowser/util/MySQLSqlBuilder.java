@@ -39,4 +39,9 @@ public class MySQLSqlBuilder extends SqlBuilder {
     public SqlBuilder defaultValue(String value) {
         return append(SqlUtils.quoteMysqlDefaultValue(value));
     }
+
+    @Override
+    public SqlBuilder like(String fieldKey, String fieldLikeValue) {
+        return super.like(fieldKey, fieldLikeValue);
+    }
 }

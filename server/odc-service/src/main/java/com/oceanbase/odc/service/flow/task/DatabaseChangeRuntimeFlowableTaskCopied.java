@@ -230,7 +230,8 @@ public class DatabaseChangeRuntimeFlowableTaskCopied extends BaseODCFlowTaskDele
                 FlowTaskUtil.getTaskCreator(execution).getId());
         jobParameters.put(JobParametersKeyConstants.FLOW_INSTANCE_ID, getFlowInstanceId().toString());
         jobParameters.put(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY, JobUtils.toJson(taskParameters));
-        jobParameters.put(JobParametersKeyConstants.TASK_EXECUTION_TIMEOUT_MILLIS, p.getTimeoutMillis() + "");
+        jobParameters.put(JobParametersKeyConstants.TASK_EXECUTION_END_TIME_MILLIS,
+                String.valueOf(System.currentTimeMillis() + p.getTimeoutMillis()));
         return DefaultJobDefinition.builder().jobClass(DatabaseChangeTask.class)
                 .jobType(TaskType.ASYNC.name())
                 .jobParameters(jobParameters)

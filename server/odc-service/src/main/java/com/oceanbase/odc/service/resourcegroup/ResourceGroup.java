@@ -32,7 +32,7 @@ import org.apache.commons.lang.Validate;
 import org.springframework.data.jpa.domain.Specification;
 
 import com.oceanbase.odc.core.authority.model.SecurityResource;
-import com.oceanbase.odc.core.shared.OrganizationIsolated;
+import com.oceanbase.odc.core.shared.SingleOrganizationResource;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -69,7 +69,7 @@ import lombok.ToString;
 @ToString(exclude = {"resourceGroupRepository", "resourceGroupConnectionRepository", "authenticationFacade"})
 @EqualsAndHashCode(exclude = {"resourceGroupRepository", "resourceGroupConnectionRepository",
         "authenticationFacade", "createTime", "updateTime"})
-public class ResourceGroup implements SecurityResource, OrganizationIsolated {
+public class ResourceGroup implements SecurityResource, SingleOrganizationResource {
 
     private Long id;
     @Setter

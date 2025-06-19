@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -56,10 +57,12 @@ import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
+import com.oceanbase.odc.service.sqlcheck.AffectedRowCalculator;
 import com.oceanbase.odc.service.sqlcheck.DefaultSqlChecker;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRuleFactory;
+import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.sqlcheck.rule.SqlCheckRules;
 import com.oceanbase.odc.service.task.base.TaskBase;
@@ -86,6 +89,7 @@ public class PreCheckTask extends TaskBase<FlowTaskResult> {
     private volatile boolean success = false;
     private SqlCheckTaskResult sqlCheckResult = null;
     private DatabasePermissionCheckResult permissionCheckResult = null;
+    private AffectedRowCalculator affectedRowCalculator;
 
     public PreCheckTask() {}
 
@@ -116,6 +120,9 @@ public class PreCheckTask extends TaskBase<FlowTaskResult> {
             }
             this.permissionCheckResult = new DatabasePermissionCheckResult(unauthorizedDBResources);
             this.sqlCheckResult = SqlCheckTaskResult.success(violations);
+            if (affectedRowCalculator != null) {
+                this.sqlCheckResult.setAffectedRows(affectedRowCalculator.getAffectedRows(sqls));
+            }
             this.success = true;
             log.info("Pre-check task end up running, task id: {}", taskId);
         } catch (Throwable e) {
@@ -250,8 +257,12 @@ public class PreCheckTask extends TaskBase<FlowTaskResult> {
         SqlCheckContext checkContext = new SqlCheckContext((long) sqls.size());
         try (SingleConnectionDataSource dataSource = (SingleConnectionDataSource) factory.getDataSource()) {
             JdbcTemplate jdbc = new JdbcTemplate(dataSource);
-            List<SqlCheckRule> checkRules = getRules(rules, config.getDialectType(), jdbc);
+            List<SqlCheckRule> checkRules =
+                    getRules(rules, () -> SqlCheckUtil.getDbVersion(config, dataSource), config.getDialectType(), jdbc);
             DefaultSqlChecker sqlChecker = new DefaultSqlChecker(config.getDialectType(), null, checkRules);
+            this.affectedRowCalculator = new AffectedRowCalculator(config.getDialectType(),
+                    SqlCheckUtil.getAffectedRowsRule(() -> SqlCheckUtil.getDbVersion(config, dataSource),
+                            config.getDialectType(), jdbc));
             List<CheckViolation> checkViolations = new ArrayList<>();
             for (OffsetString sql : sqls) {
                 List<CheckViolation> violations = sqlChecker.check(Collections.singletonList(sql), checkContext);
@@ -262,7 +273,8 @@ public class PreCheckTask extends TaskBase<FlowTaskResult> {
         }
     }
 
-    private List<SqlCheckRule> getRules(List<Rule> rules, @NonNull DialectType dialectType,
+    private List<SqlCheckRule> getRules(List<Rule> rules, Supplier<String> dbVersionSupplier,
+            @NonNull DialectType dialectType,
             @NonNull JdbcOperations jdbc) {
         if (CollectionUtils.isEmpty(rules)) {
             return Collections.emptyList();
@@ -276,7 +288,7 @@ public class PreCheckTask extends TaskBase<FlowTaskResult> {
             return Objects.equals(metadata.getType(), RuleType.SQL_CHECK);
         }).map(rule -> {
             try {
-                return SqlCheckRules.createByRule(candidates, dialectType, rule);
+                return SqlCheckRules.createByRule(candidates, dbVersionSupplier, dialectType, rule);
             } catch (Exception e) {
                 return null;
             }
@@ -313,5 +325,4 @@ public class PreCheckTask extends TaskBase<FlowTaskResult> {
             }
         }
     }
-
 }

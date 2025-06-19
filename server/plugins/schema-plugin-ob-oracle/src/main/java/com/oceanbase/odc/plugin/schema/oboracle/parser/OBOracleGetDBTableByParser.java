@@ -89,6 +89,13 @@ public class OBOracleGetDBTableByParser extends BaseOBGetDBTableByParser {
     @Getter
     private Map<String, String> indexName2Ddl = new HashMap<>();
 
+    public OBOracleGetDBTableByParser() {
+        this.createTableStmt = null;
+        this.connection = null;
+        this.schemaName = null;
+        this.tableName = null;
+    }
+
     public OBOracleGetDBTableByParser(@NonNull Connection connection, @NonNull String schemaName,
             @NonNull String tableName) {
         this.connection = connection;

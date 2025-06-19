@@ -132,7 +132,7 @@ public class CustomAuthenticationFailureHandler implements AuthenticationFailure
             errorResponse = Responses.error(HttpStatus.UNAUTHORIZED,
                     Error.of(ErrorCodes.UserNotEnabled, new Object[] {remainTime}));
         } else if (cause instanceof UsernameNotFoundException) {
-            errorResponse = Responses.error(HttpStatus.NOT_FOUND,
+            errorResponse = Responses.error(HttpStatus.UNAUTHORIZED,
                     Error.of(ErrorCodes.UserWrongPasswordOrNotFound, new Object[] {remainTime}));
         } else if (cause instanceof BadCredentialsException) {
             errorResponse = Responses.error(HttpStatus.UNAUTHORIZED,
@@ -156,8 +156,6 @@ public class CustomAuthenticationFailureHandler implements AuthenticationFailure
         } else {
             failedLoginAttemptLimiter.reduceFailedAttemptCount();
         }
-
-        errorResponse.getError().addDetail(exception);
 
         // recover to current locale
         LocaleContextHolder.setLocale(currentLocale);

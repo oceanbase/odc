@@ -178,9 +178,21 @@ public class ResourceRoleService {
         return resourceRoleRepository.findById(id);
     }
 
+    @SkipAuthorize("internal usage")
+    public List<ResourceRoleEntity> listResourceRoleByIds(@NonNull Collection<Long> ids) {
+        return resourceRoleRepository.findAllById(ids);
+    }
+
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal usage")
     public List<UserResourceRole> listByResourceTypeAndResourceId(ResourceType resourceType, Long resourceId) {
+        return listByResourceTypeAndResourceId(resourceType, resourceId, authenticationFacade.currentOrganizationId());
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("internal usage")
+    public List<UserResourceRole> listByResourceTypeAndResourceId(ResourceType resourceType, Long resourceId,
+            Long organizationId) {
         List<UserResourceRole> userResourceRoles =
                 fromEntities(userResourceRoleRepository.listByResourceTypeAndId(resourceType, resourceId));
         if (resourceType == ResourceType.ODC_DATABASE) {
@@ -188,7 +200,7 @@ public class ResourceRoleService {
         }
         List<UserGlobalResourceRole> globalResourceRoles =
                 globalResourceRoleService
-                        .findGlobalResourceRoleUsersByOrganizationId(authenticationFacade.currentOrganizationId());
+                        .findGlobalResourceRoleUsersByOrganizationId(organizationId);
         if (CollectionUtils.isEmpty(globalResourceRoles)) {
             return userResourceRoles;
         }
@@ -282,7 +294,8 @@ public class ResourceRoleService {
 
     @SkipAuthorize("internal usage")
     public List<UserResourceRole> listByUserId(Long userId) {
-        List<UserResourceRole> userResourceRoles = fromEntities(userResourceRoleRepository.findByUserId(userId));
+        List<UserResourceRole> userResourceRoles = fromEntities(userResourceRoleRepository
+                .findByOrganizationIdAndUserId(authenticationFacade.currentOrganizationId(), userId));
         List<UserGlobalResourceRole> globalResourceRoles =
                 globalResourceRoleService.findGlobalResourceRoleUsersByOrganizationIdAndUserId(
                         authenticationFacade.currentOrganizationId(),

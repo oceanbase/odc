@@ -241,34 +241,29 @@ public class PartitionPlanScheduleService {
 
     @Transactional(rollbackOn = Exception.class)
     public void disablePartitionPlan(@NonNull Long databaseId) throws SchedulerException {
-        List<Long> ppIds = this.partitionPlanRepository.findByDatabaseIdAndEnabled(databaseId, true)
-                .stream().map(PartitionPlanEntity::getId).collect(Collectors.toList());
-        if (CollectionUtils.isEmpty(ppIds)) {
+        List<PartitionPlanEntity> ppEntities = this.partitionPlanRepository.findByDatabaseIdAndEnabled(
+                databaseId, true);
+        if (CollectionUtils.isEmpty(ppEntities)) {
             return;
         }
-        List<PartitionPlanEntity> ppEntities = this.partitionPlanRepository.findByIdIn(ppIds)
-                .stream().filter(e -> Boolean.TRUE.equals(e.getEnabled())).collect(Collectors.toList());
         Set<Long> flowInstIds = ppEntities.stream()
                 .map(PartitionPlanEntity::getFlowInstanceId)
                 .filter(id -> id > 0).collect(Collectors.toSet());
         this.flowInstanceRepository.updateStatusByIds(flowInstIds, FlowStatus.CANCELLED);
-        ppIds = ppEntities.stream().map(PartitionPlanEntity::getId).collect(Collectors.toList());
+        List<Long> ppIds = ppEntities.stream().map(PartitionPlanEntity::getId).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(ppIds)) {
             return;
         }
         this.partitionPlanRepository.updateEnabledAndLastModifierIdByIdIn(
                 ppIds, false, this.authenticationFacade.currentUserId());
-        List<Long> pptIds = this.partitionPlanTableRepository.findByPartitionPlanIdInAndEnabled(ppIds, true)
-                .stream().map(PartitionPlanTableEntity::getId).collect(Collectors.toList());
-        disablePartitionPlanTables(pptIds);
+        disablePartitionPlanTables(ppIds);
         log.info("Disable partition plan succeed, ids={}, databaseId={}", ppIds, databaseId);
     }
 
     @Transactional(rollbackOn = Exception.class)
-    public void disablePartitionPlanTables(@NonNull List<Long> partitionPlanTableIds) throws SchedulerException {
-        List<PartitionPlanTableEntity> ppts = this.partitionPlanTableRepository
-                .findByIdIn(partitionPlanTableIds).stream()
-                .filter(e -> Boolean.TRUE.equals(e.getEnabled())).collect(Collectors.toList());
+    public void disablePartitionPlanTables(@NonNull List<Long> partitionPlanIds) throws SchedulerException {
+        List<PartitionPlanTableEntity> ppts =
+                this.partitionPlanTableRepository.findByPartitionPlanIdInAndEnabled(partitionPlanIds, true);
         if (CollectionUtils.isEmpty(ppts)) {
             return;
         }

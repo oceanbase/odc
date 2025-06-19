@@ -59,6 +59,7 @@ import com.oceanbase.odc.service.schedule.export.exception.DatabaseNonExistExcep
 import com.oceanbase.odc.service.schedule.export.model.BaseScheduleRowData;
 import com.oceanbase.odc.service.schedule.export.model.DataArchiveScheduleRowData;
 import com.oceanbase.odc.service.schedule.export.model.DataDeleteScheduleRowData;
+import com.oceanbase.odc.service.schedule.export.model.ExportedDatabase;
 import com.oceanbase.odc.service.schedule.export.model.ImportScheduleTaskView;
 import com.oceanbase.odc.service.schedule.export.model.ImportTaskResult;
 import com.oceanbase.odc.service.schedule.export.model.PartitionPlanScheduleRowData;
@@ -66,7 +67,9 @@ import com.oceanbase.odc.service.schedule.export.model.ScheduleRowPreviewDto;
 import com.oceanbase.odc.service.schedule.export.model.ScheduleTaskImportRequest;
 import com.oceanbase.odc.service.schedule.export.model.SqlPlanScheduleRowData;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
+import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
 import com.oceanbase.odc.service.schedule.model.OperationType;
+import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
 
@@ -108,6 +111,9 @@ public class ScheduleTaskImporter implements InitializingBean {
                 ExportRowDataReader<JsonNode> rowDataReader = extractor.getRowDataReader()) {
             checkMetaData(extractor, rowDataReader);
             List<ScheduleRowPreviewDto> previewDto = getScheduleImportPreviewDto(rowDataReader);
+            if (CollectionUtils.isEmpty(previewDto)) {
+                throw new ExtractFileException(ErrorCodes.ExtractFileFailed, "No data in files");
+            }
             return scheduleExportImportFacade.preview(request.getScheduleType(), request.getProjectId(),
                     rowDataReader.getProperties(), previewDto);
         } catch (IOException e) {
@@ -231,12 +237,12 @@ public class ScheduleTaskImporter implements InitializingBean {
             results.add(ImportTaskResult.success(baseScheduleRowData.getRowId(), null));
             return true;
         }
-        CreateFlowInstanceReq createScheduleReq =
+        ScheduleChangeParams createScheduleReq =
                 getCreateScheduleReq(rowDataReader, scheduleType, projectId, currentRow, databaseId,
                         targetDatabaseId);
         log.info("Start to create schedule, createFlowInstanceReq={}, rowId={}", JsonUtils.toJson(createScheduleReq),
                 baseScheduleRowData.getRowId());
-        scheduleService.dispatchCreateSchedule(createScheduleReq);
+        scheduleService.changeSchedule(createScheduleReq);
         log.info("Create schedule success, rowId={}", baseScheduleRowData.getRowId());
         results.add(ImportTaskResult.success(baseScheduleRowData.getRowId(), null));
         return true;
@@ -260,7 +266,7 @@ public class ScheduleTaskImporter implements InitializingBean {
 
     }
 
-    private CreateFlowInstanceReq getCreateScheduleReq(ExportRowDataReader<JsonNode> rowDataReader,
+    private ScheduleChangeParams getCreateScheduleReq(ExportRowDataReader<JsonNode> rowDataReader,
             ScheduleType scheduleType, Long projectId, JsonNode row,
             Long databaseId,
             Long targetDatabaseId) {
@@ -268,15 +274,15 @@ public class ScheduleTaskImporter implements InitializingBean {
             case SQL_PLAN:
                 return getSqlPlanReq(rowDataReader, row, projectId, databaseId);
             case DATA_DELETE:
-                return getDataDeleteReq(row, projectId, databaseId, targetDatabaseId);
+                return getDataDeleteReq(row, databaseId, targetDatabaseId);
             case DATA_ARCHIVE:
-                return getDataArchiveReq(row, projectId, databaseId, targetDatabaseId);
+                return getDataArchiveReq(row, databaseId, targetDatabaseId);
             default:
                 throw new IllegalArgumentException("Unsupported type");
         }
     }
 
-    private CreateFlowInstanceReq getSqlPlanReq(ExportRowDataReader<JsonNode> rowDataReader, JsonNode row,
+    private ScheduleChangeParams getSqlPlanReq(ExportRowDataReader<JsonNode> rowDataReader, JsonNode row,
             Long projectId, Long databaseId) {
         SqlPlanScheduleRowData currentRowData = JsonUtils.fromJsonNode(row, SqlPlanScheduleRowData.class);
         if (currentRowData == null) {
@@ -291,9 +297,23 @@ public class ScheduleTaskImporter implements InitializingBean {
 
         AlterScheduleParameters alterScheduleParameters = ExportRowDataMapper.INSTANCE.toAlterScheduleParameters(
                 OperationType.CREATE, currentRowData, sqlPlanParameters);
-        return ExportRowDataMapper.INSTANCE.toCreateFlowInstanceReq(projectId,
-                databaseId, TaskType.ALTER_SCHEDULE, alterScheduleParameters,
-                currentRowData.getDescription());
+
+
+        return getScheduleChangeParams(alterScheduleParameters, currentRowData.getDatabase());
+    }
+
+    private ScheduleChangeParams getScheduleChangeParams(AlterScheduleParameters alterScheduleParameters,
+            ExportedDatabase exportedDatabase) {
+        CreateScheduleReq createScheduleReq = new CreateScheduleReq();
+        createScheduleReq.setParameters(alterScheduleParameters.getScheduleTaskParameters());
+        createScheduleReq.setTriggerConfig(alterScheduleParameters.getTriggerConfig());
+        createScheduleReq.setType(alterScheduleParameters.getType());
+        createScheduleReq.setDescription(alterScheduleParameters.getDescription());
+        createScheduleReq.setName("IMPORT-AUTO-CREATE" + "-" + exportedDatabase.getDatabaseName() + "-"
+                + exportedDatabase.getExportedDataSource().getInstanceId() + "-"
+                + exportedDatabase.getExportedDataSource().getTenantId() + "-"
+                + exportedDatabase.getExportedDataSource().getUsername());
+        return ScheduleChangeParams.with(createScheduleReq);
     }
 
     public List<String> rewriteObjectIds(ExportRowDataReader<JsonNode> rowDataReader, String creatorId,
@@ -311,7 +331,7 @@ public class ScheduleTaskImporter implements InitializingBean {
         return rewriteObjectIds;
     }
 
-    private CreateFlowInstanceReq getDataDeleteReq(JsonNode row, Long projectId, Long databaseId,
+    private ScheduleChangeParams getDataDeleteReq(JsonNode row, Long databaseId,
             Long targetDatabaseId) {
         DataDeleteScheduleRowData currentRowData = JsonUtils.fromJsonNode(row, DataDeleteScheduleRowData.class);
         if (currentRowData == null) {
@@ -322,13 +342,12 @@ public class ScheduleTaskImporter implements InitializingBean {
                         currentRowData);
         AlterScheduleParameters alterScheduleParameters = ExportRowDataMapper.INSTANCE
                 .toAlterScheduleParameters(OperationType.CREATE, currentRowData, dataDeleteParameters);
-        return ExportRowDataMapper.INSTANCE.toCreateFlowInstanceReq(projectId,
-                databaseId, TaskType.ALTER_SCHEDULE, alterScheduleParameters,
-                currentRowData.getDescription());
+
+        return getScheduleChangeParams(alterScheduleParameters, currentRowData.getDatabase());
     }
 
 
-    private CreateFlowInstanceReq getDataArchiveReq(JsonNode row, Long projectId, Long databaseId,
+    private ScheduleChangeParams getDataArchiveReq(JsonNode row, Long databaseId,
             Long targetDatabaseId) {
         DataArchiveScheduleRowData currentRowData = JsonUtils.fromJsonNode(row, DataArchiveScheduleRowData.class);
         if (currentRowData == null) {
@@ -339,9 +358,7 @@ public class ScheduleTaskImporter implements InitializingBean {
                         currentRowData);
         AlterScheduleParameters alterScheduleParameters = ExportRowDataMapper.INSTANCE
                 .toAlterScheduleParameters(OperationType.CREATE, currentRowData, dataArchiveParameters);
-        return ExportRowDataMapper.INSTANCE.toCreateFlowInstanceReq(projectId,
-                databaseId, TaskType.ALTER_SCHEDULE, alterScheduleParameters,
-                currentRowData.getDescription());
+        return getScheduleChangeParams(alterScheduleParameters, currentRowData.getDatabase());
     }
 
     private List<ScheduleRowPreviewDto> getScheduleImportPreviewDto(ExportRowDataReader<JsonNode> rowDataReader) {

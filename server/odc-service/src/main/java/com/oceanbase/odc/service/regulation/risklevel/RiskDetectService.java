@@ -15,9 +15,12 @@
  */
 package com.oceanbase.odc.service.regulation.risklevel;
 
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -48,7 +51,9 @@ import com.oceanbase.odc.service.regulation.risklevel.model.QueryRiskDetectRuleP
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskDetectRule;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
+import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriberIdentifier;
 
+import cn.hutool.core.util.ObjectUtil;
 import lombok.NonNull;
 
 /**
@@ -101,6 +106,26 @@ public class RiskDetectService {
             }
         }
         return matched;
+    }
+
+    @SkipAuthorize("internal usage")
+    public Map<RiskLevelDescriberIdentifier, RiskLevel> batchDetectHighestRiskLevel(List<RiskDetectRule> rules,
+            @NonNull Collection<RiskLevelDescriberIdentifier> identifiers) {
+        if (CollectionUtils.isEmpty(identifiers)) {
+            return Collections.emptyMap();
+        }
+        RiskLevel defaultRiskLevel = null;
+        Map<RiskLevelDescriberIdentifier, RiskLevel> identifiers2HighestRiskLevels = new HashMap<>();
+        for (RiskLevelDescriberIdentifier identifier : identifiers) {
+            if (CollectionUtils.isEmpty(rules)) {
+                defaultRiskLevel = ObjectUtil.defaultIfNull(defaultRiskLevel, riskLevelService.findDefaultRiskLevel());
+                identifiers2HighestRiskLevels.put(identifier, defaultRiskLevel);
+                continue;
+            }
+            identifiers2HighestRiskLevels.put(identifier,
+                    riskLevelService.findHighestRiskLevel(detect(rules, identifier.getDescriber())));
+        }
+        return identifiers2HighestRiskLevels;
     }
 
     @SkipAuthorize("internal authenticated")
@@ -166,7 +191,7 @@ public class RiskDetectService {
             return Collections.emptyList();
         }
         return ruleEntities.stream()
-                .map(ruleEntity -> entityToModel(ruleEntity))
+                .map(this::entityToModel)
                 .collect(Collectors.toList());
     }
 

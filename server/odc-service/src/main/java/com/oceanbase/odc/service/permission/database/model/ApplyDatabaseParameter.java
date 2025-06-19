@@ -23,6 +23,7 @@ import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.permission.project.ApplyProjectParameter.ApplyProject;
+import com.oceanbase.odc.service.task.base.precheck.PreCheckRiskLevel;
 
 import lombok.Data;
 
@@ -60,6 +61,11 @@ public class ApplyDatabaseParameter implements Serializable, TaskParameters {
      * Reason for application, required
      */
     private String applyReason;
+
+    /**
+     * Risk level info, required
+     */
+    private PreCheckRiskLevel riskLevel;
 
     @Data
     public static class ApplyDatabase implements Serializable {

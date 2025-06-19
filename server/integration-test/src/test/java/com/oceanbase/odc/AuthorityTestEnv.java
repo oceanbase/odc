@@ -39,6 +39,8 @@ import com.oceanbase.odc.metadb.iam.RolePermissionEntity;
 import com.oceanbase.odc.metadb.iam.RolePermissionRepository;
 import com.oceanbase.odc.metadb.iam.RoleRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
+import com.oceanbase.odc.metadb.iam.UserOrganizationEntity;
+import com.oceanbase.odc.metadb.iam.UserOrganizationRepository;
 import com.oceanbase.odc.metadb.iam.UserPermissionRepository;
 import com.oceanbase.odc.metadb.iam.UserRepository;
 import com.oceanbase.odc.metadb.iam.UserRoleEntity;
@@ -52,6 +54,8 @@ public abstract class AuthorityTestEnv extends ServiceTestEnv {
 
     @Autowired
     protected UserRepository userRepository;
+    @Autowired
+    protected UserOrganizationRepository userOrganizationRepository;
 
     @Autowired
     protected RoleRepository roleRepository;
@@ -108,7 +112,13 @@ public abstract class AuthorityTestEnv extends ServiceTestEnv {
         entity.setActive(true);
         entity.setEnabled(true);
         entity.setDescription("internal for unit test");
-        return userRepository.saveAndFlush(entity);
+
+        UserEntity user = userRepository.saveAndFlush(entity);
+        UserOrganizationEntity userOrganizationEntity = new UserOrganizationEntity();
+        userOrganizationEntity.setOrganizationId(user.getOrganizationId());
+        userOrganizationEntity.setUserId(user.getId());
+        userOrganizationRepository.saveAndFlush(userOrganizationEntity);
+        return user;
     }
 
     protected RoleEntity createRole() {

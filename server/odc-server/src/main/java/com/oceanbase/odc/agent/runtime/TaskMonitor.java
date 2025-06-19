@@ -59,7 +59,6 @@ class TaskMonitor {
     private final TaskReporter reporter;
     private final TaskContainer<?> taskContainer;
     private final CloudObjectStorageService cloudObjectStorageService;
-    private volatile long startTimeMilliSeconds;
     private ScheduledExecutorService reportScheduledExecutor;
     private ScheduledExecutorService heartScheduledExecutor;
     private Map<String, String> logMetadata = new HashMap<>();
@@ -84,9 +83,11 @@ class TaskMonitor {
 
     public void monitor() {
         log.info("monitor starting, jobId={}", getJobId());
+        initReportScheduler();
+        initHeartbeatScheduler();
+    }
 
-        this.startTimeMilliSeconds = System.currentTimeMillis();
-
+    private void initReportScheduler() {
         ThreadFactory threadFactory =
                 new TraceDecoratorThreadFactory(new TaskThreadFactory(("Task-Monitor-Job-" + getJobId())));
         this.reportScheduledExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
@@ -106,22 +107,28 @@ class TaskMonitor {
                 JobConstants.REPORT_TASK_INFO_INTERVAL_SECONDS,
                 TimeUnit.SECONDS);
         log.info("Task monitor init success");
+    }
 
-        heartScheduledExecutor = Executors.newSingleThreadScheduledExecutor(
-                new TaskThreadFactory(("Task-Heart-Job-" + getJobId())));
+    private void initHeartbeatScheduler() {
+        if (JobUtils.getExecutorPort().isPresent() && JobUtils.isReportEnabled()) {
+            heartScheduledExecutor = Executors.newSingleThreadScheduledExecutor(
+                    new TaskThreadFactory(("Task-Heart-Job-" + getJobId())));
 
-        heartScheduledExecutor.scheduleAtFixedRate(() -> {
-            try {
-                if (JobUtils.getExecutorPort().isPresent() && JobUtils.isReportEnabled()) {
-                    getReporter().report(JobServerUrls.TASK_HEARTBEAT, buildHeartRequest());
+            heartScheduledExecutor.scheduleAtFixedRate(() -> {
+                try {
+                    if (JobUtils.getExecutorPort().isPresent() && JobUtils.isReportEnabled()) {
+                        getReporter().report(JobServerUrls.TASK_HEARTBEAT, buildHeartRequest());
+                    }
+                } catch (Throwable e) {
+                    log.warn("Update heart info failed, id: {}", getJobId(), e);
                 }
-            } catch (Throwable e) {
-                log.warn("Update heart info failed, id: {}", getJobId(), e);
-            }
-        }, JobConstants.REPORT_TASK_HEART_DELAY_SECONDS,
-                JobConstants.REPORT_TASK_HEART_INTERVAL_SECONDS,
-                TimeUnit.SECONDS);
-        log.info("Task heart init success");
+            }, JobConstants.REPORT_TASK_HEART_DELAY_SECONDS,
+                    JobConstants.REPORT_TASK_HEART_INTERVAL_SECONDS,
+                    TimeUnit.SECONDS);
+            log.info("Task heart init success");
+        } else {
+            log.info("heart beat not needed, cause report not needed");
+        }
     }
 
     public void finalWork() {
@@ -175,12 +182,12 @@ class TaskMonitor {
     protected boolean isTimeout() {
         String milliSecStr =
                 getTask().getJobContext().getJobParameters()
-                        .get(JobParametersKeyConstants.TASK_EXECUTION_TIMEOUT_MILLIS);
+                        .get(JobParametersKeyConstants.TASK_EXECUTION_END_TIME_MILLIS);
 
         if (StringUtils.isNotBlank(milliSecStr)) {
-            boolean timeout = System.currentTimeMillis() - startTimeMilliSeconds > Long.parseLong(milliSecStr);
+            boolean timeout = System.currentTimeMillis() > Long.parseLong(milliSecStr);
             if (timeout) {
-                log.info("Task timeout, jobId={}, timeoutMills={}", getJobId(), milliSecStr);
+                log.info("Task timeout, jobId={}, endTimeMills={}", getJobId(), milliSecStr);
             }
             return timeout;
         } else {
@@ -190,7 +197,6 @@ class TaskMonitor {
 
     @VisibleForTesting
     protected void doFinal() {
-
         TaskResult finalResult = DefaultTaskResultBuilder.build(getTaskContainer());
         // Report final result
         log.info("Task id: {}, finished with status: {}, start to report final result", getJobId(),

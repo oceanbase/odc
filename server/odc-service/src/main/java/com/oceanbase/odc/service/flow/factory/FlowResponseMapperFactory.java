@@ -91,7 +91,11 @@ import com.oceanbase.odc.service.integration.model.ApprovalProperties;
 import com.oceanbase.odc.service.integration.model.IntegrationConfig;
 import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.integration.model.TemplateVariables.Variable;
+import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter;
+import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter.ApplyDatabase;
 import com.oceanbase.odc.service.permission.project.ApplyProjectParameter;
+import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter;
+import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter.ApplyTable;
 import com.oceanbase.odc.service.regulation.risklevel.RiskLevelMapper;
 
 import lombok.NonNull;
@@ -293,6 +297,18 @@ public class FlowResponseMapperFactory {
         populateTaskMappings(serviceEntities, flowInstanceId2Tasks, taskId2TaskEntity);
 
         Set<Long> databaseIds = getDatabaseIds(taskId2TaskEntity);
+        /**
+         * Get Database associated with each TaskEntity
+         */
+        Map<Long, Database> id2Database = new HashMap<>();
+        Set<Long> databaseIds = taskId2TaskEntity.values().stream()
+                .map(TaskEntity::getDatabaseId)
+                .filter(Objects::nonNull).collect(Collectors.toSet());
+
+        databaseIds.addAll(collectMultiDatabaseChangeDatabaseIds(taskId2TaskEntity));
+        databaseIds.addAll(collectDBStructureComparisonDatabaseIds(taskId2TaskEntity));
+        databaseIds.addAll(collectApplyDatabasePermissionDatabaseIds(taskId2TaskEntity));
+        databaseIds.addAll(collectApplyTablePermissionDatabaseIds(taskId2TaskEntity));
         Set<Long> projectIds = new HashSet<>();
         Map<Long, Database> id2Database = getIdDatabaseMapAndFillProjectIds(
                 databaseIds, projectIds, taskId2TaskEntity);
@@ -534,6 +550,34 @@ public class FlowResponseMapperFactory {
                     MultipleDatabaseChangeParameters parameter = JsonUtils.fromJson(
                             task.getParametersJson(), MultipleDatabaseChangeParameters.class);
                     databaseIds.addAll(parameter.getDatabases().stream().map(DatabaseChangeDatabase::getId)
+                            .collect(Collectors.toSet()));
+                });
+        return databaseIds;
+    }
+
+    private Set<Long> collectApplyDatabasePermissionDatabaseIds(Map<Long, TaskEntity> taskId2TaskEntity) {
+        Set<Long> databaseIds = new HashSet<>();
+        taskId2TaskEntity.values().stream()
+                .filter(task -> task.getTaskType().equals(TaskType.APPLY_DATABASE_PERMISSION))
+                .forEach(task -> {
+                    ApplyDatabaseParameter parameter = JsonUtils.fromJson(
+                            task.getParametersJson(), ApplyDatabaseParameter.class);
+                    databaseIds.addAll(parameter.getDatabases().stream().map(ApplyDatabase::getId)
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toSet()));
+                });
+        return databaseIds;
+    }
+
+    private Set<Long> collectApplyTablePermissionDatabaseIds(Map<Long, TaskEntity> taskId2TaskEntity) {
+        Set<Long> databaseIds = new HashSet<>();
+        taskId2TaskEntity.values().stream()
+                .filter(task -> task.getTaskType().equals(TaskType.APPLY_TABLE_PERMISSION))
+                .forEach(task -> {
+                    ApplyTableParameter parameter = JsonUtils.fromJson(
+                            task.getParametersJson(), ApplyTableParameter.class);
+                    databaseIds.addAll(parameter.getTables().stream().map(ApplyTable::getDatabaseId)
+                            .filter(Objects::nonNull)
                             .collect(Collectors.toSet()));
                 });
         return databaseIds;

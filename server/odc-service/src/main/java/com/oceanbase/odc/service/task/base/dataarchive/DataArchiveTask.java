@@ -16,11 +16,15 @@
 package com.oceanbase.odc.service.task.base.dataarchive;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import org.apache.commons.collections.CollectionUtils;
 
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
@@ -38,11 +42,11 @@ import com.oceanbase.odc.service.task.base.TaskBase;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.util.JobUtils;
+import com.oceanbase.tools.migrator.common.configure.JoinCondition;
 import com.oceanbase.tools.migrator.common.enums.JobType;
 import com.oceanbase.tools.migrator.core.meta.JobMeta;
 import com.oceanbase.tools.migrator.job.Job;
 import com.oceanbase.tools.migrator.limiter.LimiterConfig;
-import com.oceanbase.tools.migrator.task.CheckMode;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -60,7 +64,7 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
     private double progress = 0.0;
     private Job job;
     private List<DlmTableUnit> toDoList;
-    private int currentIndex = 0;
+    private int currentIndex = -1;
     private boolean isToStop = false;
 
     public DataArchiveTask() {}
@@ -74,7 +78,10 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
                     JsonUtils.fromJson(
                             jobContext.getJobParameters().get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
                             DLMJobReq.class);
+            log.info("Start to init dlm job,tables={}", parameters.getTables());
             initTableUnit(parameters);
+            currentIndex = -1;
+            log.info(buildToDoTableInfo());
         } catch (Exception e) {
             log.warn("Initialization of the DLM job was failed,jobIdentity={}", context.getJobIdentity(), e);
         }
@@ -84,13 +91,10 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
 
     @Override
     public boolean start() throws Exception {
-        while (!isToStop && currentIndex < toDoList.size()) {
-            DlmTableUnit dlmTableUnit = toDoList.get(currentIndex);
-            if (dlmTableUnit.getStatus() != TaskStatus.PREPARING) {
-                log.info("The table had been processed,tableName={},status={}", dlmTableUnit.getTableName(),
-                        dlmTableUnit.getStatus());
-                currentIndex++;
-                continue;
+        while (!isToStop) {
+            DlmTableUnit dlmTableUnit = getNextTableUnit();
+            if (dlmTableUnit == null) {
+                break;
             }
             syncTableStructure(dlmTableUnit);
             try {
@@ -99,7 +103,6 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             } catch (Throwable e) {
                 log.error("Failed to create job,dlmTableUnitId={}", dlmTableUnit.getDlmTableUnitId(), e);
                 dlmTableUnit.setStatus(isToStop ? TaskStatus.CANCELED : TaskStatus.FAILED);
-                currentIndex++;
                 continue;
             }
             log.info("Init {} job succeed,dlmTableUnitId={}", dlmTableUnit.getType(), dlmTableUnit.getDlmTableUnitId());
@@ -111,16 +114,40 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
                     log.info("{} job finished,dlmTableUnitId={}", dlmTableUnit.getType(),
                             dlmTableUnit.getDlmTableUnitId());
                     dlmTableUnit.setStatus(TaskStatus.DONE);
+                } else {
+                    log.warn("Job is canceled,dlmTableUnitId={},status={}", dlmTableUnit.getDlmTableUnitId(),
+                            dlmTableUnit.getStatus());
                 }
             } catch (Throwable e) {
                 dlmTableUnit.setStatus(isToStop ? TaskStatus.CANCELED : TaskStatus.FAILED);
                 context.getExceptionListener().onException(e);
             }
             dlmTableUnit.setEndTime(new Date());
-            currentIndex++;
         }
         log.info("All tables have been processed,jobIdentity={}.\n{}", jobContext.getJobIdentity(), buildReport());
         return true;
+    }
+
+    private DlmTableUnit getNextTableUnit() {
+        if (CollectionUtils.isEmpty(toDoList)) {
+            log.warn("The table list is empty,the task will exit.");
+            return null;
+        }
+        currentIndex++;
+        // skip tables where the state is not "PREPARING"
+        while (currentIndex < toDoList.size() && toDoList.get(currentIndex).getStatus() != TaskStatus.PREPARING) {
+            log.info("Skip table {},tableUnitId={},status={}", toDoList.get(currentIndex).getTableName(),
+                    toDoList.get(currentIndex).getDlmTableUnitId(), toDoList.get(currentIndex).getStatus());
+            currentIndex++;
+        }
+        if (currentIndex >= toDoList.size()) {
+            log.info("All tables are processed,the task will exit.");
+            return null;
+        }
+        DlmTableUnit dlmTableUnit = toDoList.get(currentIndex);
+        log.info("Next table is = {},tableUnitId={},tableIndex = {}/{}.", dlmTableUnit.getTableName(),
+                dlmTableUnit.getDlmTableUnitId(), currentIndex + 1, toDoList.size());
+        return toDoList.get(currentIndex);
     }
 
     private void syncTableStructure(DlmTableUnit tableUnit) {
@@ -132,6 +159,7 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
                     tableUnit.getParameters().getTempTableName());
             return;
         }
+        long startTimeMillis = System.currentTimeMillis();
         try {
             DLMTableStructureSynchronizer.sync(tableUnit.getSourceDatasourceInfo(), tableUnit.getTargetDatasourceInfo(),
                     tableUnit.getTableName(), tableUnit.getTargetTableName(),
@@ -140,6 +168,7 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             log.warn("Failed to sync target table structure,tableName={}",
                     tableUnit.getTableName(), e);
         }
+        log.info("Sync table structure cost {} millis.", System.currentTimeMillis() - startTimeMillis);
     }
 
     private void initTableUnit(DLMJobReq req) {
@@ -149,7 +178,6 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             dlmTableUnit.setScheduleTaskId(req.getScheduleTaskId());
             DlmTableUnitParameters jobParameter = new DlmTableUnitParameters();
             jobParameter.setMigrateRule(table.getConditionExpression());
-            jobParameter.setCheckMode(CheckMode.MULTIPLE_GET);
             jobParameter.setReaderBatchSize(req.getRateLimit().getBatchSize());
             jobParameter.setWriterBatchSize(req.getRateLimit().getBatchSize());
             jobParameter.setMigrationInsertAction(req.getMigrationInsertAction());
@@ -166,6 +194,15 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             }
             jobParameter.setCreateTempTableInSource(
                     req.isDeleteAfterMigration() && req.getTargetDs().getType().isFileSystem());
+            jobParameter.setDirtyRowAction(req.getDirtyRowAction());
+            jobParameter.setMaxAllowedDirtyRowCount(req.getMaxAllowedDirtyRowCount());
+            jobParameter.setJoinConditions(table.getJoinTableConfigs().stream().map(joinTableConfig -> {
+                JoinCondition joinCondition = new JoinCondition();
+                joinCondition.setTableName(joinTableConfig.getTableName());
+                joinCondition.setCondition(joinTableConfig.getJoinCondition());
+                return joinCondition;
+            }).collect(Collectors.toList()));
+            jobParameter.setPrintSqlTrace(true);
             dlmTableUnit.setParameters(jobParameter);
             dlmTableUnit.setDlmTableUnitId(DlmJobIdUtil.generateHistoryJobId(req.getJobName(), req.getJobType().name(),
                     req.getScheduleTaskId(), dlmTableUnits.size()));
@@ -174,7 +211,8 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             dlmTableUnit.setSourceDatasourceInfo(req.getSourceDs());
             dlmTableUnit.setTargetDatasourceInfo(req.getTargetDs());
             dlmTableUnit.setFireTime(req.getFireTime());
-            dlmTableUnit.setStatus(TaskStatus.PREPARING);
+            dlmTableUnit.setStatus(
+                    table.getLastProcessedStatus() == null ? TaskStatus.PREPARING : table.getLastProcessedStatus());
             dlmTableUnit.setType(req.getJobType());
             dlmTableUnit.setStatistic(new DlmTableUnitStatistic());
             dlmTableUnit.setSyncTableStructure(req.getSyncTableStructure());
@@ -204,7 +242,8 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             }
             dlmTableUnits.add(dlmTableUnit);
         });
-        toDoList = new LinkedList<>(dlmTableUnits);
+        dlmTableUnits.sort(Comparator.comparing(DlmTableUnit::getDlmTableUnitId));
+        toDoList = Collections.unmodifiableList(dlmTableUnits);
     }
 
     private String buildReport() {
@@ -226,6 +265,15 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
                         .map(DlmTableUnit::getTableName).collect(
                                 Collectors.joining(",")))
                 .append("\n");
+        return sb.toString();
+    }
+
+    private String buildToDoTableInfo() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("To do table list:\n");
+        for (int i = 0; i < toDoList.size(); i++) {
+            sb.append("[").append(i).append("] ").append(toDoList.get(i).getTableName());
+        }
         return sb.toString();
     }
 

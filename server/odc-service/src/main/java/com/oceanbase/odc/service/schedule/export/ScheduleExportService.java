@@ -29,6 +29,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
+import com.oceanbase.odc.common.security.PasswordUtils;
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.SingleOrganizationResource;
+import com.oceanbase.odc.core.shared.constant.OrganizationType;
+import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.common.task.RouteLogCallable;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
@@ -52,7 +59,11 @@ import com.oceanbase.odc.service.schedule.util.BatchSchedulePermissionValidator;
 import com.oceanbase.odc.service.state.StatefulUuidStateIdGenerator;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+
 @Service
+@SkipAuthorize
 public class ScheduleExportService {
     public static final String ASYNC_TASK_BASE_BUCKET = "scheduleexport";
     private static final Logger log = LoggerFactory.getLogger(ScheduleExportService.class);
@@ -169,9 +180,32 @@ public class ScheduleExportService {
     public String getExportLog(String exportId) {
         statefulUuidStateIdGenerator.checkCurrentUserId(exportId);
         String filePath = String.format(RouteLogCallable.LOG_PATH_PATTERN, logPath,
-                ScheduleTaskExportCallable.WORK_SPACE, exportId,
-                ScheduleTaskExportCallable.LOG_NAME);
+            ScheduleTaskExportCallable.WORK_SPACE, exportId,
+            ScheduleTaskExportCallable.LOG_NAME);
         File logFile = new File(filePath);
         return LogUtils.getLatestLogContent(logFile, 10000L, 1048576L);
+    }
+
+    @Data
+    @AllArgsConstructor
+    private final static class FlowOrganizationIsolated implements SingleOrganizationResource {
+
+        private Long organizationId;
+        private Long id;
+
+        @Override
+        public String resourceType() {
+            return ResourceType.ODC_FLOW_INSTANCE.name();
+        }
+
+        @Override
+        public Long organizationId() {
+            return organizationId;
+        }
+
+        @Override
+        public Long id() {
+            return id;
+        }
     }
 }

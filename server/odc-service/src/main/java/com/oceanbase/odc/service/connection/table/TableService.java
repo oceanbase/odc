@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -41,6 +42,7 @@ import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.datasource.SingleConnectionDataSource;
+import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
@@ -50,6 +52,7 @@ import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.dbobject.DBObjectEntity;
 import com.oceanbase.odc.metadb.dbobject.DBObjectRepository;
 import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
+import com.oceanbase.odc.plugin.schema.api.MViewExtensionPoint;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
 import com.oceanbase.odc.plugin.schema.api.ViewExtensionPoint;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
@@ -57,9 +60,11 @@ import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.table.model.QueryTableParams;
 import com.oceanbase.odc.service.connection.table.model.Table;
+import com.oceanbase.odc.service.db.DBMaterializedViewService;
 import com.oceanbase.odc.service.db.schema.DBSchemaSyncService;
 import com.oceanbase.odc.service.db.schema.syncer.DBSchemaSyncer;
 import com.oceanbase.odc.service.db.schema.syncer.object.DBExternalTableSyncer;
+import com.oceanbase.odc.service.db.schema.syncer.object.DBMVSyncer;
 import com.oceanbase.odc.service.db.schema.syncer.object.DBTableSyncer;
 import com.oceanbase.odc.service.db.schema.syncer.object.DBViewSyncer;
 import com.oceanbase.odc.service.feature.VersionDiffConfigService;
@@ -106,6 +111,9 @@ public class TableService {
     private DBViewSyncer dbViewSyncer;
 
     @Autowired
+    private DBMVSyncer dbMVSyncer;
+
+    @Autowired
     private JdbcLockRegistry lockRegistry;
 
     @Autowired
@@ -138,19 +146,17 @@ public class TableService {
                 generateListAndSyncDBTablesByTableType(params, database, dataSource, tables, conn, DBObjectType.TABLE,
                         latestTableNames);
             }
-            if (types.contains(DBObjectType.EXTERNAL_TABLE)) {
-                InformationExtensionPoint point =
-                        ConnectionPluginUtil.getInformationExtension(dataSource.getDialectType());
-                String databaseProductVersion = point.getDBVersion(conn);
-                if (versionDiffConfigService.isExternalTableSupported(dataSource.getDialectType(),
-                        databaseProductVersion)) {
-                    Set<String> latestExternalTableNames =
-                            tableExtension.list(conn, database.getName(), DBObjectType.EXTERNAL_TABLE)
-                                    .stream().map(DBObjectIdentity::getName)
-                                    .collect(Collectors.toCollection(LinkedHashSet::new));
-                    generateListAndSyncDBTablesByTableType(params, database, dataSource, tables, conn,
-                            DBObjectType.EXTERNAL_TABLE, latestExternalTableNames);
-                }
+            InformationExtensionPoint point =
+                    ConnectionPluginUtil.getInformationExtension(dataSource.getDialectType());
+            String version = point.getDBVersion(conn);
+            if (types.contains(DBObjectType.EXTERNAL_TABLE)
+                    && versionDiffConfigService.isExternalTableSupported(dataSource.getDialectType(), version)) {
+                Set<String> latestExternalTableNames =
+                        tableExtension.list(conn, database.getName(), DBObjectType.EXTERNAL_TABLE)
+                                .stream().map(DBObjectIdentity::getName)
+                                .collect(Collectors.toCollection(LinkedHashSet::new));
+                generateListAndSyncDBTablesByTableType(params, database, dataSource, tables, conn,
+                        DBObjectType.EXTERNAL_TABLE, latestExternalTableNames);
             }
             if (types.contains(DBObjectType.VIEW)) {
                 ViewExtensionPoint viewExtension = SchemaPluginUtil.getViewExtension(dataSource.getDialectType());
@@ -163,13 +169,28 @@ public class TableService {
                             latestViewNames);
                 }
             }
+            if (types.contains(DBObjectType.MATERIALIZED_VIEW)
+                    && versionDiffConfigService.isMViewSupported(dataSource.getDialectType(), version)) {
+                MViewExtensionPoint mvExtension = SchemaPluginUtil.getMViewExtension(dataSource.getDialectType());
+                if (mvExtension != null) {
+                    Set<String> latestViewNames = mvExtension.list(conn, database.getName())
+                            .stream().map(DBObjectIdentity::getName)
+                            .collect(Collectors.toCollection(LinkedHashSet::new));
+                    generateListAndSyncDBTablesByTableType(params, database, dataSource, tables, conn,
+                            DBObjectType.MATERIALIZED_VIEW,
+                            latestViewNames);
+                }
+            }
         }
         return tables;
     }
 
-    private void generateListAndSyncDBTablesByTableType(QueryTableParams params, Database database,
+    @Transactional(rollbackFor = Exception.class)
+    @SkipAuthorize("permission check inside")
+    public void generateListAndSyncDBTablesByTableType(QueryTableParams params, Database database,
             ConnectionConfig dataSource, List<Table> tables,
-            Connection conn, DBObjectType tableType, Set<String> latestTableNames) throws InterruptedException {
+            Connection conn, DBObjectType tableType, Set<String> latestTableNames)
+            throws InterruptedException, SQLException {
         if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
             tables.addAll(latestTableNames.stream().map(tableName -> {
                 Table table = new Table();
@@ -186,7 +207,21 @@ public class TableService {
                     existTables.stream().map(DBObjectEntity::getName).collect(Collectors.toSet());
             if (latestTableNames.size() != existTableNames.size()
                     || !existTableNames.containsAll(latestTableNames)) {
-                syncDBTables(conn, database, dataSource.getDialectType(), getSyncerByTableType(tableType));
+                if (Objects.isNull(conn)) {
+                    /**
+                     * This logic applies specifically to the scenario where a {@link ConnectionSession} exists. In that
+                     * scenario, need to create a new connection only when the table/view in the metadata database is
+                     * inconsistent with the table/view in the real database. For details, please refer to
+                     * {@link DBMaterializedViewService#list(ConnectionSession, QueryTableParams)}
+                     */
+                    OBConsoleDataSourceFactory factory = new OBConsoleDataSourceFactory(dataSource, true);
+                    try (SingleConnectionDataSource ds = (SingleConnectionDataSource) factory.getDataSource();
+                            Connection conn1 = ds.getConnection()) {
+                        syncDBTables(conn1, database, dataSource.getDialectType(), getSyncerByTableType(tableType));
+                    }
+                } else {
+                    syncDBTables(conn, database, dataSource.getDialectType(), getSyncerByTableType(tableType));
+                }
                 existTables =
                         dbObjectRepository.findByDatabaseIdAndTypeOrderByNameAsc(params.getDatabaseId(),
                                 tableType);
@@ -203,6 +238,8 @@ public class TableService {
                 return dbExternalTableSyncer;
             case VIEW:
                 return dbViewSyncer;
+            case MATERIALIZED_VIEW:
+                return dbMVSyncer;
             default:
                 throw new IllegalArgumentException("Unsupported table type: " + tableType);
         }

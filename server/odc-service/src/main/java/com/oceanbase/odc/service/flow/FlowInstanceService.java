@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +34,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
@@ -48,10 +50,13 @@ import org.flowable.engine.history.HistoricProcessInstanceQuery;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -60,11 +65,13 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.validation.annotation.Validated;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.google.common.collect.Sets;
 import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.common.i18n.I18n;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.lang.Holder;
 import com.oceanbase.odc.common.task.RouteLogCallable;
+import com.oceanbase.odc.common.util.ObjectUtil;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.flow.model.TaskParameters;
@@ -85,6 +92,7 @@ import com.oceanbase.odc.metadb.collaboration.EnvironmentEntity;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
+import com.oceanbase.odc.metadb.flow.FlowInstanceRepository.FlowInstanceProjection;
 import com.oceanbase.odc.metadb.flow.FlowInstanceSpecs;
 import com.oceanbase.odc.metadb.flow.FlowInstanceViewEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceViewRepository;
@@ -98,6 +106,7 @@ import com.oceanbase.odc.metadb.iam.resourcerole.ResourceRoleEntity;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
+import com.oceanbase.odc.service.collaboration.project.ProjectService;
 import com.oceanbase.odc.service.common.FutureCache;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
@@ -136,6 +145,7 @@ import com.oceanbase.odc.service.flow.model.FlowMetaInfo;
 import com.oceanbase.odc.service.flow.model.FlowNodeInstanceDetailResp.FlowNodeInstanceMapper;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
+import com.oceanbase.odc.service.flow.model.InnerQueryFlowInstanceParams;
 import com.oceanbase.odc.service.flow.model.QueryFlowInstanceParams;
 import com.oceanbase.odc.service.flow.processor.EnablePreprocess;
 import com.oceanbase.odc.service.flow.task.BaseRuntimeFlowableDelegate;
@@ -174,16 +184,19 @@ import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParamete
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter;
 import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter.ApplyTable;
+import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigSelector;
 import com.oceanbase.odc.service.regulation.approval.model.ApprovalFlowConfig;
 import com.oceanbase.odc.service.regulation.approval.model.ApprovalNodeConfig;
 import com.oceanbase.odc.service.regulation.risklevel.RiskLevelService;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
+import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriberIdentifier;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.state.StatefulUuidStateIdGenerator;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
+import com.oceanbase.odc.service.task.base.precheck.PreCheckRiskLevel;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.service.SpringTransactionManager;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
@@ -191,8 +204,10 @@ import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 import io.micrometer.core.instrument.Tag;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -205,11 +220,6 @@ import lombok.extern.slf4j.Slf4j;
 @SkipAuthorize("flow instance use internal check")
 public class FlowInstanceService {
 
-    private static final long MAX_EXPORT_OBJECT_COUNT = 10000;
-    private static final String ODC_SITE_URL = "odc.site.url";
-    private static final int MAX_APPLY_DATABASE_SIZE = 10;
-    private final List<Consumer<DataTransferTaskInitEvent>> dataTransferTaskInitHooks = new ArrayList<>();
-    private final List<Consumer<ShadowTableComparingUpdateEvent>> shadowTableComparingTaskHooks = new ArrayList<>();
     @Autowired
     private FlowInstanceRepository flowInstanceRepository;
     @Autowired
@@ -287,10 +297,22 @@ public class FlowInstanceService {
     @Autowired
     private MeterManager meterManager;
     @Autowired
+    @Lazy
+    private ApprovalFlowConfigSelector approvalFlowConfigSelector;
+    @Autowired
+    @Lazy
+    private ProjectService projectService;
+    @Autowired
+    private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+    @Autowired
     private TransactionTemplate transactionTemplate;
-
     @Value("${odc.log.directory:./log}")
     private String logPath;
+    private static final long MAX_EXPORT_OBJECT_COUNT = 10000;
+    private static final String ODC_SITE_URL = "odc.site.url";
+    private static final int MAX_APPLY_DATABASE_SIZE = 10;
+    private final List<Consumer<DataTransferTaskInitEvent>> dataTransferTaskInitHooks = new ArrayList<>();
+    private final List<Consumer<ShadowTableComparingUpdateEvent>> shadowTableComparingTaskHooks = new ArrayList<>();
 
     @PostConstruct
     public void init() {
@@ -345,6 +367,122 @@ public class FlowInstanceService {
         return flowInstanceDetailResp.getId();
     }
 
+    private Map<Long, RiskLevel> getDbMappingRiskLevel(@NonNull @Valid CreateFlowInstanceReq createReq) {
+        Set<Long> dbIds = Collections.emptySet();
+        if (createReq.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION) {
+            final ApplyDatabaseParameter applyDatabaseParameter = (ApplyDatabaseParameter) (createReq.getParameters());
+            dbIds = applyDatabaseParameter.getDatabases().stream()
+                    .map(ApplyDatabase::getId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+        } else if (createReq.getTaskType() == TaskType.APPLY_TABLE_PERMISSION) {
+            final ApplyTableParameter applyDatabaseParameter = (ApplyTableParameter) (createReq.getParameters());
+            dbIds = applyDatabaseParameter.getTables().stream()
+                    .map(ApplyTable::getDatabaseId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+        }
+        if (CollectionUtils.isEmpty(dbIds)) {
+            throw new IllegalStateException("databaseIds is not supposed to be empty");
+        }
+        Set<RiskLevelDescriberIdentifier> RiskLevelDescriberIdentifiers = databaseService
+                .listDatabasesDetailsByIds(dbIds).stream().map(
+                        d -> RiskLevelDescriberIdentifier.of(d.getId(),
+                                RiskLevelDescriber.of(d, createReq.getTaskType().name())))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        Map<RiskLevelDescriberIdentifier, RiskLevel> RiskLevelDescriberIdentifier2MaxRiskLevel =
+                approvalFlowConfigSelector.batchSelect(RiskLevelDescriberIdentifiers);
+
+        Map<Long, RiskLevel> dbId2RiskLevel = new HashMap<>();
+        RiskLevel defultHighestRiskLevel = null;
+        for (Entry<RiskLevelDescriberIdentifier, RiskLevel> entry : RiskLevelDescriberIdentifier2MaxRiskLevel
+                .entrySet()) {
+            defultHighestRiskLevel =
+                    ObjectUtil.defaultIfNull(defultHighestRiskLevel,
+                            riskLevelService.findHighestRiskLevel());
+            dbId2RiskLevel.put(entry.getKey().getDatabaseId(), entry.getValue());
+        }
+        return dbId2RiskLevel;
+    }
+
+    private List<String> listCandidateIdentifiers(@NonNull ApprovalFlowConfig config,
+            @NonNull Supplier<Long> dbIdSupplier, @NonNull Supplier<Long> projectIdSupplier,
+            @NonNull Map<Long, ResourceRoleEntity> resourceRoleId2ResourceRole) {
+        List<String> candidateIdentifier = new ArrayList<>();
+        for (ApprovalNodeConfig node : config.getNodes()) {
+            if (node.getResourceRoleId() != null) {
+                ResourceRoleEntity resourceRole = resourceRoleId2ResourceRole.get(node.getResourceRoleId());
+                if (resourceRole != null && resourceRole.getResourceType() == ResourceType.ODC_DATABASE) {
+                    candidateIdentifier.add(dbIdSupplier.get() + ":" + node.getResourceRoleId());
+                } else {
+                    candidateIdentifier.add(projectIdSupplier.get() + ":" + node.getResourceRoleId());
+                }
+            }
+        }
+        return candidateIdentifier;
+    }
+
+    private Map<Long, List<Set<Long>>> getDbIdMappingApprovalUserIds(
+            @NonNull Map<Long, List<String>> dbId2CandidateIdentifier) {
+        Map<Long, List<Set<Long>>> dbId2ApprovalUserIds = new HashMap<>();
+        Set<String> toQueryResourceIdentifiers = dbId2CandidateIdentifier.values().stream().flatMap(List::stream)
+                .collect(Collectors.toSet());
+        if (CollectionUtils.isEmpty(toQueryResourceIdentifiers)) {
+            return dbId2ApprovalUserIds;
+        }
+        Map<String, Set<Long>> resourceIdentifier2ApprovalUserIds =
+                resourceRoleService.listByResourceIdentifierIn(toQueryResourceIdentifiers)
+                        .stream()
+                        .collect(Collectors.groupingBy(r -> r.getResourceId() + ":" + r.getResourceRoleId(),
+                                Collectors.mapping(UserResourceRole::getUserId, Collectors.toSet())));
+        for (Entry<Long, List<String>> dbId2CandidateIdentifierEntry : dbId2CandidateIdentifier.entrySet()) {
+            Long dbId = dbId2CandidateIdentifierEntry.getKey();
+            for (String identifier : dbId2CandidateIdentifierEntry.getValue()) {
+                dbId2ApprovalUserIds.computeIfAbsent(dbId, k -> new ArrayList<>())
+                        .add(resourceIdentifier2ApprovalUserIds.getOrDefault(identifier, Collections.emptySet()));
+            }
+        }
+        return dbId2ApprovalUserIds;
+    }
+
+    public List<MergedDbCreatedData> mergeDbWhenApplyPermissionOfDbOrTable(
+            @NonNull @Valid CreateFlowInstanceReq createReq) {
+        if (createReq.getTaskType() != TaskType.APPLY_DATABASE_PERMISSION
+                && createReq.getTaskType() != TaskType.APPLY_TABLE_PERMISSION) {
+            throw new UnsupportedException("Only APPLY_DATABASE_PERMISSION or APPLY_TABLE_PERMISSION are supported");
+        }
+        Map<Long, RiskLevel> dbId2RiskLevel = getDbMappingRiskLevel(createReq);
+        Set<Long> allResourceRoleIds = dbId2RiskLevel.values().stream().map(
+                r -> r.getApprovalFlowConfig().getNodes().stream().map(
+                        ApprovalNodeConfig::getResourceRoleId).collect(Collectors.toSet()))
+                .flatMap(Set::stream).collect(Collectors.toSet());
+        Map<Long, ResourceRoleEntity> resourceRoleId2ResourceRole =
+                resourceRoleService.listResourceRoleByIds(allResourceRoleIds).stream()
+                        .collect(Collectors.toMap(ResourceRoleEntity::getId, v -> v, (e, r) -> e));
+        Map<Long, List<String>> dbId2CandidateIdentifier = new HashMap<>();
+        for (Entry<Long, RiskLevel> dbId2RiskLevelEntry : dbId2RiskLevel.entrySet()) {
+            ApprovalFlowConfig approvalFlowConfig = dbId2RiskLevelEntry.getValue().getApprovalFlowConfig();
+            dbId2CandidateIdentifier.put(dbId2RiskLevelEntry.getKey(), listCandidateIdentifiers(approvalFlowConfig,
+                    dbId2RiskLevelEntry::getKey,
+                    createReq::getProjectId,
+                    resourceRoleId2ResourceRole));
+        }
+        Map<Long, List<Set<Long>>> dbId2ApprovalUserIds = getDbIdMappingApprovalUserIds(dbId2CandidateIdentifier);
+        Map<MergedDbIdentifier, MergedDbCreatedData> mergedMap = new HashMap<>();
+        for (Entry<Long, List<String>> dbId2CandidateIdentifierEntry : dbId2CandidateIdentifier.entrySet()) {
+            Long dbId = dbId2CandidateIdentifierEntry.getKey();
+            RiskLevel riskLevel = dbId2RiskLevel.get(dbId);
+            MergedDbIdentifier mergedDbIdentifier =
+                    new MergedDbIdentifier(dbId2ApprovalUserIds.get(dbId), riskLevel.getId());
+            if (!mergedMap.containsKey(mergedDbIdentifier)) {
+                mergedMap.put(mergedDbIdentifier, new MergedDbCreatedData(riskLevel, Sets.newHashSet(dbId)));
+            } else {
+                mergedMap.get(mergedDbIdentifier).getCandidateResourceIds().add(dbId);
+            }
+        }
+        return new ArrayList<>(mergedMap.values());
+    }
+
     @EnablePreprocess
     @Transactional(rollbackFor = Throwable.class, propagation = Propagation.REQUIRED)
     public List<FlowInstanceDetailResp> create(@NotNull @Valid CreateFlowInstanceReq createReq) {
@@ -354,14 +492,16 @@ public class FlowInstanceService {
             if (CollectionUtils.isNotEmpty(databases) && databases.size() > MAX_APPLY_DATABASE_SIZE) {
                 throw new IllegalStateException("The number of databases to apply for exceeds the maximum limit");
             }
-            return databases.stream().map(e -> {
-                List<ApplyDatabase> applyDatabases = new ArrayList<>();
-                applyDatabases.add(e);
+            List<MergedDbCreatedData> mergedDbCreatedDataList =
+                    mergeDbWhenApplyPermissionOfDbOrTable(createReq);
+            return mergedDbCreatedDataList.stream().map(e -> {
+                List<ApplyDatabase> applyDatabases = databases.stream().filter(
+                        d -> e.getCandidateResourceIds().contains(d.getId())).collect(Collectors.toList());
                 parameter.setDatabases(applyDatabases);
-                createReq.setDatabaseId(e.getId());
+                parameter.setRiskLevel(PreCheckRiskLevel.from(e.getRiskLevel()));
                 createReq.setParameters(parameter);
-                return innerCreate(createReq);
-            }).collect(Collectors.toList()).stream().flatMap(Collection::stream).collect(Collectors.toList());
+                return innerCreateWithRiskLevel(createReq, e.getRiskLevel());
+            }).collect(Collectors.toList());
         } else if (createReq.getTaskType() == TaskType.APPLY_TABLE_PERMISSION) {
             ApplyTableParameter parameter = (ApplyTableParameter) createReq.getParameters();
             List<ApplyTable> tables = new ArrayList<>(parameter.getTables());
@@ -371,15 +511,32 @@ public class FlowInstanceService {
                     && databaseId2Tables.keySet().size() > MAX_APPLY_DATABASE_SIZE) {
                 throw new IllegalStateException("The number of databases to apply for exceeds the maximum limit");
             }
-            return databaseId2Tables.entrySet().stream().map(e -> {
-                parameter.setTables(new ArrayList<>(e.getValue()));
-                createReq.setDatabaseId(e.getKey());
+            List<MergedDbCreatedData> mergedDbCreatedDataList =
+                    mergeDbWhenApplyPermissionOfDbOrTable(createReq);
+            return mergedDbCreatedDataList.stream().map(e -> {
+                List<ApplyTable> applyTables = tables.stream().filter(
+                        d -> e.getCandidateResourceIds().contains(d.getDatabaseId())).collect(Collectors.toList());
+                parameter.setTables(applyTables);
+                parameter.setRiskLevel(PreCheckRiskLevel.from(e.getRiskLevel()));
                 createReq.setParameters(parameter);
-                return innerCreate(createReq);
-            }).collect(Collectors.toList()).stream().flatMap(Collection::stream).collect(Collectors.toList());
+                return innerCreateWithRiskLevel(createReq, e.getRiskLevel());
+            }).collect(Collectors.toList());
         } else {
             return innerCreate(createReq);
         }
+    }
+
+    private FlowInstanceDetailResp innerCreateWithRiskLevel(@NonNull @Valid CreateFlowInstanceReq createReq,
+            @NonNull RiskLevel riskLevel) {
+        checkCreateFlowInstancePermission(createReq);
+        List<ConnectionConfig> conns = new ArrayList<>();
+        if (Objects.nonNull(createReq.getConnectionId())) {
+            ConnectionConfig conn = connectionService.getForConnectionSkipPermissionCheck(createReq.getConnectionId());
+            cloudMetadataClient.checkPermission(OBTenant.of(conn.getClusterName(),
+                    conn.getTenantName()), conn.getInstanceType(), false, CloudPermissionAction.READONLY);
+            conns.add(conn);
+        }
+        return buildFlowInstance(Collections.singletonList(riskLevel), createReq, conns);
     }
 
     private List<FlowInstanceDetailResp> innerCreate(@NotNull @Valid CreateFlowInstanceReq createReq) {
@@ -501,11 +658,13 @@ public class FlowInstanceService {
                 .and(FlowInstanceViewSpecs.createTimeBefore(params.getEndTime()))
                 .and(FlowInstanceViewSpecs.idEquals(targetId))
                 .and(FlowInstanceViewSpecs.groupByIdAndTaskType());
+        Set<TaskType> taskTypes;
         if (params.getType() != null) {
+            taskTypes = Sets.newHashSet(params.getType());
             specification = specification.and(FlowInstanceViewSpecs.taskTypeEquals(params.getType()));
         } else {
             // Task type which will be filtered independently
-            List<TaskType> types = Arrays.asList(
+            taskTypes = Sets.newHashSet(
                     TaskType.MULTIPLE_ASYNC,
                     TaskType.EXPORT,
                     TaskType.IMPORT,
@@ -519,20 +678,27 @@ public class FlowInstanceService {
                     TaskType.APPLY_DATABASE_PERMISSION,
                     TaskType.STRUCTURE_COMPARISON,
                     TaskType.APPLY_TABLE_PERMISSION);
-            specification = specification.and(FlowInstanceViewSpecs.taskTypeIn(types));
+            specification = specification.and(FlowInstanceViewSpecs.taskTypeIn(taskTypes));
         }
 
         if (CollectionUtils.isNotEmpty(params.getProjectIds())) {
             specification = specification.and(FlowInstanceViewSpecs.projectIdIn(params.getProjectIds()));
         } else {
             Set<Long> joinedProjectIds = userService.getCurrentUserJoinedProjectIds();
-            // if the user does not join any projects in team space, then return empty directly
+            // If the user does not join any projects in team space, and it filters out the
+            // APPLY_PROJECT_PERMISSION, then return empty directly
             if (CollectionUtils.isEmpty(joinedProjectIds)
-                    && authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM) {
+                    && authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM
+                    && !taskTypes.contains(TaskType.APPLY_PROJECT_PERMISSION)) {
                 return Page.empty();
             }
+            // Add the condition of joined project ids or if it contains APPLY_PROJECT_PERMISSION, we only need
+            // to require creatorId equals currentUserId because user should be allowed to view the
+            // APPLY_PROJECT_PERMISSION tickets even if they have not joined that project
             specification =
-                    specification.and(FlowInstanceViewSpecs.projectIdIn(userService.getCurrentUserJoinedProjectIds()));
+                    specification.and(FlowInstanceViewSpecs.projectIdIn(userService.getCurrentUserJoinedProjectIds())
+                            .or(FlowInstanceViewSpecs.creatorIdEquals(authenticationFacade.currentUserId())
+                                    .and(FlowInstanceViewSpecs.taskTypeEquals(TaskType.APPLY_PROJECT_PERMISSION))));
         }
         if (params.getContainsAll()) {
             return flowInstanceViewRepository.findAll(specification, pageable).map(FlowInstanceEntity::from);
@@ -966,6 +1132,12 @@ public class FlowInstanceService {
         TaskEntity preCheckTaskEntity = taskService.create(preCheckReq, (int) TimeUnit.SECONDS
                 .convert(flowTaskProperties.getDefaultExecutionExpirationIntervalHours(), TimeUnit.HOURS));
 
+        if (flowInstanceReq.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION
+                || flowInstanceReq.getTaskType() == TaskType.APPLY_TABLE_PERMISSION) {
+            Verify.singleton(riskLevels, "RiskLevel");
+            Verify.notNull(preCheckTaskEntity.getId(), "PreCheckTaskId");
+        }
+
         TaskEntity taskEntity = taskService.create(flowInstanceReq, (int) TimeUnit.SECONDS
                 .convert(flowTaskProperties.getDefaultExecutionExpirationIntervalHours(), TimeUnit.HOURS));
         Verify.notNull(taskEntity.getId(), "TaskId can not be null");
@@ -987,9 +1159,14 @@ public class FlowInstanceService {
                 FlowInstanceConfigurer targetConfigurer = buildConfigurer(riskLevels.get(i).getApprovalFlowConfig(),
                         flowInstance, flowInstanceReq.getTaskType(), taskEntity.getId(),
                         flowInstanceReq.getParameters(), flowInstanceReq);
-                startConfigurer.route(
-                        String.format("${%s == %d}", RuntimeTaskConstants.RISKLEVEL, riskLevels.get(i).getLevel()),
-                        targetConfigurer);
+                // Determining the risk level determines the route
+                if (i == 0 && i == riskLevels.size() - 1) {
+                    startConfigurer.route(targetConfigurer);
+                } else {
+                    startConfigurer.route(
+                            String.format("${%s == %d}", RuntimeTaskConstants.RISKLEVEL, riskLevels.get(i).getLevel()),
+                            targetConfigurer);
+                }
             }
             flowInstance.buildTopology();
             flowInstanceReq.setId(flowInstance.getId());
@@ -1056,6 +1233,46 @@ public class FlowInstanceService {
         return schemaName + "_" + connectionName;
     }
 
+    private Map<Long, Set<Long>> groupCandidateResourceIdsByResourceRoleId(@NonNull Collection<Long> resourceRoleIds,
+            @NonNull CreateFlowInstanceReq flowInstanceReq) {
+        Set<Long> resourceRoleIdSet = new HashSet<>(resourceRoleIds);
+        if (CollectionUtils.isEmpty(resourceRoleIdSet)) {
+            return Collections.emptyMap();
+        }
+        Map<Long, ResourceRoleEntity> resourceRoleId2ResourceRole = resourceRoleService
+                .listResourceRoleByIds(resourceRoleIdSet)
+                .stream().collect(Collectors.toMap(ResourceRoleEntity::getId, Function.identity(), (e, r) -> e));
+        final Map<Long, Set<Long>> resourceRoleId2CandidateResourceIds = new HashMap<>();
+        TaskParameters parameters = flowInstanceReq.getParameters();
+        resourceRoleIdSet.forEach(resourceRoleId -> {
+            Set<Long> candidateResourceIds = new HashSet<>();
+            ResourceRoleEntity resourceRole = resourceRoleId2ResourceRole.get(resourceRoleId);
+            if (resourceRole != null && resourceRole.getResourceType() == ResourceType.ODC_DATABASE) {
+                if (flowInstanceReq.getDatabaseId() != null) {
+                    candidateResourceIds.add(flowInstanceReq.getDatabaseId());
+                }
+                if (flowInstanceReq.getTaskType() == TaskType.MULTIPLE_ASYNC) {
+                    candidateResourceIds
+                            .addAll(((MultipleDatabaseChangeParameters) parameters).getOrderedDatabaseIds().stream()
+                                    .flatMap(Collection::stream).collect(Collectors.toSet()));
+                } else if (flowInstanceReq.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION) {
+                    candidateResourceIds
+                            .addAll(((ApplyDatabaseParameter) parameters).getDatabases().stream()
+                                    .map(ApplyDatabase::getId).collect(Collectors.toSet()));
+                } else if (flowInstanceReq.getTaskType() == TaskType.APPLY_TABLE_PERMISSION) {
+                    candidateResourceIds
+                            .addAll(((ApplyTableParameter) parameters).getTables().stream()
+                                    .map(ApplyTable::getDatabaseId).collect(Collectors.toSet()));
+                }
+            } else {
+                candidateResourceIds.add(flowInstanceReq.getProjectId());
+            }
+            resourceRoleId2CandidateResourceIds.put(resourceRoleId,
+                    candidateResourceIds.stream().filter(Objects::nonNull).collect(Collectors.toSet()));
+        });
+        return resourceRoleId2CandidateResourceIds;
+    }
+
     private FlowInstanceConfigurer buildConfigurer(
             @NonNull ApprovalFlowConfig approvalFlowConfig,
             @NonNull FlowInstance flowInstance,
@@ -1066,6 +1283,10 @@ public class FlowInstanceService {
         List<ApprovalNodeConfig> nodeConfigs = approvalFlowConfig.getNodes();
         Verify.verify(!nodeConfigs.isEmpty(), "Approval Nodes size can not be equal to zero");
         List<FlowInstanceConfigurer> configurers = new LinkedList<>();
+        Map<Long, Set<Long>> resourceRoleId2CandidateResourceIds = groupCandidateResourceIdsByResourceRoleId(
+                nodeConfigs.stream().map(ApprovalNodeConfig::getResourceRoleId).collect(
+                        Collectors.toSet()),
+                flowInstanceReq);
         for (int nodeSequence = 0; nodeSequence < nodeConfigs.size(); nodeSequence++) {
             FlowInstanceConfigurer configurer;
             ApprovalNodeConfig nodeConfig = nodeConfigs.get(nodeSequence);
@@ -1075,18 +1296,8 @@ public class FlowInstanceService {
                     nodeConfig.getAutoApproval(), approvalFlowConfig.getApprovalExpirationIntervalSeconds(),
                     nodeConfig.getExternalApprovalId());
             if (Objects.nonNull(resourceRoleId)) {
-                Set<Long> candidateResourceIds = new HashSet<>();
-                Optional<ResourceRoleEntity> resourceRole = resourceRoleService.findResourceRoleById(resourceRoleId);
-                if (resourceRole.isPresent() && resourceRole.get().getResourceType() == ResourceType.ODC_DATABASE) {
-                    candidateResourceIds.add(flowInstanceReq.getDatabaseId());
-                    if (taskType == TaskType.MULTIPLE_ASYNC) {
-                        candidateResourceIds
-                                .addAll(((MultipleDatabaseChangeParameters) parameters).getOrderedDatabaseIds().stream()
-                                        .flatMap(Collection::stream).collect(Collectors.toSet()));
-                    }
-                } else {
-                    candidateResourceIds.add(flowInstanceReq.getProjectId());
-                }
+                Set<Long> candidateResourceIds =
+                        resourceRoleId2CandidateResourceIds.getOrDefault(resourceRoleId, Collections.emptySet());
                 approvalInstance.setCandidates(candidateResourceIds.stream().filter(Objects::nonNull)
                         .map(e -> StringUtils.join(e, ":", resourceRoleId)).collect(Collectors.toList()));
             }
@@ -1394,10 +1605,156 @@ public class FlowInstanceService {
         return flowInstanceRepository.findFlowInstanceIdByScheduleIdAndStatus(scheduleId, status);
     }
 
+    /**
+     * This is a temporary method that only uses ODC 4.3.4
+     *
+     * @param params
+     * @return
+     */
+    private List<ServiceTaskInstanceEntity> innerListDistinctServiceTaskInstances(
+            @NonNull InnerQueryFlowInstanceParams params) {
+        StringBuilder querySql = new StringBuilder();
+        HashMap<String, Object> queryParamMap = new HashMap<>();
+        queryParamMap.put("organizationId", authenticationFacade.currentOrganizationId());
+        querySql.append("SELECT flow_instance_id, task_type FROM flow_instance_node_task ");
+        querySql.append("WHERE organization_id = :organizationId ");
+        if (CollectionUtils.isNotEmpty(params.getFlowInstanceIds())) {
+            queryParamMap.put("flowInstanceIds", params.getFlowInstanceIds());
+            querySql.append("AND flow_instance_id in (:flowInstanceIds) ");
+        }
+        if (CollectionUtils.isNotEmpty(params.getTaskTypes())) {
+            queryParamMap.put("taskTypes",
+                    params.getTaskTypes().stream().map(Enum::name).collect(Collectors.toSet()));
+            querySql.append("AND task_type in (:taskTypes) ");
+        }
+        if (params.getStartTime() != null) {
+            queryParamMap.put("startTime", params.getStartTime());
+            querySql.append("AND create_time >= :startTime ");
+        }
+        if (params.getEndTime() != null) {
+            queryParamMap.put("endTime", params.getEndTime());
+            querySql.append("AND create_time <= :endTime ");
+        }
+        querySql.append("GROUP BY flow_instance_id;");
+        return namedParameterJdbcTemplate.query(
+                querySql.toString(), queryParamMap,
+                new BeanPropertyRowMapper<>(ServiceTaskInstanceEntity.class));
+    }
+
+    public int getPartitionPlanCount(@NotNull InnerQueryFlowInstanceParams params) {
+        Set<Long> joinedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
+        if (CollectionUtils.isEmpty(joinedProjectIds)) {
+            return 0;
+        }
+        Set<Long> partitionPlanFlowInstanceIds =
+                innerListDistinctServiceTaskInstances(new InnerQueryFlowInstanceParams()
+                        .setTaskTypes(Collections.singleton(TaskType.PARTITION_PLAN))
+                        .setStartTime(params.getStartTime())
+                        .setEndTime(params.getEndTime()))
+                                .stream().map(ServiceTaskInstanceEntity::getFlowInstanceId).collect(Collectors.toSet());
+        if (CollectionUtils.isNotEmpty(partitionPlanFlowInstanceIds)) {
+            Specification<FlowInstanceEntity> spec = FlowInstanceSpecs
+                    .organizationIdEquals(authenticationFacade.currentOrganizationId())
+                    .and(FlowInstanceSpecs.idIn(partitionPlanFlowInstanceIds))
+                    .and(FlowInstanceSpecs.projectIdIn(joinedProjectIds))
+                    .and(FlowInstanceSpecs.statusIn(params.getFlowStatus()));
+            return flowInstanceRepository.findAll(spec).size();
+        }
+        return 0;
+    }
+
+    /**
+     * This is a temporary method that only uses ODC 4.3.4
+     *
+     * @param params
+     * @return
+     */
+    private List<FlowInstanceState> listPartitionPlanSubTaskStates(@NonNull InnerQueryFlowInstanceParams params) {
+        Set<Long> joinedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
+        if (CollectionUtils.isEmpty(joinedProjectIds) || CollectionUtils.isEmpty(params.getTaskTypes())
+                || !params.getTaskTypes().contains(TaskType.PARTITION_PLAN)) {
+            return Collections.emptyList();
+        }
+        Set<Long> partitionPlanFlowInstanceIds =
+                innerListDistinctServiceTaskInstances(new InnerQueryFlowInstanceParams()
+                        .setTaskTypes(Collections.singleton(TaskType.PARTITION_PLAN)))
+                                .stream().map(ServiceTaskInstanceEntity::getFlowInstanceId).collect(Collectors.toSet());
+        if (CollectionUtils.isEmpty(partitionPlanFlowInstanceIds)) {
+            return Collections.emptyList();
+        }
+        Specification<FlowInstanceEntity> spec = FlowInstanceSpecs.createTimeLate(params.getStartTime())
+                .and(FlowInstanceSpecs.createTimeBefore(params.getEndTime()))
+                .and(FlowInstanceSpecs.parentInstanceIdIn(partitionPlanFlowInstanceIds))
+                .and(FlowInstanceSpecs.projectIdIn(joinedProjectIds));
+        final List<FlowInstanceState> partitionPlanFlowInstanceStates = new ArrayList<>();
+        flowInstanceRepository.findAll(spec).forEach(flowInstance -> {
+            partitionPlanFlowInstanceStates
+                    .add(new FlowInstanceState(TaskType.PARTITION_PLAN, flowInstance.getStatus()));
+        });
+        return partitionPlanFlowInstanceStates;
+    }
+
+    /**
+     * This is a temporary method that only uses ODC 4.3.4
+     *
+     * @param params
+     * @return
+     */
+    private List<FlowInstanceState> listSqlPlanSubTaskStates(@NonNull InnerQueryFlowInstanceParams params) {
+        if (CollectionUtils.isEmpty(params.getParentInstanceIds()) || CollectionUtils.isEmpty(params.getTaskTypes())) {
+            return Collections.emptyList();
+        }
+        InnerQueryFlowInstanceParams copiedParams = ObjectUtil.deepCopy(params,
+                InnerQueryFlowInstanceParams.class);
+        copiedParams.getTaskTypes().retainAll(Collections.singleton(TaskType.ASYNC));
+        Map<Long, FlowStatus> flowInstanceId2Status = flowInstanceRepository.findProjectionByParentInstanceIdIn(
+                copiedParams.getParentInstanceIds()).stream()
+                .collect(Collectors.toMap(FlowInstanceProjection::getId, FlowInstanceProjection::getStatus,
+                        (exist, replace) -> exist));
+        if (CollectionUtils.isEmpty(flowInstanceId2Status.keySet())) {
+            return Collections.emptyList();
+        }
+        copiedParams.setFlowInstanceIds(flowInstanceId2Status.keySet());
+        Map<Long, TaskType> flowInstanceId2SubTaskType = innerListDistinctServiceTaskInstances(copiedParams)
+                .stream().collect(Collectors.toMap(ServiceTaskInstanceEntity::getFlowInstanceId,
+                        ServiceTaskInstanceEntity::getTaskType, (exist, replace) -> exist));
+        final List<FlowInstanceState> flowInstanceStates = new ArrayList<>();
+        flowInstanceId2Status.forEach((id, flowStatus) -> {
+            if (flowStatus != null && flowInstanceId2SubTaskType.containsKey(id)) {
+                flowInstanceStates.add(new FlowInstanceState(TaskType.ASYNC, flowStatus));
+            }
+        });
+        return flowInstanceStates;
+    }
+
+    /**
+     * This is a temporary method that only uses ODC 4.3.4
+     *
+     * @param params
+     * @return
+     */
+    public List<FlowInstanceState> listSubTaskStates(
+            @NonNull InnerQueryFlowInstanceParams params) {
+        Set<Long> joinedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
+        if (CollectionUtils.isEmpty(joinedProjectIds)) {
+            return Collections.emptyList();
+        }
+        List<FlowInstanceState> flowInstanceStates = listSqlPlanSubTaskStates(params);
+        flowInstanceStates.addAll(listPartitionPlanSubTaskStates(params));
+        return flowInstanceStates;
+    }
+
     @Data
     public static class ShadowTableComparingUpdateEvent {
         private Long comparingTaskId;
         private Long flowInstanceId;
+    }
+
+    @Data
+    @AllArgsConstructor
+    public static class FlowInstanceState {
+        private TaskType taskType;
+        private FlowStatus status;
     }
 
     @Getter
@@ -1405,5 +1762,30 @@ public class FlowInstanceService {
     public static class DataTransferTaskInitEvent {
         private Long taskId;
         private DataTransferConfig config;
+    }
+
+    @Data
+    @Accessors(chain = true)
+    @AllArgsConstructor
+    @EqualsAndHashCode
+    private static class MergedDbIdentifier {
+        /**
+         * For a complete approval process, there are N approval nodes, and each approval node has M
+         * approval User eg: [1,2] -> [1,3]
+         */
+        private List<Set<Long>> approvalUserIds;
+
+        /**
+         * Different databases go through the approval process corresponding to different risk levels
+         */
+        private Long riskLevelId;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @Accessors(chain = true)
+    public static class MergedDbCreatedData {
+        private RiskLevel riskLevel;
+        private Set<Long> candidateResourceIds;
     }
 }

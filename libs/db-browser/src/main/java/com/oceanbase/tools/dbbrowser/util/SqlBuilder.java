@@ -155,6 +155,14 @@ public abstract class SqlBuilder implements Appendable, CharSequence {
         return appendList(identifiers, this::identifier);
     }
 
+    public SqlBuilder like(String fieldKey, String fieldLikeValue) {
+        if (StringUtils.isNotBlank(fieldKey)) {
+            append(fieldKey);
+        }
+        return append(" LIKE ")
+                .value("%" + StringUtils.escapeLike(fieldLikeValue) + "%");
+    }
+
     public SqlBuilder likeValueIfNotBlank(String value) {
         if (StringUtils.isBlank(value)) {
             return this;

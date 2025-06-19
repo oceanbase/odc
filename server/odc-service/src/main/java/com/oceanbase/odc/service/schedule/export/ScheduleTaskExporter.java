@@ -40,6 +40,7 @@ import org.springframework.stereotype.Service;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.lang.Pair;
 import com.oceanbase.odc.common.util.FileZipper;
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.collaboration.ProjectEntity;
@@ -119,10 +120,12 @@ public class ScheduleTaskExporter {
     @Autowired
     private TaskRepository taskRepository;
 
+    @SkipAuthorize
     public static String removeSeparator(String fileName) {
         return fileName.replace(File.separator, "_");
     }
 
+    @SkipAuthorize("internal usage")
     public ExportedFile exportPartitionPlan(String encryptKey, ExportProperties exportProperties,
             Collection<Long> ids) {
         List<ServiceTaskInstanceEntity> serviceTaskInstanceEntities = serviceTaskRepository.findByFlowInstanceIdIn(ids)
@@ -158,6 +161,7 @@ public class ScheduleTaskExporter {
         }
     }
 
+    @SkipAuthorize("internal usage")
     public ExportedFile exportSchedule(ScheduleType scheduleType, String encryptKey, ExportProperties exportProperties,
             Collection<Long> ids) {
         Verify.verify(scheduleType == ScheduleType.SQL_PLAN || scheduleType == ScheduleType.DATA_DELETE
@@ -183,6 +187,7 @@ public class ScheduleTaskExporter {
         return deepClone;
     }
 
+    @SkipAuthorize("internal usage")
     public ExportProperties generateExportProperties() {
         ExportProperties exportProperties = new ExportProperties();
         exportProperties.putToMetaData(EXPORT_TYPE, SCHEDULE_EXPORT_TYPE);
@@ -193,6 +198,7 @@ public class ScheduleTaskExporter {
     }
 
     @SneakyThrows
+    @SkipAuthorize("internal usage")
     public ExportedFile mergeToZip(ExportProperties exportProperties, List<ExportedFile> files, String encryptKey) {
         String filePath = exportProperties.acquireFilePath();
         String outputFileName = filePath + File.separator + buildMergedZipName();

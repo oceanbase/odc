@@ -22,6 +22,7 @@ import java.util.UUID;
 
 import javax.validation.constraints.NotNull;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.oceanbase.odc.common.json.JsonUtils;
@@ -175,6 +176,10 @@ public class OmsCreateDataTaskAction implements Action<OscActionContext, OscActi
         TableTransferObject tableTransferObject = new TableTransferObject();
         tableTransferObject.setName(oscScheduleTaskParameters.getOriginTableNameUnwrapped());
         tableTransferObject.setMappedName(oscScheduleTaskParameters.getNewTableNameUnwrapped());
+        // remove column founded
+        if (CollectionUtils.isNotEmpty(oscScheduleTaskParameters.getFilterColumns())) {
+            tableTransferObject.setFilterColumns(oscScheduleTaskParameters.getFilterColumns());
+        }
         tables.add(tableTransferObject);
         databaseTransferObject.setTables(tables);
 

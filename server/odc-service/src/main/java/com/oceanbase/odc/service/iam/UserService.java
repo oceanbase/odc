@@ -89,6 +89,7 @@ import com.oceanbase.odc.metadb.iam.RolePermissionEntity;
 import com.oceanbase.odc.metadb.iam.RolePermissionRepository;
 import com.oceanbase.odc.metadb.iam.RoleRepository;
 import com.oceanbase.odc.metadb.iam.UserEntity;
+import com.oceanbase.odc.metadb.iam.UserOrganizationEntity;
 import com.oceanbase.odc.metadb.iam.UserOrganizationRepository;
 import com.oceanbase.odc.metadb.iam.UserPermissionEntity;
 import com.oceanbase.odc.metadb.iam.UserPermissionRepository;
@@ -369,7 +370,7 @@ public class UserService {
             throw new UnsupportedException(ErrorCodes.IllegalOperation, new Object[] {"admin account"},
                     "Operation on admin account is not allowed");
         }
-        permissionValidator.checkCurrentOrganization(new User(userEntity));
+        permissionValidator.checkCurrentOrganization(nullSafeGetUser(userEntity));
 
         UserDeleteEvent event = new UserDeleteEvent();
         event.setUserId(id);
@@ -606,9 +607,11 @@ public class UserService {
 
     @SkipAuthorize
     public PaginatedData<User> listUserBasicsWithoutPermissionCheck() {
-        List<User> users =
-                userRepository.findByOrganizationId(authenticationFacade.currentOrganizationId()).stream()
-                        .map(User::new).collect(Collectors.toList());
+        List<UserOrganizationEntity> entities = userOrganizationRepository.findByOrganizationId(
+                authenticationFacade.currentOrganizationId());
+        List<User> users = userRepository.findByIdIn(
+                entities.stream().map(UserOrganizationEntity::getUserId).collect(Collectors.toList())).stream()
+                .map(User::new).collect(Collectors.toList());
         acquireRolesAndRoleIds(users);
         return new PaginatedData<>(users, CustomPage.empty());
     }
@@ -671,13 +674,17 @@ public class UserService {
             }
         }).collect(Collectors.toList());
 
-        Specification<UserEntity> spec =
-                Specification.where(UserSpecs.organizationIdEqual(authenticationFacade.currentOrganizationId()))
-                        .and(UserSpecs.enabledEqual(params.getEnabled()))
-                        .and(UserSpecs.namesLike(params.getNames())
-                                .or(UserSpecs.accountNamesLike(params.getAccountNames())));
+        Specification<UserEntity> spec = Specification.where(UserSpecs.enabledEqual(params.getEnabled()))
+                .and(UserSpecs.namesLike(params.getNames())
+                        .or(UserSpecs.accountNamesLike(params.getAccountNames())));
+
+        List<Long> userIdsInOrg = userOrganizationRepository.findByOrganizationId(
+                authenticationFacade.currentOrganizationId()).stream().map(UserOrganizationEntity::getUserId).collect(
+                        Collectors.toList());
         if (!findAllUsers) {
             spec = spec.and(UserSpecs.userIdIn(queryUserIds));
+        } else {
+            spec = spec.and(UserSpecs.userIdIn(userIdsInOrg));
         }
         spec = spec.and(UserSpecs.sort(Sort.by(orderList)));
         Pageable page = pageable.equals(Pageable.unpaged()) ? pageable
@@ -738,7 +745,7 @@ public class UserService {
         }
         userEntity.setEnabled(updateUserReq.isEnabled());
         userEntity.setDescription(updateUserReq.getDescription());
-        permissionValidator.checkCurrentOrganization(new User(userEntity));
+        permissionValidator.checkCurrentOrganization(nullSafeGetUser(userEntity));
         userRepository.update(userEntity);
         publishTriggerEventAfterTx(new User(userEntity), TriggerEvent.USER_UPDATED);
         log.info("User has been updated: {}", userEntity);
@@ -786,7 +793,7 @@ public class UserService {
             throw new UnsupportedException(ErrorCodes.IllegalOperation, new Object[] {"admin account"},
                     "Operation on admin account is not allowed");
         }
-        permissionValidator.checkCurrentOrganization(new User(userEntity));
+        permissionValidator.checkCurrentOrganization(nullSafeGetUser(userEntity));
         userEntity.setEnabled(enabled);
         userRepository.update(userEntity);
         User user = new User(userEntity);
@@ -809,8 +816,9 @@ public class UserService {
                     "New password has to be different from old password");
             SecurityContextUtils.setCurrentUser(new User(userEntity));
         } else {
-            userEntity = nullSafeGet(authenticationFacade.currentUserId());
-            permissionValidator.checkCurrentOrganization(authenticationFacade.currentUser());
+            long currentUserId = authenticationFacade.currentUserId();
+            userEntity = nullSafeGet(currentUserId);
+            permissionValidator.checkCurrentOrganization(nullSafeGetUser(userEntity));
         }
         String previousPassword = userEntity.getPassword();
         FailedLoginAttemptLimiter attemptLimiter = userIdChangePasswordAttamptCache.get(userEntity.getId());
@@ -857,7 +865,7 @@ public class UserService {
     @PreAuthenticate(actions = "update", resourceType = "ODC_USER", indexOfIdParam = 0)
     public User resetPassword(long id, String password) {
         UserEntity userEntity = nullSafeGet(id);
-        permissionValidator.checkCurrentOrganization(new User(userEntity));
+        permissionValidator.checkCurrentOrganization(nullSafeGetUser(userEntity));
         String previousPassword = userEntity.getPassword();
 
         PreConditions.validPassword(password);
@@ -884,6 +892,13 @@ public class UserService {
     }
 
     @SkipAuthorize("odc internal usage")
+    public User nullSafeGetUser(UserEntity userEntity) {
+        User user = new User(userEntity);
+        user.setOrganizationIds(userOrganizationRepository.findAllOrganizationIdByUserId(userEntity.getId()));
+        return user;
+    }
+
+    @SkipAuthorize("odc internal usage")
     public UserEntity nullSafeGet(String accountName) {
         return userRepository.findByAccountName(accountName)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_USER, "accountName", accountName));
@@ -898,7 +913,13 @@ public class UserService {
                     .collect(Collectors.joining(","));
             throw new NotFoundException(ResourceType.ODC_USER, "id", absentIds);
         }
-        return entities.stream().map(User::new).collect(Collectors.toList());
+        List<User> users = new ArrayList<>();
+        entities.stream().forEach(entity -> {
+            User user = new User(entity);
+            user.setOrganizationIds(userOrganizationRepository.findAllOrganizationIdByUserId(entity.getId()));
+            users.add(user);
+        });
+        return users;
     }
 
     @SkipAuthorize("odc internal usage")

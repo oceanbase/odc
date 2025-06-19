@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.junit.Assert;
@@ -44,6 +45,7 @@ import com.oceanbase.odc.service.sqlcheck.rule.NoSpecificColumnExists;
 import com.oceanbase.odc.service.sqlcheck.rule.NoValidWhereClause;
 import com.oceanbase.odc.service.sqlcheck.rule.NoWhereClauseExists;
 import com.oceanbase.odc.service.sqlcheck.rule.NotNullColumnWithoutDefaultValue;
+import com.oceanbase.odc.service.sqlcheck.rule.OracleAffectedRowsExceedLimit;
 import com.oceanbase.odc.service.sqlcheck.rule.OracleColumnCalculation;
 import com.oceanbase.odc.service.sqlcheck.rule.OracleLeftFuzzyMatch;
 import com.oceanbase.odc.service.sqlcheck.rule.OracleMissingRequiredColumns;
@@ -75,6 +77,7 @@ import com.oceanbase.odc.service.sqlcheck.rule.TooManyInExpression;
 import com.oceanbase.odc.service.sqlcheck.rule.TooManyOutOfLineIndex;
 import com.oceanbase.odc.service.sqlcheck.rule.TooManyTableJoin;
 import com.oceanbase.odc.service.sqlcheck.rule.TruncateTableExists;
+import com.oceanbase.odc.service.sqlcheck.rule.Unable2JudgeAffectedRows;
 
 /**
  * {@link OracleSqlCheckerTest}
@@ -84,6 +87,7 @@ import com.oceanbase.odc.service.sqlcheck.rule.TruncateTableExists;
  * @since ODC_release_4.1.0
  */
 public class OracleSqlCheckerTest {
+    private Supplier<String> defaultVersionSupplier = () -> "10.1";
 
     @Test
     public void check_sqlWithColumnLeftCalculation_violationGenerated() {
@@ -1193,7 +1197,7 @@ public class OracleSqlCheckerTest {
         Mockito.when(jdbcTemplate.queryForObject(Mockito.anyString(), Mockito.any(RowMapper.class)))
                 .thenReturn(sqls[4]);
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE,
-                null, Collections.singletonList(new OracleOfflineDdlExists(jdbcTemplate)));
+                null, Collections.singletonList(new OracleOfflineDdlExists(defaultVersionSupplier, jdbcTemplate)));
         List<CheckViolation> actual = sqlChecker.check(toOffsetString(sqls), null);
 
         SqlCheckRuleType type = SqlCheckRuleType.OFFLINE_SCHEMA_CHANGE_EXISTS;
@@ -1236,7 +1240,7 @@ public class OracleSqlCheckerTest {
                 + "return v1;\n"
                 + "end; $$";
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE, "$$",
-                SqlCheckRules.getAllDefaultRules(null, DialectType.OB_ORACLE));
+                SqlCheckRules.getAllDefaultRules(null, defaultVersionSupplier, DialectType.OB_ORACLE));
         Assert.assertTrue(sqlChecker.check(sql).isEmpty());
     }
 
@@ -1248,7 +1252,7 @@ public class OracleSqlCheckerTest {
                 + "return v1;\n"
                 + "end; $$";
         DefaultSqlChecker sqlChecker = new DefaultSqlChecker(DialectType.OB_ORACLE, "$$",
-                SqlCheckRules.getAllDefaultRules(null, DialectType.OB_ORACLE));
+                SqlCheckRules.getAllDefaultRules(null, defaultVersionSupplier, DialectType.OB_ORACLE));
         List<CheckViolation> actual = sqlChecker.check(sql);
 
         SqlCheckRuleType type = SqlCheckRuleType.SYNTAX_ERROR;
@@ -1276,6 +1280,199 @@ public class OracleSqlCheckerTest {
         CheckResult r2 = new CheckResult("2", Collections.singletonList(c2));
         List<CheckResult> expect = Arrays.asList(r1, r2);
         Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void check_restrictSqlAffectedRowsBySqlPlan_inNativeOracle_passed() {
+        String delete = "delete from ZIJIA.TEST_ROW";
+        List<String> resultSet = Arrays.asList(
+                "---------------------------------------------------------------------------------",
+                "| Id  | Operation        | Name         | Rows  | Bytes | Cost (%CPU)| Time     |",
+                "---------------------------------------------------------------------------------",
+                "|   0 | DELETE STATEMENT |              |     5 |    65 |     2   (0)| 00:00:01 |",
+                "|   1 |  DELETE          | EMPLOYEES    |       |       |            |          |",
+                "|   2 |   INDEX FULL SCAN| SYS_C0038069 |     5 |    65 |     2   (0)| 00:00:01 |",
+                "---------------------------------------------------------------------------------");
+
+        JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
+
+        Mockito.when(jdbcTemplate.query(Mockito.anyString(), Mockito.any(RowMapper.class)))
+                .thenReturn(resultSet);
+        DefaultSqlChecker selectChecker = new DefaultSqlChecker(DialectType.ORACLE, "$$",
+                Collections.singletonList(
+                        new OracleAffectedRowsExceedLimit(6L, DialectType.ORACLE, jdbcTemplate)));
+        List<CheckViolation> actualSelect = selectChecker.check(delete);
+        Assert.assertEquals(0, actualSelect.size());
+    }
+
+    @Test
+    public void check_restrictSqlAffectedRowsBySqlPlan_inNativeOracle_intercepted() {
+        String delete = "delete from ZIJIA.TEST_ROW";
+        List<String> resultSet = Arrays.asList(
+                "---------------------------------------------------------------------------------",
+                "| Id  | Operation        | Name         | Rows  | Bytes | Cost (%CPU)| Time     |",
+                "---------------------------------------------------------------------------------",
+                "|   0 | DELETE STATEMENT |              |     5 |    65 |     2   (0)| 00:00:01 |",
+                "|   1 |  DELETE          | EMPLOYEES    |       |       |            |          |",
+                "|   2 |   INDEX FULL SCAN| SYS_C0038069 |     5 |    65 |     2   (0)| 00:00:01 |",
+                "---------------------------------------------------------------------------------");
+
+        JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
+
+        Mockito.when(jdbcTemplate.query(Mockito.anyString(), Mockito.any(RowMapper.class)))
+                .thenReturn(resultSet);
+        DefaultSqlChecker selectChecker = new DefaultSqlChecker(DialectType.ORACLE, "$$",
+                Collections.singletonList(
+                        new OracleAffectedRowsExceedLimit(4L, DialectType.ORACLE, jdbcTemplate)));
+        List<CheckViolation> actualSelect = selectChecker.check(delete);
+        Assert.assertEquals(1, actualSelect.size());
+        Assert.assertEquals(SqlCheckRuleType.RESTRICT_SQL_AFFECTED_ROWS, actualSelect.get(0).getType());
+    }
+
+    @Test
+    public void check_restrictSqlAffectedRowsBySqlPlan_OBVersionIs4352_passed() {
+        String delete = "delete from ZIJIA.TEST_ROW";
+        List<String> resultSet = Arrays.asList(
+                "=========================================================",
+                "|ID|OPERATOR         |NAME        |EST.ROWS|EST.TIME(us)|",
+                "---------------------------------------------------------",
+                "|0 |DELETE           |            |5       |35          |",
+                "|1 |+-TABLE FULL SCAN|TEST_MV_BASE|5       |3           |",
+                "=========================================================");
+
+        JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
+
+        Mockito.when(jdbcTemplate.query(Mockito.anyString(), Mockito.any(RowMapper.class)))
+                .thenReturn(resultSet);
+        DefaultSqlChecker selectChecker = new DefaultSqlChecker(DialectType.OB_ORACLE, "$$",
+                Collections.singletonList(
+                        new OracleAffectedRowsExceedLimit(6L, DialectType.OB_ORACLE, jdbcTemplate)));
+        List<CheckViolation> actualSelect = selectChecker.check(delete);
+        Assert.assertEquals(0, actualSelect.size());
+    }
+
+    @Test
+    public void check_restrictSqlAffectedRowsBySqlPlan_OBVersionIs4352_intercepted() {
+        String delete = "delete from ZIJIA.TEST_ROW";
+        List<String> resultSet = Arrays.asList(
+                "=========================================================",
+                "|ID|OPERATOR         |NAME        |EST.ROWS|EST.TIME(us)|",
+                "---------------------------------------------------------",
+                "|0 |DELETE           |            |5       |35          |",
+                "|1 |+-TABLE FULL SCAN|TEST_MV_BASE|5       |3           |",
+                "=========================================================");
+
+        JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
+
+        Mockito.when(jdbcTemplate.query(Mockito.anyString(), Mockito.any(RowMapper.class)))
+                .thenReturn(resultSet);
+        DefaultSqlChecker selectChecker = new DefaultSqlChecker(DialectType.OB_ORACLE, "$$",
+                Collections.singletonList(
+                        new OracleAffectedRowsExceedLimit(4L, DialectType.OB_ORACLE, jdbcTemplate)));
+        List<CheckViolation> actualSelect = selectChecker.check(delete);
+        Assert.assertEquals(1, actualSelect.size());
+        Assert.assertEquals(SqlCheckRuleType.RESTRICT_SQL_AFFECTED_ROWS, actualSelect.get(0).getType());
+    }
+
+    @Test
+    public void check_restrictSqlAffectedRowsBySqlPlan_OBVersionIs324_passed() {
+        String delete = "delete from ZIJIA.TEST_ROW";
+        List<String> resultSet = Collections.singletonList(
+                "========================================\n"
+                        + "|ID|OPERATOR   |NAME    |EST. ROWS|COST|\n"
+                        + "----------------------------------------\n"
+                        + "|0 |DELETE     |        |2        |48  |\n"
+                        + "|1 | TABLE SCAN|TEST_ROW|2        |46  |\n"
+                        + "========================================\n"
+                        + "\n"
+                        + "Outputs & filters: \n"
+                        + "-------------------------------------\n"
+                        + "  0 - output(nil), filter(nil), table_columns([{TEST_ROW: ({TEST_ROW: (TEST_ROW.__pk_increment, TEST_ROW.ID)})}])\n"
+                        + "  1 - output([TEST_ROW.__pk_increment], [TEST_ROW.ID]), filter(nil), \n"
+                        + "      access([TEST_ROW.__pk_increment], [TEST_ROW.ID]), partitions(p0)");
+
+        JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
+
+        Mockito.when(jdbcTemplate.query(Mockito.anyString(), Mockito.any(RowMapper.class)))
+                .thenReturn(resultSet);
+        DefaultSqlChecker selectChecker = new DefaultSqlChecker(DialectType.OB_ORACLE, "$$",
+                Collections.singletonList(
+                        new OracleAffectedRowsExceedLimit(3L, DialectType.OB_ORACLE, jdbcTemplate)));
+        List<CheckViolation> actualSelect = selectChecker.check(delete);
+        Assert.assertEquals(0, actualSelect.size());
+    }
+
+    @Test
+    public void check_restrictSqlAffectedRowsBySqlPlan_OBVersionIs324_intercepted() {
+        String delete = "delete from ZIJIA.TEST_ROW";
+        List<String> resultSet = Collections.singletonList(
+                "========================================\n"
+                        + "|ID|OPERATOR   |NAME    |EST. ROWS|COST|\n"
+                        + "----------------------------------------\n"
+                        + "|0 |DELETE     |        |2        |48  |\n"
+                        + "|1 | TABLE SCAN|TEST_ROW|2        |46  |\n"
+                        + "========================================\n"
+                        + "\n"
+                        + "Outputs & filters: \n"
+                        + "-------------------------------------\n"
+                        + "  0 - output(nil), filter(nil), table_columns([{TEST_ROW: ({TEST_ROW: (TEST_ROW.__pk_increment, TEST_ROW.ID)})}])\n"
+                        + "  1 - output([TEST_ROW.__pk_increment], [TEST_ROW.ID]), filter(nil), \n"
+                        + "      access([TEST_ROW.__pk_increment], [TEST_ROW.ID]), partitions(p0)");
+
+        JdbcTemplate jdbcTemplate = Mockito.mock(JdbcTemplate.class);
+
+        Mockito.when(jdbcTemplate.query(Mockito.anyString(), Mockito.any(RowMapper.class)))
+                .thenReturn(resultSet);
+        DefaultSqlChecker selectChecker = new DefaultSqlChecker(DialectType.OB_ORACLE, "$$",
+                Collections.singletonList(
+                        new OracleAffectedRowsExceedLimit(1L, DialectType.OB_ORACLE, jdbcTemplate)));
+        List<CheckViolation> actualSelect = selectChecker.check(delete);
+        Assert.assertEquals(1, actualSelect.size());
+        Assert.assertEquals(SqlCheckRuleType.RESTRICT_SQL_AFFECTED_ROWS, actualSelect.get(0).getType());
+    }
+
+    @Test
+    public void check_unable2JudgeAffectedRows_OBOracle_enabled() {
+        String insert =
+                "insert into users (id, name, age, email) \n"
+                        + "values \n"
+                        + "('2', 'b-bot', 3, 'o'), \n"
+                        + "('3', 'c-bot', 3, 'o'), \n"
+                        + "('4', 'd-bot', 3, '(o)')";
+        OracleAffectedRowsExceedLimit oracleAffectedRowsExceedLimit = Mockito.mock(OracleAffectedRowsExceedLimit.class);
+        Mockito.when(oracleAffectedRowsExceedLimit.getSupportsDialectTypes())
+                .thenReturn(Arrays.asList(DialectType.OB_ORACLE, DialectType.ORACLE));
+        Mockito.when(oracleAffectedRowsExceedLimit.getStatementAffectedRows(Mockito.any()))
+                .thenThrow(RuntimeException.class);
+
+        DefaultSqlChecker insertChecker = new DefaultSqlChecker(DialectType.OB_ORACLE, "$$",
+                Collections.singletonList(
+                        new Unable2JudgeAffectedRows(oracleAffectedRowsExceedLimit)));
+        List<CheckViolation> actualInsert = insertChecker.check(insert);
+        Assert.assertEquals(1, actualInsert.size());
+        Assert.assertEquals(SqlCheckRuleType.ESTIMATE_SQL_AFFECTED_ROWS_FAILED, actualInsert.get(0).getType());
+    }
+
+    @Test
+    public void check_unable2JudgeAffectedRows_Oracle_enabled() {
+        String insert =
+                "insert into users (id, name, age, email) \n"
+                        + "values \n"
+                        + "('2', 'b-bot', 3, 'o'), \n"
+                        + "('3', 'c-bot', 3, 'o'), \n"
+                        + "('4', 'd-bot', 3, '(o)')";
+        OracleAffectedRowsExceedLimit oracleAffectedRowsExceedLimit = Mockito.mock(OracleAffectedRowsExceedLimit.class);
+        Mockito.when(oracleAffectedRowsExceedLimit.getSupportsDialectTypes())
+                .thenReturn(Arrays.asList(DialectType.OB_ORACLE, DialectType.ORACLE));
+        Mockito.when(oracleAffectedRowsExceedLimit.getStatementAffectedRows(Mockito.any()))
+                .thenThrow(RuntimeException.class);
+
+        DefaultSqlChecker insertChecker = new DefaultSqlChecker(DialectType.ORACLE, "$$",
+                Collections.singletonList(
+                        new Unable2JudgeAffectedRows(oracleAffectedRowsExceedLimit)));
+        List<CheckViolation> actualInsert = insertChecker.check(insert);
+        Assert.assertEquals(1, actualInsert.size());
+        Assert.assertEquals(SqlCheckRuleType.ESTIMATE_SQL_AFFECTED_ROWS_FAILED, actualInsert.get(0).getType());
     }
 
     private String joinAndAppend(String[] sqls, String delimiter) {

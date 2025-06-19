@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.notification;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -87,6 +88,12 @@ public class JdbcNotificationQueue implements NotificationQueue {
             }
         });
         return messages;
+    }
+
+    @Override
+    public void failSendingTimeoutMessages(long timeout, TimeUnit timeUnit) {
+        int affected = messageRepository.failSendingTimeoutMessages(TimeUnit.SECONDS.convert(timeout, timeUnit));
+        log.info("failed {} messages.", affected);
     }
 
     @Override
