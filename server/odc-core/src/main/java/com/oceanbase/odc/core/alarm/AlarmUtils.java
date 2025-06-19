@@ -27,6 +27,7 @@ public final class AlarmUtils {
      * Base alarm message names
      */
     public static final String CLUSTER_NAME = "Cluster";
+    public static final String INSTANCE_NAME = "instanceId";
     public static final String TENANT_NAME = "Tenant";
     public static final String ORGANIZATION_NAME = "OrganizationId";
     public static final String MESSAGE_NAME = "Message";
@@ -42,6 +43,7 @@ public final class AlarmUtils {
     public static final String RESOURCE_TYPE = "ResourceType";
     public static final String TASK_TYPE_NAME = "TaskType";
     public static final String SCHEDULE_ID_NAME = "ScheduleId";
+    public static final String FLOW_INSTANCE_ID_NAME = "FlowInstanceId";
     public static final Collection<String> TASK_FRAMEWORK_ALARM_DIGEST_NAMES =
             Arrays.asList(CLUSTER_NAME, TENANT_NAME, SCHEDULE_ID_NAME);
 

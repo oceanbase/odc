@@ -15,23 +15,30 @@
  */
 package com.oceanbase.odc.service.schedule.export.model;
 
-import javax.annotation.Nullable;
-
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
-public class ScheduleRowPreviewDto {
+@AllArgsConstructor
+@NoArgsConstructor
+public class ScheduleTerminateResult {
 
-    private String rowId;
-    private String originId;
-    private String originProjectName;
-    private String description;
-    private ScheduleType type;
+    private Boolean terminateSucceed;
 
-    private ExportedDatabase database;
-    @Nullable
-    private ExportedDatabase targetDatabase;
+    private ScheduleType scheduleType;
 
+    private Long id;
+
+    private String failReason;
+
+    public static ScheduleTerminateResult ofSuccess(ScheduleType scheduleType, Long id) {
+        return new ScheduleTerminateResult(true, scheduleType, id, null);
+    }
+
+    public static ScheduleTerminateResult ofFailed(ScheduleType scheduleType, Long id, String failReason) {
+        return new ScheduleTerminateResult(false, scheduleType, id, failReason);
+    }
 }

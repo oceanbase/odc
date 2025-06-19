@@ -15,23 +15,14 @@
  */
 package com.oceanbase.odc.service.schedule.export.model;
 
-import javax.annotation.Nullable;
+import java.util.List;
 
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 
 import lombok.Data;
 
 @Data
-public class ScheduleRowPreviewDto {
-
-    private String rowId;
-    private String originId;
-    private String originProjectName;
-    private String description;
-    private ScheduleType type;
-
-    private ExportedDatabase database;
-    @Nullable
-    private ExportedDatabase targetDatabase;
-
+public class ScheduleTerminateCmd {
+    private ScheduleType scheduleType;
+    private List<Long> ids;
 }

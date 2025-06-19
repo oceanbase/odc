@@ -28,7 +28,9 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
@@ -44,6 +46,7 @@ import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTablePartitionKeyEnti
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTablePartitionKeyRepository;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTableRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
+import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
@@ -55,6 +58,8 @@ import com.oceanbase.odc.service.partitionplan.model.PartitionPlanStrategy;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTableConfig;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 import com.oceanbase.odc.service.schedule.ScheduleService;
+import com.oceanbase.odc.service.schedule.export.model.ScheduleTerminateCmd;
+import com.oceanbase.odc.service.schedule.export.model.ScheduleTerminateResult;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
@@ -87,9 +92,12 @@ public class PartitionPlanScheduleService {
     @Autowired
     private PartitionPlanTablePartitionKeyRepository partitionPlanTablePartitionKeyRepository;
     @Autowired
+    @Lazy
     private FlowInstanceService flowInstanceService;
     @Autowired
     private FlowInstanceRepository flowInstanceRepository;
+    @Autowired
+    private TransactionTemplate transactionTemplate;
 
     public PartitionPlanConfig getPartitionPlanByFlowInstanceId(@NonNull Long flowInstanceId) {
         FlowInstanceDetailResp resp = this.flowInstanceService.detail(flowInstanceId);
@@ -205,6 +213,29 @@ public class PartitionPlanScheduleService {
                     partitionPlanEntity.getId(), dropScheduleEntity.getId(),
                     partitionPlanConfig.getFlowInstanceId(), partitionPlanConfig.getTaskId(),
                     partitionPlanConfig.getErrorStrategy(), partitionPlanConfig.getTimeoutMillis());
+        }
+    }
+
+    public void processTerminatePartitionPlan(ScheduleTerminateCmd cmd, List<ScheduleTerminateResult> results) {
+        Map<Long, TaskEntity> flowInstanceId2TaskEntity = flowInstanceService.getTaskByFlowInstanceIds(cmd.getIds());
+        for (Map.Entry<Long, TaskEntity> entry : flowInstanceId2TaskEntity.entrySet()) {
+            Long flowInstanceId = entry.getKey();
+            TaskEntity taskEntity = entry.getValue();
+            try {
+                transactionTemplate.executeWithoutResult((status) -> {
+                    try {
+                        disablePartitionPlan(taskEntity.getDatabaseId());
+                    } catch (Exception e) {
+                        status.setRollbackOnly();
+                        throw new RuntimeException(e);
+                    }
+                });
+                results.add(ScheduleTerminateResult.ofSuccess(cmd.getScheduleType(), flowInstanceId));
+                log.info("PartitionPlan task stop success, flowInstanceId={}", flowInstanceId);
+            } catch (Exception e) {
+                results.add(ScheduleTerminateResult.ofFailed(cmd.getScheduleType(), flowInstanceId, e.getMessage()));
+                log.info("PartitionPlan task stop failed, flowInstanceId={}", flowInstanceId, e);
+            }
         }
     }
 

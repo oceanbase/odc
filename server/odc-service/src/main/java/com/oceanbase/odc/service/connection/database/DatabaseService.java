@@ -38,6 +38,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -1298,5 +1299,19 @@ public class DatabaseService {
                     ex.getLocalizedMessage());
         }
 
+    }
+
+    public <T> void assignDatabaseById(List<T> content, Function<T, Long> databaseIdProvider,
+            BiConsumer<T, Database> databaseSetter) {
+        List<Long> databaseIds = content.stream().map(databaseIdProvider).collect(
+                Collectors.toList());
+        List<DatabaseEntity> entities = databaseRepository.findByIdIn(databaseIds);
+        List<Database> databases = entitiesToModels(new PageImpl<>(entities), false).getContent();
+        Map<Long, Database> idDatabaseEntityMap = databases.stream().collect(
+                Collectors.toMap(Database::getId, t -> t));
+        content.forEach(c -> {
+            Database database = idDatabaseEntityMap.get(databaseIdProvider.apply(c));
+            databaseSetter.accept(c, database);
+        });
     }
 }
