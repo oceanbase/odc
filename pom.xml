@@ -150,7 +150,7 @@
 
         <jwt.version>3.9.0</jwt.version>
         <okhttp.version>4.11.0</okhttp.version>
-        <jgit.version>5.13.3.202401111512-r</jgit.version>
+        <jgit.version>6.10.1.202505221210-r</jgit.version>
         <bouncycastle.jdk18.version>1.76</bouncycastle.jdk18.version>
         <bouncycastle.jdk15.version>1.70</bouncycastle.jdk15.version>
         <commons-codec.version>1.15</commons-codec.version>
