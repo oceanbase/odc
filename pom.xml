@@ -89,7 +89,7 @@
         <moco.version>1.4.0</moco.version>
         <apsara-audit-starter.version>3.17.0-SNAPSHOT</apsara-audit-starter.version>
         <awaitility.version>4.1.1</awaitility.version>
-        <org.apache.poi.version>5.2.2</org.apache.poi.version>
+        <org.apache.poi.version>5.4.0</org.apache.poi.version>
         <alipay.sdk.version>4.20.19.ALL</alipay.sdk.version>
         <bucket4j-core.version>4.10.0</bucket4j-core.version>
         <springfox-swagger-ui.version>2.10.0</springfox-swagger-ui.version>
