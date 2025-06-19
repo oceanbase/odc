@@ -38,7 +38,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
-import java.util.function.Function;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -1128,7 +1127,7 @@ public class DatabaseService {
             return Page.empty();
         }
         Map<Long, Project> projectId2Project = projectService.mapByIdIn(entities.stream()
-            .map(DatabaseEntity::getProjectId).collect(Collectors.toSet()));
+                .map(DatabaseEntity::getProjectId).collect(Collectors.toSet()));
         Map<Long, List<ConnectionConfig>> connectionId2Connections = connectionService.mapByIdIn(entities.stream()
                 .map(DatabaseEntity::getConnectionId).collect(Collectors.toSet()));
         Map<Long, Set<DatabasePermissionType>> databaseId2PermittedActions = new HashMap<>();

@@ -306,16 +306,17 @@ public class ScheduleController {
     public SuccessResponse<String> getTerminateScheduleLog(String terminateId) {
         return Responses.ok(scheduleService.getTerminateLog(terminateId));
     }
+
     @RequestMapping(value = "/schedules/stats", method = RequestMethod.GET)
     public ListResponse<ScheduleStat> getScheduleStats(
-        @RequestParam(required = false, name = "types") Set<ScheduleType> types,
-        @RequestParam(required = false, name = "startTime") Date startTime,
-        @RequestParam(required = false, name = "endTime") Date endTime) {
+            @RequestParam(required = false, name = "types") Set<ScheduleType> types,
+            @RequestParam(required = false, name = "startTime") Date startTime,
+            @RequestParam(required = false, name = "endTime") Date endTime) {
         QueryScheduleStatParams req = QueryScheduleStatParams.builder()
-            .scheduleTypes(types)
-            .startTime(startTime)
-            .endTime(endTime)
-            .build();
+                .scheduleTypes(types)
+                .startTime(startTime)
+                .endTime(endTime)
+                .build();
         return Responses.list(scheduleService.listScheduleStat(req));
     }
 }

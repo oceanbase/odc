@@ -296,11 +296,9 @@ public class FlowResponseMapperFactory {
         Map<Long, TaskEntity> taskId2TaskEntity = getTaskEntityMap(serviceEntities);
         populateTaskMappings(serviceEntities, flowInstanceId2Tasks, taskId2TaskEntity);
 
-        Set<Long> databaseIds = getDatabaseIds(taskId2TaskEntity);
         /**
          * Get Database associated with each TaskEntity
          */
-        Map<Long, Database> id2Database = new HashMap<>();
         Set<Long> databaseIds = taskId2TaskEntity.values().stream()
                 .map(TaskEntity::getDatabaseId)
                 .filter(Objects::nonNull).collect(Collectors.toSet());

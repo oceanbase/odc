@@ -24,7 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.core.shared.OrganizationIsolated;
+import com.oceanbase.odc.core.shared.SingleOrganizationResource;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -86,7 +86,7 @@ public class BatchSchedulePermissionValidator {
 
     @Data
     @AllArgsConstructor
-    private final static class FlowOrganizationIsolated implements OrganizationIsolated {
+    private final static class FlowOrganizationIsolated implements SingleOrganizationResource {
 
         private Long organizationId;
         private Long id;

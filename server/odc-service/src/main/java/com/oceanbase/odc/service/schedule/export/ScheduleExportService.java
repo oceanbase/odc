@@ -29,14 +29,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
-import com.oceanbase.odc.common.security.PasswordUtils;
-import com.oceanbase.odc.core.authority.util.SkipAuthorize;
-import com.oceanbase.odc.core.shared.PreConditions;
-import com.oceanbase.odc.core.shared.SingleOrganizationResource;
-import com.oceanbase.odc.core.shared.constant.OrganizationType;
-import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
-import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.common.task.RouteLogCallable;
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
+import com.oceanbase.odc.core.shared.SingleOrganizationResource;
+import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
@@ -180,8 +176,8 @@ public class ScheduleExportService {
     public String getExportLog(String exportId) {
         statefulUuidStateIdGenerator.checkCurrentUserId(exportId);
         String filePath = String.format(RouteLogCallable.LOG_PATH_PATTERN, logPath,
-            ScheduleTaskExportCallable.WORK_SPACE, exportId,
-            ScheduleTaskExportCallable.LOG_NAME);
+                ScheduleTaskExportCallable.WORK_SPACE, exportId,
+                ScheduleTaskExportCallable.LOG_NAME);
         File logFile = new File(filePath);
         return LogUtils.getLatestLogContent(logFile, 10000L, 1048576L);
     }
