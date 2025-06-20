@@ -5,7 +5,7 @@
     <parent>
         <artifactId>plugin-parent</artifactId>
         <groupId>com.oceanbase</groupId>
-        <version>4.3.3-SNAPSHOT</version>
+        <version>4.3.4-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -75,6 +75,11 @@
             <groupId>com.fasterxml.woodstox</groupId>
             <artifactId>woodstox-core</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>info.picocli</groupId>
+            <artifactId>picocli</artifactId>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 

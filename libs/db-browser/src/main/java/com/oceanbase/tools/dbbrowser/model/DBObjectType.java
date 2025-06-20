@@ -25,6 +25,7 @@ public enum DBObjectType {
     SCHEMA("SCHEMA"),
     TABLE("TABLE"),
     EXTERNAL_TABLE("EXTERNAL TABLE"),
+    MATERIALIZED_VIEW("MATERIALIZED VIEW"),
     LOGICAL_TABLE("LOGICAL TABLE"),
     COLUMN("COLUMN"),
     INDEX("INDEX"),
@@ -35,6 +36,7 @@ public enum DBObjectType {
     /**
      * other
      */
+    MATERIALIZED_VIEW_LOG("MATERIALIZED VIEW LOG"),
     TRIGGER("TRIGGER"),
     SEQUENCE("SEQUENCE"),
     PROCEDURE("PROCEDURE"),

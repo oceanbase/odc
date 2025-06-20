@@ -65,6 +65,10 @@ public final class Verify {
         }
     }
 
+    public static void equalsExactlyOne(int value, String parameterName) {
+        Verify.equals(value, 1, parameterName);
+    }
+
     public static long notNegative(long value, String parameterName) {
         if (value < 0) {
             throw new VerifyException(String.format("%s was negative, value=%d", parameterName, value));

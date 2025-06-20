@@ -47,6 +47,14 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>,
 
     @Transactional
     @Query(value = "update job_job set "
+            + " executor_endpoint=:executorEndpoint,  executor_identifier = :executorIdentifier, last_heart_time= CURRENT_TIMESTAMP"
+            + " where id=:id", nativeQuery = true)
+    @Modifying
+    int updateExecutorEndpointAndExecutorIdentifierById(@Param("id") Long id,
+            @Param("executorEndpoint") String executorEndpoint, @Param("executorIdentifier") String executorIdentifier);
+
+    @Transactional
+    @Query(value = "update job_job set "
             + " status=:#{#param.status.name()},"
             + " progress_percentage=:#{#param.progressPercentage},result_json=:#{#param.resultJson},"
             + " finished_time=:#{#param.finishedTime},last_report_time=:#{#param.lastReportTime}"
@@ -71,7 +79,7 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>,
 
     @Transactional
     @Query("update JobEntity set "
-            + " executorIdentifier=:#{#param.executorIdentifier}, jobProperties =:#{#param.jobProperties} "
+            + " executorIdentifier=:#{#param.executorIdentifier}, jobProperties =:#{#param.jobProperties}, last_heart_time= CURRENT_TIMESTAMP "
             + " where id=:#{#param.id}")
     @Modifying
     int updateJobExecutorIdentifierById(@Param("param") JobEntity entity);

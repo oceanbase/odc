@@ -79,9 +79,9 @@ public class OrganizationEntity {
     private String displayName;
 
     /**
-     * Secret for public connection encryption
+     * Obfuscated secret for public connection encryption after migrate to ODC 4.3.4
      */
-    @Column(name = "secret", nullable = false)
+    @Column(name = "secret_new", nullable = false)
     private String secret;
 
     /**

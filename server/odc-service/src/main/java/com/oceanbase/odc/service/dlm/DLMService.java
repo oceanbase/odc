@@ -54,7 +54,12 @@ public class DLMService {
         String previewSqlTemp = "select * from %s where %s;";
         Date now = new Date();
         req.getTables().forEach(tableConfig -> {
-            returnValue.add(String.format(previewSqlTemp, tableConfig.getTableName(),
+            StringBuilder sb = new StringBuilder();
+            tableConfig.getJoinTableConfigs().forEach(joinTableConfig -> {
+                sb.append(String.format(" join %s on %s", joinTableConfig.getTableName(),
+                        joinTableConfig.getJoinCondition()));
+            });
+            returnValue.add(String.format(previewSqlTemp, tableConfig.getTableName() + sb,
                     StringUtils.isEmpty(tableConfig.getConditionExpression()) ? "1=1"
                             : DataArchiveConditionUtil
                                     .parseCondition(tableConfig.getConditionExpression(), req.getVariables(), now)));
@@ -125,6 +130,11 @@ public class DLMService {
     @SkipAuthorize("odc internal usage")
     public TaskStatus getFinalTaskStatus(Long scheduleTaskId) {
         List<DlmTableUnit> dlmTableUnits = findByScheduleTaskId(scheduleTaskId);
+        return getFinalTaskStatus(dlmTableUnits);
+    }
+
+    @SkipAuthorize("odc internal usage")
+    public TaskStatus getFinalTaskStatus(List<DlmTableUnit> dlmTableUnits) {
         Set<TaskStatus> collect = dlmTableUnits.stream().map(DlmTableUnit::getStatus).collect(
                 Collectors.toSet());
         // If the tables do not exist or any table fails, the task is considered a failure.
@@ -142,5 +152,6 @@ public class DLMService {
         }
         return TaskStatus.DONE;
     }
+
 
 }

@@ -41,19 +41,18 @@ public class ConnectionEncryption {
     private EncryptionFacade encryptionFacade;
 
     public ConnectionConfig encryptPasswords(ConnectionConfig connection) {
-        if (Objects.isNull(connection.getCipher())) {
-            connection.setCipher(Cipher.AES256SALT);
-        }
-        if (StringUtils.isEmpty(connection.getSalt())) {
-            connection.setSalt(encryptionFacade.generateSalt());
-        }
+        fillCipherAndSaltIfNull(connection);
         TextEncryptor encryptor = getEncryptor(connection);
-        if (Objects.nonNull(connection.getPassword())) {
-            connection.setPasswordEncrypted(encryptor.encrypt(connection.getPassword()));
-        }
-        if (Objects.nonNull(connection.getSysTenantPassword())) {
-            connection.setSysTenantPasswordEncrypted(encryptor.encrypt(connection.getSysTenantPassword()));
-        }
+        setPasswordsEncrypted(connection, encryptor);
+
+        return connection;
+    }
+
+    public ConnectionConfig encryptPasswordsByCustomKey(ConnectionConfig connection, String customKey) {
+        fillCipherAndSaltIfNull(connection);
+        TextEncryptor encryptor = encryptionFacade.passwordEncryptor(customKey, connection.getSalt());
+        setPasswordsEncrypted(connection, encryptor);
+
         return connection;
     }
 
@@ -72,6 +71,24 @@ public class ConnectionEncryption {
         PreConditions.notNull(connection.getCreatorId(), "organization.creatorId");
         PreConditions.notNull(connection.getOrganizationId(), "organization.organizationId");
         return encryptionFacade.organizationEncryptor(connection.getOrganizationId(), connection.getSalt());
+    }
+
+    private void fillCipherAndSaltIfNull(ConnectionConfig connection) {
+        if (Objects.isNull(connection.getCipher())) {
+            connection.setCipher(Cipher.AES256SALT);
+        }
+        if (StringUtils.isEmpty(connection.getSalt())) {
+            connection.setSalt(encryptionFacade.generateSalt());
+        }
+    }
+
+    private void setPasswordsEncrypted(ConnectionConfig connection, TextEncryptor encryptor) {
+        if (Objects.nonNull(connection.getPassword())) {
+            connection.setPasswordEncrypted(encryptor.encrypt(connection.getPassword()));
+        }
+        if (Objects.nonNull(connection.getSysTenantPassword())) {
+            connection.setSysTenantPasswordEncrypted(encryptor.encrypt(connection.getSysTenantPassword()));
+        }
     }
 
 }

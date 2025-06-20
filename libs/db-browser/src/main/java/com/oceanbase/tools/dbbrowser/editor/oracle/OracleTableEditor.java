@@ -74,7 +74,10 @@ public class OracleTableEditor extends DBTableEditor {
 
     @Override
     public void generateUpdateTableOptionDDL(DBTable oldTable, DBTable newTable, SqlBuilder sqlBuilder) {
-        if (!StringUtils.equals(oldTable.getTableOptions().getComment(), newTable.getTableOptions().getComment())) {
+        if (Objects.nonNull(oldTable.getTableOptions())
+                && Objects.nonNull(newTable.getTableOptions())
+                && !StringUtils.equals(oldTable.getTableOptions().getComment(),
+                        newTable.getTableOptions().getComment())) {
             appendTableComment(newTable, sqlBuilder);
         }
     }

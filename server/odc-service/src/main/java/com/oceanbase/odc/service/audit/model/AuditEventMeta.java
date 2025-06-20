@@ -46,9 +46,19 @@ public class AuditEventMeta {
     private AuditEventType type;
 
     /**
+     * Audit event name
+     */
+    private String typeName;
+
+    /**
      * Audit event action
      */
     private AuditEventAction action;
+
+    /**
+     * Audit event action name
+     */
+    private String actionName;
 
     /**
      * sid extract expression which is an SpEL

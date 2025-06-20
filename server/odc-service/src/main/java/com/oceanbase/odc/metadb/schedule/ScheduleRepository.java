@@ -32,6 +32,7 @@ import org.springframework.data.repository.query.Param;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 
 /**
  * @Author：tinker
@@ -64,6 +65,15 @@ public interface ScheduleRepository extends OdcJpaRepository<ScheduleEntity, Lon
             nativeQuery = true)
     int getEnabledScheduleCountByProjectId(@Param("projectId") Long projectId);
 
+    @Query(value = "SELECT job_type as scheduleType, COUNT(*) as count FROM schedule_schedule " +
+            "WHERE organization_id = :organizationId " +
+            "  AND project_id IN (:projectIds) " +
+            "  AND job_type IN (:types) " +
+            "GROUP BY job_type",
+            nativeQuery = true)
+    List<ScheduleTypeCount> getScheduleCountByProjectIdInAndTypeIn(@Param("organizationId") Long organizationId,
+            @Param("projectIds") Set<Long> projectIds, @Param("types") Set<String> types);
+
     default Page<ScheduleEntity> find(@NotNull Pageable pageable, @NotNull QueryScheduleParams params) {
         Specification<ScheduleEntity> specification = Specification
                 .where(OdcJpaRepository.between(ScheduleEntity_.createTime, params.getStartTime(), params.getEndTime()))
@@ -78,5 +88,17 @@ public interface ScheduleRepository extends OdcJpaRepository<ScheduleEntity, Lon
                 .and(OdcJpaRepository.like(ScheduleEntity_.name, params.getName()))
                 .and(OdcJpaRepository.eq(ScheduleEntity_.organizationId, params.getOrganizationId()));
         return findAll(specification, pageable);
+    }
+
+    List<ScheduleEntity> findByOrganizationIdAndIdInAndProjectIdIn(Long organizationId, Collection<Long> ids,
+            Collection<Long> projectIds);
+
+    List<ScheduleEntity> findByOrganizationIdAndProjectIdInAndTypeIn(Long organizationId, Collection<Long> projectIds,
+            Collection<ScheduleType> types);
+
+    interface ScheduleTypeCount {
+        String getScheduleType();
+
+        int getCount();
     }
 }

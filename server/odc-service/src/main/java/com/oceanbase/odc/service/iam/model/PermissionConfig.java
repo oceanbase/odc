@@ -32,7 +32,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PermissionConfig implements Serializable {
-    private Long resourceId;
+    private String resourceId;
     private ResourceType resourceType;
     private List<String> actions;
 }

@@ -28,6 +28,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.service.common.FutureCache;
 import com.oceanbase.odc.service.exporter.exception.ExtractFileException;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -39,14 +40,17 @@ import com.oceanbase.odc.service.schedule.export.model.ScheduleTaskImportRequest
 import com.oceanbase.odc.service.state.StatefulUuidStateIdGenerator;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
 public class ScheduleTaskImportService {
 
     @Autowired
     private FutureCache futureCache;
 
     @Autowired
-    private ThreadPoolTaskExecutor scheduleImportExecutor;
+    private ThreadPoolTaskExecutor commonAsyncTaskExecutor;
 
     @Autowired
     private ScheduleTaskImporter scheduleTaskImporter;
@@ -60,19 +64,28 @@ public class ScheduleTaskImportService {
     @Value("${odc.log.directory:./log}")
     private String logPath;
 
+    @SkipAuthorize("internal usage")
     public String startPreviewImportTask(ScheduleTaskImportRequest request) {
-        String previewId = statefulUuidStateIdGenerator.generateStateId("scheduleImportReview");
+        String previewId = statefulUuidStateIdGenerator.generateCurrentUserIdStateId("scheduleImportReview");
         User user = authenticationFacade.currentUser();
-        Future<List<ImportScheduleTaskView>> future = scheduleImportExecutor.submit(
+        Future<List<ImportScheduleTaskView>> future = commonAsyncTaskExecutor.submit(
                 () -> {
-                    SecurityContextUtils.setCurrentUser(user);
-                    return scheduleTaskImporter.preview(request);
+                    try {
+                        SecurityContextUtils.setCurrentUser(user);
+                        return scheduleTaskImporter.preview(request);
+                    } catch (Exception e) {
+                        log.info("Preview Import task failed", e);
+                        throw e;
+                    }
+
                 });
         futureCache.put(previewId, future);
         return previewId;
     }
 
+    @SkipAuthorize("internal usage")
     public List<ImportScheduleTaskView> getPreviewTaskResults(String previewId) {
+        statefulUuidStateIdGenerator.checkCurrentUserId(previewId);
         Future<?> future = futureCache.get(previewId);
         if (future == null) {
             return null;
@@ -94,17 +107,20 @@ public class ScheduleTaskImportService {
         }
     }
 
+    @SkipAuthorize("internal usage")
     public String startImportTask(ScheduleTaskImportRequest request) {
-        String previewId = statefulUuidStateIdGenerator.generateStateId("scheduleImport");
+        String previewId = statefulUuidStateIdGenerator.generateCurrentUserIdStateId("scheduleImport");
         User user = authenticationFacade.currentUser();
 
-        Future<List<ImportTaskResult>> future = scheduleImportExecutor.submit(
+        Future<List<ImportTaskResult>> future = commonAsyncTaskExecutor.submit(
                 new ScheduleTaskImportCallable(user, previewId, scheduleTaskImporter, request));
         futureCache.put(previewId, future);
         return previewId;
     }
 
+    @SkipAuthorize("internal usage")
     public List<ImportTaskResult> getImportTaskResults(String importId) {
+        statefulUuidStateIdGenerator.checkCurrentUserId(importId);
         Future<?> future = futureCache.get(importId);
         if (future == null) {
             return null;
@@ -125,8 +141,9 @@ public class ScheduleTaskImportService {
         }
     }
 
-
+    @SkipAuthorize("internal usage")
     public String getImportLog(String importId) {
+        statefulUuidStateIdGenerator.checkCurrentUserId(importId);
         String filePath = String.format(LOG_PATH_PATTERN, logPath, ScheduleTaskImportCallable.WORK_SPACE, importId,
                 ScheduleTaskImportCallable.LOG_NAME);
         File logFile = new File(filePath);

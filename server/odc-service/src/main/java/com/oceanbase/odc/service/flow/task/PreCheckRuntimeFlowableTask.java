@@ -72,8 +72,10 @@ import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
+import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.permission.table.TablePermissionService;
+import com.oceanbase.odc.service.permission.table.model.ApplyTableParameter;
 import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigSelector;
 import com.oceanbase.odc.service.regulation.risklevel.RiskLevelService;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
@@ -86,7 +88,9 @@ import com.oceanbase.odc.service.session.util.DBSchemaExtractor.DBSchemaIdentity
 import com.oceanbase.odc.service.sqlcheck.SqlCheckService;
 import com.oceanbase.odc.service.sqlcheck.model.CheckResult;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
+import com.oceanbase.odc.service.sqlcheck.model.SqlCheckResponse;
 import com.oceanbase.odc.service.task.TaskService;
+import com.oceanbase.odc.service.task.base.precheck.PreCheckRiskLevel;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.tools.dbbrowser.parser.constant.SqlType;
 
@@ -222,9 +226,14 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
                         .map(approvalFlowConfigSelector::select)
                         .max(Comparator.comparingInt(RiskLevel::getLevel))
                         .orElseThrow(() -> new IllegalStateException("Unknown error"));
-            } else if (taskEntity.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION
-                    || taskEntity.getTaskType() == TaskType.APPLY_TABLE_PERMISSION) {
-                riskLevel = riskLevelService.findHighestRiskLevel();
+            } else if (taskEntity.getTaskType() == TaskType.APPLY_DATABASE_PERMISSION) {
+                riskLevel = PreCheckRiskLevel
+                        .toRiskLevel(JsonUtils.fromJson(taskEntity.getParametersJson(), ApplyDatabaseParameter.class)
+                                .getRiskLevel());
+            } else if (taskEntity.getTaskType() == TaskType.APPLY_TABLE_PERMISSION) {
+                riskLevel = PreCheckRiskLevel
+                        .toRiskLevel(JsonUtils.fromJson(taskEntity.getParametersJson(), ApplyTableParameter.class)
+                                .getRiskLevel());
             } else if (riskLevelDescriber != null) {
                 riskLevel = approvalFlowConfigSelector.select(riskLevelDescriber);
             } else {
@@ -379,15 +388,16 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
         List<OffsetString> sqls = new ArrayList<>();
         this.overLimit = getSqlContentUntilOverLimit(sqls, preCheckTaskProperties.getMaxSqlContentBytes());
         List<UnauthorizedDBResource> unauthorizedDBResource = new ArrayList<>();
-        List<CheckViolation> violations = new ArrayList<>();
+        SqlCheckResponse<CheckViolation> sqlCheckResponse = SqlCheckResponse.empty();
         if (CollectionUtils.isNotEmpty(sqls)) {
-            violations.addAll(this.sqlCheckService.check(Long.valueOf(describer.getEnvironmentId()),
-                    describer.getDatabaseName(), sqls, connectionConfig));
+            sqlCheckResponse = this.sqlCheckService.check(Long.valueOf(describer.getEnvironmentId()),
+                    describer.getDatabaseName(), sqls, connectionConfig);
             unauthorizedDBResource = getUnauthorizedDBResources(sqls, connectionConfig,
                     preCheckTaskEntity.getDatabaseName(), taskType);
         }
         this.permissionCheckResult = new DatabasePermissionCheckResult(unauthorizedDBResource);
-        this.sqlCheckResult = SqlCheckTaskResult.success(violations);
+        this.sqlCheckResult = SqlCheckTaskResult.success(sqlCheckResponse.getCheckResults());
+        this.sqlCheckResult.setAffectedRows(sqlCheckResponse.getAffectedRows());
         try {
             storeTaskResultToFile(preCheckTaskEntity.getId(), this.sqlCheckResult);
             sqlCheckResult.setFileName(CHECK_RESULT_FILE_NAME);
@@ -422,7 +432,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             for (Database database : this.databaseList) {
                 List<CheckViolation> violations = new ArrayList<>(this.sqlCheckService.check(
                         Long.valueOf(databaseId2RiskLevelDescriber.get(database.getId()).getEnvironmentId()),
-                        database.getName(), sqls, database.getDataSource()));
+                        database.getName(), sqls, database.getDataSource()).getCheckResults());
                 sqlCheckTaskResultList.add(SqlCheckTaskResult.success(violations));
                 List<UnauthorizedDBResource> unauthorizedDBResources = getUnauthorizedDBResources(sqls,
                         database.getDataSource(), database.getName(), taskType);

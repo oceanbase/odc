@@ -45,7 +45,7 @@ public class ExportOutputTest {
     }
 
     @Test
-    public void getManifest_fromFolder_returnNotNull() throws IOException {
+    public void getManifest_fromFolder_returnNotNull() throws Exception {
         ExportOutput output = new ExportOutput(getDumpFolder());
         Assert.assertNotNull(output.getManifest());
     }

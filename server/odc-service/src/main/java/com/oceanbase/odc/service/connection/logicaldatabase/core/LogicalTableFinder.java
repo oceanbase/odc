@@ -101,8 +101,10 @@ public class LogicalTableFinder {
 
     public List<LogicalTable> find() {
         List<DataNode> dataNodes = transferToDataNodes();
+        log.info("Data nodes: {}", dataNodes);
 
         List<LogicalTable> logicalTableCandidates = LogicalTableRecognitionUtils.recognizeLogicalTables(dataNodes);
+        log.info("Logical table candidates: {}", logicalTableCandidates);
 
         Map<Long, List<DataNode>> dataSourceId2DataNodes = logicalTableCandidates.stream()
                 .flatMap(logicalTable -> logicalTable.getActualDataNodes().stream()).collect(Collectors.toList())

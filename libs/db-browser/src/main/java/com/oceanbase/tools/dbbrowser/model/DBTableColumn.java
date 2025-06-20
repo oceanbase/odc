@@ -212,7 +212,13 @@ public class DBTableColumn implements DBObject, DBObjectWarningDescriptor {
         /**
          * If COLUMN_KEY is AGG, the column is an aggregate key in an Aggregate Model table.
          */
-        AGG
+        AGG,
+
+        /**
+         * If COLUMN_KEY is DUP, the column is a duplicate key which is often used in OLAP scenarios where
+         * certain records need to be updated frequently.
+         */
+        DUP
     }
 
     public enum CharUnit {

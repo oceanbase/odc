@@ -103,7 +103,7 @@ public class ApprovalPermissionService {
         }
         Set<Long> roleIds = userService.getCurrentUserRoleIds();
         Set<String> resourceRoleIdentifiers = userService.getCurrentUserResourceRoleIdentifiers();
-        Set<FlowNodeStatus> unViewableStatuses = Collections.singleton(FlowNodeStatus.CREATED);
+        Set<String> unViewableStatuses = Collections.singleton(FlowNodeStatus.CREATED.name());
         List<UserTaskInstanceEntity> userTaskInstanceEntities = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(resourceRoleIdentifiers)) {
             userTaskInstanceEntities.addAll(userTaskInstanceRepository

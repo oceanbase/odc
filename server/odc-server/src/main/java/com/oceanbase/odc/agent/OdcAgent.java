@@ -38,5 +38,6 @@ public class OdcAgent {
             log.error("Task existed abnormal", e);
         }
         log.info("Task executor exit.");
+        System.exit(0);
     }
 }

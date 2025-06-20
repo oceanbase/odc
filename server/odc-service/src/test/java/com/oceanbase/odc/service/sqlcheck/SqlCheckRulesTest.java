@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -43,11 +44,13 @@ import com.oceanbase.odc.service.sqlcheck.rule.SqlCheckRules;
  * @since ODC_release_4.2.0
  */
 public class SqlCheckRulesTest {
+    private Supplier<String> defaulDbVersionSupplier = () -> "4.2.5";
 
     @Test
     public void createByRule_noParametersRule_createSucceed() {
         Rule rule = createRule(SqlCheckRuleType.INDEX_COLUMN_CALCULATION, null, null);
-        SqlCheckRule actual = SqlCheckRules.createByRule((JdbcOperations) null, DialectType.OB_ORACLE, rule);
+        SqlCheckRule actual =
+                SqlCheckRules.createByRule((JdbcOperations) null, () -> "4.2.5", DialectType.OB_ORACLE, rule);
         Assert.assertNotNull(actual);
     }
 
@@ -57,7 +60,8 @@ public class SqlCheckRulesTest {
         Map<String, Object> parameter = new HashMap<>();
         parameter.put(factory.getParameterNameKey("max-in-expr-count"), 12345);
         Rule rule = createRule(SqlCheckRuleType.TOO_MANY_IN_EXPR, parameter, null);
-        SqlCheckRule actual = SqlCheckRules.createByRule((JdbcOperations) null, DialectType.OB_MYSQL, rule);
+        SqlCheckRule actual =
+                SqlCheckRules.createByRule((JdbcOperations) null, defaulDbVersionSupplier, DialectType.OB_MYSQL, rule);
         Assert.assertNotNull(actual);
     }
 
@@ -67,7 +71,8 @@ public class SqlCheckRulesTest {
         Map<String, Object> parameter = new HashMap<>();
         parameter.put(factory.getParameterNameKey("max-in-expr-count"), 12345);
         Rule rule = createRule(SqlCheckRuleType.TOO_MANY_IN_EXPR, parameter, null);
-        SqlCheckRule actual = SqlCheckRules.createByRule((JdbcOperations) null, DialectType.OB_ORACLE, rule);
+        SqlCheckRule actual =
+                SqlCheckRules.createByRule((JdbcOperations) null, defaulDbVersionSupplier, DialectType.OB_ORACLE, rule);
         assert actual != null;
         Assert.assertTrue(actual.getSupportsDialectTypes().isEmpty());
     }
@@ -83,7 +88,8 @@ public class SqlCheckRulesTest {
         Map<String, Object> parameter = new HashMap<>();
         parameter.putIfAbsent(factory.getParameterNameKey("datatype-names"), Arrays.asList("varchar2", "blob"));
         rule.setProperties(JsonUtils.fromJsonMap(JsonUtils.toJson(parameter), String.class, Object.class));
-        SqlCheckRule actual = SqlCheckRules.createByRule((JdbcOperations) null, DialectType.OB_ORACLE, rule);
+        SqlCheckRule actual =
+                SqlCheckRules.createByRule((JdbcOperations) null, defaulDbVersionSupplier, DialectType.OB_ORACLE, rule);
         assert actual != null;
         Assert.assertEquals(factory.getSupportsType(), actual.getType());
     }
@@ -95,7 +101,8 @@ public class SqlCheckRulesTest {
         parameter.put(factory.getParameterNameKey("max-in-expr-count"), 12345);
         Rule rule = createRule(SqlCheckRuleType.TOO_MANY_IN_EXPR, parameter,
                 Collections.singletonList(DialectType.OB_MYSQL));
-        SqlCheckRule actual = SqlCheckRules.createByRule((JdbcOperations) null, DialectType.OB_MYSQL, rule);
+        SqlCheckRule actual =
+                SqlCheckRules.createByRule((JdbcOperations) null, defaulDbVersionSupplier, DialectType.OB_MYSQL, rule);
         assert actual != null;
         Assert.assertEquals(Collections.singletonList(DialectType.OB_MYSQL), actual.getSupportsDialectTypes());
     }

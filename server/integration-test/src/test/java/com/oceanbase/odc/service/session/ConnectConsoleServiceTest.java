@@ -58,6 +58,7 @@ import com.oceanbase.odc.core.sql.execute.model.JdbcResultSetMetaData;
 import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
+import com.oceanbase.odc.service.config.OrganizationConfigUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.session.DefaultDBSessionManage;
 import com.oceanbase.odc.service.dml.ValueEncodeType;
@@ -81,6 +82,8 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
     private final String sessionid = "10000";
     @MockBean
     private ConnectSessionService sessionService;
+    @MockBean
+    private OrganizationConfigUtils organizationConfigUtils;
     @Autowired
     private ConnectConsoleService consoleService;
     @Autowired
@@ -88,6 +91,10 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
 
     @Test
     public void getAsyncResult_killSessionSql_successResult() throws Exception {
+        Mockito.when(organizationConfigUtils.getDefaultQueryLimit())
+                .thenReturn(1000);
+        Mockito.when(organizationConfigUtils.getDefaultMaxQueryLimit())
+                .thenReturn(1000);
         String sql = "kill session /*";
         injectAsyncJdbcExecutor(JdbcGeneralResult.successResult(SqlTuple.newTuple(sql)));
         SqlAsyncExecuteResp resp = consoleService.streamExecute(sessionid, getSqlAsyncExecuteReq(sql));
@@ -99,6 +106,10 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
 
     @Test
     public void getAsyncResult_wrongKillSessionSql_failedResult() throws Exception {
+        Mockito.when(organizationConfigUtils.getDefaultQueryLimit())
+                .thenReturn(1000);
+        Mockito.when(organizationConfigUtils.getDefaultMaxQueryLimit())
+                .thenReturn(1000);
         String sql = "kill session /*";
         JdbcGeneralResult failedResult = JdbcGeneralResult.failedResult(SqlTuple.newTuple(sql), new Exception("test"));
         injectAsyncJdbcExecutor(failedResult);
@@ -112,6 +123,10 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
 
     @Test
     public void getAsyncResult_delimiter_getResultSucceed() throws Exception {
+        Mockito.when(organizationConfigUtils.getDefaultQueryLimit())
+                .thenReturn(1000);
+        Mockito.when(organizationConfigUtils.getDefaultMaxQueryLimit())
+                .thenReturn(1000);
         String sql = "delimiter $$";
         injectAsyncJdbcExecutor(JdbcGeneralResult.successResult(SqlTuple.newTuple(sql)));
         SqlAsyncExecuteResp resp = consoleService.streamExecute(sessionid, getSqlAsyncExecuteReq(sql));
@@ -122,6 +137,10 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
 
     @Test
     public void getAsyncResult_commonSQLForOracle_getResultSucceed() throws Exception {
+        Mockito.when(organizationConfigUtils.getDefaultQueryLimit())
+                .thenReturn(1000);
+        Mockito.when(organizationConfigUtils.getDefaultMaxQueryLimit())
+                .thenReturn(1000);
         String sql = "select * from tableaas";
         injectAsyncJdbcExecutor(JdbcGeneralResult.successResult(SqlTuple.newTuple(sql)));
         SqlAsyncExecuteResp resp = consoleService.streamExecute(sessionid, getSqlAsyncExecuteReq(sql));
@@ -133,6 +152,10 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
 
     @Test
     public void getAsyncResult_commonSQLForMysql_getSucceed() throws Exception {
+        Mockito.when(organizationConfigUtils.getDefaultQueryLimit())
+                .thenReturn(1000);
+        Mockito.when(organizationConfigUtils.getDefaultMaxQueryLimit())
+                .thenReturn(1000);
         String sql = "select * from tableaas";
         injectAsyncJdbcExecutor(JdbcGeneralResult.successResult(SqlTuple.newTuple(sql)),
                 ConnectType.OB_MYSQL);
@@ -145,6 +168,10 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
 
     @Test
     public void generateResult_editableResultSet_isEditable() throws Exception {
+        Mockito.when(organizationConfigUtils.getDefaultQueryLimit())
+                .thenReturn(1000);
+        Mockito.when(organizationConfigUtils.getDefaultMaxQueryLimit())
+                .thenReturn(1000);
         String sql = "select * from table_test";
         JdbcGeneralResult executeResult = getJdbcGeneralResultWithQueryData(sql);
         injectAsyncJdbcExecutor(executeResult, ConnectType.OB_MYSQL);
@@ -157,6 +184,8 @@ public class ConnectConsoleServiceTest extends ServiceTestEnv {
 
     @Test
     public void getBinaryContent_skipSeveralBytes_readSucceed() throws IOException {
+        Mockito.when(organizationConfigUtils.getDefaultQueryLimit()).thenReturn(1000);
+        Mockito.when(organizationConfigUtils.getDefaultMaxQueryLimit()).thenReturn(1000);
         ConnectionSession session = new TestConnectionSession(
                 sessionid, new ByteArrayInputStream("abcd".getBytes()));
         Mockito.when(sessionService.nullSafeGet(sessionid)).thenReturn(session);

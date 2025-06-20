@@ -82,7 +82,7 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
         if (transferConfig.getMaxDumpSizeBytes() != null) {
             parameter.setMaxFileSize(transferConfig.getMaxDumpSizeBytes());
         }
-        parameter.setSchemaless(true);
+        parameter.setRetainSchema(false);
         // ob-dumper would use `show create table` for dump schema ddl
         parameter.setCompactSchema(true);
         setFetchSize(parameter);
@@ -179,12 +179,12 @@ public class DumpParameterFactory extends BaseParameterFactory<DumpParameter> {
         switch (transferFormat) {
             case SQL:
                 parameter.setDataFormat(DataFormat.SQL);
-                parameter.setFileSuffix(DataTransferFormat.SQL.getExtension());
+                parameter.setFileSuffixes(DataFormat.SQL.getFileSuffixes());
                 return;
             case CSV:
             case EXCEL:
                 parameter.setDataFormat(DataFormat.CSV);
-                parameter.setFileSuffix(DataTransferFormat.CSV.getExtension());
+                parameter.setFileSuffixes(DataFormat.CSV.getFileSuffixes());
                 return;
             default:
                 throw new UnsupportedOperationException();

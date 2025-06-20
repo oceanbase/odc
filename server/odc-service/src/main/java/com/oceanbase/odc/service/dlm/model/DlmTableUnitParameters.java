@@ -22,6 +22,7 @@ import com.oceanbase.tools.migrator.common.dto.JobParameter;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 /**
  * @Author：tinker
@@ -31,6 +32,7 @@ import lombok.EqualsAndHashCode;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
+@ToString(callSuper = true)
 public class DlmTableUnitParameters extends JobParameter {
 
     private Set<DBObjectType> syncDBObjectType;

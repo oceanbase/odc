@@ -22,15 +22,36 @@ import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.service.config.model.ConfigurationMeta;
+import com.oceanbase.odc.service.session.SessionProperties;
 
 public class ConfigValueValidator {
 
     public static void validate(ConfigurationMeta meta, String value) {
         PreConditions.notNull(meta, "meta");
+        checkValueNotNull(meta, value);
+        checkValueAllowed(meta, value);
+        checkValueMinBasedOnMeta(meta, value);
+        checkValueMaxBasedOnMeta(meta, value);
+    }
+
+    public static void validateOrganizationConfig(ConfigurationMeta meta, SessionProperties properties, String value) {
+        PreConditions.notNull(meta, "meta");
+        checkValueNotNull(meta, value);
+        checkValueAllowed(meta, value);
+        checkValueMinBasedOnMeta(meta, value);
+        // check that the max query limit is less than the value of the metadata
+        checkValueMaxBasedOnSystemConfig(meta, properties, value);
+
+    }
+
+    private static void checkValueNotNull(ConfigurationMeta meta, String value) {
         if (!meta.isNullable() && Objects.isNull(value)) {
             throw new IllegalArgumentException(
                     String.format("Value cannot be null for key '%s'", meta.getKey()));
         }
+    }
+
+    private static void checkValueAllowed(ConfigurationMeta meta, String value) {
         if (CollectionUtils.isNotEmpty(meta.getAllowedValues())) {
             if (!meta.getAllowedValues().contains(value)) {
                 throw new IllegalArgumentException(
@@ -38,6 +59,9 @@ public class ConfigValueValidator {
                                 String.join(",", meta.getAllowedValues())));
             }
         }
+    }
+
+    private static void checkValueMaxBasedOnMeta(ConfigurationMeta meta, String value) {
         if (Objects.nonNull(meta.getMaxValue())) {
             if (meta.getMaxValue().compareTo(new BigDecimal(value)) < 0) {
                 throw new IllegalArgumentException(
@@ -45,6 +69,9 @@ public class ConfigValueValidator {
                                 meta.getKey(), meta.getMaxValue()));
             }
         }
+    }
+
+    private static void checkValueMinBasedOnMeta(ConfigurationMeta meta, String value) {
         if (Objects.nonNull(meta.getMinValue())) {
             if (meta.getMinValue().compareTo(new BigDecimal(value)) > 0) {
                 throw new IllegalArgumentException(
@@ -54,4 +81,14 @@ public class ConfigValueValidator {
         }
     }
 
+    private static void checkValueMaxBasedOnSystemConfig(ConfigurationMeta meta,
+            SessionProperties properties, String value) {
+        if (Objects.nonNull(meta.getMaxValue())) {
+            if (Long.parseLong(value) > properties.getResultSetMaxRows()) {
+                throw new IllegalArgumentException(
+                        String.format("Value is greater than max value for key, maxValue is '%s'",
+                                properties.getResultSetMaxRows()));
+            }
+        }
+    }
 }

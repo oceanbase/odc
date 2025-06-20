@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.jdbc.core.ConnectionCallback;
+import org.springframework.util.CollectionUtils;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
@@ -157,6 +158,13 @@ public class AbstractDlmPreprocessor implements Preprocessor {
             }
             SqlBuilder sqlBuilder = dbType.isMysql() ? new MySQLSqlBuilder() : new OracleSqlBuilder();
             sqlBuilder.append("SELECT 1 FROM ").identifier(database.getName(), table.getTableName());
+            if (!CollectionUtils.isEmpty(table.getJoinTableConfigs())) {
+                table.getJoinTableConfigs().forEach(unionTableConfig -> {
+                    sqlBuilder.append(" INNER JOIN  ").identifier(unionTableConfig.getTableName());
+                    sqlBuilder.append(" ON ");
+                    sqlBuilder.append(unionTableConfig.getJoinCondition());
+                });
+            }
             if (StringUtils.isNotEmpty(table.getConditionExpression())) {
                 sqlBuilder.append(" WHERE ")
                         .append(DataArchiveConditionUtil.parseCondition(table.getConditionExpression(),

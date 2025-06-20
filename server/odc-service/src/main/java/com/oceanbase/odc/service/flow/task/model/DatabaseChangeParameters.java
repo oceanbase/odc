@@ -44,7 +44,7 @@ public class DatabaseChangeParameters implements Serializable, TaskParameters {
     private TaskErrorStrategy errorStrategy;
     private boolean markAsFailedWhenAnyErrorsHappened;
     private String delimiter = ";";
-    private Integer queryLimit = 1000;
+    private Integer queryLimit;
     private Integer riskLevelIndex;
     @NotNull
     private Boolean generateRollbackPlan;

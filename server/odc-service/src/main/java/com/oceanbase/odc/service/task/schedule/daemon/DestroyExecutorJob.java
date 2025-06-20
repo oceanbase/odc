@@ -30,7 +30,6 @@ import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.config.JobConfigurationHolder;
-import com.oceanbase.odc.service.task.config.JobConfigurationValidator;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.exception.JobException;
@@ -55,7 +54,6 @@ public class DestroyExecutorJob implements Job {
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         configuration = JobConfigurationHolder.getJobConfiguration();
-        JobConfigurationValidator.validComponent();
 
         // scan terminate job
         TaskFrameworkService taskFrameworkService = configuration.getTaskFrameworkService();
@@ -103,6 +101,7 @@ public class DestroyExecutorJob implements Job {
                 // executorIdentifier is null, otherwise, the job cannot be released.
                 log.info("Executor not found, updating executor to destroyed,jobId={}", lockedEntity.getId());
                 taskFrameworkService.updateExecutorToDestroyed(lockedEntity.getId());
+                configuration.getSupervisorAgentAllocator().deallocateSupervisorEndpoint(lockedEntity.getId());
             }
         });
     }

@@ -199,13 +199,21 @@ public class PartitionPlanService {
             @NonNull List<PartitionPlanTableConfig> tableConfigs, Boolean onlyForPartitionName) {
         DialectType dialectType = connectionSession.getDialectType();
         AutoPartitionExtensionPoint extensionPoint = TaskPluginUtil.getAutoPartitionExtensionPoint(dialectType);
+        String schema = ConnectionSessionUtil.getCurrentSchema(connectionSession);
+        JdbcOperations jdbc = getJdbcOpt(connectionSession);
+        // filter the tableConfigs that is not existed in the current session
+        List<String> currentTableName = jdbc.execute(
+                (ConnectionCallback<List<DBTable>>) con -> extensionPoint.listAllPartitionedTables(con,
+                        ConnectionSessionUtil.getTenantName(connectionSession),
+                        schema, null))
+                .stream().map(DBTable::getName).collect(Collectors.toList());
+        tableConfigs = tableConfigs.stream().filter(i -> currentTableName.contains(i.getTableName()))
+                .collect(Collectors.toList());
         if (extensionPoint == null) {
             throw new UnsupportedOperationException("Unsupported dialect " + dialectType);
         }
         List<String> tableNames = tableConfigs.stream().map(PartitionPlanTableConfig::getTableName)
                 .collect(Collectors.toList());
-        String schema = ConnectionSessionUtil.getCurrentSchema(connectionSession);
-        JdbcOperations jdbc = getJdbcOpt(connectionSession);
         Map<String, DBTable> name2Table =
                 jdbc.execute((ConnectionCallback<List<DBTable>>) con -> extensionPoint.listAllPartitionedTables(con,
                         ConnectionSessionUtil.getTenantName(connectionSession),

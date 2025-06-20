@@ -17,19 +17,13 @@ package com.oceanbase.odc.service.task.util;
 
 import java.io.IOException;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.ExceptionUtils;
-import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
-import com.oceanbase.odc.service.schedule.ScheduleLogProperties;
 import com.oceanbase.odc.service.task.constants.JobExecutorUrls;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.executor.TaskResult;
-import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 
 import lombok.NonNull;
@@ -40,35 +34,7 @@ import lombok.extern.slf4j.Slf4j;
  * see @{@link JobExecutorUrls}
  */
 @Slf4j
-@Component
 public class TaskExecutorClient {
-
-    @Autowired
-    private ScheduleLogProperties loggerProperty;
-
-    public String getLogContent(@NonNull String executorEndpoint, @NonNull Long jobId, @NonNull OdcTaskLogLevel level) {
-        String url = new StringBuilder(executorEndpoint)
-                .append(String.format(JobExecutorUrls.QUERY_LOG, jobId))
-                .append("?logType=" + level.getName())
-                .append("&fetchMaxLine=" + loggerProperty.getMaxLines())
-                .append("&fetchMaxByteSize=" + loggerProperty.getMaxSize()).toString();
-        try {
-            SuccessResponse<String> response =
-                    HttpClientUtils.request("GET", url,
-                            new TypeReference<SuccessResponse<String>>() {});
-            if (response != null && response.getSuccessful()) {
-                return response.getData();
-            } else {
-                return String.format("Get log content failed, jobId=%s, response=%s",
-                        jobId, JsonUtils.toJson(response));
-            }
-        } catch (IOException e) {
-            // Occur io timeout when pod deleted manual
-            log.warn("Query log from executor occur error, executorEndpoint={}, jobId={}, causeMessage={}",
-                    executorEndpoint, jobId, ExceptionUtils.getRootCauseReason(e));
-            return ErrorCodes.TaskLogNotFound.getLocalizedMessage(new Object[] {"jobId", jobId});
-        }
-    }
 
     public void stop(@NonNull String executorEndpoint, @NonNull JobIdentity ji) throws JobException {
         String url = executorEndpoint + String.format(JobExecutorUrls.STOP_TASK, ji.getId());
@@ -110,22 +76,26 @@ public class TaskExecutorClient {
         }
     }
 
-    public TaskResult getResult(@NonNull String executorEndpoint, @NonNull JobIdentity ji) throws JobException {
+    public TaskResultWrap getResult(@NonNull String executorEndpoint, @NonNull JobIdentity ji) throws JobException {
         String url = executorEndpoint + String.format(JobExecutorUrls.GET_RESULT, ji.getId());
         log.info("Try query job result from executor, jobId={}, url={}", ji.getId(), url);
         try {
             SuccessResponse<TaskResult> response =
                     HttpClientUtils.request("GET", url, new TypeReference<SuccessResponse<TaskResult>>() {});
             if (response != null && response.getSuccessful()) {
-                return response.getData();
+                return TaskResultWrap.successTaskResult(response.getData());
             } else {
-                throw new JobException("Get job result failed, jobId={0}, response={1}",
-                        ji.getId(), JsonUtils.toJson(response));
+                return TaskResultWrap
+                        .failedTaskResult(new JobException("Get job result failed, jobId={0}, response={1}",
+                                ji.getId(), JsonUtils.toJson(response)));
             }
         } catch (IOException e) {
-            throw new JobException("Get job result occur error, jobId={0}, causeMessage={1}",
-                    ji.getId(), ExceptionUtils.getRootCauseReason(e));
+            return TaskResultWrap
+                    .unreachedTaskResult(new JobException("Get job result occur error, jobId={0}, causeMessage={1}",
+                            ji.getId(), ExceptionUtils.getRootCauseReason(e)));
         }
     }
+
+
 
 }

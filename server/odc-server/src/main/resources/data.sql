@@ -577,7 +577,9 @@ VALUES ('odc.notification.dequeue-created-notification-fixed-delay-millis', '200
 insert into `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
 VALUES ('odc.notification.dequeue-failed-notification-fixed-delay-millis', '60000', 'odc', 'default', 'master', '处理 SENT_FAILED 消息的定时任务周期，默认 60000 MS') ON DUPLICATE KEY update `id`=`id`;
 insert into `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
-VALUES ('odc.notification.dequeue-sending-notification-fixed-delay-millis', '120000', 'odc', 'default', 'master', '处理 SENDING 消息的最长时间，超过此时间未响应则重新发送，默认 120000 MS') ON DUPLICATE KEY update `id`=`id`;
+VALUES ('odc.notification.dequeue-sending-notification-fixed-delay-millis', '120000', 'odc', 'default', 'master', '处理 SENDING 消息的定时任务周期，默认 120000 MS') ON DUPLICATE KEY update `id`=`id`;
+insert into `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
+VALUES ('odc.notification.sending-notification-expire-time-millis', '600000', 'odc', 'default', 'master', '处理 SENDING 消息的最长时间，超过此时间未响应则置为发送失败，默认 10 MIN') ON DUPLICATE KEY update `id`=`id`;
 insert into `config_system_configuration` (`key`, `value`, `application`, `profile`, `label`, `description`)
 VALUES ('odc.notification.max-resend-times', '3', 'odc', 'default', 'master', '重新处理 SENT_FAILED 消息的最大重试次数，默认 3') ON DUPLICATE KEY
 update `id`=`id`;
@@ -742,11 +744,19 @@ INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.run-mode', 'PROCESS', 'ODC task run mode, optional: PROCESS/K8S, default PROCESS' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.monitor-mode', 'PUSH', 'ODC task monitor mode, optional: PUSH/PULL, default PUSH' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.odc-url', '', 'odc server url is used to report task result by TaskExecutor, use odc server ip when odc url is null') ON DUPLICATE KEY UPDATE `id`=`id`;
+--- old task schedule cron expression
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.start-preparing-job-cron-expression', '0/1 * * * * ?', 'start preparing job cron expression, modify value restart to take affect' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.check-running-job-cron-expression', '0/10 * * * * ?', 'check running job cron expression, modify value restart to take affect' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.pull-task-result-job-cron-expression', '0/30 * * * * ?', 'pull task result job cron expression, modify value restart to take affect' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.do-canceling-job-cron-expression', '0/1 * * * * ?', 'check canceling job cron expression, modify value restart to take affect' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.destroy-executor-job-cron-expression', '0/1 * * * * ?', 'check terminate job to destroy executor cron expression, modify value restart to take affect' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+--- task v2 schedule cron expression
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.start-preparing-job-v2-cron-expression', '0/1 * * * * ?', 'start preparing job v2 cron expression, modify value restart to take affect' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.manage-resource-job-v2-cron-expression', '0/1 * * * * ?', 'manage resource job v2 cron expression, modify value restart to take affect' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.pull-task-result-job-v2-cron-expression', '0/10 * * * * ?', 'pull task result job v2 cron expression, modify value restart to take affect' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.do-stop-job-cron-v2-expression', '0/2 * * * * ?', 'do stop job v2 cron expression, modify value restart to take affect' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.do-finish-job-v2-cron-expression', '0/2 * * * * ?', 'check terminate job to destroy executor cron expression, modify value restart to take affect' ) ON DUPLICATE KEY UPDATE `id` = `id`;
+
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.job-heart-timeout-seconds', '300', 'job heart timeout seconds, job will failed or retrying' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.executor-waiting-to-run-threshold-seconds', '3', 'time threshold of executor waiting to run, for controller schedule rate' ) ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES( 'odc.task-framework.executor-waiting-to-run-threshold-count', '10', 'amount threshold of executor waiting to run, for controller schedule rate' ) ON DUPLICATE KEY UPDATE `id` = `id`;

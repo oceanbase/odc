@@ -125,7 +125,8 @@ public class LogicalDatabaseChangeJob implements OdcJob {
         jobData.put(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY,
                 JobUtils.toJson(publishReq));
         if (timeoutMillis != null) {
-            jobData.put(JobParametersKeyConstants.TASK_EXECUTION_TIMEOUT_MILLIS, timeoutMillis.toString());
+            jobData.put(JobParametersKeyConstants.TASK_EXECUTION_END_TIME_MILLIS,
+                    String.valueOf(System.currentTimeMillis() + timeoutMillis));
         }
         Map<String, String> jobProperties = new HashMap<>();
         SingleJobProperties singleJobProperties = new SingleJobProperties();

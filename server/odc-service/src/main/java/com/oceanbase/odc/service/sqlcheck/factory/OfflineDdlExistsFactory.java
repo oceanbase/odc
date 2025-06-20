@@ -15,12 +15,10 @@
  */
 package com.oceanbase.odc.service.sqlcheck.factory;
 
-import java.util.Map;
-
 import org.springframework.jdbc.core.JdbcOperations;
 
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
+import com.oceanbase.odc.service.sqlcheck.SqlCheckRuleContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRuleFactory;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLOfflineDdlExists;
@@ -42,8 +40,10 @@ public class OfflineDdlExistsFactory implements SqlCheckRuleFactory {
     }
 
     @Override
-    public SqlCheckRule generate(@NonNull DialectType dialectType, Map<String, Object> parameters) {
-        return dialectType.isMysql() ? new MySQLOfflineDdlExists(this.jdbc) : new OracleOfflineDdlExists(this.jdbc);
+    public SqlCheckRule generate(@NonNull SqlCheckRuleContext sqlCheckRuleContext) {
+        return sqlCheckRuleContext.getDialectType().isMysql() ? new MySQLOfflineDdlExists(
+                sqlCheckRuleContext.getDbVersionSupplier(), this.jdbc)
+                : new OracleOfflineDdlExists(sqlCheckRuleContext.getDbVersionSupplier(), this.jdbc);
     }
 
 }

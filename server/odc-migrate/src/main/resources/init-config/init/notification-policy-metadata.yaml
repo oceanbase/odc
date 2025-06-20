@@ -125,27 +125,27 @@
 - id: 32
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.ONLINE_SCHEMA_CHANGE}-${com.oceanbase.odc.event.TASK.EXECUTION_SUCCEEDED.name}"
-  match_expression: "taskType.equals('ONLINE_SCHEMA_CHANGE') && taskStatus.equals('EXECUTION_SUCCEEDED')"
+  match_expression: "taskType.equals('ONLINE_SCHEMA_CHANGE_COMPLETE') && taskStatus.equals('EXECUTION_SUCCEEDED')"
 - id: 33
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.ONLINE_SCHEMA_CHANGE}-${com.oceanbase.odc.event.TASK.EXECUTION_FAILED.name}"
-  match_expression: "taskType.equals('ONLINE_SCHEMA_CHANGE') && taskStatus.equals('EXECUTION_FAILED')"
+  match_expression: "taskType.equals('ONLINE_SCHEMA_CHANGE_COMPLETE') && taskStatus.equals('EXECUTION_FAILED')"
 - id: 34
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.ONLINE_SCHEMA_CHANGE}-${com.oceanbase.odc.event.TASK.EXECUTION_TIMEOUT.name}"
-  match_expression: "taskType.equals('ONLINE_SCHEMA_CHANGE') && taskStatus.equals('EXECUTION_TIMEOUT')"
+  match_expression: "taskType.equals('ONLINE_SCHEMA_CHANGE_COMPLETE') && taskStatus.equals('EXECUTION_TIMEOUT')"
 - id: 35
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.ONLINE_SCHEMA_CHANGE}-${com.oceanbase.odc.event.TASK.PENDING_APPROVAL.name}"
-  match_expression: "taskType.equals('ONLINE_SCHEMA_CHANGE') && taskStatus.equals('PENDING_APPROVAL')"
+  match_expression: "taskType.equals('ONLINE_SCHEMA_CHANGE_COMPLETE') && taskStatus.equals('PENDING_APPROVAL')"
 - id: 36
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.ONLINE_SCHEMA_CHANGE}-${com.oceanbase.odc.event.TASK.APPROVED.name}"
-  match_expression: "taskType.equals('ONLINE_SCHEMA_CHANGE') && taskStatus.equals('APPROVED')"
+  match_expression: "taskType.equals('ONLINE_SCHEMA_CHANGE_COMPLETE') && taskStatus.equals('APPROVED')"
 - id: 37
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.ONLINE_SCHEMA_CHANGE}-${com.oceanbase.odc.event.TASK.APPROVAL_REJECTION.name}"
-  match_expression: "taskType.equals('ONLINE_SCHEMA_CHANGE') && taskStatus.equals('APPROVAL_REJECTION')"
+  match_expression: "taskType.equals('ONLINE_SCHEMA_CHANGE_COMPLETE') && taskStatus.equals('APPROVAL_REJECTION')"
 - id: 38
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.EXPORT_RESULT_SET}-${com.oceanbase.odc.event.TASK.EXECUTION_SUCCEEDED.name}"
@@ -229,31 +229,31 @@
 - id: 58
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.event.TASK.EXECUTION_SUCCEEDED.name}"
-  match_expression: "taskType.equals('DATA_ARCHIVE') && taskStatus.equals('EXECUTION_SUCCEEDED')"
+  match_expression: "taskType.startsWith('DATA_ARCHIVE') && taskStatus.equals('EXECUTION_SUCCEEDED')"
 - id: 59
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.event.TASK.EXECUTION_FAILED.name}"
-  match_expression: "taskType.equals('DATA_ARCHIVE') && taskStatus.equals('EXECUTION_FAILED')"
+  match_expression: "taskType.startsWith('DATA_ARCHIVE') && taskStatus.equals('EXECUTION_FAILED')"
 - id: 60
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.event.TASK.EXECUTION_TIMEOUT.name}"
-  match_expression: "taskType.equals('DATA_ARCHIVE') && taskStatus.equals('EXECUTION_TIMEOUT')"
+  match_expression: "taskType.startsWith('DATA_ARCHIVE') && taskStatus.equals('EXECUTION_TIMEOUT')"
 - id: 61
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.event.TASK.PENDING_APPROVAL.name}"
-  match_expression: "taskType.equals('DATA_ARCHIVE') && taskStatus.equals('PENDING_APPROVAL')"
+  match_expression: "taskType.startsWith('DATA_ARCHIVE') && taskStatus.equals('PENDING_APPROVAL')"
 - id: 62
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.event.TASK.APPROVED.name}"
-  match_expression: "taskType.equals('DATA_ARCHIVE') && taskStatus.equals('APPROVED')"
+  match_expression: "taskType.startsWith('DATA_ARCHIVE') && taskStatus.equals('APPROVED')"
 - id: 63
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.event.TASK.APPROVAL_REJECTION.name}"
-  match_expression: "taskType.equals('DATA_ARCHIVE') && taskStatus.equals('APPROVAL_REJECTION')"
+  match_expression: "taskType.startsWith('DATA_ARCHIVE') && taskStatus.equals('APPROVAL_REJECTION')"
 - id: 64
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.DATA_ARCHIVE}-${com.oceanbase.odc.event.TASK.SCHEDULING_FAILED.name}"
-  match_expression: "taskType.equals('DATA_ARCHIVE') && taskStatus.equals('SCHEDULING_FAILED')"
+  match_expression: "taskType.startsWith('DATA_ARCHIVE') && taskStatus.equals('SCHEDULING_FAILED')"
 - id: 65
   event_category: "TASK"
   event_name: "${com.oceanbase.odc.TaskType.DATA_DELETE}-${com.oceanbase.odc.event.TASK.EXECUTION_SUCCEEDED.name}"

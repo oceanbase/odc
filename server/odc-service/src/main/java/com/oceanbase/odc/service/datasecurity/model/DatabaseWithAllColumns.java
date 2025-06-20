@@ -36,6 +36,7 @@ public class DatabaseWithAllColumns {
     private Map<String, List<DBTableColumn>> table2Columns;
     private Map<String, List<DBTableColumn>> view2Columns;
     private Map<String, List<DBTableColumn>> externalTable2Columns;
+    private Map<String, List<DBTableColumn>> materializedView2Columns;
     /**
      * Mapping from database type to show type, used for displaying column type icon
      */

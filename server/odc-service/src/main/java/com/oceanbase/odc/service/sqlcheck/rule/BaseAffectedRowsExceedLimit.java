@@ -15,8 +15,10 @@
  */
 package com.oceanbase.odc.service.sqlcheck.rule;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
 
 import org.springframework.jdbc.core.JdbcOperations;
 
@@ -75,6 +77,8 @@ public abstract class BaseAffectedRowsExceedLimit implements SqlCheckRule {
     public long getOBAffectedRows(String originalSql, JdbcOperations jdbcOperations) {
         /**
          * <pre>
+         *    The following is the result set returned by the sql plan for the new version ob, whose version number is 4.3.4
+         *
          *     obclient> explain delete from T1 where 1=1;
          * +-------------------------------------------------------+
          * | Query Plan                                            |
@@ -95,45 +99,101 @@ public abstract class BaseAffectedRowsExceedLimit implements SqlCheckRule {
          * |       range_key([t1.id]), range(MIN ; MAX)always true |
          * +-------------------------------------------------------+
          * 14 rows in set (0.00 sec)
+         *
+         *  The following is the result set returned by the sql plan for the new version ob, whose version number is 3.2.4.6
+         *
+         *  obclient(root@mysql)[zijia]> explain  delete from ids;
+         * +------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+         * | Query Plan                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+         * +------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+         * | ====================================
+         * |ID|OPERATOR   |NAME|EST. ROWS|COST|
+         * ------------------------------------
+         * |0 |DELETE     |    |11       |57  |
+         * |1 | TABLE SCAN|ids |11       |46  |
+         * ====================================
+         *
+         * Outputs & filters:
+         * -------------------------------------
+         *   0 - output(nil), filter(nil), table_columns([{ids: ({ids: (ids.__pk_increment, ids.id)})}])
+         *   1 - output([ids.__pk_increment], [ids.id]), filter(nil),
+         *       access([ids.__pk_increment], [ids.id]), partitions(p0)
+         *  |
+         * +------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+         * 1 row in set (0.002 sec)
+         *
+         * Differences between the two versions of ob mysql are as follows:
+         * 1. The numbers of rows returned in the result set are different. The new version returns multiple rows, but the old version returns single row.
+         * 2. The names of the estimated affected rows are different. The name of new version is “EST.ROWS", but that of the old version is “EST. ROWS”
+         *
          * </pre>
+         *
+         *
          */
         String explainSql = "EXPLAIN " + originalSql;
         List<String> queryResults = jdbcOperations.query(explainSql, (rs, rowNum) -> rs.getString("Query Plan"));
-        return getOBAndOracleAffectRowsFromResult(queryResults);
+        return getOBAndOracleAffectRowsFromResult(queryResults, this::containsAffectRowsColumnForOB,
+                this::isAffectRowsColumnForOB);
     }
 
-    public long getOBAndOracleAffectRowsFromResult(List<String> queryResults) {
-        long estRowsValue = 0;
+    protected long getOBAndOracleAffectRowsFromResult(List<String> queryResults,
+            Predicate<String> containsAffectRowsColumn,
+            Predicate<String> isAffectRowsColumn) {
+        if (queryResults.size() == 1) {
+            queryResults = Arrays.asList(queryResults.get(0).split("\\r?\\n"));
+        }
+        long estRowsValue = -1;
+        int estRowsIndex = -1;
+
         for (int rowNum = 0; rowNum < queryResults.size(); rowNum++) {
-            String resultRow = queryResults.get(rowNum);
-            estRowsValue = getEstRowsValue(resultRow);
-            if (estRowsValue != 0) {
-                break;
+            String resultRow = queryResults.get(rowNum).trim();
+            if (estRowsIndex == -1 && containsAffectRowsColumn.test(resultRow)) {
+                estRowsIndex = getEstRowsIndex(resultRow, isAffectRowsColumn);
+                continue;
+            }
+
+            if (estRowsIndex != -1) {
+                estRowsValue = getEstRowsValue(resultRow, estRowsIndex);
+                if (estRowsValue != -1 && estRowsValue != 0) {
+                    return estRowsValue;
+                }
             }
         }
         return estRowsValue;
     }
 
-    private long getEstRowsValue(String singleRow) {
-        String[] parts = singleRow.split("\\|");
-        if (parts.length > 5) {
-            String value = parts[4].trim();
-            return parseLong(value);
+    private int getEstRowsIndex(String headerRow, Predicate<String> isAffectRowsColumn) {
+        String[] columns = headerRow.split("\\|");
+        for (int i = 0; i < columns.length; i++) {
+            if (isAffectRowsColumn.test(columns[i].trim())) {
+                return i;
+            }
         }
-        return 0;
+        return -1;
     }
 
-    /**
-     * Safely parse a long value.
-     *
-     * @param value string to parse
-     * @return parsed long or 0 if parsing fails
-     */
+    private long getEstRowsValue(String resultRow, int columnIndex) {
+        String[] values = resultRow.split("\\|");
+        if (values.length > columnIndex) {
+            return parseLong(values[columnIndex].trim());
+        }
+        return -1;
+    }
+
+
+    private boolean containsAffectRowsColumnForOB(String row) {
+        return row.contains("EST.ROWS") || row.contains("EST. ROWS");
+    }
+
+    private boolean isAffectRowsColumnForOB(String column) {
+        return column.trim().equals("EST.ROWS") || column.trim().equals("EST. ROWS");
+    }
+
     private long parseLong(String value) {
         try {
             return Long.parseLong(value);
         } catch (NumberFormatException e) {
-            return 0;
+            return -1;
         }
     }
 

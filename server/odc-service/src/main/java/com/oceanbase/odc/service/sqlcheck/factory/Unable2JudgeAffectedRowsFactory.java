@@ -15,12 +15,12 @@
  */
 package com.oceanbase.odc.service.sqlcheck.factory;
 
-import java.util.Map;
+import javax.annotation.Nullable;
 
 import org.springframework.jdbc.core.JdbcOperations;
 
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
+import com.oceanbase.odc.service.sqlcheck.SqlCheckRuleContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRuleFactory;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 import com.oceanbase.odc.service.sqlcheck.rule.BaseAffectedRowsExceedLimit;
@@ -41,11 +41,15 @@ public class Unable2JudgeAffectedRowsFactory implements SqlCheckRuleFactory {
         return SqlCheckRuleType.ESTIMATE_SQL_AFFECTED_ROWS_FAILED;
     }
 
+    @Nullable
     @Override
-    public SqlCheckRule generate(@NonNull DialectType dialectType, Map<String, Object> parameters) {
+    public SqlCheckRule generate(@NonNull SqlCheckRuleContext sqlCheckRuleContext) {
         SqlAffectedRowsFactory sqlAffectedRowsFactory = new SqlAffectedRowsFactory(this.jdbc);
         BaseAffectedRowsExceedLimit targetRule = (BaseAffectedRowsExceedLimit) sqlAffectedRowsFactory
-                .generate(dialectType, parameters);
+                .generate(sqlCheckRuleContext);
+        if (targetRule == null) {
+            return null;
+        }
         return new Unable2JudgeAffectedRows(targetRule);
     }
 }

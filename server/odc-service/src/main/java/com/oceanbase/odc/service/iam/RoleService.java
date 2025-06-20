@@ -78,7 +78,6 @@ import com.oceanbase.odc.service.iam.model.UpdateRoleReq;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.util.PermissionUtil;
 import com.oceanbase.odc.service.iam.util.RoleMapper;
-import com.oceanbase.odc.service.resourcegroup.ResourceGroupService;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -117,9 +116,6 @@ public class RoleService {
     private ConnectionService connectionService;
 
     @Autowired
-    private ResourceGroupService resourceGroupService;
-
-    @Autowired
     private AuthenticationFacade authenticationFacade;
 
     @Autowired
@@ -136,6 +132,9 @@ public class RoleService {
 
     @Autowired
     private UserOrganizationService userOrganizationService;
+
+    @Autowired
+    private ResourcePermissionExtractor resourcePermissionExtractor;
 
     private RoleMapper roleMapper = RoleMapper.INSTANCE;
     private final List<Consumer<RoleDeleteEvent>> preRoleDeleteHooks = new ArrayList<>();
@@ -409,7 +408,7 @@ public class RoleService {
             }
             role.setResourceManagementPermissions(
                     PermissionUtil.aggregateResourceManagementPermissions(managementPermissions));
-            role.setSystemOperationPermissions(PermissionUtil.aggregatePermissions(operationPermissions));
+            role.setSystemOperationPermissions(resourcePermissionExtractor.aggregatePermissions(operationPermissions));
         }
     }
 
@@ -429,7 +428,7 @@ public class RoleService {
         Long organizationId = authenticationFacade.currentOrganizationId();
         for (PermissionConfig config : permissionConfigs) {
             ResourceType resourceType = config.getResourceType();
-            String resourceId = Objects.nonNull(config.getResourceId()) ? config.getResourceId().toString() : "*";
+            String resourceId = config.getResourceId();
             for (String action : config.getActions()) {
                 PermissionEntity permission = new PermissionEntity();
                 permission.setAction(action);
@@ -470,10 +469,8 @@ public class RoleService {
         List<PermissionConfig> permissionConfigs = Stream.of(
                 createRoleReq.nullSafeGetResourceManagementPermissions()).flatMap(Collection::stream)
                 .collect(Collectors.toList());
-        permissionConfigs.forEach(config -> {
-            String resourceId = Objects.nonNull(config.getResourceId()) ? config.getResourceId().toString() : "*";
-            resources.add(new DefaultSecurityResource(resourceId, config.getResourceType().name()));
-        });
+        permissionConfigs.forEach(config -> resources
+                .add(new DefaultSecurityResource(config.getResourceId(), config.getResourceType().name())));
         verticalPermissionValidator.checkResourcePermissions(
                 resources.stream().filter(resource -> StringUtils.equals(resource.resourceType(), "ODC_PROJECT"))
                         .collect(Collectors.toList()),
@@ -482,18 +479,19 @@ public class RoleService {
                 resources.stream().filter(resource -> !StringUtils.equals(resource.resourceType(), "ODC_PROJECT"))
                         .collect(Collectors.toList()),
                 Collections.singletonList("update"));
-        createRoleReq.nullSafeGetSystemOperationPermissions().forEach(config -> {
-            String resourceId = Objects.nonNull(config.getResourceId()) ? config.getResourceId().toString() : "*";
-            verticalPermissionValidator.checkResourcePermissions(
-                    new DefaultSecurityResource(resourceId, config.getResourceType().name()), config.getActions());
-        });
+        createRoleReq.nullSafeGetSystemOperationPermissions()
+                .forEach(config -> verticalPermissionValidator.checkResourcePermissions(
+                        new DefaultSecurityResource(config.getResourceId(), config.getResourceType().name()),
+                        config.getActions()));
     }
 
     private <T extends CreateRoleReq> void inspectHorizontalUnauthorized(T createRoleReq) {
         List<PermissionConfig> permissionConfigs = Stream.of(
                 createRoleReq.nullSafeGetConnectionAccessPermissions(),
                 createRoleReq.nullSafeGetResourceManagementPermissions()).flatMap(Collection::stream)
-                .filter(config -> Objects.nonNull(config.getResourceId())).collect(Collectors.toList());
+                .filter(config -> Objects.nonNull(config.getResourceId())
+                        && StringUtils.isNumeric(config.getResourceId()))
+                .collect(Collectors.toList());
         Set<Long> userIds = new HashSet<>();
         Set<Long> roleIds = new HashSet<>();
         Set<Long> resourceGroupIds = new HashSet<>();
@@ -501,16 +499,16 @@ public class RoleService {
         permissionConfigs.forEach(config -> {
             switch (config.getResourceType()) {
                 case ODC_USER:
-                    userIds.add(config.getResourceId());
+                    userIds.add(Long.valueOf(config.getResourceId()));
                     break;
                 case ODC_ROLE:
-                    roleIds.add(config.getResourceId());
+                    roleIds.add(Long.valueOf(config.getResourceId()));
                     break;
                 case ODC_CONNECTION:
-                    connectionIds.add(config.getResourceId());
+                    connectionIds.add(Long.valueOf(config.getResourceId()));
                     break;
                 case ODC_RESOURCE_GROUP:
-                    resourceGroupIds.add(config.getResourceId());
+                    resourceGroupIds.add(Long.valueOf(config.getResourceId()));
                     break;
                 default:
                     break;

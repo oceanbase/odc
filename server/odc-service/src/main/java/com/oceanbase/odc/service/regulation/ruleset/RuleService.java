@@ -49,12 +49,14 @@ import com.oceanbase.odc.metadb.regulation.ruleset.DefaultRuleApplyingRepository
 import com.oceanbase.odc.metadb.regulation.ruleset.RuleApplyingEntity;
 import com.oceanbase.odc.metadb.regulation.ruleset.RuleApplyingRepository;
 import com.oceanbase.odc.service.common.model.Stats;
+import com.oceanbase.odc.service.config.OrganizationConfigUtils;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.regulation.ruleset.model.QueryRuleMetadataParams;
 import com.oceanbase.odc.service.regulation.ruleset.model.Rule;
 import com.oceanbase.odc.service.regulation.ruleset.model.RuleMetadata;
 import com.oceanbase.odc.service.regulation.ruleset.model.Ruleset;
+import com.oceanbase.odc.service.regulation.ruleset.model.SqlConsoleRules;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -90,6 +92,9 @@ public class RuleService {
 
     @Autowired
     private LoadingCache<Long, List<Rule>> rulesetId2RulesCache;
+
+    @Autowired
+    private OrganizationConfigUtils organizationConfigUtils;
 
     @SkipAuthorize("odc internal usage")
     public List<Rule> list(@NonNull Long rulesetId, @NonNull QueryRuleMetadataParams params) {
@@ -176,7 +181,7 @@ public class RuleService {
                     () -> new UnexpectedException("rule applying not found, ruleId = " + ruleId));
             savedRuleApplyingOpt.setLevel(rule.getLevel());
             savedRuleApplyingOpt.setEnabled(rule.getEnabled());
-            savedRuleApplyingOpt.setPropertiesJson(JsonUtils.toJson(rule.getProperties()));
+            savedRuleApplyingOpt.setPropertiesJson(adaptiveProperties(rule.getProperties()));
             if (Objects.nonNull(rule.getAppliedDialectTypes())) {
                 savedRuleApplyingOpt.setAppliedDialectTypes(
                         rule.getAppliedDialectTypes().stream().map(DialectType::name).collect(Collectors.toList()));
@@ -195,7 +200,7 @@ public class RuleService {
             saved = savedOpt.get();
             saved.setLevel(rule.getLevel());
             saved.setEnabled(rule.getEnabled());
-            saved.setPropertiesJson(JsonUtils.toJson(rule.getProperties()));
+            saved.setPropertiesJson(adaptiveProperties(rule.getProperties()));
             if (Objects.nonNull(rule.getAppliedDialectTypes())) {
                 saved.setAppliedDialectTypes(
                         rule.getAppliedDialectTypes().stream().map(DialectType::name).collect(Collectors.toList()));
@@ -206,7 +211,7 @@ public class RuleService {
             saved.setRuleMetadataId(defaultApplying.getRuleMetadataId());
             saved.setLevel(rule.getLevel());
             saved.setEnabled(rule.getEnabled());
-            saved.setPropertiesJson(JsonUtils.toJson(rule.getProperties()));
+            saved.setPropertiesJson(adaptiveProperties(rule.getProperties()));
             if (Objects.nonNull(rule.getAppliedDialectTypes())) {
                 saved.setAppliedDialectTypes(
                         rule.getAppliedDialectTypes().stream().map(DialectType::name).collect(Collectors.toList()));
@@ -238,7 +243,6 @@ public class RuleService {
         ruleApplyingRepository.batchCreate(entities);
         return rules;
     }
-
 
     private List<Rule> internalList(@NonNull Long rulesetId, @NonNull QueryRuleMetadataParams params) {
         List<RuleMetadata> ruleMetadatas = metadataService.list(params);
@@ -276,6 +280,7 @@ public class RuleService {
             List<DefaultRuleApplyingEntity> defaultApplyings = metadataId2DefaultRuleApplying.get(metadata.getId());
             Verify.equals(1, defaultApplyings.size(), "defaultRuleApplyingEntity");
             RuleApplyingEntity merged;
+            // merged from default and user-defined rule values
             if (!metadataId2RuleApplying.containsKey(metadata.getId())) {
                 merged = RuleApplyingEntity.merge(defaultApplyings.get(0), Optional.empty());
             } else {
@@ -309,4 +314,17 @@ public class RuleService {
         return rule;
     }
 
+    private String adaptiveProperties(Map<String, Object> properties) {
+        String propertiesJson = JsonUtils.toJson(properties);
+        if (properties == null || properties.isEmpty()) {
+            return propertiesJson;
+        }
+        // if this is "max query limit" property, do check
+        if (Objects.nonNull(properties.get(SqlConsoleRules.MAX_QUERY_LIMIT.getPropertyName()))) {
+            Integer currentValue = (Integer) properties.get(SqlConsoleRules.MAX_QUERY_LIMIT.getPropertyName());
+            Verify.notGreaterThan(currentValue, organizationConfigUtils.getDefaultMaxQueryLimit(),
+                    "max query limit value");
+        }
+        return propertiesJson;
+    }
 }

@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.metadb.export.ImportFileRowHistoryEntity;
 import com.oceanbase.odc.metadb.export.ImportFileRowHistoryRepository;
 import com.oceanbase.odc.service.exporter.model.ExportProperties;
@@ -36,16 +37,19 @@ public class ImportService {
     @Autowired
     private ImportFileRowHistoryRepository importFileRowHistoryRepository;
 
+    @SkipAuthorize("internal usage")
     public boolean imported(String fileSignature, String rowId) {
         return importFileRowHistoryRepository.existsByFileSignatureAndRowId(fileSignature, rowId);
     }
 
+    @SkipAuthorize("internal usage")
     public boolean imported(ExportProperties exportProperties, String rowId) {
         String fileSignature = exportProperties.getStringValue(SIGNATURE);
         log.info("imported file signature: {}", fileSignature);
         return imported(fileSignature, rowId);
     }
 
+    @SkipAuthorize("internal usage")
     @Transactional
     public void importAndSaveHistory(String fileSignature, String rowId, Callable<Boolean> doImport) throws Exception {
         Boolean success = doImport.call();
@@ -57,6 +61,7 @@ public class ImportService {
         }
     }
 
+    @SkipAuthorize("internal usage")
     @Transactional
     public void importAndSaveHistory(ExportProperties exportProperties, String rowId, Callable<Boolean> doImport)
             throws Exception {

@@ -86,6 +86,9 @@ public class JobEntity implements Serializable {
     @Column(name = "run_mode")
     private TaskRunMode runMode;
 
+    /**
+     * this column is json string of TaskResult, not TaskResult.getResultJson
+     */
     @Column(name = "result_json")
     private String resultJson;
 

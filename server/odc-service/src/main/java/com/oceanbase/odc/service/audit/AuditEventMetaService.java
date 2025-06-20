@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.audit;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -138,6 +139,12 @@ public class AuditEventMetaService {
                         AuditUtils.createEntitiesByActions(entity,
                                 Arrays.asList(AuditEventAction.ENABLE_DATA_MASKING_RULE,
                                         AuditEventAction.DISABLE_DATA_MASKING_RULE)));
+                continue;
+            }
+            if (AuditEventAction.UPDATE_ORGANIZATION_CONFIGURATION == entity.getAction()) {
+                actualEventMetas.addAll(
+                        AuditUtils.createEntitiesByActions(entity,
+                                Collections.singletonList(AuditEventAction.UPDATE_ORGANIZATION_CONFIGURATION)));
                 continue;
             }
             actualEventMetas.add(entity);

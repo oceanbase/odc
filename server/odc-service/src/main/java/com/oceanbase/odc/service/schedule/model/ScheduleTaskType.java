@@ -15,6 +15,13 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
+import java.util.Collections;
+import java.util.Set;
+
+import com.google.common.collect.Sets;
+
+import lombok.NonNull;
+
 /**
  * @Author：tinker
  * @Date: 2024/6/18 16:56
@@ -38,6 +45,26 @@ public enum ScheduleTaskType {
 
     LOGICAL_DATABASE_CHANGE,
 
-    LOAD_DATA
+    LOAD_DATA;
+
+    public static Set<ScheduleTaskType> from(ScheduleType scheduleType) {
+        if (scheduleType == null) {
+            return Collections.emptySet();
+        }
+        if (scheduleType == ScheduleType.DATA_ARCHIVE) {
+            return Sets.newHashSet(ScheduleTaskType.DATA_ARCHIVE, ScheduleTaskType.DATA_ARCHIVE_DELETE,
+                    ScheduleTaskType.DATA_ARCHIVE_ROLLBACK);
+        }
+        return Collections.singleton(ScheduleTaskType.valueOf(scheduleType.name()));
+    }
+
+    public static ScheduleType from(@NonNull ScheduleTaskType scheduleTaskType) {
+        if (scheduleTaskType == ScheduleTaskType.DATA_ARCHIVE
+                || scheduleTaskType == ScheduleTaskType.DATA_ARCHIVE_DELETE
+                || scheduleTaskType == ScheduleTaskType.DATA_ARCHIVE_ROLLBACK) {
+            return ScheduleType.DATA_ARCHIVE;
+        }
+        return ScheduleType.valueOf(scheduleTaskType.name());
+    }
 
 }

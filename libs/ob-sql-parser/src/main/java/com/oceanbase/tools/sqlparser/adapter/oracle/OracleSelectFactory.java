@@ -15,8 +15,11 @@
  */
 package com.oceanbase.tools.sqlparser.adapter.oracle;
 
+import org.antlr.v4.runtime.ParserRuleContext;
+
 import com.oceanbase.tools.sqlparser.adapter.StatementFactory;
 import com.oceanbase.tools.sqlparser.oboracle.OBParser.Select_stmtContext;
+import com.oceanbase.tools.sqlparser.oboracle.OBParser.View_subqueryContext;
 import com.oceanbase.tools.sqlparser.oboracle.OBParserBaseVisitor;
 import com.oceanbase.tools.sqlparser.statement.select.ForUpdate;
 import com.oceanbase.tools.sqlparser.statement.select.OrderBy;
@@ -36,15 +39,34 @@ import lombok.NonNull;
  */
 public class OracleSelectFactory extends OBParserBaseVisitor<Select> implements StatementFactory<Select> {
 
-    private final Select_stmtContext selectStmtContext;
+    private final ParserRuleContext parserRuleContext;
 
     public OracleSelectFactory(@NonNull Select_stmtContext selectStmtContext) {
-        this.selectStmtContext = selectStmtContext;
+        this.parserRuleContext = selectStmtContext;
+    }
+
+    public OracleSelectFactory(@NonNull View_subqueryContext view_subqueryContext) {
+        this.parserRuleContext = view_subqueryContext;
     }
 
     @Override
     public Select generate() {
-        return visit(this.selectStmtContext);
+        return visit(this.parserRuleContext);
+    }
+
+    @Override
+    public Select visitView_subquery(View_subqueryContext ctx) {
+        StatementFactory<SelectBody> selectBodyFactory = new OracleSelectBodyFactory(ctx.subquery());
+        Select select = new Select(ctx, selectBodyFactory.generate());
+        if (ctx.fetch_next_clause() != null) {
+            StatementFactory<Fetch> factory = new OracleFetchFactory(ctx.fetch_next_clause());
+            select.setFetch(factory.generate());
+        }
+        if (ctx.order_by() != null) {
+            StatementFactory<OrderBy> factory = new OracleOrderByFactory(ctx.order_by());
+            select.setOrderBy(factory.generate());
+        }
+        return select;
     }
 
     @Override

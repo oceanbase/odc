@@ -161,7 +161,7 @@ public class ConfigurationResolver {
         }
         // csv config
         if (Objects.nonNull(baseConfig.getCsvConfig())) {
-            pluginParameter.setLineDelimiter(getRealLineSeparator(baseConfig.getCsvConfig().getLineSeparator()));
+            pluginParameter.setLineDelimiter(baseConfig.getCsvConfig().getLineSeparator());
             pluginParameter.setCsvWriterConfig(getDataXCsvConfig(baseConfig));
             pluginParameter.setSkipHeader(baseConfig.getCsvConfig().isSkipHeader());
             pluginParameter.setNullFormat(baseConfig.getCsvConfig().isBlankToNull() ? "null" : "");
@@ -259,32 +259,8 @@ public class ConfigurationResolver {
         return DataXCsvConfig.builder()
                 .textQualifier(csvConfig.getColumnDelimiter())
                 .delimiter(csvConfig.getColumnSeparator())
-                .recordDelimiter(getRealLineSeparator(csvConfig.getLineSeparator()))
+                .recordDelimiter(csvConfig.getLineSeparator())
                 .build();
-    }
-
-    private static String getRealLineSeparator(String lineSeparator) {
-        StringBuilder realLineSeparator = new StringBuilder();
-        int length = lineSeparator.length();
-        boolean transferFlag = false;
-        for (int i = 0; i < length; i++) {
-            char item = lineSeparator.charAt(i);
-            if (item == '\\') {
-                transferFlag = true;
-                continue;
-            }
-            if (transferFlag) {
-                if (item == 'n') {
-                    realLineSeparator.append('\n');
-                } else if (item == 'r') {
-                    realLineSeparator.append('\r');
-                }
-                transferFlag = false;
-            } else {
-                realLineSeparator.append(item);
-            }
-        }
-        return realLineSeparator.toString();
     }
 
     private static List<CsvColumnMapping> getColumnMapping(DataTransferConfig baseConfig,

@@ -23,14 +23,23 @@ import lombok.Data;
 public class StatefulUuidStateId {
     @Nullable
     private String type;
+    @Nullable
+    private String originId;
     private String uuid;
     private String from;
+
 
     public static StatefulUuidStateId createUuidStateId(String uuid, String from) {
         StatefulUuidStateId statefulUuidStateId = new StatefulUuidStateId();
         statefulUuidStateId.uuid = uuid;
         statefulUuidStateId.from = from;
         return statefulUuidStateId;
+    }
+
+    public static StatefulUuidStateId createUuidStateId(String type, String originId, String uuid, String from) {
+        StatefulUuidStateId typeUuidStateId = createTypeUuidStateId(type, uuid, from);
+        typeUuidStateId.setOriginId(originId);
+        return typeUuidStateId;
     }
 
     public static StatefulUuidStateId createTypeUuidStateId(String type, String uuid, String from) {

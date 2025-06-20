@@ -36,7 +36,7 @@ public enum SqlConsoleRules implements Translatable {
     NOT_ALLOWED_EDIT_RESULTSET("not-allowed-edit-resultset"),
     NOT_ALLOWED_EXPORT_RESULTSET("not-allowed-export-resultset"),
     MAX_EXECUTE_SQLS("max-execute-sqls"),
-    MAX_RETURN_ROWS("max-return-rows"),
+    MAX_QUERY_LIMIT("max-query-limit"),
     EXTERNAL_SQL_INTERCEPTOR("external-sql-interceptor");
 
     private String name;

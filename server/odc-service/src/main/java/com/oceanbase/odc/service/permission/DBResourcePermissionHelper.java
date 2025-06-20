@@ -260,10 +260,13 @@ public class DBResourcePermissionHelper {
         // Pre-handle DBResource (fill in databaseId, databaseName, tableId, tableName)
         Set<Long> dsIds = resource2Types.keySet().stream().map(DBResource::getDataSourceId).collect(Collectors.toSet());
         List<DatabaseEntity> dbEntities = databaseRepository.findByConnectionIdIn(dsIds);
+        List<DatabaseEntity> existingDatabases =
+                dbEntities.stream().filter(x -> Boolean.TRUE.equals(x.getExisted())).collect(
+                        Collectors.toList());
         Map<Long, DatabaseEntity> dbId2Entity =
-                dbEntities.stream().collect(Collectors.toMap(DatabaseEntity::getId, e -> e));
+                existingDatabases.stream().collect(Collectors.toMap(DatabaseEntity::getId, e -> e));
         Map<Long, Map<String, DatabaseEntity>> dsId2dbName2dbEntity = new HashMap<>();
-        for (DatabaseEntity dbEntity : dbEntities) {
+        for (DatabaseEntity dbEntity : existingDatabases) {
             dsId2dbName2dbEntity
                     .computeIfAbsent(dbEntity.getConnectionId(), k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER))
                     .put(dbEntity.getName(), dbEntity);
@@ -279,7 +282,8 @@ public class DBResourcePermissionHelper {
         });
         Set<Long> dbIds = resource2Types.keySet().stream().map(DBResource::getDatabaseId).collect(Collectors.toSet());
         List<DBObjectEntity> tbEntities = dbObjectRepository.findByDatabaseIdInAndTypeIn(dbIds,
-                Arrays.asList(DBObjectType.TABLE, DBObjectType.VIEW, DBObjectType.EXTERNAL_TABLE));
+                Arrays.asList(DBObjectType.TABLE, DBObjectType.VIEW, DBObjectType.EXTERNAL_TABLE,
+                        DBObjectType.MATERIALIZED_VIEW));
         Map<Long, DBObjectEntity> tbId2Entity =
                 tbEntities.stream().collect(Collectors.toMap(DBObjectEntity::getId, e -> e));
         Map<Long, Map<String, DBObjectEntity>> dbId2tbName2tbEntity = new HashMap<>();

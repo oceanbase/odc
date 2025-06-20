@@ -17,7 +17,6 @@
 package com.oceanbase.odc.service.task.constants;
 
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
-import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
 
 /**
  * @author yaobin
@@ -40,7 +39,7 @@ public class JobParametersKeyConstants {
 
     public static final String OBJECT_METADATA = "objectMetadata";
 
-    public static final String TASK_EXECUTION_TIMEOUT_MILLIS = RuntimeTaskConstants.TIMEOUT_MILLI_SECONDS;
+    public static final String TASK_EXECUTION_END_TIME_MILLIS = "endTimeMilliSeconds";
 
     public static final String TASK_PARAMETER_JSON_KEY = "taskParameterJson";
 

@@ -100,7 +100,7 @@ public enum AuditEventType implements Translatable {
 
     DATABASE_CHANGE_CHANGING_ORDER_TEMPLATE_MANAGEMENT,
 
-    ;
+    INSTANCE_MIGRATION;
 
 
     @Override

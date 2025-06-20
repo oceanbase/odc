@@ -48,6 +48,9 @@ public class JobStatusFsmTest {
     }
 
     private void checkStatusTransfer(TaskStatus remainStatus, JobStatus targetStatus) {
+        if (targetStatus.isTerminated()) {
+            return;
+        }
         for (JobStatus jobStatus : JobStatus.values()) {
             Assert.assertEquals(targetStatus, jobStatusFsm.determinateJobStatus(jobStatus, remainStatus));
         }

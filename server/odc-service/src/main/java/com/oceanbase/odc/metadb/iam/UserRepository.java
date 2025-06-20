@@ -18,6 +18,7 @@ package com.oceanbase.odc.metadb.iam;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -38,6 +39,10 @@ public interface UserRepository extends OdcJpaRepository<UserEntity, Long> {
     default List<UserEntity> partitionFindById(Collection<Long> ids, int size) {
         return partitionFind(ids, size, this::findByIdIn);
     }
+
+    @Query("select e.id from UserEntity e where e.organizationId=:organizationId and e.creatorId=:creatorId")
+    Set<Long> findIdsByOrganizationIdAndCreatorId(@Param("organizationId") Long organizationId,
+            @Param("creatorId") Long creatorId);
 
     @Query(value = "select u.* from (select * from iam_permission where id=:permissionId) as p inner join iam_role_permission "
             + "as rp on p.id=rp.permission_id inner join (select * from iam_role where is_enabled=:enabled) as r on "

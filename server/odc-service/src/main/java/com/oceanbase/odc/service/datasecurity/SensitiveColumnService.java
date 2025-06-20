@@ -146,8 +146,15 @@ public class SensitiveColumnService {
                     databaseColumn.setExternalTable2Columns(getFilteringExistColumns(database.getId(),
                             accessor.listBasicExternalTableColumns(database.getName()), exists));
                 }
+                if (versionDiffConfigService.isMViewSupported(dialectType, version)) {
+                    databaseColumn.setMaterializedView2Columns(getFilteringExistColumns(database.getId(),
+                            accessor.listBasicMViewColumns(database.getName()), exists));
+                }
                 databaseColumn.setDataTypeUnits(versionDiffConfigService.getDatatypeList(session));
-                if (!databaseColumn.getTable2Columns().isEmpty() || !databaseColumn.getView2Columns().isEmpty()) {
+                if (!databaseColumn.getTable2Columns().isEmpty()
+                        || !databaseColumn.getView2Columns().isEmpty()
+                        || !databaseColumn.getExternalTable2Columns().isEmpty()
+                        || !databaseColumn.getMaterializedView2Columns().isEmpty()) {
                     databaseColumns.add(databaseColumn);
                 }
             } finally {

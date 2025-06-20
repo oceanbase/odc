@@ -19,10 +19,12 @@ import java.sql.Connection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
 import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.unit.BinarySizeUnit;
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
 import com.oceanbase.odc.plugin.schema.obmysql.parser.OBMySQLGetDBTableByParser;
 import com.oceanbase.odc.plugin.schema.obmysql.utils.DBAccessorUtil;
@@ -52,7 +54,10 @@ public class OBMySQLTableExtension implements TableExtensionPoint {
         List<String> nameList;
         switch (tableType) {
             case TABLE:
-                nameList = getSchemaAccessor(connection).showTables(schemaName);
+                nameList = getSchemaAccessor(connection).showTables(schemaName).stream()
+                        .filter(name -> !StringUtils.startsWithIgnoreCase(name, OdcConstants.CONTAINER_TABLE_PREFIX)
+                                && !StringUtils.startsWithIgnoreCase(name, OdcConstants.MATERIALIZED_VIEW_LOG_PREFIX))
+                        .collect(Collectors.toList());
                 return generateDBObjectIdentityByTableType(schemaName, nameList, DBObjectType.TABLE);
             case EXTERNAL_TABLE:
                 nameList = getSchemaAccessor(connection).showExternalTables(schemaName);
@@ -76,7 +81,10 @@ public class OBMySQLTableExtension implements TableExtensionPoint {
     @Override
     public List<String> showNamesLike(@NonNull Connection connection, @NonNull String schemaName,
             @NonNull String tableNameLike) {
-        return getSchemaAccessor(connection).showTablesLike(schemaName, tableNameLike);
+        return getSchemaAccessor(connection).showTablesLike(schemaName, tableNameLike)
+                .stream().filter(name -> !StringUtils.startsWithIgnoreCase(name, OdcConstants.CONTAINER_TABLE_PREFIX)
+                        && !StringUtils.startsWithIgnoreCase(name, OdcConstants.MATERIALIZED_VIEW_LOG_PREFIX))
+                .collect(Collectors.toList());
     }
 
     @Override

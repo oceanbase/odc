@@ -15,7 +15,10 @@
  */
 package com.oceanbase.odc.plugin.task.api.partitionplan.model;
 
+import org.springframework.validation.annotation.Validated;
+
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -29,9 +32,11 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
+@Validated
 public class DateBasedPartitionNameGeneratorConfig {
 
     private String namingPrefix;
+    @NonNull
     private String namingSuffixExpression;
     private String refPartitionKey;
     private NamingSuffixStrategy namingSuffixStrategy = NamingSuffixStrategy.PARTITION_UPPER_BOUND;

@@ -52,4 +52,8 @@ public class SessionSettings {
     @Min(value = 0, message = "QueryLimit can not be negative")
     @Max(value = Integer.MAX_VALUE, message = "QueryLimit can not be bigger than " + Integer.MAX_VALUE)
     private Integer queryLimit;
+    /**
+     * Max query limit settings
+     */
+    private Integer maxQueryLimit;
 }

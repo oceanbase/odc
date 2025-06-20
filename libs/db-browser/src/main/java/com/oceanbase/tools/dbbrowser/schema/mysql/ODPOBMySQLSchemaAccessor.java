@@ -99,7 +99,7 @@ public class ODPOBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor 
         if (tableNameLike == null) {
             sb.append("show tables");
         } else {
-            sb.append("show tables like ").value("%" + tableNameLike + "%");
+            sb.append("show tables").like(null, tableNameLike);
         }
         return jdbcOperations.queryForList(sb.toString(), String.class);
     }
@@ -115,7 +115,7 @@ public class ODPOBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor 
     }
 
     @Override
-    public List<DBObjectIdentity> listAllUserViews() {
+    public List<DBObjectIdentity> listAllUserViews(String viewNameLike) {
         String sql = "select database()";
         String currentSchema = jdbcOperations.queryForObject(sql, (rs, rowNum) -> rs.getString(1));
         List<DBObjectIdentity> results = new ArrayList<>();
@@ -138,7 +138,7 @@ public class ODPOBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor 
     }
 
     @Override
-    public List<DBObjectIdentity> listAllSystemViews() {
+    public List<DBObjectIdentity> listAllSystemViews(String viewNameLike) {
         return Collections.emptyList();
     }
 

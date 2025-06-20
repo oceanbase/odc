@@ -36,6 +36,7 @@ import com.oceanbase.odc.core.sql.execute.model.SqlExecuteStatus;
 import com.oceanbase.odc.core.sql.execute.model.SqlTuple;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTree;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
+import com.oceanbase.odc.service.config.OrganizationConfigUtils;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.regulation.ruleset.RuleService;
 import com.oceanbase.odc.service.regulation.ruleset.SqlConsoleRuleService;
@@ -69,6 +70,8 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
     private RuleService ruleService;
     @Autowired
     private SqlConsoleRuleService sqlConsoleRuleService;
+    @Autowired
+    private OrganizationConfigUtils organizationConfigUtils;
 
     public final static String NEED_SQL_CONSOLE_CHECK = "NEED_SQL_CONSOLE_CHECK";
     public final static String SQL_CONSOLE_INTERCEPTED = "SQL_CONSOLE_INTERCEPTED";
@@ -96,13 +99,11 @@ public class SqlConsoleInterceptor extends BaseTimeConsumingInterceptor {
             return true;
         }
 
-        Optional<Integer> queryLimit = sqlConsoleRuleService.getProperties(ruleSetId, SqlConsoleRules.MAX_RETURN_ROWS,
+        Optional<Integer> queryLimit = sqlConsoleRuleService.getProperties(ruleSetId, SqlConsoleRules.MAX_QUERY_LIMIT,
                 session.getDialectType(), Integer.class);
-        queryLimit.ifPresent(limit -> {
-            if (Objects.isNull(request.getQueryLimit()) || request.getQueryLimit() > limit) {
-                request.setQueryLimit(limit);
-            }
-        });
+        queryLimit.ifPresent(limit -> request.setQueryLimit(
+                Objects.isNull(request.getQueryLimit()) ? organizationConfigUtils.getDefaultQueryLimit()
+                        : Math.min(limit, request.getQueryLimit())));
         AtomicBoolean allowExecute = new AtomicBoolean(true);
 
         List<SqlTuple> sqlTuples = response.getSqls().stream().map(SqlTuplesWithViolation::getSqlTuple)

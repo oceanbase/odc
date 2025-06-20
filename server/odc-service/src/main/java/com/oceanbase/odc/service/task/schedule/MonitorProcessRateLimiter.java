@@ -35,9 +35,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MonitorProcessRateLimiter extends BaseStartJobRateLimiter {
 
-    private final Supplier<TaskFrameworkProperties> taskFrameworkProperties;
-    private final TaskFrameworkService taskFrameworkService;
-    private final long runningJobCountLimit;
+    protected final Supplier<TaskFrameworkProperties> taskFrameworkProperties;
+    protected final TaskFrameworkService taskFrameworkService;
+    protected final long runningJobCountLimit;
 
     public MonitorProcessRateLimiter(Supplier<TaskFrameworkProperties> taskFrameworkProperties,
             TaskFrameworkService taskFrameworkService) {

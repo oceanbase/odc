@@ -145,7 +145,7 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
 
     private void setTransferFormat(LoadParameter parameter, DataTransferConfig transferConfig) {
         if (!transferConfig.isTransferData()) {
-            parameter.setFileSuffix(DataFormat.SQL.getDefaultFileSuffix());
+            parameter.setFileSuffixes(DataFormat.SQL.getFileSuffixes());
             return;
         }
         DataTransferFormat format = transferConfig.getDataTransferFormat();
@@ -153,15 +153,15 @@ public class LoadParameterFactory extends BaseParameterFactory<LoadParameter> {
             boolean isZipOrDirImport = transferConfig.isZipOrDir();
             if (isZipOrDirImport) {
                 parameter.setDataFormat(DataFormat.SQL);
-                parameter.setFileSuffix(DataFormat.SQL.getDefaultFileSuffix());
+                parameter.setFileSuffixes(DataFormat.SQL.getFileSuffixes());
             } else {
                 parameter.setDataFormat(DataFormat.MIX);
-                parameter.setFileSuffix(DataFormat.MIX.getDefaultFileSuffix());
+                parameter.setFileSuffixes(DataFormat.MIX.getFileSuffixes());
             }
             parameter.setExternal(!isZipOrDirImport);
         } else if (DataTransferFormat.CSV.equals(format)) {
             parameter.setDataFormat(DataFormat.CSV);
-            parameter.setFileSuffix(DataFormat.CSV.getDefaultFileSuffix());
+            parameter.setFileSuffixes(DataFormat.CSV.getFileSuffixes());
             parameter.setExternal(!transferConfig.isZipOrDir());
         }
     }

@@ -28,4 +28,8 @@ public class ObjectUtil {
         return JsonUtils.fromJson(json, classType);
     }
 
+    public static <T> T defaultIfNull(T object, T defaultValue) {
+        return object != null ? object : defaultValue;
+    }
+
 }

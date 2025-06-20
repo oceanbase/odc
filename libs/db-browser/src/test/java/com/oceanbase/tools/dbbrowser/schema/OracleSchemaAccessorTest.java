@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -292,10 +293,24 @@ public class OracleSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void showTablesLike_InputIsNonEmptyString_Success() {
+        List<String> tables = accessor.showTablesLike(getOracleSchema(), "_");
+        Assert.assertTrue(tables.size() > 0);
+        Assert.assertTrue(tables.stream().allMatch(o -> o.contains("_")));
+    }
+
+    @Test
     public void listTables_Success() {
         List<DBObjectIdentity> tables =
                 accessor.listTables(getOracleSchema(), null);
         Assert.assertTrue(tables.size() > 0);
+    }
+
+    @Test
+    public void listTables_InputIsNonEmptyString_Success() {
+        List<DBObjectIdentity> tables = accessor.listTables(getOracleSchema(), "_");
+        Assert.assertTrue(tables.size() > 0);
+        Assert.assertTrue(tables.stream().allMatch(o -> o.getName().contains("_")));
     }
 
     @Test
@@ -311,8 +326,16 @@ public class OracleSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
+    public void listUserViewsWhenViewNameLikeNotNull_Success() {
+        List<DBObjectIdentity> views = accessor.listAllUserViews(StringUtils.escapeLike("_TEST"));
+        if (CollectionUtils.isNotEmpty(views)) {
+            Assert.assertTrue(views.stream().allMatch(o -> o.getName().toUpperCase().contains("_TEST")));
+        }
+    }
+
+    @Test
     public void listAllUserViews_Success() {
-        List<DBObjectIdentity> views = accessor.listAllUserViews();
+        List<DBObjectIdentity> views = accessor.listAllUserViews(null);
         Assert.assertTrue(views.size() > 0);
     }
 

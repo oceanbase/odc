@@ -178,6 +178,11 @@ public class ResourceRoleService {
         return resourceRoleRepository.findById(id);
     }
 
+    @SkipAuthorize("internal usage")
+    public List<ResourceRoleEntity> listResourceRoleByIds(@NonNull Collection<Long> ids) {
+        return resourceRoleRepository.findAllById(ids);
+    }
+
     @Transactional(rollbackFor = Exception.class)
     @SkipAuthorize("internal usage")
     public List<UserResourceRole> listByResourceTypeAndResourceId(ResourceType resourceType, Long resourceId) {

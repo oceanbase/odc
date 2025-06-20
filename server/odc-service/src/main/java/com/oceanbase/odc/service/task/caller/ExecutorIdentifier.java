@@ -26,6 +26,7 @@ public interface ExecutorIdentifier {
 
     String getHost();
 
+    // that's the server port, not the executor's listen port for process mode
     int getPort();
 
     String getNamespace();

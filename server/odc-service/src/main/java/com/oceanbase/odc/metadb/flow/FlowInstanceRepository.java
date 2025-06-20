@@ -104,6 +104,12 @@ public interface FlowInstanceRepository
     Set<FlowInstanceEntity> findByScheduleIdAndStatus(@Param("scheduleIds") Set<Long> scheduleIds,
             @Param("status") FlowStatus status);
 
+    @Query(value = "select id, parent_instance_id as parentInstanceId, status from flow_instance where parent_instance_id in (:parentInstanceId)",
+            nativeQuery = true)
+    List<FlowInstanceProjection> findProjectionByParentInstanceIdIn(
+            @Param("parentInstanceId") Collection<Long> parentInstanceId);
+
+
     @Query("select e.parentInstanceId as parentInstanceId, count(1) as count from FlowInstanceEntity e where e.parentInstanceId in (?1) group by parentInstanceId")
     List<ParentInstanceIdCount> findByParentInstanceIdIn(Collection<Long> parentInstanceId);
 
@@ -112,5 +118,13 @@ public interface FlowInstanceRepository
         Long getParentInstanceId();
 
         Integer getCount();
+    }
+
+    interface FlowInstanceProjection {
+        Long getId();
+
+        Long getParentInstanceId();
+
+        FlowStatus getStatus();
     }
 }

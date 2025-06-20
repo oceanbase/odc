@@ -204,7 +204,7 @@ public class LoadParameterFactoryTest {
         DataTransferConfig config = generateConfig(DataTransferFormat.CSV, true, true, false, DialectType.OB_ORACLE);
         LoadParameterFactory factory = new LoadParameterFactory(config, getWorkingDir(), getWorkingDir());
         CsvConfig csvConfig = new CsvConfig();
-        csvConfig.setLineSeparator("\\n");
+        csvConfig.setLineSeparator("\n");
         config.setCsvConfig(csvConfig);
         LoadParameter parameter = factory.generate();
         Assert.assertEquals("\n", parameter.getLineSeparator());
@@ -223,7 +223,7 @@ public class LoadParameterFactoryTest {
         DataTransferConfig config = generateConfig(DataTransferFormat.CSV, true, true, false, DialectType.OB_ORACLE);
         LoadParameterFactory factory = new LoadParameterFactory(config, getWorkingDir(), getWorkingDir());
         CsvConfig csvConfig = new CsvConfig();
-        csvConfig.setLineSeparator("\\r");
+        csvConfig.setLineSeparator("\r");
         config.setCsvConfig(csvConfig);
         LoadParameter parameter = factory.generate();
         Assert.assertEquals("\r", parameter.getLineSeparator());

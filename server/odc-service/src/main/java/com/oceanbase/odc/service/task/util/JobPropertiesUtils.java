@@ -44,6 +44,10 @@ public class JobPropertiesUtils {
         jobProperties.put(ResourceIDUtil.GROUP_PROP_NAME, cloudProvider.toString());
     }
 
+    public static void setDefaultCloudProvider(@NonNull Map<String, String> jobProperties) {
+        jobProperties.put("cloudProvider", ResourceIDUtil.PROCESS_REGION_NAME);
+    }
+
     public static CloudProvider getCloudProvider(@NonNull Map<String, String> jobProperties) {
         String cloudProvider = jobProperties.get(ResourceIDUtil.GROUP_PROP_NAME);
         return StringUtils.isBlank(cloudProvider) ? CloudProvider.NONE : CloudProvider.fromValue(cloudProvider);
@@ -51,6 +55,10 @@ public class JobPropertiesUtils {
 
     public static void setRegionName(@NonNull Map<String, String> jobProperties, @NonNull String regionName) {
         jobProperties.put(ResourceIDUtil.REGION_PROP_NAME, regionName);
+    }
+
+    public static void setDefaultRegionName(@NonNull Map<String, String> jobProperties) {
+        jobProperties.put("regionName", ResourceIDUtil.PROCESS_REGION_NAME);
     }
 
     public static String getRegionName(@NonNull Map<String, String> jobProperties) {

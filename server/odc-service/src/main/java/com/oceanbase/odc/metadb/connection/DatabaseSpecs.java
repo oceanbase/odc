@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.data.jpa.domain.Specification;
@@ -44,6 +45,11 @@ public class DatabaseSpecs {
                 : builder.like(root.get("name"), "%" + StringUtils.escapeLike(name) + "%");
     }
 
+    public static Specification<DatabaseEntity> nameLikeWithoutCase(String name) {
+        return (root, query, builder) -> StringUtils.isBlank(name) ? builder.conjunction()
+                : builder.like(builder.lower(root.get("name")), "%" + StringUtils.escapeLike(name.toLowerCase()) + "%");
+    }
+
     public static Specification<DatabaseEntity> projectIdEquals(Long projectId) {
         return (root, query, builder) -> Objects.isNull(projectId) ? builder.conjunction()
                 : builder.equal(root.get("projectId"), projectId);
@@ -52,6 +58,11 @@ public class DatabaseSpecs {
     public static Specification<DatabaseEntity> connectionIdEquals(Long connectionId) {
         return (root, query, builder) -> Objects.isNull(connectionId) ? builder.conjunction()
                 : builder.equal(root.get("connectionId"), connectionId);
+    }
+
+    public static Specification<DatabaseEntity> connectionIdIn(Collection<Long> connectionIds) {
+        Set<Long> finalConnectionIds = connectionIds.stream().filter(Objects::nonNull).collect(Collectors.toSet());
+        return SpecificationUtil.columnIn("connectionId", finalConnectionIds);
     }
 
     public static Specification<DatabaseEntity> organizationIdEquals(Long organizationId) {

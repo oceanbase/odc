@@ -57,4 +57,9 @@ public interface OrganizationRepository
     @Query("select id from OrganizationEntity where type = ?1")
     List<Long> findIdByType(OrganizationType type);
 
+    @Transactional
+    @Modifying
+    @Query("update OrganizationEntity as e set e.secret=:secret where e.id=:id")
+    int updateOrganizationSecretById(@Param("id") Long id, @Param("secret") String secret);
+
 }

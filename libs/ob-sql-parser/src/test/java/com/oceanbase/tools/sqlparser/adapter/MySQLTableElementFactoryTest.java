@@ -875,6 +875,55 @@ public class MySQLTableElementFactoryTest {
     }
 
     @Test
+    public void generate_simplePk_succeed() {
+        StatementFactory<TableElement> factory = new MySQLTableElementFactory(
+                getTableElementContext("primary key (col)"));
+        TableElement actual = factory.generate();
+
+        SortColumn s1 = new SortColumn(new ColumnReference(null, null, "col"));
+        OutOfLineConstraint expect = new OutOfLineConstraint(null, Collections.singletonList(s1));
+        expect.setPrimaryKey(true);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_onlyIndexAlgoPrimaryKey_succeed() {
+        StatementFactory<TableElement> factory = new MySQLTableElementFactory(
+                getTableElementContext("primary key `aaaa` using hash (col, col1) using btree"));
+        TableElement actual = factory.generate();
+
+        SortColumn s1 = new SortColumn(new ColumnReference(null, null, "col"));
+        SortColumn s2 = new SortColumn(new ColumnReference(null, null, "col1"));
+        ConstraintState state = new ConstraintState();
+        IndexOptions indexOptions = new IndexOptions();
+        indexOptions.setUsingHash(true);
+        indexOptions.setUsingBtree(true);
+        state.setIndexOptions(indexOptions);
+        OutOfLineConstraint expect = new OutOfLineConstraint(state, Arrays.asList(s1, s2));
+        expect.setPrimaryKey(true);
+        expect.setIndexName("`aaaa`");
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generate_onlyIndexOptPrimaryKey_succeed() {
+        StatementFactory<TableElement> factory = new MySQLTableElementFactory(
+                getTableElementContext("primary key `aaaa` (col, col1) comment 'abcd'"));
+        TableElement actual = factory.generate();
+
+        SortColumn s1 = new SortColumn(new ColumnReference(null, null, "col"));
+        SortColumn s2 = new SortColumn(new ColumnReference(null, null, "col1"));
+        ConstraintState state = new ConstraintState();
+        IndexOptions indexOptions = new IndexOptions();
+        indexOptions.setComment("'abcd'");
+        state.setIndexOptions(indexOptions);
+        OutOfLineConstraint expect = new OutOfLineConstraint(state, Arrays.asList(s1, s2));
+        expect.setPrimaryKey(true);
+        expect.setIndexName("`aaaa`");
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
     public void generate_indexPrimaryKeyNoUsingHash_succeed() {
         StatementFactory<TableElement> factory = new MySQLTableElementFactory(
                 getTableElementContext("constraint abcd primary key oop (col, col1) comment 'abcd'"));

@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,7 +58,9 @@ public class NotificationScheduleConfiguration implements SchedulingConfigurer {
         taskRegistrar.addTriggerTask(() -> broker.dequeueNotification(MessageSendingStatus.SENT_FAILED),
                 getTrigger(() -> Duration
                         .ofMillis(notificationProperties.getDequeueFailedNotificationFixedDelayMillis())));
-        taskRegistrar.addTriggerTask(() -> broker.dequeueNotification(MessageSendingStatus.SENDING),
+        taskRegistrar.addTriggerTask(
+                () -> broker.failSendingTimeoutNotification(
+                        notificationProperties.getSendingNotificationExpireTimeMillis(), TimeUnit.MILLISECONDS),
                 getTrigger(() -> Duration
                         .ofMillis(notificationProperties.getDequeueSendingNotificationFixedDelayMillis())));
     }

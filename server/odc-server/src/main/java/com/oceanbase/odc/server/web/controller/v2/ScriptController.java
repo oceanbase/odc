@@ -19,11 +19,15 @@ import java.io.IOException;
 import java.util.List;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.Size;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -81,6 +85,12 @@ public class ScriptController {
     @RequestMapping(value = "/scripts/batchGetDownloadUrl", method = RequestMethod.POST)
     public ListResponse<String> getDownloadUrl(@RequestBody List<Long> ids) {
         return Responses.list(scriptService.getDownloadUrl(ids));
+    }
+
+    @RequestMapping(value = "/scripts/batchDownload", method = RequestMethod.POST)
+    public ResponseEntity<InputStreamResource> batchDownload(
+            @NotEmpty @RequestBody @Size(min = 1, max = 200) List<Long> ids) throws IOException {
+        return scriptService.batchDownload(ids);
     }
 
     @RequestMapping(value = "/scripts/{id}/sync", method = RequestMethod.POST)

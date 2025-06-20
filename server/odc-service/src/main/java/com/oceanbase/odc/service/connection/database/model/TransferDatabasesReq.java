@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Set;
 
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.Size;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -43,4 +44,7 @@ public class TransferDatabasesReq {
     private Long projectId;
 
     private Set<Long> ownerIds = new HashSet<>();
+
+    @Size(min = 1, max = 100)
+    private String databaseRemark;
 }

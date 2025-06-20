@@ -26,6 +26,7 @@ import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBForeignKeyMatchType;
 import com.oceanbase.tools.dbbrowser.model.DBForeignKeyModifyRule;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.model.DBTable.DBTableOptions;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
@@ -94,6 +95,20 @@ public class DBObjectUtilsTest {
         table.getTableOptions().setCollationName("ascii_bin");
         table.getTableOptions().setRowFormat("COMPACT");
         return table;
+    }
+
+    public static DBMaterializedView getNewMView() {
+        DBMaterializedView mView = new DBMaterializedView();
+        mView.setSchemaName("whatever_schema");
+        mView.setName("whatever_table");
+        mView.setIndexes(Arrays.asList(getNewIndex()));
+        return mView;
+    }
+
+    public static DBMaterializedView getOldMView() {
+        DBMaterializedView mView = getNewMView();
+        mView.setIndexes(Arrays.asList(getOldIndex()));
+        return mView;
     }
 
     public static DBTableIndex getOldIndex() {

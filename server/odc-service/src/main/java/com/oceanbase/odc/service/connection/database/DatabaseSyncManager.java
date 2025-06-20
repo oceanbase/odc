@@ -91,6 +91,7 @@ public class DatabaseSyncManager {
         }));
     }
 
+    @SkipAuthorize("internal usage")
     public Boolean syncDBForDataSource(@NonNull ConnectionConfig dataSource) throws InterruptedException {
         Long creatorId = dataSource.getCreatorId();
         SecurityContextUtils.setCurrentUser(creatorId, dataSource.getOrganizationId(), getAccountName(creatorId));

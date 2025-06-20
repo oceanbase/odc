@@ -20,8 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
+import com.oceanbase.odc.service.sqlcheck.SqlCheckRuleContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRuleFactory;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 import com.oceanbase.odc.service.sqlcheck.rule.ProhibitedDatatypeExists;
@@ -37,7 +37,8 @@ public class ProhibitedDatatypeExistsFactory implements SqlCheckRuleFactory {
 
     @Override
     @SuppressWarnings("all")
-    public SqlCheckRule generate(@NonNull DialectType dialectType, Map<String, Object> parameters) {
+    public SqlCheckRule generate(@NonNull SqlCheckRuleContext sqlCheckRuleContext) {
+        Map<String, Object> parameters = sqlCheckRuleContext.getParameters();
         String key = getParameterNameKey("datatype-names");
         Set<String> types;
         if (parameters == null || parameters.isEmpty() || parameters.get(key) == null) {

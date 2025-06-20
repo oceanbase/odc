@@ -18,8 +18,8 @@ package com.oceanbase.odc.service.task.util;
 
 import java.io.File;
 import java.lang.reflect.Type;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -27,22 +27,34 @@ import java.util.Optional;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
+import com.oceanbase.odc.metadb.resource.ResourceEntity;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
+import com.oceanbase.odc.service.task.caller.DefaultExecutorIdentifier;
+import com.oceanbase.odc.service.task.caller.ExecutorIdentifier;
+import com.oceanbase.odc.service.task.caller.ExecutorIdentifierParser;
 import com.oceanbase.odc.service.task.caller.JobEnvironmentEncryptor;
+import com.oceanbase.odc.service.task.config.JobConfiguration;
 import com.oceanbase.odc.service.task.constants.JobConstants;
 import com.oceanbase.odc.service.task.constants.JobEnvKeyConstants;
+import com.oceanbase.odc.service.task.enums.JobStatus;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
+import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.executor.TaskResult;
 import com.oceanbase.odc.service.task.jasypt.AccessEnvironmentJasyptEncryptorConfigProperties;
 import com.oceanbase.odc.service.task.jasypt.DefaultJasyptEncryptor;
 import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
+import com.oceanbase.odc.service.task.service.TaskFrameworkService;
+import com.oceanbase.odc.service.task.supervisor.endpoint.ExecutorEndpoint;
 
+import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -53,10 +65,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class JobUtils {
 
-    private static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS");
-
-    public static String generateExecutorName(JobIdentity ji) {
-        return JobConstants.TEMPLATE_JOB_NAME_PREFIX + ji.getId() + "-" + LocalDateTime.now().format(DTF);
+    public static String generateExecutorName(JobIdentity ji, Date jobCreateTime) {
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmssSSS");
+        String dateString = formatter.format(jobCreateTime);
+        return JobConstants.TEMPLATE_JOB_NAME_PREFIX + ji.getId() + "-" + dateString;
     }
 
     public static String generateExecutorSelectorOnProcess(String executorName) {
@@ -194,5 +206,61 @@ public class JobUtils {
     public static String retrieveJobResultStr(JobEntity jobEntity) {
         TaskResult taskResult = JsonUtils.fromJson(jobEntity.getResultJson(), TaskResult.class);
         return null == taskResult ? null : taskResult.getResultJson();
+    }
+
+    public static void updateStatusAndCheck(Long jobId, JobStatus oldStatus, JobStatus newStatus,
+            TaskFrameworkService taskFrameworkService) {
+        int rows = taskFrameworkService.updateStatusByIdOldStatus(jobId, oldStatus, newStatus);
+        if (rows <= 0) {
+            throw new TaskRuntimeException(
+                    "Update job status from " + oldStatus + "to " + newStatus + " failed, jobId=" + jobId);
+        }
+    }
+
+    public static void alarmJobEvent(JobEntity jobEntity, String eventName, String message) {
+        AlarmUtils.alarm(eventName,
+                AlarmUtils.createAlarmMapBuilder()
+                        .item(AlarmUtils.ORGANIZATION_NAME, Optional.ofNullable(jobEntity.getOrganizationId()).map(
+                                Object::toString).orElse(StrUtil.EMPTY))
+                        .item(AlarmUtils.TASK_JOB_ID_NAME, String.valueOf(jobEntity.getId()))
+                        .item(AlarmUtils.MESSAGE_NAME, message)
+                        .build());
+    }
+
+    public static void alarmResourceEvent(ResourceEntity resourceEntity, String eventName, String message) {
+        Map<String, String> eventMessage = AlarmUtils.createAlarmMapBuilder()
+                .item(AlarmUtils.ORGANIZATION_NAME, AlarmUtils.ODC_RESOURCE)
+                .item(AlarmUtils.RESOURCE_ID_NAME, String.valueOf(resourceEntity.getId()))
+                .item(AlarmUtils.RESOURCE_TYPE, resourceEntity.getResourceType())
+                .item(AlarmUtils.MESSAGE_NAME, message)
+                .build();
+        AlarmUtils.alarm(eventName, eventMessage);
+    }
+
+    public static String getLogBasePath(String mountPath) {
+        return StringUtils.isNotBlank(mountPath) ? mountPath
+                : JobConstants.ODC_EXECUTOR_DEFAULT_MOUNT_PATH;
+    }
+
+    public static Integer getODCServerPort(JobConfiguration configuration) {
+        String portString = Optional.ofNullable(configuration.getHostProperties().getPort())
+                .orElse(DefaultExecutorIdentifier.DEFAULT_PORT + "");
+        return Integer.valueOf(portString);
+    }
+
+    // for process mode, correct real listen port to odc server port, for log request route
+    public static ExecutorIdentifier getCorrectedExecutorIdentifier(ExecutorEndpoint endpoint,
+            JobConfiguration configuration) {
+        ExecutorIdentifier executorIdentifier = ExecutorIdentifierParser.parser(endpoint.getIdentifier());
+        if (configuration.getTaskFrameworkProperties().getRunMode() == TaskRunMode.PROCESS) {
+            return DefaultExecutorIdentifier.builder().host(executorIdentifier.getHost())
+                    .port(endpoint.getSupervisorOwnerPort())
+                    .protocol(executorIdentifier.getProtocol())
+                    .namespace(executorIdentifier.getNamespace())
+                    .executorName(executorIdentifier.getExecutorName())
+                    .build();
+        } else {
+            return executorIdentifier;
+        }
     }
 }

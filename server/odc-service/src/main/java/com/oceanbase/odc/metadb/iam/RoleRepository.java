@@ -18,6 +18,7 @@ package com.oceanbase.odc.metadb.iam;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -78,4 +79,8 @@ public interface RoleRepository extends JpaRepository<RoleEntity, Long>, JpaSpec
             + "description=:#{#roleEntity.description}, user_update_time=now() where id=:#{#roleEntity.id}",
             nativeQuery = true)
     int update(@Param("roleEntity") RoleEntity roleEntity);
+
+    @Query("select e.id from RoleEntity e where e.organizationId=:organizationId and e.creatorId=:creatorId")
+    Set<Long> findIdsByOrganizationIdAndCreatorId(@Param("organizationId") Long organizationId,
+            @Param("creatorId") Long creatorId);
 }

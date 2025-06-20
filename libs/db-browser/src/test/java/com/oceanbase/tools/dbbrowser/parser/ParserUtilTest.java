@@ -380,4 +380,52 @@ public class ParserUtilTest {
         Assert.assertEquals(DBObjectType.COLUMN, result.getDbObjectType());
     }
 
+    @Test
+    public void test_mysql_create_mView() {
+        String sql = "create materialized view mv1 as select * from t1";
+        BasicResult result = ParserUtil.parseMysqlType(sql);
+        Assert.assertEquals(SqlType.CREATE, result.getSqlType());
+        Assert.assertEquals(DBObjectType.MATERIALIZED_VIEW, result.getDbObjectType());
+    }
+
+    @Test
+    public void test_oracle_create_mView() {
+        String sql = "create materialized view mv1 as select * from t1";
+        BasicResult result = ParserUtil.parseOracleType(sql);
+        Assert.assertEquals(SqlType.CREATE, result.getSqlType());
+        Assert.assertEquals(DBObjectType.MATERIALIZED_VIEW, result.getDbObjectType());
+    }
+
+    @Test
+    public void test_mysql_drop_mView() {
+        String sql = "drop materialized view mv1";
+        BasicResult result = ParserUtil.parseMysqlType(sql);
+        Assert.assertEquals(SqlType.DROP, result.getSqlType());
+        Assert.assertEquals(DBObjectType.MATERIALIZED_VIEW, result.getDbObjectType());
+    }
+
+    @Test
+    public void test_oracle_drop_mView() {
+        String sql = "drop materialized view mv1";
+        BasicResult result = ParserUtil.parseOracleType(sql);
+        Assert.assertEquals(SqlType.DROP, result.getSqlType());
+        Assert.assertEquals(DBObjectType.MATERIALIZED_VIEW, result.getDbObjectType());
+    }
+
+    @Test
+    public void test_mysql_drop_view() {
+        String sql = "drop view mv1";
+        BasicResult result = ParserUtil.parseMysqlType(sql);
+        Assert.assertEquals(SqlType.DROP, result.getSqlType());
+        Assert.assertEquals(DBObjectType.VIEW, result.getDbObjectType());
+    }
+
+    @Test
+    public void test_oracle_drop_view() {
+        String sql = "drop view mv1";
+        BasicResult result = ParserUtil.parseOracleType(sql);
+        Assert.assertEquals(SqlType.DROP, result.getSqlType());
+        Assert.assertEquals(DBObjectType.VIEW, result.getDbObjectType());
+    }
+
 }

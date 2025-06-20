@@ -36,6 +36,11 @@ public class ExecutorProcessBuilderFactory {
     private static final Pattern ODC_SERVER_EXECUTABLE_JAR = Pattern.compile("^.*odc-server-.*executable\\.jar$");
 
     public ProcessBuilder getProcessBuilder(ProcessConfig processConfig, long jobId, String executorName) {
+        return getProcessBuilder(processConfig, jobId, executorName, JobConstants.ODC_AGENT_CLASS_NAME);
+    }
+
+    public ProcessBuilder getProcessBuilder(ProcessConfig processConfig, long jobId, String executorName,
+            String mainClassName) {
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
         ProcessBuilder pb = new ProcessBuilder();
         List<String> commands = new ArrayList<>();
@@ -47,13 +52,13 @@ public class ExecutorProcessBuilderFactory {
             commands.add("-cp");
             // set jar package file name in commands
             commands.add(runtimeMxBean.getClassPath());
-            commands.add("-Dloader.main=" + JobConstants.ODC_AGENT_CLASS_NAME);
+            commands.add("-Dloader.main=" + mainClassName);
             commands.add("org.springframework.boot.loader.PropertiesLauncher");
         } else {
             // start odc executor by java -classpath
             commands.add("-cp");
             commands.add(runtimeMxBean.getClassPath());
-            commands.add(JobConstants.ODC_AGENT_CLASS_NAME);
+            commands.add(mainClassName);
             // commands.add("org.springframework.boot.loader.PropertiesLauncher");
         }
         pb.command(commands);

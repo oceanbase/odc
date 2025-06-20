@@ -55,6 +55,16 @@ public abstract class BaseViewTemplate implements DBObjectTemplate<DBView> {
     @Override
     public String generateCreateObjectTemplate(@NotNull DBView dbObject) {
         Validate.notBlank(dbObject.getViewName(), "View name can not be blank");
+        validOperations(dbObject);
+        SqlBuilder sqlBuilder = sqlBuilder();
+        sqlBuilder.append(preHandle("create or replace view "))
+                .identifier(dbObject.getViewName())
+                .append(preHandle(" as"));
+        generateQueryStatement(dbObject, sqlBuilder);
+        return doGenerateCreateObjectTemplate(sqlBuilder, dbObject);
+    }
+
+    public void validOperations(DBView dbObject) {
         Validate.isTrue(dbObject.getOperations() == null
                 || dbObject.getViewUnits() != null,
                 "Unable to calculate while operation set but table not set");
@@ -67,10 +77,9 @@ public abstract class BaseViewTemplate implements DBObjectTemplate<DBView> {
                 || dbObject.getOperations().size() == 0 && dbObject.getViewUnits().size() == 0
                 || dbObject.getOperations().size() == dbObject.getViewUnits().size() - 1,
                 "Unable to calculate, operationSize<>tableSize-1");
-        SqlBuilder sqlBuilder = sqlBuilder();
-        sqlBuilder.append(preHandle("create or replace view "))
-                .identifier(dbObject.getViewName())
-                .append(preHandle(" as"));
+    }
+
+    public void generateQueryStatement(DBView dbObject, SqlBuilder sqlBuilder) {
         ViewCreateParameters params = new ViewCreateParameters(dbObject);
         params.getSubParameters().forEach(p -> {
             if (Objects.isNull(p.getViewUnits()) && Objects.isNull(p.getColumns())) {
@@ -80,7 +89,6 @@ public abstract class BaseViewTemplate implements DBObjectTemplate<DBView> {
             }
             handleQuery(sqlBuilder, p);
         });
-        return doGenerateCreateObjectTemplate(sqlBuilder, dbObject);
     }
 
     private void handleQuery(SqlBuilder sqlBuilder, ViewCreateSubParameters subParam) {

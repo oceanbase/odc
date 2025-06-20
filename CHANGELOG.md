@@ -1,4 +1,79 @@
 # OceanBase Developer Center (ODC) CHANGELOG
+## 4.3.4 (2025-05-08)
+
+### Feature Updates
+
+#### Change Risk Control
+
+- Upgraded the Configuration Center with support for workspace-level configurations (personal and team workspaces) to manage settings across modules within a workspace.
+- DML change orders now display the estimated number of affected rows to help users assess potential risks.
+- Permissions requests for databases and tables can now be merged into a single approval if they share the same approval flow.
+- Approval rules for database and table permission requests are now matched against security risk levels to determine the appropriate approval flow.
+- Enhanced authorization mechanism: users can now manage the data sources and user accounts they create.
+- Added batch admin settings for databases within a project.
+
+#### SQL Development
+
+- Added support for managing OceanBase materialized views, including creation, viewing, and management via GUI.
+- Added batch script download support.
+- Object DDL statements are now displayed when hovering over object names in the SQL window.
+
+#### Data Lifecycle Management
+
+- Added support for multi-table archiving scenarios with customizable join conditions.
+- Archiving now supports tables with generated columns.
+- Introduced exception handling options for data cleanup tasks: skip, update target database, or fail the task — enhancing fault tolerance during cleanup.
+
+#### Partitioning Plans
+
+- Added support for automatically creating partitions based on ascending `INT` or `CHAR` field values, reducing the configuration cost for partitioning strategies.
+
+#### Online Schema Changes
+
+- Now supports column deletion through DDL changes.
+
+### Usability Improvements
+
+- Revamped homepage with five new modules: Scheduled Job Overview, Quick Start, Recently Accessed Databases, About Us, and Best Practices.
+- Improved empty-state guidance to help new users understand how to proceed when first using ODC.
+- Enhanced global search capabilities: users can now search within specific databases, projects, or data sources.
+- Improved “locator key” functionality to allow precise object-level navigation in global search and object pages.
+- Added SQL Console access in team workspaces for quick entry.
+- Introduced database grouping capabilities for better organization in resource trees, project database lists, SQL console, and tickets. Grouping by project, data source, cluster, tenant, database type, and environment is supported with persistent settings.
+- Improved database search across all list-based contexts, allowing searches by database name, data source, cluster, and tenant.
+- Added support for database remarks (annotations), which appear on hover across various interfaces to help differentiate between databases with similar names.
+- Support for resubmitting tickets in Logical Database Changes, Partitioning Plans, and Shadow Table Orders.
+
+### Bug Fixes
+
+- Tickets for requesting project permissions were not visible.
+- Database admins could not participate in approvals.
+- Error when selecting databases with the same name during table/view permission requests.
+- Doris data source did not support duplicate keys.
+- Viewing execution profiles failed on OceanBase V4.2.5.3.
+- Query plan errors due to type mismatch: `Long` cannot be cast to `Integer`.
+- Error when auto-suggesting view names in cross-database queries: “view does not exist.”
+- Unable to estimate affected rows for DML statements in OceanBase Oracle compatible mode.
+- Partitioning plan tasks failed when the target table did not exist.
+- Periodic tasks could not be deleted after the associated database was deleted.
+- When archiving LOB data on OceanBase V4.3.5.1 with `supportLobLocator=false`, source data was not deleted.
+- Archiving failed for TIMESTAMP value `'0000-00-00 00:00:00'`.
+- Retry actions in archiving/cleanup tasks resulted in inconsistent subtask and execution statuses.
+- OAuth2 login failed to load user roles.
+- Unable to modify the default "Query Result Row Limit."
+- Notification messages were sometimes sent multiple times.
+- Missing post-cleanup success configuration option for data archiving tasks.
+- Notifications were not sent when multi-database changes failed.
+- Extra semicolon appeared when viewing functions or procedures.
+- Failed to import stored procedures containing escape characters like `'\\'` or `'\'`.
+- Improved CSV line ending handling across different data sources.
+- `kill session` operation may fail during online schema changes.
+
+### Security Enhancements
+
+- Upgraded Tomcat to version 9.0.99.
+- Fixed a potential horizontal privilege escalation issue.
+
 
 ## 4.3.3 (2025-01-13)
 

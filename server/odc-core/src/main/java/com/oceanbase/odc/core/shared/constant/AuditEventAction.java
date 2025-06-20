@@ -422,6 +422,10 @@ public enum AuditEventAction implements Translatable {
 
     DELETE_DATABASE_CHANGE_CHANGING_ORDER_TEMPLATE,
 
+    BATCH_TERMINAL_TASKS,
+
+    BATCH_EXPORT_TASKS
+
     ;
 
     @Override

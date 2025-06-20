@@ -47,6 +47,10 @@ import com.oceanbase.tools.dbbrowser.model.DBForeignKeyModifyRule;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
 import com.oceanbase.tools.dbbrowser.model.DBIndexType;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecord;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
@@ -220,8 +224,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         sb.append(" WHERE OWNER=");
         sb.value(schemaName);
         if (StringUtils.isNotBlank(tableNameLike)) {
-            sb.append(" AND TABLE_NAME LIKE ");
-            sb.value(tableNameLike);
+            sb.append(" AND ").like("TABLE_NAME", tableNameLike);
         }
         sb.append(" ORDER BY TABLE_NAME ASC");
         return jdbcOperations.queryForList(sb.toString(), String.class);
@@ -240,8 +243,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
             sb.value(schemaName);
         }
         if (StringUtils.isNotBlank(tableNameLike)) {
-            sb.append(" AND TABLE_NAME LIKE ");
-            sb.value(tableNameLike);
+            sb.append(" AND ").like("TABLE_NAME", tableNameLike);
         }
         sb.append(" ORDER BY schema_name, type, name");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
@@ -282,25 +284,29 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     public List<DBObjectIdentity> listAllViews(String viewNameLike) {
         OracleSqlBuilder sb = new OracleSqlBuilder();
         sb.append("select OWNER as schema_name, VIEW_NAME as name, 'VIEW' as type from ")
-                .append(dataDictTableNames.VIEWS())
-                .append(" where VIEW_NAME LIKE ")
-                .value('%' + viewNameLike + '%')
-                .append("  order by name asc");
+                .append(dataDictTableNames.VIEWS());
+        if (StringUtils.isNotBlank(viewNameLike)) {
+            sb.append(" WHERE ").like("VIEW_NAME", viewNameLike);
+        }
+        sb.append("  order by name asc");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
     }
 
     @Override
-    public List<DBObjectIdentity> listAllUserViews() {
+    public List<DBObjectIdentity> listAllUserViews(String viewNameLike) {
         OracleSqlBuilder sb = new OracleSqlBuilder();
         sb.append("select OWNER as schema_name, 'VIEW' as type, VIEW_NAME as name");
         sb.append(" from ");
         sb.append(dataDictTableNames.VIEWS());
+        if (StringUtils.isNotBlank(viewNameLike)) {
+            sb.append(" WHERE ").like("VIEW_NAME", viewNameLike);
+        }
         sb.append(" ORDER BY schema_name, type, name");
         return jdbcOperations.query(sb.toString(), new BeanPropertyRowMapper<>(DBObjectIdentity.class));
     }
 
     @Override
-    public List<DBObjectIdentity> listAllSystemViews() {
+    public List<DBObjectIdentity> listAllSystemViews(String viewNameLike) {
         return Collections.emptyList();
     }
 
@@ -314,6 +320,41 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
                 .append(dataDictTableNames.VIEWS())
                 .append(" where OWNER='SYS' ORDER BY VIEW_NAME");
         return jdbcOperations.queryForList(sb.toString(), String.class);
+    }
+
+    @Override
+    public List<DBObjectIdentity> listMViews(String schemaName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public List<DBObjectIdentity> listAllMViewsLike(String mViewNameLike) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public Boolean refreshMVData(DBMViewRefreshParameter parameter) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public DBMaterializedView getMView(String schemaName, String mViewName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public List<DBTableConstraint> listMViewConstraints(String schemaName, String mViewName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public List<DBMViewRefreshRecord> listMViewRefreshRecords(DBMViewRefreshRecordParam param) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public List<DBTableIndex> listMViewIndexes(String schemaName, String mViewName) {
+        throw new UnsupportedOperationException("not support yet");
     }
 
     @Override
@@ -651,6 +692,16 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public List<DBTableColumn> listBasicExternalTableColumns(String schemaName, String externalTableName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public Map<String, List<DBTableColumn>> listBasicMViewColumns(String schemaName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public List<DBTableColumn> listBasicMViewColumns(String schemaName, String externalTableName) {
         throw new UnsupportedOperationException("not support yet");
     }
 

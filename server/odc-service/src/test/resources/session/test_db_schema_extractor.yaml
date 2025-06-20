@@ -364,4 +364,37 @@
   expected:
     - schema: DEFAULT_SCHEMA
       table: ~
-
+#create materialized view for ob mysql and ob oracle
+- id: 45
+  dialect_type: OB_MYSQL
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - "CREATE MATERIALIZED VIEW MV1 AS SELECT * FROM TABLE1;"
+  expected:
+      - schema: DEFAULT_SCHEMA
+        table: MV1
+- id: 46
+  dialect_type: OB_ORACLE
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - "CREATE MATERIALIZED VIEW MV1 AS SELECT * FROM TABLE1;"
+  expected:
+    - schema: DEFAULT_SCHEMA
+      table: MV1
+#drop materialized view for ob mysql and ob oracle
+- id: 47
+  dialect_type: OB_MYSQL
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - "DROP MATERIALIZED VIEW MV1;"
+  expected:
+    - schema: DEFAULT_SCHEMA
+      table: MV1
+- id: 48
+  dialect_type: OB_ORACLE
+  default_schema: DEFAULT_SCHEMA
+  sqls:
+    - "DROP MATERIALIZED VIEW MV1;"
+  expected:
+    - schema: DEFAULT_SCHEMA
+      table: MV1

@@ -47,4 +47,5 @@ public class QueryScheduleTaskParams {
 
     // inner use
     private Set<Long> scheduleIds;
+    private Set<String> jobGroups;
 }

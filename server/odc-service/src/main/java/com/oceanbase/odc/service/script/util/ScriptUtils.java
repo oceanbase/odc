@@ -16,9 +16,17 @@
 package com.oceanbase.odc.service.script.util;
 
 import java.io.File;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
+import java.util.UUID;
 
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.core.shared.constant.AuditEventAction;
 import com.oceanbase.odc.service.script.model.ScriptConstants;
+
+import cn.hutool.core.lang.Tuple;
 
 /**
  * @Author: Lebie
@@ -26,8 +34,24 @@ import com.oceanbase.odc.service.script.model.ScriptConstants;
  * @Description: []
  */
 public class ScriptUtils {
+    private static final String SCRIPT_BATCH_DOWNLOAD_DIRECTORY = "temp_dir/script_download";
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+
     public static String getPersonalBucketName(String userIdStr) {
         PreConditions.notEmpty(userIdStr, "userIdStr");
         return ScriptConstants.SCRIPT_BASE_BUCKET.concat(File.separator).concat(userIdStr);
+    }
+
+    public static Tuple getScriptBatchDownloadDirectoryAndZipFile() {
+        int hashCode = UUID.randomUUID().hashCode();
+        ZonedDateTime nowInShanghai = ZonedDateTime.now(ZoneId.systemDefault());
+        String name = String.format("%s_%s", AuditEventAction.DOWNLOAD_SCRIPT.getLocalizedMessage(),
+                nowInShanghai.format(FORMATTER));
+        return new Tuple(String.format("%s/%s/%s/", SCRIPT_BATCH_DOWNLOAD_DIRECTORY, hashCode, name),
+                String.format("%s/%s/%s.zip", SCRIPT_BATCH_DOWNLOAD_DIRECTORY, hashCode, name));
+    }
+
+    public static String getScriptBatchDownloadDirectory() {
+        return SCRIPT_BATCH_DOWNLOAD_DIRECTORY;
     }
 }

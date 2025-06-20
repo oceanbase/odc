@@ -19,6 +19,7 @@ import java.util.Map;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
+import com.oceanbase.odc.service.sqlcheck.SqlCheckRuleContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRuleFactory;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
 import com.oceanbase.odc.service.sqlcheck.rule.MySQLRestrictTableAutoIncrement;
@@ -33,7 +34,9 @@ public class RestrictTableAutoIncrementFactory implements SqlCheckRuleFactory {
     }
 
     @Override
-    public SqlCheckRule generate(@NonNull DialectType dialectType, Map<String, Object> parameters) {
+    public SqlCheckRule generate(@NonNull SqlCheckRuleContext sqlCheckRuleContext) {
+        DialectType dialectType = sqlCheckRuleContext.getDialectType();
+        Map<String, Object> parameters = sqlCheckRuleContext.getParameters();
         int initValue;
         String key = getParameterNameKey("init-value");
         if (parameters == null || parameters.isEmpty() || parameters.get(key) == null) {

@@ -269,6 +269,7 @@ public class ExportOutput {
         });
 
         if (manifestPaths.isEmpty()) {
+            log.info("Manifest file not found, {}", parentDir.getAbsolutePath());
             return null;
         }
         if (manifestPaths.size() != 1) {
@@ -280,6 +281,7 @@ public class ExportOutput {
     private BinaryFile<Manifest> getManifest(ZipFileTree tree) {
         List<ZipElement> nodes = tree.filter(zipEltNode -> MANIFEST.equals(zipEltNode.getName()));
         if (nodes.isEmpty()) {
+            log.info("Checkpoint file not found, {}", tree.getZipFile().getName());
             return null;
         }
         if (nodes.size() != 1) {

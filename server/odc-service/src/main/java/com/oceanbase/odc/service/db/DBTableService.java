@@ -15,16 +15,19 @@
  */
 package com.oceanbase.odc.service.db;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.stereotype.Service;
 
@@ -41,11 +44,11 @@ import com.oceanbase.odc.core.shared.model.TableIdentity;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
+import com.oceanbase.odc.service.db.model.DatabaseAndTables;
 import com.oceanbase.odc.service.db.model.GenerateTableDDLResp;
 import com.oceanbase.odc.service.db.model.GenerateUpdateTableDDLReq;
 import com.oceanbase.odc.service.db.model.UpdateTableDdlCheck;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
-import com.oceanbase.odc.service.session.ConnectConsoleService;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
 import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
@@ -64,9 +67,6 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @SkipAuthorize("inside connect session")
 public class DBTableService {
-    @Autowired
-    private ConnectConsoleService consoleService;
-
     /**
      * show tables from schemaName like tableName
      *
@@ -195,7 +195,7 @@ public class DBTableService {
                         .syncExternalTableFiles(con, schemaName, externalTableName));
     }
 
-    private String checkUpdateDDL(DialectType dialectType, String ddl) {
+    public String checkUpdateDDL(DialectType dialectType, String ddl) {
         boolean createIndex = false;
         boolean dropIndex = false;
         for (String s : SqlUtils.split(dialectType, ddl, ";")) {
@@ -230,6 +230,26 @@ public class DBTableService {
     public Boolean isLowerCaseTableName(@NotNull ConnectionSession connectionSession) {
         DBSchemaAccessor schemaAccessor = DBSchemaAccessors.create(connectionSession);
         return schemaAccessor.isLowerCaseTableName();
+    }
+
+    public List<DatabaseAndTables> generateDatabaseAndTables(@NotNull DBSchemaAccessor accessor,
+            @NotNull String tableNameLike,
+            @NotNull List<String> existedDatabases) {
+        List<DBObjectIdentity> existedTablesIdentities = accessor.listTables(null, tableNameLike).stream()
+                .filter(identity -> !StringUtils.endsWithIgnoreCase(identity.getName(),
+                        OdcConstants.VALIDATE_DDL_TABLE_POSTFIX)
+                        && !StringUtils.startsWithIgnoreCase(identity.getName(), OdcConstants.CONTAINER_TABLE_PREFIX)
+                        && !StringUtils.startsWithIgnoreCase(identity.getName(),
+                                OdcConstants.MATERIALIZED_VIEW_LOG_PREFIX))
+                .collect(Collectors.toList());
+        Map<String, List<String>> schema2ExistedTables = new HashMap<>();
+        existedTablesIdentities.forEach(item -> {
+            schema2ExistedTables.computeIfAbsent(item.getSchemaName(), t -> new ArrayList<>()).add(item.getName());
+        });
+        return existedDatabases.stream()
+                .map(schema -> new DatabaseAndTables(schema, Optional.ofNullable(schema2ExistedTables.get(schema))
+                        .orElse(Collections.emptyList())))
+                .collect(Collectors.toList());
     }
 
     private TableExtensionPoint getTableExtensionPoint(@NotNull ConnectionSession connectionSession) {

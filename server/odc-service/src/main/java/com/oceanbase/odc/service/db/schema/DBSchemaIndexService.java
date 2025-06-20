@@ -199,6 +199,25 @@ public class DBSchemaIndexService {
         return resp;
     }
 
+    public Boolean syncCurrentUserVisibleDatabases() {
+        this.databaseService.refreshExpiredPendingDBObjectStatus();
+        long userId = authenticationFacade.currentUserId();
+        if (authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM) {
+            Set<Long> joinedProjectIds = projectService.getMemberProjectIds(userId);
+            if (CollectionUtils.isEmpty(joinedProjectIds)) {
+                return true;
+            }
+            dbSchemaSyncTaskManager
+                    .submitTaskByDatabases(
+                            databaseService.listExistAndNotPendingDatabasesByProjectIdIn(joinedProjectIds));
+        } else {
+            dbSchemaSyncTaskManager
+                    .submitTaskByDatabases(databaseService.listExistAndNotPendingDatabasesByOrganizationId(
+                            authenticationFacade.currentOrganizationId()));
+        }
+        return true;
+    }
+
     public Boolean syncDatabaseObjects(@NonNull @Valid SyncDBObjectReq req) {
         this.databaseService.refreshExpiredPendingDBObjectStatus();
         Set<Database> databases = new HashSet<>();

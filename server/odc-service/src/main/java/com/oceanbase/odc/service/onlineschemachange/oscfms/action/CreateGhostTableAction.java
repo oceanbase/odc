@@ -125,8 +125,20 @@ public class CreateGhostTableAction implements Action<OscActionContext, OscActio
         aMinusB.removeAll(new ArrayList<>(newTableColumns));
 
         if (!aMinusB.isEmpty()) {
-            throw new UnsupportedException(ErrorCodes.OscColumnNameInconsistent,
-                    null, String.format("Column [%s] is not found in new table.", String.join(",", aMinusB)));
+            // add column and drop column can't do in same time
+            if (originTableColumns.containsAll(newTableColumns)) {
+                taskParam.setFilterColumns(newTableColumns);
+                log.info(
+                        "drop column found for osc task, database = {}, origin table name = {}, new table name = {}, drop columns = {}",
+                        taskParam.getDatabaseName(), taskParam.getOriginTableName(), taskParam.getNewTableName(),
+                        aMinusB);
+            } else {
+                throw new UnsupportedException(ErrorCodes.OscColumnNameInconsistent,
+                        null,
+                        String.format(
+                                "Add and drop column can't do in same time, Column [%s] is not found in new table.",
+                                String.join(",", aMinusB)));
+            }
         }
 
         List<String> bMinusA = new ArrayList<>(newTableColumns);
@@ -144,6 +156,5 @@ public class CreateGhostTableAction implements Action<OscActionContext, OscActio
                                         String.join(",", p.getColumnNames())));
                     }
                 });
-
     }
 }

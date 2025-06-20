@@ -18,7 +18,7 @@
             [%date{yyyy-MM-dd HH:mm:ss.SSS z}][%thread][%X{traceId},%X{spanId},%X{requestId}][%X{taskId}][%level][%class][%line]: %message%n
         </Property>
         <Property name="TASK_LOG_PATTERN">
-            [%d{yyyy-MM-dd HH:mm:ss z}] [%X{taskId}] [%p][%class][%line] %m%n
+            [%d{yyyy-MM-dd HH:mm:ss z}][%thread][%X{taskId}] [%p][%class][%line] %m%n
         </Property>
     </Properties>
 
@@ -53,7 +53,7 @@
                                  fileName="${LOG_DIRECTORY}/${ctx:taskId}/task-log.all"
                                  filePattern="${LOG_DIRECTORY}/${ctx:taskId}/${date:yyyy-MM}/task-log-%d{yyyy-MM-dd}-%i.all.gz">
                         <PatternLayout>
-                            <pattern>[%d{yyyy-MM-dd HH:mm:ss z}] [%X{taskId}] [%p] %m%n</pattern>
+                            <pattern>[%d{yyyy-MM-dd HH:mm:ss z}][%thread][%X{taskId}] [%p] %m%n</pattern>
                         </PatternLayout>
                         <Policies>
                             <OnStartupTriggeringPolicy minSize="104857600"/>
@@ -76,7 +76,7 @@
                                  fileName="${LOG_DIRECTORY}/${ctx:taskId}/task-log.warn"
                                  filePattern="${LOG_DIRECTORY}/${ctx:taskId}/${date:yyyy-MM}/task-log-%d{yyyy-MM-dd}-%i.warn.gz">
                         <PatternLayout>
-                            <pattern>[%d{yyyy-MM-dd HH:mm:ss z}] [%X{taskId}] [%p] %m%n</pattern>
+                            <pattern>[%d{yyyy-MM-dd HH:mm:ss z}][%thread][%X{taskId}] [%p] %m%n</pattern>
                         </PatternLayout>
                         <Policies>
                             <OnStartupTriggeringPolicy minSize="104857600"/>

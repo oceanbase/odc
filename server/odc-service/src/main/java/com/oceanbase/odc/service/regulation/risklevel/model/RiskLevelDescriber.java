@@ -16,13 +16,18 @@
 package com.oceanbase.odc.service.regulation.risklevel.model;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 import org.apache.commons.lang3.StringUtils;
+
+import com.oceanbase.odc.service.connection.database.model.Database;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 
 /**
  * @Author: Lebie
@@ -33,6 +38,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode
 public class RiskLevelDescriber implements Serializable {
 
     private static final long serialVersionUID = 1080959497443673210L;
@@ -67,5 +73,20 @@ public class RiskLevelDescriber implements Serializable {
         } else {
             return StringUtils.EMPTY;
         }
+    }
+
+    public static RiskLevelDescriber of(@NonNull Database db, String taskType) {
+        RiskLevelDescriber describer = RiskLevelDescriber.builder()
+                .databaseName(db.getName())
+                .taskType(taskType)
+                .build();
+        if (Objects.nonNull(db.getEnvironment())) {
+            describer.setEnvironmentId(String.valueOf(db.getEnvironment().getId()));
+            describer.setEnvironmentName(db.getEnvironment().getName());
+        }
+        if (Objects.nonNull(db.getProject())) {
+            describer.setProjectName(db.getProject().getName());
+        }
+        return describer;
     }
 }

@@ -104,6 +104,10 @@ public class OnlineSchemaChangeScheduleTaskParameters {
 
     private String extraInfo;
 
+    // column should be replicated when replicate data from origin table to ghost table
+    // only set when column is dropped
+    private List<String> filterColumns;
+
     public String getOriginTableNameWithSchema() {
         return tableNameWithSchema(originTableName);
     }

@@ -15,9 +15,13 @@
  */
 package com.oceanbase.odc.service.regulation.approval;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +32,7 @@ import com.oceanbase.odc.service.regulation.risklevel.RiskLevelService;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskDetectRule;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
+import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriberIdentifier;
 
 /**
  * @Author: Lebie
@@ -69,6 +74,17 @@ public class ApprovalFlowConfigSelector {
          * determine the final selected risk level
          */
         return riskLevelService.findHighestRiskLevel(matched);
+    }
+
+    @SkipAuthorize("internal usage")
+    public Map<RiskLevelDescriberIdentifier, RiskLevel> batchSelect(
+            Collection<RiskLevelDescriberIdentifier> RiskLevelDescriberIdentifiers) {
+        if (CollectionUtils.isEmpty(RiskLevelDescriberIdentifiers)) {
+            return Collections.emptyMap();
+        }
+        List<RiskDetectRule> rules =
+                riskDetectService.listAllByOrganizationId(authenticationFacade.currentOrganizationId());
+        return riskDetectService.batchDetectHighestRiskLevel(rules, RiskLevelDescriberIdentifiers);
     }
 
     @SkipAuthorize("internal usage")

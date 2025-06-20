@@ -77,6 +77,7 @@ import com.oceanbase.odc.core.sql.parser.EmptyAstFactory;
 import com.oceanbase.odc.core.sql.split.OffsetString;
 import com.oceanbase.odc.service.common.util.SqlUtils;
 import com.oceanbase.odc.service.common.util.WebResponseUtils;
+import com.oceanbase.odc.service.config.OrganizationConfigUtils;
 import com.oceanbase.odc.service.config.UserConfigFacade;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.database.model.UnauthorizedDBResource;
@@ -87,6 +88,7 @@ import com.oceanbase.odc.service.db.session.KillResult;
 import com.oceanbase.odc.service.db.session.KillSessionOrQueryReq;
 import com.oceanbase.odc.service.dml.ValueEncodeType;
 import com.oceanbase.odc.service.feature.AllFeatures;
+import com.oceanbase.odc.service.feature.VersionDiffConfigService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.queryprofile.OBQueryProfileManager;
@@ -146,6 +148,10 @@ public class ConnectConsoleService {
     private AuthenticationFacade authenticationFacade;
     @Autowired
     private OBQueryProfileManager profileManager;
+    @Autowired
+    private VersionDiffConfigService versionDiffConfigService;
+    @Autowired
+    private OrganizationConfigUtils organizationConfigUtils;
 
     public SqlExecuteResult queryTableOrViewData(@NotNull String sessionId,
             @NotNull @Valid QueryTableOrViewDataReq req) throws Exception {
@@ -553,6 +559,12 @@ public class ConnectConsoleService {
             log.warn("Failed to init sql type", e);
         }
         try (TraceStage s = watch.start(SqlExecuteStages.INIT_EDITABLE_INFO)) {
+            cxt.computeIfAbsent(VersionDiffConfigService.SUPPORT_EXTERNAL_TABLE,
+                    key -> versionDiffConfigService.isExternalTableSupported(connectionSession.getDialectType(),
+                            ConnectionSessionUtil.getVersion(connectionSession)));
+            cxt.computeIfAbsent(VersionDiffConfigService.SUPPORT_MATERIALIZED_VIEW,
+                    key -> versionDiffConfigService.isMViewSupported(connectionSession.getDialectType(),
+                            ConnectionSessionUtil.getVersion(connectionSession)));
             resultTable = result.initEditableInfo(connectionSession, cxt);
         } catch (Exception e) {
             log.warn("Failed to init editable info", e);
@@ -582,11 +594,7 @@ public class ConnectConsoleService {
 
     private Integer checkQueryLimit(Integer queryLimit) {
         if (Objects.isNull(queryLimit)) {
-            queryLimit = (int) sessionProperties.getResultSetDefaultRows();
-        }
-        // if default rows limit is exceeded than max rows limit, still use max rows limit
-        if (sessionProperties.getResultSetMaxRows() > 0) {
-            return Math.min(queryLimit, (int) sessionProperties.getResultSetMaxRows());
+            queryLimit = organizationConfigUtils.getDefaultQueryLimit();
         }
         return queryLimit;
     }

@@ -19,9 +19,12 @@ import static com.oceanbase.tools.dbbrowser.editor.DBObjectUtilsTest.loadAsStrin
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -29,10 +32,16 @@ import org.junit.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.oceanbase.tools.dbbrowser.env.BaseTestEnv;
+import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecord;
+import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewRefreshMethod;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
@@ -48,22 +57,32 @@ import com.oceanbase.tools.dbbrowser.model.DBVariable;
 import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessors;
+import com.oceanbase.tools.dbbrowser.util.VersionUtils;
+import com.oceanbase.tools.sqlparser.statement.createtable.ColumnAttributes;
 
 import lombok.Data;
 
 /**
+ * TODO: all implementation classes of {@link DBSchemaAccessor} should have a separate test class to
+ * test their methods, and the methods in their test class will only be triggered when the version
+ * of the test data source matches their requirements.
+ * 
  * @author jingtian
  */
 public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     private static final String BASE_PATH = "src/test/resources/table/obmysql/";
     private static String ddl;
     private static String dropTables;
+    private static String dropMVs;
     private static String testProcedureDDL;
     private static String testFunctionDDL;
-    private static List<DataType> verifyDataTypes = new ArrayList<>();
-    private static List<ColumnAttributes> columnAttributes = new ArrayList<>();
+    private static final List<DataType> verifyDataTypes = new ArrayList<>();
+    private static final List<ColumnAttributes> columnAttributes = new ArrayList<>();
     private static final JdbcTemplate jdbcTemplate = new JdbcTemplate(getOBMySQLDataSource());
-    private static DBSchemaAccessor accessor = new DBSchemaAccessors(getOBMySQLDataSource()).createOBMysql();
+    private static final DBSchemaAccessors dbSchemaAccessors = new DBSchemaAccessors(getOBMySQLDataSource());
+    private static final DBSchemaAccessor accessor = dbSchemaAccessors.createOBMysql();
+    private static final boolean isSupportMaterializedView =
+            VersionUtils.isGreaterThanOrEqualsTo(dbSchemaAccessors.getVersion(), "4.3.5.2");
 
     @BeforeClass
     public static void setUp() throws Exception {
@@ -72,6 +91,11 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
 
         dropTables = loadAsString(BASE_PATH + "drop.sql");
         jdbcTemplate.execute(dropTables);
+
+        if (isSupportMaterializedView) {
+            dropMVs = loadAsString(BASE_PATH + "dropMV.sql");
+            jdbcTemplate.execute(dropTables);
+        }
 
         ddl = loadAsString(BASE_PATH + "testTableColumnDDL.sql", BASE_PATH + "testTableIndexDDL.sql",
                 BASE_PATH + "testTableConstraintDDL.sql", BASE_PATH + "testPartitionDDL.sql",
@@ -82,16 +106,181 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
         batchExcuteSql(testProcedureDDL);
         testFunctionDDL = loadAsString(BASE_PATH + "testFunctionDDL.sql");
         batchExcuteSql(testFunctionDDL);
+
+        if (isSupportMaterializedView) {
+            String createMV = loadAsString(BASE_PATH + "testMVDDL.sql");
+            jdbcTemplate.execute(createMV);
+        }
     }
 
     @AfterClass
     public static void tearDown() throws Exception {
         jdbcTemplate.execute(dropTables);
+        if (isSupportMaterializedView) {
+            jdbcTemplate.execute(dropMVs);
+        }
     }
 
     private static void batchExcuteSql(String str) {
         for (String ddl : str.split("/")) {
             jdbcTemplate.execute(ddl);
+        }
+    }
+
+    @Test
+    public void listAllMViewsLike_InputIsEmptyString_Success() {
+        if (isSupportMaterializedView) {
+            List<DBObjectIdentity> dbObjectIdentities = accessor.listAllMViewsLike("");
+            Assert.assertTrue(dbObjectIdentities.size() >= 9);
+        }
+    }
+
+    @Test
+    public void listAllMViewsLike_InputIsNonEmptyString_Success() {
+        if (isSupportMaterializedView) {
+            List<DBObjectIdentity> mViewsContains_ = accessor.listAllMViewsLike("_");
+            Assert.assertTrue(mViewsContains_.size() > 0);
+            Assert.assertTrue(mViewsContains_.stream().allMatch(o -> o.getName().contains("_")));
+        }
+    }
+
+    @Test
+    public void listMViews_Success() {
+        if (isSupportMaterializedView) {
+            List<DBObjectIdentity> dbObjectIdentities = accessor.listMViews(getOBMySQLDataBaseName());
+            Assert.assertEquals(9, dbObjectIdentities.size());
+        }
+    }
+
+    @Test
+    public void refreshMVData_Success() {
+        if (isSupportMaterializedView) {
+            DBMViewRefreshParameter DBMViewRefreshParameter =
+                    new DBMViewRefreshParameter(getOBMySQLDataBaseName(), "test_mv_all_syntax",
+                            DBMaterializedViewRefreshMethod.REFRESH_COMPLETE, 2L);
+            Boolean aBoolean = accessor.refreshMVData(DBMViewRefreshParameter);
+            Assert.assertTrue(aBoolean);
+        }
+    }
+
+    @Test
+    public void getMView_Success() {
+        if (isSupportMaterializedView) {
+            DBMaterializedView test_mv_allSyntax = accessor.getMView(getOBMySQLDataBaseName(), "test_mv_all_syntax");
+            Assert.assertEquals("test_mv_all_syntax", test_mv_allSyntax.getName());
+            Assert.assertEquals(DBMaterializedViewRefreshMethod.REFRESH_COMPLETE,
+                    test_mv_allSyntax.getRefreshMethod());
+            Assert.assertFalse(test_mv_allSyntax.getEnableQueryRewrite());
+            Assert.assertFalse(test_mv_allSyntax.getEnableQueryComputation());
+            Assert.assertEquals(DBMaterializedViewRefreshMethod.REFRESH_COMPLETE,
+                    test_mv_allSyntax.getLastRefreshType());
+            Assert.assertNotNull(test_mv_allSyntax.getLastRefreshStartTime());
+            Assert.assertNotNull(test_mv_allSyntax.getLastRefreshEndTime());
+
+            DBMaterializedView test_mv_computation = accessor.getMView(getOBMySQLDataBaseName(), "test_mv_computation");
+            Assert.assertTrue(test_mv_computation.getEnableQueryComputation());
+
+            DBMaterializedView test_mv_queryRewrite =
+                    accessor.getMView(getOBMySQLDataBaseName(), "test_mv_query_rewrite");
+            Assert.assertTrue(test_mv_queryRewrite.getEnableQueryRewrite());
+
+            DBMaterializedView test_mv_complete = accessor.getMView(getOBMySQLDataBaseName(), "test_mv_complete");
+            Assert.assertEquals(DBMaterializedViewRefreshMethod.REFRESH_COMPLETE,
+                    test_mv_complete.getRefreshMethod());
+
+            DBMaterializedView test_mv_fast = accessor.getMView(getOBMySQLDataBaseName(), "test_mv_fast");
+            Assert.assertEquals(DBMaterializedViewRefreshMethod.REFRESH_FAST, test_mv_fast.getRefreshMethod());
+
+            DBMaterializedView test_mv_force = accessor.getMView(getOBMySQLDataBaseName(), "test_mv_force");
+            Assert.assertEquals(DBMaterializedViewRefreshMethod.REFRESH_FORCE, test_mv_force.getRefreshMethod());
+
+            DBMaterializedView test_mv_never = accessor.getMView(getOBMySQLDataBaseName(), "test_mv_never");
+            Assert.assertEquals(DBMaterializedViewRefreshMethod.NEVER_REFRESH, test_mv_never.getRefreshMethod());
+
+        }
+    }
+
+    @Test
+    public void listTableColumnGroups_stmtIsCreateMaterializedView_Success() {
+        if (isSupportMaterializedView) {
+            List<DBColumnGroupElement> columnGroups =
+                    accessor.listTableColumnGroups(getOBMySQLDataBaseName(), "test_mv_each_column");
+            Assert.assertTrue(columnGroups.get(0).isEachColumn());
+        }
+    }
+
+    @Test
+    public void listMViewRefreshRecords_Success() {
+        if (isSupportMaterializedView) {
+            refreshMVData_Success();
+            DBMViewRefreshRecordParam param =
+                    new DBMViewRefreshRecordParam(getOBMySQLDataBaseName(), "test_mv_all_syntax", 1);
+            List<DBMViewRefreshRecord> dbmViewRefreshRecords = accessor.listMViewRefreshRecords(param);
+            Assert.assertEquals(getOBMySQLDataBaseName(), dbmViewRefreshRecords.get(0).getMvOwner());
+            Assert.assertEquals("test_mv_all_syntax", dbmViewRefreshRecords.get(0).getMvName());
+            Assert.assertEquals("COMPLETE",
+                    dbmViewRefreshRecords.get(0).getRefreshMethod());
+        }
+    }
+
+    @Test
+    public void listBasicMViewColumns_InSchema_Success() {
+        if (isSupportMaterializedView) {
+            Map<String, List<DBTableColumn>> columns = accessor.listBasicMViewColumns(getOBMySQLDataBaseName());
+            Assert.assertTrue(columns.containsKey("test_mv_all_syntax"));
+            Assert.assertTrue(columns.get("test_mv_all_syntax").stream()
+                    .allMatch(column -> column.getSchemaName().equals(getOBMySQLDataBaseName())));
+            Assert.assertEquals(Arrays.asList("prim", "col2", "col3", "col4"), (columns.get("test_mv_all_syntax")
+                    .stream().map(DBTableColumn::getName).collect(Collectors.toList())));
+
+            Assert.assertTrue(columns.containsKey("test_mv_computation"));
+            Assert.assertTrue(columns.get("test_mv_computation").stream()
+                    .allMatch(column -> column.getSchemaName().equals(getOBMySQLDataBaseName())));
+            Assert.assertEquals(Arrays.asList("col1", "count(*)"), (columns.get("test_mv_computation").stream()
+                    .map(DBTableColumn::getName).collect(Collectors.toList())));
+        }
+    }
+
+    @Test
+    public void listBasicMViewColumns_InMView_Success() {
+        if (isSupportMaterializedView) {
+            List<DBTableColumn> columns =
+                    accessor.listBasicMViewColumns(getOBMySQLDataBaseName(), "test_mv_all_syntax");
+            Assert.assertEquals(4, columns.size());
+            List<String> expect = Arrays.asList("prim", "col2", "col3", "col4");
+            columns.forEach(column -> {
+                Assert.assertTrue(expect.contains(column.getName()));
+                Assert.assertEquals(column.getTableName(), "test_mv_all_syntax");
+                Assert.assertEquals(column.getSchemaName(), getOBMySQLDataBaseName());
+            });
+        }
+    }
+
+    @Test
+    public void listMViewConstraints_Success() {
+        if (isSupportMaterializedView) {
+            List<DBTableConstraint> constraints =
+                    accessor.listMViewConstraints(getOBMySQLDataBaseName(), "test_mv_all_syntax");
+            Assert.assertEquals(Collections.emptyList(), constraints);
+        }
+    }
+
+    @Test
+    public void listMViewIndexes_Success() {
+        if (isSupportMaterializedView) {
+            List<DBTableIndex> indexList = accessor.listMViewIndexes(getOBMySQLDataBaseName(), "test_mv_auto_refresh");
+
+            Assert.assertEquals("test_global_idx", indexList.get(0).getName());
+            Assert.assertEquals(getOBMySQLDataBaseName(), indexList.get(0).getSchemaName());
+
+            Assert.assertEquals("test_local_idx", indexList.get(1).getName());
+            Assert.assertEquals(getOBMySQLDataBaseName(), indexList.get(1).getSchemaName());
+
+            Assert.assertEquals("test_eachcolumn_idx", indexList.get(2).getName());
+            Assert.assertEquals(getOBMySQLDataBaseName(), indexList.get(2).getSchemaName());
+
+            Assert.assertEquals("test_allcolumn_idx", indexList.get(3).getName());
+            Assert.assertEquals(getOBMySQLDataBaseName(), indexList.get(3).getSchemaName());
         }
     }
 
@@ -248,8 +437,16 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void listAllSystemViews_Success() {
-        List<DBObjectIdentity> sysViews = accessor.listAllSystemViews();
+        List<DBObjectIdentity> sysViews = accessor.listAllSystemViews(null);
         Assert.assertTrue(sysViews != null && sysViews.size() > 0);
+    }
+
+    @Test
+    public void listSystemViewsWhenViewNameLikeNotNull_Success() {
+        List<DBObjectIdentity> sysViews = accessor.listAllSystemViews("TABLE");
+        if (CollectionUtils.isNotEmpty(sysViews)) {
+            Assert.assertTrue(sysViews.stream().allMatch(o -> o.getName().toUpperCase().contains("TABLE")));
+        }
     }
 
     @Test
@@ -284,6 +481,12 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     public void listTables_Success() {
         List<DBObjectIdentity> tables = accessor.listTables(getOBMySQLDataBaseName(), null);
         Assert.assertTrue(tables != null && tables.size() > 0);
+    }
+
+    @Test
+    public void listTables_InputIsNonEmptyString_Success() {
+        List<DBObjectIdentity> tables = accessor.listTables(getOBMySQLDataBaseName(), "_");
+        Assert.assertTrue(tables.stream().allMatch(o -> o.getName().contains("_")));
     }
 
     @Test

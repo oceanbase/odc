@@ -47,6 +47,10 @@ public class DefaultJobContextBuilder implements JobContextBuilder {
 
     @Override
     public JobContext build(JobEntity jobEntity) {
+        return build(jobEntity, JobConfigurationHolder.getJobConfiguration());
+    }
+
+    public JobContext build(JobEntity jobEntity, JobConfiguration configuration) {
         DefaultJobContext jobContext = new DefaultJobContext();
         jobContext.setJobIdentity(JobIdentity.of(jobEntity.getId()));
         jobContext.setJobClass(jobEntity.getJobClass());
@@ -54,7 +58,7 @@ public class DefaultJobContextBuilder implements JobContextBuilder {
                 new TypeReference<Map<String, String>>() {}));
         jobContext.setJobProperties(jobEntity.getJobProperties());
 
-        HostUrlProvider hostUrlProvider = JobConfigurationHolder.getJobConfiguration().getHostUrlProvider();
+        HostUrlProvider hostUrlProvider = configuration.getHostUrlProvider();
         jobContext.setHostUrls(hostUrlProvider.hostUrl());
         return jobContext;
     }

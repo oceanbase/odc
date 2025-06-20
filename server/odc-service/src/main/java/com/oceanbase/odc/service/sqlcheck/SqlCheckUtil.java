@@ -18,23 +18,35 @@ package com.oceanbase.odc.service.sqlcheck;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.annotation.Nullable;
+import javax.sql.DataSource;
+
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
+import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactories;
 import com.oceanbase.odc.core.sql.parser.AbstractSyntaxTreeFactory;
+import com.oceanbase.odc.core.sql.split.OffsetString;
+import com.oceanbase.odc.core.sql.split.SqlCommentProcessor;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
+import com.oceanbase.odc.service.sqlcheck.factory.SqlAffectedRowsFactory;
 import com.oceanbase.odc.service.sqlcheck.model.CheckResult;
 import com.oceanbase.odc.service.sqlcheck.model.CheckViolation;
 import com.oceanbase.odc.service.sqlcheck.model.SqlCheckRuleType;
+import com.oceanbase.odc.service.sqlcheck.rule.BaseAffectedRowsExceedLimit;
 import com.oceanbase.tools.sqlparser.statement.Expression;
 import com.oceanbase.tools.sqlparser.statement.Statement;
 import com.oceanbase.tools.sqlparser.statement.alter.table.AlterTable;
@@ -240,4 +252,52 @@ public class SqlCheckUtil {
         }
     }
 
+    public static String getDbVersion(ConnectionConfig config, DataSource dataSource) {
+        try {
+            return ConnectionPluginUtil.getInformationExtension(config.getDialectType())
+                    .getDBVersion(dataSource.getConnection());
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static List<OffsetString> splitSql(@NonNull String sqlScript, @NonNull DialectType dialectType,
+            String delimiter) {
+        if (StringUtils.isEmpty(sqlScript)) {
+            return Collections.emptyList();
+        }
+        SqlCommentProcessor processor = new SqlCommentProcessor(dialectType, true, true);
+        processor.setDelimiter(delimiter);
+        StringBuffer buffer = new StringBuffer();
+        List<OffsetString> sqls = processor.split(buffer, sqlScript);
+        String bufferStr = buffer.toString();
+        if (!bufferStr.trim().isEmpty()) {
+            int lastSqlOffset;
+            if (sqls.isEmpty()) {
+                int index = sqlScript.indexOf(bufferStr.trim());
+                lastSqlOffset = index == -1 ? 0 : index;
+            } else {
+                int from = sqls.get(sqls.size() - 1).getOffset() + sqls.get(sqls.size() - 1).getStr().length();
+                int index = sqlScript.indexOf(bufferStr.trim(), from);
+                lastSqlOffset = index == -1 ? from : index;
+            }
+            sqls.add(new OffsetString(lastSqlOffset, bufferStr));
+        }
+        return sqls;
+    }
+
+    @Nullable
+    public static BaseAffectedRowsExceedLimit getAffectedRowsRule(@NonNull Supplier<String> dbVersionSupplier,
+            @NonNull DialectType dialectType, @NonNull JdbcOperations jdbc) {
+        return getAffectedRowsRule(dbVersionSupplier, dialectType, jdbc, null);
+    }
+
+    @Nullable
+    public static BaseAffectedRowsExceedLimit getAffectedRowsRule(@NonNull Supplier<String> dbVersionSupplier,
+            @NonNull DialectType dialectType, @NonNull JdbcOperations jdbc, Map<String, Object> parameters) {
+        SqlCheckRuleContext sqlCheckRuleContext =
+                SqlCheckRuleContext.create(dbVersionSupplier, dialectType, parameters);
+        SqlAffectedRowsFactory sqlAffectedRowsFactory = new SqlAffectedRowsFactory(jdbc);
+        return (BaseAffectedRowsExceedLimit) sqlAffectedRowsFactory.generate(sqlCheckRuleContext);
+    }
 }

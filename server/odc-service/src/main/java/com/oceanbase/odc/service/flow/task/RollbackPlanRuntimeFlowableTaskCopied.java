@@ -159,8 +159,8 @@ public class RollbackPlanRuntimeFlowableTaskCopied extends BaseODCFlowTaskDelega
         Map<String, String> jobParams = new HashMap<>();
         jobParams.put(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY,
                 JobUtils.toJson(buildRollbackPlanTaskParameters(entity, config)));
-        jobParams.put(JobParametersKeyConstants.TASK_EXECUTION_TIMEOUT_MILLIS,
-                String.valueOf(rollbackProperties.getMaxTimeoutMillisecond()));
+        jobParams.put(JobParametersKeyConstants.TASK_EXECUTION_END_TIME_MILLIS,
+                String.valueOf(System.currentTimeMillis() + rollbackProperties.getMaxTimeoutMillisecond()));
         return DefaultJobDefinition.builder()
                 .jobClass(RollbackPlanTask.class)
                 .jobType(TaskType.GENERATE_ROLLBACK.name())

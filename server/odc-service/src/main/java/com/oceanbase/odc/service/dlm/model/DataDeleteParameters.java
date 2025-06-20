@@ -15,13 +15,11 @@
  */
 package com.oceanbase.odc.service.dlm.model;
 
-import java.util.List;
-
 import javax.validation.constraints.NotNull;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.service.connection.database.model.Database;
-import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
-import com.oceanbase.tools.migrator.common.enums.ShardingStrategy;
 
 import lombok.Data;
 
@@ -31,64 +29,21 @@ import lombok.Data;
  * @Descripition:
  */
 @Data
-public class DataDeleteParameters implements ScheduleTaskParameters {
+public class DataDeleteParameters extends DLMBaseParameters {
 
     @NotNull
     private Long databaseId;
 
     private Long targetDatabaseId;
-
     // inner init
+    @JsonProperty(access = Access.READ_ONLY)
     private Database database;
-
     // inner init
+    @JsonProperty(access = Access.READ_ONLY)
     private Database targetDatabase;
-
-    private List<OffsetConfig> variables;
-
-    private List<DataArchiveTableConfig> tables;
-
-    @NotNull
-    private RateLimitConfiguration rateLimit;
 
     private Boolean deleteByUniqueKey = true;
 
-    private ShardingStrategy shardingStrategy;
-
     private Boolean needCheckBeforeDelete = false;
 
-    private boolean needPrintSqlTrace = false;
-
-    private int readThreadCount;
-
-    private int writeThreadCount;
-
-    private int queryTimeout;
-
-    private int scanBatchSize;
-
-    private Long timeoutMillis;
-
-    // default cpu limit is 25%
-    private int cpuLimit = 25;
-
-    private boolean fullDatabase = false;
-
-    public String getDatabaseName() {
-        return database == null ? null : database.getName();
-    }
-
-    public String getTargetDatabaseName() {
-        return targetDatabase == null ? null : targetDatabase.getName();
-    }
-
-    public String getSourceDataSourceName() {
-        return database == null || database.getDataSource() == null ? null
-                : database.getDataSource().getName();
-    }
-
-    public String getTargetDataSourceName() {
-        return targetDatabase == null || targetDatabase.getDataSource() == null ? null
-                : targetDatabase.getDataSource().getName();
-    }
 }

@@ -51,14 +51,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class BaseOBGetDBTableByParser implements GetDBTableByParser {
 
-    public final DBTablePartition getPartition() {
-        DBTablePartition partition = new DBTablePartition();
-        DBTablePartitionOption partitionOption = new DBTablePartitionOption();
-        partitionOption.setType(DBTablePartitionType.NOT_PARTITIONED);
-        partition.setPartitionOption(partitionOption);
-        List<DBTablePartitionDefinition> partitionDefinitions = new ArrayList<>();
-        partition.setPartitionDefinitions(partitionDefinitions);
+    public final DBTablePartition getPartition(@NonNull Partition partitionStmt) {
+        DBTablePartition partition = initDbTablePartition();
+        fillDbTablePartition(partition, partitionStmt);
+        return partition;
+    }
 
+    public final DBTablePartition getPartition() {
+        DBTablePartition partition = initDbTablePartition();
         if (Objects.isNull(getCreateTableStmt())) {
             partition.setWarning("Failed to parse table ddl");
             return partition;
@@ -67,6 +67,11 @@ public abstract class BaseOBGetDBTableByParser implements GetDBTableByParser {
         if (Objects.isNull(partitionStmt)) {
             return partition;
         }
+        fillDbTablePartition(partition, partitionStmt);
+        return partition;
+    }
+
+    private void fillDbTablePartition(DBTablePartition partition, Partition partitionStmt) {
         parsePartitionStmt(partition, partitionStmt);
 
         /**
@@ -82,6 +87,15 @@ public abstract class BaseOBGetDBTableByParser implements GetDBTableByParser {
             }
         }
         fillSubPartitions(partition, partitionStmt);
+    }
+
+    private DBTablePartition initDbTablePartition() {
+        DBTablePartition partition = new DBTablePartition();
+        DBTablePartitionOption partitionOption = new DBTablePartitionOption();
+        partitionOption.setType(DBTablePartitionType.NOT_PARTITIONED);
+        partition.setPartitionOption(partitionOption);
+        List<DBTablePartitionDefinition> partitionDefinitions = new ArrayList<>();
+        partition.setPartitionDefinitions(partitionDefinitions);
         return partition;
     }
 

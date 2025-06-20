@@ -52,7 +52,8 @@ public class DefaultJobSubmitter implements JobSubmitter {
         Map<String, String> jobData = new HashMap<>();
         jobData.put(JobParametersKeyConstants.META_TASK_PARAMETER_JSON, parametersJson);
         if (timeoutMillis != null) {
-            jobData.put(JobParametersKeyConstants.TASK_EXECUTION_TIMEOUT_MILLIS, timeoutMillis.toString());
+            jobData.put(JobParametersKeyConstants.TASK_EXECUTION_END_TIME_MILLIS,
+                    String.valueOf(System.currentTimeMillis() + timeoutMillis));
         }
         Map<String, String> jobProperties = new HashMap<>();
         if (provider != null && StringUtils.isNotEmpty(region)) {

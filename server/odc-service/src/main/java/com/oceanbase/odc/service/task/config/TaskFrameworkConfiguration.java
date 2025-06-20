@@ -44,6 +44,7 @@ import com.oceanbase.odc.service.task.schedule.JobCredentialProvider;
 import com.oceanbase.odc.service.task.schedule.JobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 import com.oceanbase.odc.service.task.schedule.MonitorProcessRateLimiter;
+import com.oceanbase.odc.service.task.schedule.MonitorProcessRateLimiterV2;
 import com.oceanbase.odc.service.task.schedule.StartJobRateLimiter;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.ulisesbocchio.jasyptspringboot.properties.JasyptEncryptorConfigurationProperties;
@@ -68,9 +69,15 @@ public class TaskFrameworkConfiguration {
     }
 
     @Bean
-    @ConditionalOnBean(TaskFrameworkService.class)
-    public StartJobRateLimiter monitorProcessRateLimiter(@Autowired TaskFrameworkService taskFrameworkService) {
-        return new MonitorProcessRateLimiter(TaskFrameworkPropertiesSupplier.getSupplier(), taskFrameworkService);
+    @ConditionalOnBean({TaskFrameworkService.class, TaskFrameworkProperties.class})
+    public StartJobRateLimiter monitorProcessRateLimiter(@Autowired TaskFrameworkService taskFrameworkService,
+            @Autowired TaskFrameworkProperties taskFrameworkProperties) {
+        if (!taskFrameworkProperties.isEnableTaskSupervisorAgent()) {
+            return new MonitorProcessRateLimiter(TaskFrameworkPropertiesSupplier.getSupplier(), taskFrameworkService);
+        } else {
+            return new MonitorProcessRateLimiterV2(TaskFrameworkPropertiesSupplier.getSupplier(), taskFrameworkService,
+                    taskFrameworkProperties.getMaxAllowRunningJobs());
+        }
     }
 
     @Bean

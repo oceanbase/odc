@@ -49,9 +49,17 @@ public interface DatabaseRepository extends JpaRepository<DatabaseEntity, Long>,
 
     List<DatabaseEntity> findByProjectIdAndExisted(Long projectId, Boolean existed);
 
+    List<DatabaseEntity> findByProjectIdInAndExistedAndObjectSyncStatusNot(Collection<Long> projectIds, Boolean existed,
+            DBObjectSyncStatus dbObjectSyncStatus);
+
+    List<DatabaseEntity> findByOrganizationIdAndExistedAndObjectSyncStatusNot(Long organizationId, Boolean existed,
+            DBObjectSyncStatus dbObjectSyncStatus);
+
     List<DatabaseEntity> findByIdIn(Collection<Long> ids);
 
     List<DatabaseEntity> findByNameIn(Collection<String> name);
+
+    List<DatabaseEntity> findByIdInAndProjectIdIn(Collection<Long> ids, Collection<Long> projectIds);
 
     @Modifying
     @Transactional
@@ -115,4 +123,8 @@ public interface DatabaseRepository extends JpaRepository<DatabaseEntity, Long>,
     int setEnvironmentIdByConnectionId(@Param("environmentId") Long environmentId,
             @Param("connectionId") Long connectionId);
 
+    @Modifying
+    @Transactional
+    @Query(value = "update connect_database t set t.remark = :remark where t.id in (:ids)", nativeQuery = true)
+    int setDatabaseRemarkByIdIn(@Param("ids") Collection<Long> databaseIds, @Param("remark") String databaseRemark);
 }

@@ -44,8 +44,13 @@ import com.oceanbase.tools.sqlparser.adapter.oracle.OracleFromReferenceFactory;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Alter_table_actionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_database_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_index_stmtContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Create_mview_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Database_factorContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Dot_relation_factorContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Drop_function_stmtContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Drop_procedure_stmtContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Drop_trigger_stmtContext;
+import com.oceanbase.tools.sqlparser.obmysql.OBParser.Drop_view_stmtContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Normal_relation_factorContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Partition_optionContext;
 import com.oceanbase.tools.sqlparser.obmysql.OBParser.Relation_factorContext;
@@ -207,24 +212,35 @@ public class DBSchemaExtractor {
         }
 
         @Override
-        public RelationFactor visitDrop_function_stmt(
-                com.oceanbase.tools.sqlparser.obmysql.OBParser.Drop_function_stmtContext ctx) {
+        public RelationFactor visitCreate_mview_stmt(Create_mview_stmtContext ctx) {
+            addRelationFactor(MySQLFromReferenceFactory.getRelationFactor(ctx.view_name().relation_factor()));
+            return null;
+        }
+
+        @Override
+        public RelationFactor visitDrop_view_stmt(Drop_view_stmtContext ctx) {
+            ctx.table_list().relation_factor()
+                    .forEach(item -> addRelationFactor(MySQLFromReferenceFactory.getRelationFactor(item)));
+            return null;
+        }
+
+
+        @Override
+        public RelationFactor visitDrop_function_stmt(Drop_function_stmtContext ctx) {
             RelationFactor relationFactor = MySQLFromReferenceFactory.getRelationFactor(
                     ctx.relation_factor().normal_relation_factor());
             return extractIdentityExceptTableAndView(relationFactor);
         }
 
         @Override
-        public RelationFactor visitDrop_procedure_stmt(
-                com.oceanbase.tools.sqlparser.obmysql.OBParser.Drop_procedure_stmtContext ctx) {
+        public RelationFactor visitDrop_procedure_stmt(Drop_procedure_stmtContext ctx) {
             RelationFactor relationFactor = MySQLFromReferenceFactory.getRelationFactor(
                     ctx.relation_factor().normal_relation_factor());
             return extractIdentityExceptTableAndView(relationFactor);
         }
 
         @Override
-        public RelationFactor visitDrop_trigger_stmt(
-                com.oceanbase.tools.sqlparser.obmysql.OBParser.Drop_trigger_stmtContext ctx) {
+        public RelationFactor visitDrop_trigger_stmt(Drop_trigger_stmtContext ctx) {
             RelationFactor relationFactor = MySQLFromReferenceFactory.getRelationFactor(
                     ctx.relation_factor().normal_relation_factor());
             return extractIdentityExceptTableAndView(relationFactor);
@@ -400,6 +416,18 @@ public class DBSchemaExtractor {
 
         private OBOracleRelationFactorVisitor(String defaultSchema) {
             this.defaultSchema = defaultSchema;
+        }
+
+        @Override
+        public RelationFactor visitCreate_mview_stmt(OBParser.Create_mview_stmtContext ctx) {
+            addRelationFactor(OracleFromReferenceFactory.getRelationFactor(
+                    ctx.view_name().relation_factor()));
+            return null;
+        }
+
+        public RelationFactor visitDrop_view_stmt(OBParser.Drop_view_stmtContext ctx) {
+            addRelationFactor(OracleFromReferenceFactory.getRelationFactor(ctx.relation_factor()));
+            return null;
         }
 
         @Override

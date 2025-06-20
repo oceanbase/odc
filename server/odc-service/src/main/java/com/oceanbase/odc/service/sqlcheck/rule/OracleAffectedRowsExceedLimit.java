@@ -114,7 +114,16 @@ public class OracleAffectedRowsExceedLimit extends BaseAffectedRowsExceedLimit {
         String getPlanSql =
                 "SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY('PLAN_TABLE', '" + ODC_TEMP_EXPLAIN_STATEMENT_ID + "', 'ALL'))";
         List<String> queryResults = jdbcOperations.query(getPlanSql, (rs, rowNum) -> rs.getString("PLAN_TABLE_OUTPUT"));
-        return getOBAndOracleAffectRowsFromResult(queryResults);
+        return getOBAndOracleAffectRowsFromResult(queryResults, this::containsAffectRowsColumnForOracle,
+                this::isAffectRowsColumnForOracle);
+    }
+
+    private boolean containsAffectRowsColumnForOracle(String row) {
+        return row.contains("Rows");
+    }
+
+    private boolean isAffectRowsColumnForOracle(String column) {
+        return column.trim().equals("Rows");
     }
 
 }

@@ -74,10 +74,12 @@ import com.oceanbase.odc.service.common.util.SidUtils;
 import com.oceanbase.odc.service.common.util.WebRequestUtils;
 import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.connection.model.CreateSessionReq;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.session.ConnectSessionService;
+import com.oceanbase.odc.service.session.factory.DefaultConnectSessionIdGenerator;
 import com.oceanbase.odc.service.session.model.AsyncExecuteResultResp;
 import com.oceanbase.odc.service.session.model.SqlAsyncExecuteResp;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
@@ -306,9 +308,7 @@ public class AuditEventAspect {
         if (StringUtils.isNotBlank(auditEventMeta.getDatabaseIdExtractExpression())) {
             Long databaseId = parseDatabaseId(auditEventMeta, method, args);
             if (Objects.nonNull(databaseId)) {
-                DatabaseEntity database =
-                        databaseRepository.findById(databaseId).orElseThrow(() -> new NotFoundException(
-                                ResourceType.ODC_DATABASE, "id", databaseId));
+                DatabaseEntity database = getDatabaseEntityById(databaseId);
                 auditEvent.setDatabaseId(databaseId);
                 auditEvent.setDatabaseName(database.getName());
                 setConnectionRelatedProperties(auditEvent, String.valueOf(database.getConnectionId()));
@@ -318,6 +318,13 @@ public class AuditEventAspect {
         if (StringUtils.isNotBlank(auditEventMeta.getSidExtractExpression())) {
             String sid = parseSid(auditEventMeta, method, args);
             if (StringUtils.isNotEmpty(sid)) {
+                // sid content contains "sid:", so we need to parse it
+                String sessionId = SidUtils.getSessionId(sid);
+                CreateSessionReq req = new DefaultConnectSessionIdGenerator().getKeyFromId(sessionId);
+                Long databaseId = req.getDbId();
+                DatabaseEntity database = getDatabaseEntityById(databaseId);
+                auditEvent.setDatabaseId(databaseId);
+                auditEvent.setDatabaseName(database.getName());
                 auditEvent = setConnectionRelatedProperties(auditEvent, sid);
             }
         }
@@ -332,6 +339,11 @@ public class AuditEventAspect {
             }
         }
         return auditEvent;
+    }
+
+    private DatabaseEntity getDatabaseEntityById(Long databaseId) {
+        return databaseRepository.findById(databaseId).orElseThrow(() -> new NotFoundException(
+                ResourceType.ODC_DATABASE, "id", databaseId));
     }
 
     private String parseDetailFromApiParams(Map<String, Object> apiParams) {

@@ -97,6 +97,10 @@ public class ScheduleChangePreprocessor implements InitializingBean {
     }
 
     private void adaptScheduleChangeParams(ScheduleChangeParams req) {
+        if (req.getOperationType() == OperationType.DELETE) {
+            // datasource invalid, database info was deleted
+            return;
+        }
         Database srcDb = databaseService.innerDetailForTask(getTargetDatabaseId(req));
         req.setProjectId(srcDb.getProject().getId());
         req.setProjectName(srcDb.getProject().getName());

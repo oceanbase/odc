@@ -43,16 +43,18 @@ function main() {
         ;;
     Xset-release)
         local release_id="$2"
+        local maven_extra_args=("${@:3}")
+        echo "maven_extra_args=${maven_extra_args[@]}"
         if [ -z "${release_id}" ]; then
             release_id=$(date +%Y%m%d)
             echo "release_id not set, use current date ${release_id}"
         fi
         #e.g. 2.3.3-SNAPSHOT --> cut to 2.3.3
-        local main_version="$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout | cut -d - -f 1)"
+        local main_version="$(mvn ${maven_extra_args[@]} help:evaluate -Dexpression=project.version -q -DforceStdout | cut -d - -f 1)"
         local new_version="${main_version}-${release_id}"
         echo "release $new_version"
-        mvn versions:set -DnewVersion="${new_version}"
-        mvn versions:commit
+        mvn ${maven_extra_args[@]} versions:set -DnewVersion="${new_version}"
+        mvn ${maven_extra_args[@]} versions:commit
         set_rpm_version "${new_version}"
         ;;
     Xshow-version)

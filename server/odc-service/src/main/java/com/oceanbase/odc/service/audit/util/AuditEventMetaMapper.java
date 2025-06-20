@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.audit.util;
 
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 
 import com.oceanbase.odc.metadb.audit.AuditEventMetaEntity;
@@ -25,6 +26,8 @@ import com.oceanbase.odc.service.audit.model.AuditEventMeta;
 public interface AuditEventMetaMapper {
     AuditEventMetaMapper INSTANCE = Mappers.getMapper(AuditEventMetaMapper.class);
 
+    @Mapping(target = "actionName", expression = "java(entity.getAction().getLocalizedMessage())")
+    @Mapping(target = "typeName", expression = "java(entity.getType().getLocalizedMessage())")
     AuditEventMeta entityToModel(AuditEventMetaEntity entity);
 
     AuditEventMetaEntity modelToEntity(AuditEventMeta model);
