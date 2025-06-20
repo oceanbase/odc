@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.connection;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -68,6 +69,10 @@ public interface CloudMetadataClient {
      * List all oceanbase instances under an organization
      */
     List<OBInstance> listInstances(Long organizationId);
+
+    default List<OBInstance> listInstancesByProjectId(String projectId) {
+        return Collections.emptyList();
+    }
 
     /**
      * 获取集群下租户列表

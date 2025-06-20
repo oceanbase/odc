@@ -60,16 +60,16 @@ public class UserConfigService {
             .maximumSize(500).expireAfterWrite(60, TimeUnit.SECONDS)
             .build(this::internalGetUserConfigurations);
 
-    private List<Consumer<Configuration>> configurationConsumers = new ArrayList<>();
+    private List<Consumer<Configuration>> defaultConfigurationConsumers = new ArrayList<>();
 
     @SkipAuthorize("odc internal usage")
-    public void addConfigurationConsumer(Consumer<Configuration> consumer) {
-        this.configurationConsumers.add(consumer);
+    public void addDefaultConfigurationConsumer(Consumer<Configuration> consumer) {
+        this.defaultConfigurationConsumers.add(consumer);
     }
 
     @SkipAuthorize("odc internal usage")
     public List<Consumer<Configuration>> getConfigurationConsumer() {
-        return this.configurationConsumers;
+        return this.defaultConfigurationConsumers;
     }
 
     @PostConstruct
@@ -89,6 +89,9 @@ public class UserConfigService {
     public List<Configuration> listDefaultUserConfigurations() {
         List<Configuration> configurations = new ArrayList<>(defaultConfigurations.size());
         for (Configuration configuration : defaultConfigurations) {
+            for (Consumer<Configuration> consumer : getConfigurationConsumer()) {
+                consumer.accept(configuration);
+            }
             configurations.add(new Configuration(configuration.getKey(), configuration.getValue()));
         }
         return configurations;
@@ -108,9 +111,6 @@ public class UserConfigService {
         for (Configuration configuration : configurations) {
             if (keyToConfiguration.containsKey(configuration.getKey())) {
                 configuration.setValue(keyToConfiguration.get(configuration.getKey()).getValue());
-            }
-            for (Consumer<Configuration> consumer : getConfigurationConsumer()) {
-                consumer.accept(configuration);
             }
         }
         return configurations;

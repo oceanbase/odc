@@ -230,6 +230,7 @@ public class ObjectStorageConfig {
             case AZURE:
                 return MessageFormat.format(AZURE_ENDPOINT_PATTERN, component);
             case AWS:
+            case AWSCN:
                 // Note there is a difference of Top-Level Domain between cn and global regions.
                 if (component.startsWith("cn-")) {
                     return MessageFormat.format(S3_ENDPOINT_CN_PATTERN, component);

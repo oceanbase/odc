@@ -49,13 +49,14 @@ import lombok.extern.slf4j.Slf4j;
 public class DLMJobStore implements IJobStore {
 
     private DruidDataSource dataSource;
-    private boolean enableBreakpointRecovery = false;
+    private boolean enableBreakpointRecovery = true;
     @Setter
     private DlmTableUnit dlmTableUnit;
 
     public DLMJobStore(ConnectionConfig metaDBConfig) {
         // only supports odc meta db to record save points
-        if ("odc_job".equals(metaDBConfig.getDefaultSchema())) {
+        log.info("Job metadb is {}", metaDBConfig.getDefaultSchema());
+        if ("odc_job".equalsIgnoreCase(metaDBConfig.getDefaultSchema().trim())) {
             log.info("Only ODC Meta DB is supported for recording and closing save points now.");
             enableBreakpointRecovery = false;
             return;

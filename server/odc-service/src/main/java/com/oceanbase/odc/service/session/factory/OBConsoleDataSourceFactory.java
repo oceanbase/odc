@@ -150,6 +150,8 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         jdbcUrlParams.put("maxAllowedPacket", "64000000");
         jdbcUrlParams.put("allowMultiQueries", "true");
         jdbcUrlParams.put("connectTimeout", "5000");
+        jdbcUrlParams.put("oracle.net.CONNECT_TIMEOUT", "3000");
+        jdbcUrlParams.put("oracle.jdbc.ReadTimeout", "3000");
         jdbcUrlParams.put("zeroDateTimeBehavior", DEFAULT_ZERO_DATE_TIME_BEHAVIOR);
         jdbcUrlParams.put("noDatetimeStringSync", "true");
         jdbcUrlParams.put("jdbcCompliantTruncation", "false");
@@ -226,6 +228,8 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         properties.setProperty("allowUrlInLocalInfile", "false");
         properties.setProperty("allowLoadLocalInfileInPath", "");
         properties.setProperty("autoDeserialize", "false");
+        properties.put("oracle.net.CONNECT_TIMEOUT", "3000");
+        properties.put("oracle.jdbc.ReadTimeout", "3000");
         if (autoCommit != null) {
             dataSource.setAutoCommit(autoCommit);
         }
