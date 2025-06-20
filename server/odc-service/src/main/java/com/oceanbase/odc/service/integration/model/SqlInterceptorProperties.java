@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.integration.model;
 
+import java.util.Map;
+
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -51,6 +53,40 @@ public class SqlInterceptorProperties extends IntegrationProperties {
         private String inBlackListExpression;
         @NotBlank
         private String needReviewExpression;
+        // call back properties
+        private CallBackProperties callback;
+
+        public ApiProperties onNeedReview() {
+            if (null != callback) {
+                return callback.onNeedReview;
+            } else {
+                return null;
+            }
+        }
+
+        public ApiProperties onInBlackList() {
+            if (null != callback) {
+                return callback.onInBlackList;
+            } else {
+                return null;
+            }
+        }
+
+        public ApiProperties onInWhiteList() {
+            if (null != callback) {
+                return callback.onInWhiteList;
+            } else {
+                return null;
+            }
+        }
+    }
+
+    @Data
+    public static class CallBackProperties {
+        private ApiProperties onNeedReview;
+        private ApiProperties onInWhiteList;
+        private ApiProperties onInBlackList;
+        private Map<String, String> responseExtractExpressions;
     }
 
     public static SqlInterceptorProperties from(IntegrationConfig config) {

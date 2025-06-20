@@ -15,6 +15,9 @@
  */
 package com.oceanbase.odc.service.integration.client;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.annotation.PostConstruct;
 
 import org.apache.http.client.HttpClient;
@@ -25,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.common.util.MapUtils;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.ExternalServiceError;
@@ -32,10 +36,14 @@ import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.service.integration.HttpOperationService;
 import com.oceanbase.odc.service.integration.model.ApprovalProperties;
 import com.oceanbase.odc.service.integration.model.Encryption;
+import com.oceanbase.odc.service.integration.model.IntegrationProperties;
+import com.oceanbase.odc.service.integration.model.IntegrationProperties.ApiProperties;
 import com.oceanbase.odc.service.integration.model.IntegrationProperties.HttpProperties;
 import com.oceanbase.odc.service.integration.model.OdcIntegrationResponse;
+import com.oceanbase.odc.service.integration.model.SqlCheckResult;
 import com.oceanbase.odc.service.integration.model.SqlCheckStatus;
 import com.oceanbase.odc.service.integration.model.SqlInterceptorProperties;
+import com.oceanbase.odc.service.integration.model.SqlInterceptorProperties.CallBackProperties;
 import com.oceanbase.odc.service.integration.model.SqlInterceptorProperties.CheckProperties;
 import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.integration.model.TemplateVariables.Variable;
@@ -82,13 +90,52 @@ public class SqlInterceptorClient {
      * @param variables Template variables for building request, more details reference {@link Variable}
      * @return The check result {@link SqlCheckStatus} of SQL content
      */
-    public SqlCheckStatus check(@NonNull SqlInterceptorProperties properties, TemplateVariables variables) {
+    public SqlCheckResult check(@NonNull SqlInterceptorProperties properties, TemplateVariables variables) {
         CheckProperties check = properties.getApi().getCheck();
         HttpProperties http = properties.getHttp();
         Encryption encryption = properties.getEncryption();
+        OdcIntegrationResponse response = getIntegrationResponse(http, check, variables, encryption);
+        try {
+            SqlCheckStatus sqlCheckStatus = null;
+            String expression = check.getRequestSuccessExpression();
+            boolean valid = httpService.extractHttpResponse(response, expression, Boolean.class);
+            Verify.verify(valid, "Response is invalid, except: " + expression + ", response body: " + response);
+            if (httpService.extractHttpResponse(response, check.getInWhiteListExpression(), Boolean.class)) {
+                sqlCheckStatus = SqlCheckStatus.IN_WHITE_LIST;
+            } else if (httpService.extractHttpResponse(response, check.getInBlackListExpression(), Boolean.class)) {
+                sqlCheckStatus = SqlCheckStatus.IN_BLACK_LIST;
+            } else if (httpService.extractHttpResponse(response, check.getNeedReviewExpression(), Boolean.class)) {
+                sqlCheckStatus = SqlCheckStatus.NEED_REVIEW;
+            } else {
+                throw new RuntimeException(
+                        "Response mismatch any check result expression, response body: " + response.getContent());
+            }
+            // try extract value from response for future request
+            Map<String, String> extractedResponse = new HashMap<>();
+            CallBackProperties callBackProperties = check.getCallback();
+            if (null != callBackProperties && !MapUtils.isEmpty(callBackProperties.getResponseExtractExpressions())) {
+                for (Map.Entry<String, String> responseExtractExpressionEntrySet : callBackProperties
+                        .getResponseExtractExpressions().entrySet()) {
+                    String key = responseExtractExpressionEntrySet.getKey();
+                    String responseExtractExpression = responseExtractExpressionEntrySet.getValue();
+                    String value = extractedResponse.put(key,
+                            httpService.extractHttpResponse(response, responseExtractExpression, String.class));
+                    if (null != value) {
+                        extractedResponse.put(key, value);
+                    }
+                }
+            }
+            return new SqlCheckResult(extractedResponse, sqlCheckStatus);
+        } catch (Exception e) {
+            throw new UnexpectedException("Extract SQL check result failed: " + e.getMessage());
+        }
+    }
+
+    public OdcIntegrationResponse getIntegrationResponse(HttpProperties http,
+            @NonNull IntegrationProperties.ApiProperties api, TemplateVariables variables, Encryption encryption) {
         HttpUriRequest request;
         try {
-            request = httpService.buildHttpRequest(check, http, encryption, variables);
+            request = httpService.buildHttpRequest(api, http, encryption, variables);
         } catch (Exception e) {
             throw new UnexpectedException("Build request failed: " + e.getMessage());
         }
@@ -100,22 +147,8 @@ public class SqlInterceptorClient {
                     "Request execute failed: " + e.getMessage());
         }
         response.setContent(EncryptionUtil.decrypt(response.getContent(), encryption));
-        try {
-            String expression = check.getRequestSuccessExpression();
-            boolean valid = httpService.extractHttpResponse(response, expression, Boolean.class);
-            Verify.verify(valid, "Response is invalid, except: " + expression + ", response body: " + response);
-            if (httpService.extractHttpResponse(response, check.getInWhiteListExpression(), Boolean.class)) {
-                return SqlCheckStatus.IN_WHITE_LIST;
-            } else if (httpService.extractHttpResponse(response, check.getInBlackListExpression(), Boolean.class)) {
-                return SqlCheckStatus.IN_BLACK_LIST;
-            } else if (httpService.extractHttpResponse(response, check.getNeedReviewExpression(), Boolean.class)) {
-                return SqlCheckStatus.NEED_REVIEW;
-            } else {
-                throw new RuntimeException(
-                        "Response mismatch any check result expression, response body: " + response.getContent());
-            }
-        } catch (Exception e) {
-            throw new UnexpectedException("Extract SQL check result failed: " + e.getMessage());
-        }
+        log.info("sqlInterceptorClient getIntegrationResponse request = {}, response ={}", request,
+                response.getContent());
+        return response;
     }
 }

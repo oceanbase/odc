@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.integration;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
@@ -25,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.common.util.MapUtils;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
@@ -37,8 +39,9 @@ import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.integration.client.SqlInterceptorClient;
-import com.oceanbase.odc.service.integration.model.SqlCheckStatus;
+import com.oceanbase.odc.service.integration.model.SqlCheckResult;
 import com.oceanbase.odc.service.integration.model.SqlInterceptorProperties;
+import com.oceanbase.odc.service.integration.model.SqlInterceptorProperties.CheckProperties;
 import com.oceanbase.odc.service.integration.model.TemplateVariables;
 import com.oceanbase.odc.service.integration.model.TemplateVariables.Variable;
 import com.oceanbase.odc.service.regulation.ruleset.RuleService;
@@ -100,9 +103,20 @@ public class ExternalSqlInterceptor extends BaseTimeConsumingInterceptor {
         SqlInterceptorProperties properties =
                 (SqlInterceptorProperties) integrationService.getIntegrationProperties(interceptorOpt.get().getId());
         TemplateVariables variables = buildTemplateVariables(request.getSql(), session);
-        SqlCheckStatus result = sqlInterceptorClient.check(properties, variables);
-        switch (result) {
+        SqlCheckResult result = sqlInterceptorClient.check(properties, variables);
+        // set variables in template
+        if (!MapUtils.isEmpty(result.getExtractedResponse())) {
+            for (Map.Entry<String, String> entry : result.getExtractedResponse().entrySet()) {
+                variables.setAttribute(Variable.EXTERNAL_PROPERTIES, entry.getKey(), entry.getValue());
+            }
+        }
+        CheckProperties check = properties.getApi().getCheck();
+        switch (result.getSqlCheckStatus()) {
             case IN_WHITE_LIST:
+                if (null != check.onInWhiteList()) {
+                    sqlInterceptorClient.getIntegrationResponse(properties.getHttp(), check.onInWhiteList(), variables,
+                            properties.getEncryption());
+                }
                 return true;
             case IN_BLACK_LIST:
                 ruleService.getByRulesetIdAndName(ruleSetId, SqlConsoleRules.EXTERNAL_SQL_INTERCEPTOR.getRuleName())
@@ -121,6 +135,10 @@ public class ExternalSqlInterceptor extends BaseTimeConsumingInterceptor {
                             violationRule.setViolation(violation);
                             response.getViolatedRules().add(violationRule);
                         });
+                if (null != check.onInBlackList()) {
+                    sqlInterceptorClient.getIntegrationResponse(properties.getHttp(), check.onInBlackList(), variables,
+                            properties.getEncryption());
+                }
                 return false;
             case NEED_REVIEW:
                 ruleService.getByRulesetIdAndName(ruleSetId, SqlConsoleRules.EXTERNAL_SQL_INTERCEPTOR.getRuleName())
@@ -139,6 +157,10 @@ public class ExternalSqlInterceptor extends BaseTimeConsumingInterceptor {
                             violationRule.setViolation(violation);
                             response.getViolatedRules().add(violationRule);
                         });
+                if (null != check.onNeedReview()) {
+                    sqlInterceptorClient.getIntegrationResponse(properties.getHttp(), check.onNeedReview(), variables,
+                            properties.getEncryption());
+                }
                 return false;
             default:
                 throw new UnexpectedException("SQL intercept failed, unknown intercept status: " + result);
