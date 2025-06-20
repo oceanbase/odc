@@ -51,7 +51,6 @@ import com.oceanbase.odc.metadb.iam.OrganizationRepository;
 import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.config.model.ConfigurationMeta;
 import com.oceanbase.odc.service.connection.ConnectionService;
-import com.oceanbase.odc.service.git.GitIntegrationService;
 import com.oceanbase.odc.service.integration.IntegrationService;
 import com.oceanbase.odc.service.session.SessionProperties;
 
@@ -83,8 +82,6 @@ public class OrganizationConfigService {
     private TransactionTemplate transactionTemplate;
     @Autowired
     private IntegrationService integrationService;
-    @Autowired
-    private GitIntegrationService gitIntegrationService;
 
     private List<Configuration> defaultConfigurations;
     private Map<String, ConfigurationMeta> configKeyToConfigMeta;
