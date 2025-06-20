@@ -73,7 +73,8 @@ public class TemplateVariables implements Serializable {
         PROJECT_OWNER_IDS("project.owner.ids"),
         PROJECT_OWNER_ACCOUNTS("project.owner.accounts"),
         PROJECT_OWNER_NAMES("project.owner.names"),
-        ODC_TASK_URL("odc.task.url");
+        ODC_TASK_URL("odc.task.url"),
+        EXTERNAL_PROPERTIES("external.response");
 
 
         private final String key;
