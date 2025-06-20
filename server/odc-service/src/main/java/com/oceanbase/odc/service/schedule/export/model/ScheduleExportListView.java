@@ -15,51 +15,26 @@
  */
 package com.oceanbase.odc.service.schedule.export.model;
 
-import javax.annotation.Nullable;
+import java.util.Date;
 
 import com.oceanbase.odc.common.i18n.Internationalizable;
+import com.oceanbase.odc.service.common.model.InnerUser;
+import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 
 import lombok.Data;
 
 @Data
-public class ImportScheduleTaskView {
-
-    /**
-     * The unique ID of the exported file, which uniquely represents one schedule in one exported file
-     */
-    private String exportRowId;
-
-    /**
-     * Indicates whether a schedule can be imported
-     */
-    private Boolean importable;
-
-    /**
-     * Reasons for not being importable
-     */
-    @Nullable
-    private ScheduleNonImportableType nonImportableType;
-
+public class ScheduleExportListView {
+    private Long id;
+    private ScheduleType scheduleType;
+    private Long databaseId;
+    private Database database;
     @Internationalizable
     private String description;
-
-    /**
-     * Schedule id of the system before export
-     */
-    private String originId;
-
-    /**
-     * Project name of the system before export
-     */
-    @Nullable
-    private String originProjectName;
-
-    private ScheduleType type;
-
-
-    private ImportDatabaseView databaseView;
-
-    @Nullable
-    private ImportDatabaseView targetDatabaseView;
+    private Long creatorId;
+    private InnerUser creator;
+    private ScheduleStatus scheduleStatus;
+    private Date createTime;
 }

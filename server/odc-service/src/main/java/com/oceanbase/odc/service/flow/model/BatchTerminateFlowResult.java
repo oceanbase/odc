@@ -13,25 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.export.model;
+package com.oceanbase.odc.service.flow.model;
 
-import javax.annotation.Nullable;
-
-import com.oceanbase.odc.service.schedule.model.ScheduleType;
-
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
-public class ScheduleRowPreviewDto {
+@NoArgsConstructor
+@AllArgsConstructor
+public class BatchTerminateFlowResult {
+    private Boolean terminateSucceed;
+    private Long flowInstanceId;
+    private String failReason;
 
-    private String rowId;
-    private String originId;
-    private String originProjectName;
-    private String description;
-    private ScheduleType type;
+    public static BatchTerminateFlowResult success(Long id) {
+        return new BatchTerminateFlowResult(true, id, null);
+    }
 
-    private ExportedDatabase database;
-    @Nullable
-    private ExportedDatabase targetDatabase;
+    public static BatchTerminateFlowResult failed(Long id, String failReason) {
+        return new BatchTerminateFlowResult(false, id, failReason);
+
+    }
 
 }

@@ -143,7 +143,9 @@ public class JsonExtractor implements Extractor<JsonNode> {
         ObjectMapper objectMapper = new ObjectMapper(jsonFactory);
         File configJson = getConfigJson(this.tempFilePath);
         Verify.notNull(configJson, "Invalid archived file");
-        try (InputStream inputStream = Files.newInputStream(configJson.toPath())) {
+        InputStream inputStream = null;
+        try {
+            inputStream = Files.newInputStream(configJson.toPath());
             JsonParser jsonParser = jsonFactory.createParser(inputStream);
 
             JsonToken jsonToken = jsonParser.nextToken();
@@ -177,6 +179,12 @@ public class JsonExtractor implements Extractor<JsonNode> {
                 throw new IllegalStateException("Expected data to be an Array");
             }
             return new JsonRowDataReader(properties, jsonParser, objectMapper, exportedFile.getSecret(), tempFilePath);
+        } catch (Exception e) {
+            if (inputStream != null) {
+                inputStream.close();
+            }
+            log.error("Get row data reader failed", e);
+            throw e;
         }
     }
 
@@ -231,12 +239,19 @@ public class JsonExtractor implements Extractor<JsonNode> {
 
         @Override
         public <R extends Encryptable> R readRow(Class<R> rowDataClass) throws IOException {
-            JsonNode jsonNode = readRow();
-            R rowData = objectMapper.convertValue(jsonNode, rowDataClass);
-            if (rowData != null && encryptKey != null) {
-                rowData.decrypt(encryptKey);
+            try {
+                JsonNode jsonNode = readRow();
+                R rowData = objectMapper.convertValue(jsonNode, rowDataClass);
+                log.info("read rowData={}", rowData);
+                if (rowData != null && encryptKey != null) {
+                    rowData.decrypt(encryptKey);
+                }
+                return rowData;
+            } catch (Exception e) {
+                log.error("read row failed", e);
+                throw e;
             }
-            return rowData;
+
         }
 
         @Override

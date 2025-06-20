@@ -30,6 +30,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -48,6 +49,7 @@ import org.flowable.engine.history.HistoricProcessInstance;
 import org.flowable.engine.history.HistoricProcessInstanceQuery;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
@@ -59,6 +61,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.validation.annotation.Validated;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -67,6 +70,7 @@ import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.common.i18n.I18n;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.lang.Holder;
+import com.oceanbase.odc.common.task.RouteLogCallable;
 import com.oceanbase.odc.common.util.ObjectUtil;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -103,6 +107,7 @@ import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
+import com.oceanbase.odc.service.common.FutureCache;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.common.util.SqlUtils;
@@ -131,6 +136,7 @@ import com.oceanbase.odc.service.flow.instance.FlowInstance;
 import com.oceanbase.odc.service.flow.instance.FlowInstanceConfigurer;
 import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 import com.oceanbase.odc.service.flow.listener.AutoApproveUserTaskListener;
+import com.oceanbase.odc.service.flow.model.BatchTerminateFlowResult;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.model.ExecutionStrategyConfig;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
@@ -158,6 +164,7 @@ import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.model.UserResourceRole;
+import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 import com.oceanbase.odc.service.integration.IntegrationService;
 import com.oceanbase.odc.service.integration.client.ApprovalClient;
 import com.oceanbase.odc.service.integration.model.ApprovalProperties;
@@ -186,9 +193,12 @@ import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriberIdentifier;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
+import com.oceanbase.odc.service.state.StatefulUuidStateIdGenerator;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.base.precheck.PreCheckRiskLevel;
+import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
+import com.oceanbase.odc.service.task.service.SpringTransactionManager;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
 import io.micrometer.core.instrument.Tag;
@@ -277,6 +287,12 @@ public class FlowInstanceService {
     @Autowired
     private EnvironmentService environmentService;
     @Autowired
+    private StatefulUuidStateIdGenerator statefulUuidStateIdGenerator;
+    @Autowired
+    private ThreadPoolTaskExecutor commonAsyncTaskExecutor;
+    @Autowired
+    private FutureCache futureCache;
+    @Autowired
     private FlowPermissionHelper flowPermissionHelper;
     @Autowired
     private MeterManager meterManager;
@@ -288,7 +304,10 @@ public class FlowInstanceService {
     private ProjectService projectService;
     @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
-
+    @Autowired
+    private TransactionTemplate transactionTemplate;
+    @Value("${odc.log.directory:./log}")
+    private String logPath;
     private static final long MAX_EXPORT_OBJECT_COUNT = 10000;
     private static final String ODC_SITE_URL = "odc.site.url";
     private static final int MAX_APPLY_DATABASE_SIZE = 10;
@@ -725,6 +744,53 @@ public class FlowInstanceService {
         return cancel(flowInstance, true);
     }
 
+    public String startBatchCancelFlowInstance(Collection<Long> flowInstanceIds) {
+        String terminateId = statefulUuidStateIdGenerator.generateCurrentUserIdStateId("BatchFlowTerminate");
+        User user = authenticationFacade.currentUser();
+        Future<List<BatchTerminateFlowResult>> future = commonAsyncTaskExecutor.submit(
+                new RouteLogCallable<List<BatchTerminateFlowResult>>("BatchFlowTerminate", terminateId, "terminate") {
+                    @Override
+                    public List<BatchTerminateFlowResult> doCall() {
+                        SecurityContextUtils.setCurrentUser(user);
+                        List<BatchTerminateFlowResult> results = new ArrayList<>();
+                        for (Long id : flowInstanceIds) {
+                            try {
+                                new SpringTransactionManager(transactionTemplate)
+                                        .doInTransactionWithoutResult(() -> cancelWithWritePermission(id, false));
+                                results.add(BatchTerminateFlowResult.success(id));
+                                log.info("Terminate flow success, flowInstanceId={}", id);
+                            } catch (Exception e) {
+                                log.info("Terminate flow failed, flowInstanceId={}", id, e);
+                                results.add(BatchTerminateFlowResult.failed(id, e.getMessage()));
+                            }
+                        }
+                        return results;
+                    }
+                });
+        futureCache.put(terminateId, future);
+        return terminateId;
+    }
+
+    public List<BatchTerminateFlowResult> getBatchCancelResult(String terminateId) {
+        statefulUuidStateIdGenerator.checkCurrentUserId(terminateId);
+        Future<List<BatchTerminateFlowResult>> future =
+                (Future<List<BatchTerminateFlowResult>>) futureCache.get(terminateId);
+        if (!future.isDone()) {
+            return Collections.emptyList();
+        }
+        try {
+            futureCache.invalid(terminateId);
+            return future.get();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public String getBatchCancelLog(String terminateId) {
+        statefulUuidStateIdGenerator.checkCurrentUserId(terminateId);
+        return LogUtils.getRouteTaskLog(logPath, "BatchFlowTerminate", terminateId, "terminate");
+    }
+
     public Map<Long, FlowStatus> getStatus(Set<Long> ids) {
         Specification<FlowInstanceEntity> specification = Specification.where(FlowInstanceSpecs.idIn(ids))
                 .and(FlowInstanceSpecs.organizationIdEquals(authenticationFacade.currentOrganizationId()));
@@ -925,6 +991,23 @@ public class FlowInstanceService {
         Verify.singleton(taskIds, "Multi task for one instance is not allowed, id " + id);
         Long taskId = taskIds.iterator().next();
         return taskService.detail(taskId);
+    }
+
+    public Map<Long, TaskEntity> getTaskByFlowInstanceIds(Collection<Long> flowInstanceIds) {
+        List<ServiceTaskInstanceEntity> serviceTaskInstanceEntities = serviceTaskRepository
+                .findByFlowInstanceIdIn(flowInstanceIds)
+                .stream()
+                .filter(e -> e.getTaskType() != TaskType.GENERATE_ROLLBACK && e.getTaskType() != TaskType.SQL_CHECK
+                        && e.getTaskType() != TaskType.PRE_CHECK)
+                .collect(Collectors.toList());
+        Map<Long, Long> flowId2taskIds = serviceTaskInstanceEntities.stream().collect(
+                Collectors.toMap(ServiceTaskInstanceEntity::getFlowInstanceId,
+                        ServiceTaskInstanceEntity::getTargetTaskId, (exist, duplicate) -> exist));
+        List<TaskEntity> taskEntities = taskService.findByIds(flowId2taskIds.values());
+        Map<Long, TaskEntity> idTaskEntityMap =
+                taskEntities.stream().collect(Collectors.toMap(TaskEntity::getId, t -> t));
+        return flowId2taskIds.entrySet().stream()
+                .collect(Collectors.toMap(Entry::getKey, v -> idTaskEntityMap.get(v.getValue())));
     }
 
     private void checkCreateFlowInstancePermission(CreateFlowInstanceReq req) {
@@ -1524,7 +1607,7 @@ public class FlowInstanceService {
 
     /**
      * This is a temporary method that only uses ODC 4.3.4
-     * 
+     *
      * @param params
      * @return
      */
@@ -1582,7 +1665,7 @@ public class FlowInstanceService {
 
     /**
      * This is a temporary method that only uses ODC 4.3.4
-     * 
+     *
      * @param params
      * @return
      */
@@ -1613,7 +1696,7 @@ public class FlowInstanceService {
 
     /**
      * This is a temporary method that only uses ODC 4.3.4
-     * 
+     *
      * @param params
      * @return
      */
@@ -1646,7 +1729,7 @@ public class FlowInstanceService {
 
     /**
      * This is a temporary method that only uses ODC 4.3.4
-     * 
+     *
      * @param params
      * @return
      */

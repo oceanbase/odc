@@ -22,7 +22,7 @@ import org.apache.logging.log4j.Logger;
 import org.slf4j.MDC;
 
 public abstract class RouteLogCallable<T> implements Callable<T> {
-
+    public static final String LOG_PATH_PATTERN = "%s/%s/%s/%s.log";
     protected static Logger log = LogManager.getLogger(RouteLogCallable.class);
     private final String workSpace;
     private final String taskId;
