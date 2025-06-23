@@ -89,17 +89,25 @@ public class SqlInterceptorClient {
         HttpUriRequest request;
         try {
             request = httpService.buildHttpRequest(check, http, encryption, variables);
+            log.debug("The sql check request uri={}, method={}", request.getURI(), request.getMethod());
         } catch (Exception e) {
             throw new UnexpectedException("Build request failed: " + e.getMessage());
         }
         OdcIntegrationResponse response;
+        long requestTime = System.currentTimeMillis();
+        long responseTime;
         try {
             response = httpClient.execute(request, new OdcIntegrationResponseHandler());
+            responseTime = System.currentTimeMillis();
+            log.debug("Before decrypt, the sql check response content={}, time cost={}ms", response.getContent(),
+                    responseTime - requestTime);
         } catch (Exception e) {
             throw new ExternalServiceError(ErrorCodes.ExternalServiceError,
                     "Request execute failed: " + e.getMessage());
         }
         response.setContent(EncryptionUtil.decrypt(response.getContent(), encryption));
+        log.debug("After decrypt, the sql check response content={}, decrypt time cost={}ms", response.getContent(),
+                System.currentTimeMillis() - responseTime);
         try {
             String expression = check.getRequestSuccessExpression();
             boolean valid = httpService.extractHttpResponse(response, expression, Boolean.class);

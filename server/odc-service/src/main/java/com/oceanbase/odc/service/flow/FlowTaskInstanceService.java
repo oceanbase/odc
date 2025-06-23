@@ -536,7 +536,7 @@ public class FlowTaskInstanceService {
 
     public List<SqlExecuteResult> getExecuteResult(Long flowInstanceId) throws IOException {
         Optional<TaskEntity> taskEntityOptional = getCompleteTaskEntity(flowInstanceId,
-                flowPermissionHelper.withProjectMemberCheck());
+                flowPermissionHelper.withExecutableCheck());
         if (!taskEntityOptional.isPresent()) {
             return Collections.emptyList();
         }
