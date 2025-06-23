@@ -15,6 +15,10 @@
  */
 package com.oceanbase.odc.service.sqlcheck.rule.checkRationality;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import lombok.Builder;
 import lombok.Data;
 
 /**
@@ -25,8 +29,29 @@ import lombok.Data;
  */
 @Data
 public class DBObjectCheckRationalityContext {
-    private String defaultSchema;
 
+    private final String defaultSchema;
 
+    private final Map<String, Boolean> tableExistMap;
+
+    private final Map<String, Boolean> externalTableExistMap;
+
+    private final Map<String, Boolean> viewExistMap;
+
+    private final Map<String, Boolean> materializedViewExistMap;
+
+    private final Map<String, Boolean> indexExistMap;
+
+    private final Map<String, Boolean> columnExistMap;
+
+    public DBObjectCheckRationalityContext(String defaultSchema) {
+        this.defaultSchema = defaultSchema;
+        this.tableExistMap = new HashMap<>();
+        this.externalTableExistMap = new HashMap<>();
+        this.viewExistMap = new HashMap<>();
+        this.materializedViewExistMap = new HashMap<>();
+        this.indexExistMap = new HashMap<>();
+        this.columnExistMap = new HashMap<>();
+    }
 
 }

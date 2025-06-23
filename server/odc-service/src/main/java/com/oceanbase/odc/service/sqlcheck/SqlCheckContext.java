@@ -46,6 +46,7 @@ public class SqlCheckContext {
     Long currentStmtStartOffset;
     private final List<Pair<Pair<Statement, Integer>, List<CheckViolation>>> stmt2Violations;
     @Getter
+    @Setter
     DBObjectCheckRationalityContext dbObjectCheckRationalityContext;
 
     public SqlCheckContext() {

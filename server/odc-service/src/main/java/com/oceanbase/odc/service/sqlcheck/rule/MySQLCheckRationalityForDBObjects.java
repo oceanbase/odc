@@ -17,7 +17,9 @@ package com.oceanbase.odc.service.sqlcheck.rule;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import org.springframework.jdbc.core.JdbcOperations;
@@ -45,14 +47,19 @@ import lombok.NonNull;
  */
 public class MySQLCheckRationalityForDBObjects implements SqlCheckRule {
 
+    private final Boolean supportedSimulation;
+
+    private final Set<String> allowedDBObjectTypes;
+
     private final Supplier<String> schemaSupplier;
 
     private final JdbcOperations jdbcOperations;
-    // 前端勾选的数据库对象类型，勾选后就做此数据库对象类型的存在合理性校验
-    // 目前写死做测试用，后续需要从前端动态赋值
+
     List<DBObjectType> supportedDBObjectType = Arrays.asList(DBObjectType.TABLE, DBObjectType.COLUMN);
 
-    public MySQLCheckRationalityForDBObjects(Supplier<String> schemaSupplier, JdbcOperations jdbcOperations) {
+    public MySQLCheckRationalityForDBObjects(Boolean supportedSimulation, Set<String> allowedDBObjectTypes, Supplier<String> schemaSupplier, JdbcOperations jdbcOperations) {
+        this.supportedSimulation = supportedSimulation;
+        this.allowedDBObjectTypes = allowedDBObjectTypes;
         this.schemaSupplier = schemaSupplier;
         this.jdbcOperations = jdbcOperations;
     }
@@ -66,9 +73,9 @@ public class MySQLCheckRationalityForDBObjects implements SqlCheckRule {
     public List<CheckViolation> check(@NonNull Statement statement, @NonNull SqlCheckContext context) {
         // todo 获取需要校验存在的表对象
         List<CheckViolation> checkViolationlist = new ArrayList<>();
-        DBObjectCheckRationalityContext dbObjectCheckRationalityContext = context.getDbObjectCheckRationalityContext();
+        DBObjectCheckRationalityContext dbObjectCheckRationalityContext = getDBObjectCheckRationalityContext(context);
         // todo 这里校验表对象存在的合理性
-        if (supportedDBObjectType.contains(DBObjectType.TABLE)) {
+        if (allowedDBObjectTypes.contains(DBObjectType.TABLE.name())) {
             DBTableCheckRationalityChecker dbTableCheckRationalityChecker = new DBTableCheckRationalityChecker();
             // todo 获取需要校验存在的表对象
             List<DBObjectIdentity> shouldExistedTable =
@@ -129,6 +136,15 @@ public class MySQLCheckRationalityForDBObjects implements SqlCheckRule {
             // todo 这里校验索引对象存在的合理性
         }
         return checkViolationlist;
+    }
+
+    private DBObjectCheckRationalityContext getDBObjectCheckRationalityContext(SqlCheckContext context) {
+        DBObjectCheckRationalityContext dbObjectCheckRationalityContext = context.getDbObjectCheckRationalityContext();
+        if (dbObjectCheckRationalityContext == null) {
+            dbObjectCheckRationalityContext = new DBObjectCheckRationalityContext(schemaSupplier.get());
+            context.setDbObjectCheckRationalityContext(dbObjectCheckRationalityContext);
+        }
+        return dbObjectCheckRationalityContext;
     }
 
     @Override

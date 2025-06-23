@@ -15,10 +15,16 @@
  */
 package com.oceanbase.odc.service.sqlcheck.factory;
 
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -56,8 +62,19 @@ public class CheckRationalityForDBObjectsFactory implements SqlCheckRuleFactory 
     @Override
     public SqlCheckRule generate(@NonNull SqlCheckRuleContext sqlCheckRuleContext) {
         DialectType dialectType = sqlCheckRuleContext.getDialectType();
+        Map<String, Object> parameters = sqlCheckRuleContext.getParameters();
+        if(parameters == null){
+            return null;
+        }
+        String allowedDBObjectTypesKey = getParameterNameKey("allowed-db-object-types");
+        String supportedSimulationKey = getParameterNameKey("simulate-real-execution-scenarios");
+        if(parameters.get(allowedDBObjectTypesKey) == null || parameters.get(supportedSimulationKey) == null){
+            return null;
+        }
+        Set<String> allowedDBObjectTypes = new HashSet((List<String>)parameters.get(allowedDBObjectTypesKey));
+        Boolean supportedSimulation = Boolean.valueOf(parameters.get(supportedSimulationKey).toString());
         if (dialectType == DialectType.OB_MYSQL) {
-            return new MySQLCheckRationalityForDBObjects(schemaSupplier, jdbcOperations);
+            return new MySQLCheckRationalityForDBObjects(supportedSimulation,allowedDBObjectTypes,schemaSupplier, jdbcOperations);
         }
         return null;
     }
