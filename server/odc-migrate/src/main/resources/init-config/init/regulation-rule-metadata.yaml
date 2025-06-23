@@ -1611,5 +1611,24 @@
       value: OB_MYSQL
     - label: SUPPORTED_DIALECT_TYPE
       value: OB_ORACLE
-    - label: SUPPORTED_DIALECT_TYPE
-      value: ODP_SHARDING_OB_MYSQL
+  propertyMetadatas:
+    - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.check-rationality-for-db-objects.allowed-db-object-types}
+      description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.check-rationality-for-db-objects.allowed-db-object-types.description}
+      type: STRING_LIST
+      componentType: SELECT_MULTIPLE
+      candidates:
+        - TABLE
+        - EXTERNAL_TABLE
+        - VIEW
+        - MATERIALIZED_VIEW
+        - INDEX
+        - COLUMN
+    - name: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.check-rationality-for-db-objects.simulate-real-execution-scenarios}
+      description: ${com.oceanbase.odc.builtin-resource.regulation.rule.sql-check.check-rationality-for-db-objects.simulate-real-execution-scenarios.description}
+      type: BOOLEAN
+      componentType: RADIO
+      defaultValues:
+        - false
+      candidates:
+        - true
+        - false
