@@ -156,6 +156,8 @@ public class ConnectConsoleService {
     public SqlExecuteResult queryTableOrViewData(@NotNull String sessionId,
             @NotNull @Valid QueryTableOrViewDataReq req) throws Exception {
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
+        ConnectionSessionUtil.setClientStreamReadEnabled(connectionSession,
+                sessionProperties.isClientStreamReadEnabled());
         SqlBuilder sqlBuilder;
         DialectType dialectType = connectionSession.getConnectType().getDialectType();
         if (dialectType.isMysql()) {
@@ -244,6 +246,8 @@ public class ConnectConsoleService {
     public SqlAsyncExecuteResp streamExecute(@NotNull String sessionId,
             @NotNull @Valid SqlAsyncExecuteReq request, boolean needSqlRuleCheck) throws Exception {
         ConnectionSession connectionSession = sessionService.nullSafeGet(sessionId, true);
+        ConnectionSessionUtil.setClientStreamReadEnabled(connectionSession,
+                sessionProperties.isClientStreamReadEnabled());
         if (ConnectionSessionUtil.isLogicalSession(connectionSession)) {
             return new SqlAsyncExecuteResp(true);
         }

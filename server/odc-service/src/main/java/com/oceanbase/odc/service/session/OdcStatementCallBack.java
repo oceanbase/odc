@@ -124,6 +124,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
     private final AsyncExecuteContext context;
     private final List<SqlExecutionListener> listeners = new ArrayList<>();
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final boolean isClientStreamReadEnabled;
     @Setter
     private boolean useFullLinkTrace = false;
     @Setter
@@ -163,6 +164,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
         this.connectionSession = connectionSession;
         this.stopWhenError = stopWhenError;
         this.binaryDataManager = ConnectionSessionUtil.getBinaryDataManager(connectionSession);
+        this.isClientStreamReadEnabled = ConnectionSessionUtil.isClientStreamReadEnabled(connectionSession);
         ConnectionSessionUtil.setConsoleSessionKillQueryFlag(connectionSession, false);
         Validate.notNull(this.binaryDataManager, "BinaryDataManager can not be null");
         this.context = context;
@@ -270,6 +272,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
             // statement.setFetchSize((int) this.queryLimit.longValue());
             statement.setMaxRows((int) this.queryLimit.longValue());
         }
+        setClientStreamReadIfNeeded(statement);
     }
 
     private List<JdbcGeneralResult> consumeStatement(Statement statement, SqlTuple sqlTuple, boolean isResultSet)
@@ -379,6 +382,7 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
                         throw new NotImplementedException("Unsupport function call " + definition.getFunctionName());
                     }
                 }
+                setClientStreamReadIfNeeded(preparedStatement);
                 boolean isResultSet;
                 try {
                     isResultSet = preparedStatement.execute();
@@ -633,6 +637,12 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
             }
         }
         return null;
+    }
+
+    private void setClientStreamReadIfNeeded(Statement statement) throws SQLException {
+        if (isClientStreamReadEnabled) {
+            statement.setFetchSize(Integer.MIN_VALUE);
+        }
     }
 
     @Getter
