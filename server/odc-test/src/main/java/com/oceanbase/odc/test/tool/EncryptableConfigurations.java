@@ -57,23 +57,29 @@ public class EncryptableConfigurations {
     }
 
     public static Map<String, String> loadProperties(String path) {
-        encryptFileIfRequires(path);
-        File file = new File(path);
-        PropertiesConfiguration config = new PropertiesConfiguration();
-        PropertiesConfigurationLayout layout = new PropertiesConfigurationLayout();
         try {
-            layout.load(config, new FileReader(file));
-        } catch (ConfigurationException | FileNotFoundException e) {
-            throw new RuntimeException("load properties file failed:", e);
+            encryptFileIfRequires(path);
+            File file = new File(path);
+            PropertiesConfiguration config = new PropertiesConfiguration();
+            PropertiesConfigurationLayout layout = new PropertiesConfigurationLayout();
+            try {
+                layout.load(config, new FileReader(file));
+            } catch (ConfigurationException | FileNotFoundException e) {
+                throw new RuntimeException("load properties file failed:", e);
+            }
+            Map<String, String> properties = new HashMap<>();
+            Set<String> keys = layout.getKeys();
+            for (String key : keys) {
+                String value = config.getProperty(key).toString();
+                value = decryptIfRequired(value);
+                properties.put(key, value);
+            }
+            return properties;
+        } catch (Exception e) {
+            log.warn("Load properties failed.", e);
+            throw e;
         }
-        Map<String, String> properties = new HashMap<>();
-        Set<String> keys = layout.getKeys();
-        for (String key : keys) {
-            String value = config.getProperty(key).toString();
-            value = decryptIfRequired(value);
-            properties.put(key, value);
-        }
-        return properties;
+
     }
 
     public static String getDecryptedProperty(String key) {
@@ -142,9 +148,15 @@ public class EncryptableConfigurations {
     @NoArgsConstructor
     private static class SecretKeyGetter {
         private static final String SECRET_ENV_KEY = "ODC_CONFIG_SECRET";
+        private static final String SECRET_ENV_ACI_KEY = "ACI_VAR_ODC_CONFIG_SECRET";
 
         public String getSecretKey() {
             String secretKey = getProperty(SECRET_ENV_KEY);
+            if (StringUtils.isNotBlank(secretKey)) {
+                log.info("Secret key = {}", secretKey);
+                return secretKey;
+            }
+            secretKey = getProperty(SECRET_ENV_ACI_KEY);
             if (StringUtils.isNotBlank(secretKey)) {
                 return secretKey;
             }
