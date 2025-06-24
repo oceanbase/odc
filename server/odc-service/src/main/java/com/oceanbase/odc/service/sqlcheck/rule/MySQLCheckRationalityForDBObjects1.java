@@ -54,8 +54,6 @@ public class MySQLCheckRationalityForDBObjects1 implements SqlCheckRule {
 
     private final JdbcOperations jdbcOperations;
 
-    List<DBObjectType> supportedDBObjectType = Arrays.asList(DBObjectType.TABLE, DBObjectType.COLUMN);
-
     public MySQLCheckRationalityForDBObjects1(Boolean supportedSimulation, Set<String> allowedDBObjectTypes, Supplier<String> schemaSupplier, JdbcOperations jdbcOperations) {
         this.supportedSimulation = supportedSimulation;
         this.allowedDBObjectTypes = allowedDBObjectTypes;
@@ -103,7 +101,7 @@ public class MySQLCheckRationalityForDBObjects1 implements SqlCheckRule {
             }
         }
         // todo 这里校验列对象存在的合理性
-        else if (supportedDBObjectType.contains(DBObjectType.COLUMN)) {
+        else if (allowedDBObjectTypes.contains(DBObjectType.COLUMN)) {
             DBColumnCheckRationalityChecker dbColumnCheckRationalityChecker = new DBColumnCheckRationalityChecker();
             // todo 获取需要校验存在的表对象
             List<DBObjectIdentity> shouldExistedColumn =
@@ -131,7 +129,7 @@ public class MySQLCheckRationalityForDBObjects1 implements SqlCheckRule {
                                     new Object[] {}));
                 }
             }
-        } else if (supportedDBObjectType.contains(DBObjectType.INDEX)) {
+        } else if (allowedDBObjectTypes.contains(DBObjectType.INDEX)) {
             // todo 这里校验索引对象存在的合理性
         }
         return checkViolationlist;

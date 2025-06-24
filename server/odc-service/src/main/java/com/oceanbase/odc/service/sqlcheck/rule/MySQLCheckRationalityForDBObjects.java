@@ -22,9 +22,13 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcOperations;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckContext;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckRule;
 import com.oceanbase.odc.service.sqlcheck.SqlCheckUtil;
@@ -36,6 +40,14 @@ import com.oceanbase.odc.service.sqlcheck.rule.checkRationality.DBTableCheckRati
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.sqlparser.statement.Statement;
+import com.oceanbase.tools.sqlparser.statement.common.BraceBlock;
+import com.oceanbase.tools.sqlparser.statement.createtable.CreateTable;
+import com.oceanbase.tools.sqlparser.statement.select.ExpressionReference;
+import com.oceanbase.tools.sqlparser.statement.select.FromReference;
+import com.oceanbase.tools.sqlparser.statement.select.JoinReference;
+import com.oceanbase.tools.sqlparser.statement.select.NameReference;
+import com.oceanbase.tools.sqlparser.statement.select.Select;
+import com.oceanbase.tools.sqlparser.statement.select.SelectBody;
 
 import lombok.NonNull;
 
@@ -78,11 +90,48 @@ public class MySQLCheckRationalityForDBObjects implements SqlCheckRule {
         if (allowedDBObjectTypes.contains(DBObjectType.TABLE.name())) {
             DBTableCheckRationalityChecker dbTableCheckRationalityChecker = new DBTableCheckRationalityChecker();
             // todo 获取需要校验存在的表对象
-            List<DBObjectIdentity> shouldExistedTable =
-                    dbTableCheckRationalityChecker.ExtractShouldExistedDBObjects(schemaSupplier, statement);
+            List<DBObjectIdentity> shouldExistedTables = new ArrayList<>();
+            if (statement.getClass() == Select.class) {
+                // todo 这里校验表对象存在的合理性
+                Select select = (Select) statement;
+                SelectBody selectBody = select.getSelectBody();
+                List<FromReference> froms = selectBody.getFroms();
+                // todo 获取需要校验存在的表对象
+                if (CollectionUtils.isNotEmpty(froms)) {
+                    for (FromReference from : froms) {
+                        if (null != from) {
+                            if (from.getClass() == NameReference.class) {
+                                NameReference nameReference = (NameReference) from;
+                                if (null != nameReference.getSchema()) {
+                                    shouldExistedTables
+                                        .add(DBObjectIdentity.of(nameReference.getSchema(), DBObjectType.TABLE,
+                                            StringUtils.unquoteMySqlIdentifier(nameReference.getRelation())));
+                                } else {
+                                    shouldExistedTables.add(DBObjectIdentity.of(schemaSupplier.get(), DBObjectType.TABLE,
+                                        StringUtils.unquoteMySqlIdentifier(nameReference.getRelation())));
+                                }
+                            } else if (from.getClass() == JoinReference.class) {
+
+                            } else if (from.getClass() == BraceBlock.class) {
+
+                            } else if (from.getClass() == ExpressionReference.class) {
+
+                            }
+                        }
+                    }
+                }
+            } else if (statement.getClass() == CreateTable.class) {
+
+            }
             // todo 校验表对象是否存在
-            for (DBObjectIdentity dbObjectIdentity : shouldExistedTable) {
-                Boolean existed = dbTableCheckRationalityChecker.checkObjectExistence(dbObjectIdentity, jdbcOperations);
+            for (DBObjectIdentity dbObjectIdentity : shouldExistedTables) {
+                Boolean existed = jdbcOperations
+                    .execute((ConnectionCallback<Boolean>) con -> SchemaPluginUtil.getTableExtension(
+                            DialectType.OB_MYSQL)
+                        .list(con,
+                            dbObjectIdentity.getSchemaName(), DBObjectType.TABLE)
+                        .stream().anyMatch(
+                            table -> table.getName().equals(dbObjectIdentity.getName())));
                 if (Boolean.FALSE.equals(existed)) {
                     checkViolationlist.add(
                             SqlCheckUtil.buildViolation(statement.getText(), statement, getType(),
@@ -90,12 +139,17 @@ public class MySQLCheckRationalityForDBObjects implements SqlCheckRule {
                 }
             }
             // todo 获取需要检验不存在的表对象
-            List<DBObjectIdentity> shouldNotExistedTables =
-                    dbTableCheckRationalityChecker.ExtractShouldExistedDBObjects(schemaSupplier, statement);
+            List<DBObjectIdentity> shouldNotExistedTables = null;
+
             // todo 执行校验表对象不存在逻辑
-            for (DBObjectIdentity shouldNotExistedTable : shouldNotExistedTables) {
-                Boolean existed =
-                        dbTableCheckRationalityChecker.checkObjectNonExistence(shouldNotExistedTable, jdbcOperations);
+            for (DBObjectIdentity dbObjectIdentity : shouldNotExistedTables) {
+                Boolean existed = !jdbcOperations
+                    .execute((ConnectionCallback<Boolean>) con -> SchemaPluginUtil.getTableExtension(
+                            DialectType.OB_MYSQL)
+                        .list(con,
+                            dbObjectIdentity.getSchemaName(), DBObjectType.TABLE)
+                        .stream().anyMatch(
+                            table -> table.getName().equals(dbObjectIdentity.getName())));
                 if (Boolean.FALSE.equals(existed)) {
                     checkViolationlist.add(
                             SqlCheckUtil.buildViolation(statement.getText(), statement, getType(),
