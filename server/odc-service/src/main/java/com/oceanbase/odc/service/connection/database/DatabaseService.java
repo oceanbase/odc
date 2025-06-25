@@ -118,8 +118,6 @@ import com.oceanbase.odc.service.connection.database.model.ModifyDatabaseOwnerRe
 import com.oceanbase.odc.service.connection.database.model.QueryDatabaseParams;
 import com.oceanbase.odc.service.connection.database.model.TransferDatabasesReq;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.connection.model.ConnectionSyncErrorReason;
-import com.oceanbase.odc.service.connection.model.ConnectionSyncResult;
 import com.oceanbase.odc.service.connection.model.InnerQueryConnectionParams;
 import com.oceanbase.odc.service.db.DBSchemaService;
 import com.oceanbase.odc.service.db.schema.DBSchemaSyncTaskManager;
@@ -612,11 +610,9 @@ public class DatabaseService {
             } else {
                 syncTeamDataSources(connection);
             }
-            connectionSyncHistoryService.upsert(connection.getId(), ConnectionSyncResult.SUCCESS,
-                    connection.getOrganizationId(), null, null);
             return true;
         } catch (Exception ex) {
-            handleSyncException(ex, dataSourceId, organizationOpt);
+            log.info("sync databases failed, dataSourceId={}, errorMessage={}", dataSourceId, ex.getMessage());
             return false;
         } finally {
             lock.unlock();
@@ -726,14 +722,8 @@ public class DatabaseService {
                         "update connect_database set table_count=?, collation_name=?, charset_name=?, project_id=?, last_sync_time=? where id = ?";
                 jdbcTemplate.batchUpdate(update, toUpdate);
             }
-            connectionSyncHistoryService.upsert(connection.getId(), ConnectionSyncResult.SUCCESS,
-                    connection.getOrganizationId(), null, null);
         } finally {
-            try {
-                executorService.shutdownNow();
-            } catch (Exception e) {
-                // eat the exception
-            }
+            ExecutorUtils.gracefulShutdown(executorService, Thread.currentThread().getName(), 10);
             if (teamDataSource instanceof AutoCloseable) {
                 try {
                     ((AutoCloseable) teamDataSource).close();
@@ -819,8 +809,6 @@ public class DatabaseService {
             if (!CollectionUtils.isEmpty(toDelete)) {
                 jdbcTemplate.batchUpdate("delete from connect_database where id = ?", toDelete);
             }
-            connectionSyncHistoryService.upsert(connection.getId(), ConnectionSyncResult.SUCCESS,
-                    connection.getOrganizationId(), null, null);
         } finally {
             ExecutorUtils.gracefulShutdown(executorService, Thread.currentThread().getName(), 10);
             if (individualDataSource instanceof AutoCloseable) {
@@ -1261,47 +1249,6 @@ public class DatabaseService {
             }).collect(Collectors.toList()));
         });
         return userResourceRoles;
-    }
-
-    private void handleSyncException(@NonNull Exception ex, @NonNull Long dataSourceId,
-            @NonNull Optional<Organization> organizationOpt) {
-        String errorMessage = ex.getMessage();
-        log.warn("Sync database failed, dataSourceId={}, errorMessage={}", dataSourceId, errorMessage);
-        if (!organizationOpt.isPresent()) {
-            return;
-        }
-        Organization organization = organizationOpt.get();
-        ConnectionSyncErrorReason failedReason = ConnectionSyncErrorReason.UNKNOWN;
-        if (StringUtils.containsIgnoreCase(errorMessage, "cluster not exist")) {
-            failedReason = ConnectionSyncErrorReason.CLUSTER_NOT_EXISTS;
-            deleteDatabaseIfInstanceNotExists(dataSourceId, organization.getType());
-        } else if (StringUtils.containsIgnoreCase(errorMessage, "No tenants found") || StringUtils
-                .containsIgnoreCase(errorMessage, "tenant expected 1 but was")) {
-            failedReason = ConnectionSyncErrorReason.TENANT_NOT_EXISTS;
-            deleteDatabaseIfInstanceNotExists(dataSourceId, organization.getType());
-        }
-        connectionSyncHistoryService.upsert(dataSourceId, ConnectionSyncResult.FAILURE, organization.getId(),
-                failedReason, errorMessage);
-    }
-
-    private void deleteDatabaseIfInstanceNotExists(Long connectionId, OrganizationType organizationType) {
-        log.info(
-                "Cluster or tenant not exist, set existed to false for all databases in this data source, data source id = {}",
-                connectionId);
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        String deleteSql;
-        if (organizationType == OrganizationType.INDIVIDUAL) {
-            deleteSql = "delete from connect_database where connection_id=?";
-        } else {
-            deleteSql = "update connect_database set is_existed = 0 where connection_id=?";
-        }
-        try {
-            jdbcTemplate.update(deleteSql, connectionId);
-        } catch (Exception ex) {
-            log.warn("Failed to delete databases when cluster not exist, errorMessage={}",
-                    ex.getLocalizedMessage());
-        }
-
     }
 
     public <T> void assignDatabaseById(List<T> content, Function<T, Long> databaseIdProvider,
