@@ -21,7 +21,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.text.StringEscapeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -159,7 +158,7 @@ public class ExternalSqlInterceptor extends BaseTimeConsumingInterceptor {
     private TemplateVariables buildTemplateVariables(String sql, ConnectionSession session) {
         TemplateVariables variables = new TemplateVariables();
         // set SQL content
-        variables.setAttribute(Variable.SQL_CONTENT, StringEscapeUtils.escapeJson(sql));
+        variables.setAttribute(Variable.SQL_CONTENT, JsonUtils.toJson(sql));
         // set SQL content json array
         List<String> statements = SqlUtils.split(session, sql, true);
         variables.setAttribute(Variable.SQL_CONTENT_JSON_ARRAY, JsonUtils.toJson(statements));
