@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.task.schedule.daemon;
 
+import org.apache.commons.lang3.StringUtils;
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
@@ -67,7 +68,9 @@ public class DoCancelingJob implements Job {
         getConfiguration().getTransactionManager().doInTransactionWithoutResult(() -> {
             JobEntity lockedEntity = taskFrameworkService.findWithPessimisticLock(jobEntity.getId());
             if (lockedEntity.getStatus() == JobStatus.CANCELING) {
-                if (!configuration.getTaskFrameworkService().refreshLogMetaForCancelJob(lockedEntity.getId())) {
+                // if executor identifier is null, it means job has not started yet, so we can skip it
+                if (StringUtils.isNotBlank(jobEntity.getExecutorIdentifier())
+                        && !configuration.getTaskFrameworkService().refreshLogMetaForCancelJob(lockedEntity.getId())) {
                     log.info(
                             "Job is canceling but log have not uploaded, continue monitor result, jobId={}, currentStatus={}",
                             lockedEntity.getId(), lockedEntity.getStatus());

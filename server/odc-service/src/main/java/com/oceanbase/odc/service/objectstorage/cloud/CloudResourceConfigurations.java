@@ -45,9 +45,11 @@ import com.azure.storage.common.StorageSharedKeyCredential;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
+import com.oceanbase.odc.service.loaddata.model.ObjectStorageConfig;
 import com.oceanbase.odc.service.objectstorage.cloud.client.AlibabaCloudClient;
 import com.oceanbase.odc.service.objectstorage.cloud.client.AmazonCloudClient;
 import com.oceanbase.odc.service.objectstorage.cloud.client.AzureCloudClient;
+import com.oceanbase.odc.service.objectstorage.cloud.client.BaiduCloudClient;
 import com.oceanbase.odc.service.objectstorage.cloud.client.CloudClient;
 import com.oceanbase.odc.service.objectstorage.cloud.client.GoogleCloudClient;
 import com.oceanbase.odc.service.objectstorage.cloud.client.NullCloudClient;
@@ -112,8 +114,9 @@ public class CloudResourceConfigurations {
                 case TENCENT_CLOUD:
                 case HUAWEI_CLOUD:
                 case AWSCN:
-                case BAIDU_CLOUD:
                     return createAmazonCloudClient(configuration);
+                case BAIDU_CLOUD:
+                    return createBaiduCloudClient(configuration);
                 case GOOGLE_CLOUD:
                     return createGoogleCloudClient(configuration);
                 case AZURE:
@@ -155,6 +158,9 @@ public class CloudResourceConfigurations {
         // GCS does not support region
         if (configuration.getCloudProvider() == CloudProvider.GOOGLE_CLOUD) {
             region = "EMPTY";
+        } else if (configuration.getCloudProvider() == CloudProvider.BAIDU_CLOUD) {
+            // baidu cloud region may supplied as cn-bj eg.
+            region = ObjectStorageConfig.retrieveBaiduCloudRegion(region);
         }
         // if not AWS, means use S3 SDK to access other cloud storage, then we must set endpoint
         if (!configuration.getCloudProvider().isAWS()) {
@@ -177,6 +183,12 @@ public class CloudResourceConfigurations {
         String roleSessionName = configuration.getRoleSessionName();
         String roleArn = configuration.getRoleArn();
         return new AmazonCloudClient(s3, sts, roleSessionName, roleArn);
+    }
+
+    static BaiduCloudClient createBaiduCloudClient(ObjectStorageConfiguration configuration) {
+        AmazonCloudClient amazonCloudClient = createAmazonCloudClient(configuration);
+        return new BaiduCloudClient(configuration.getAccessKeyId(), configuration.getAccessKeySecret(),
+                configuration.getPublicEndpoint(), amazonCloudClient);
     }
 
     static GoogleCloudClient createGoogleCloudClient(ObjectStorageConfiguration configuration) {
