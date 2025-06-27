@@ -17,13 +17,12 @@ package com.oceanbase.odc.service.iam.model;
 
 import java.util.List;
 
-import javax.validation.constraints.Size;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.common.json.SensitiveInput;
 import com.oceanbase.odc.common.validate.Name;
 
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 

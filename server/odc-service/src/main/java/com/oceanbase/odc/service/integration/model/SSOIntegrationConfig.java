@@ -20,8 +20,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import javax.validation.constraints.NotBlank;
-
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -36,6 +34,7 @@ import com.oceanbase.odc.service.integration.model.Encryption.EncryptionAlgorith
 import com.oceanbase.odc.service.integration.saml.SamlParameter;
 import com.oceanbase.odc.service.integration.saml.SamlParameter.SecretInfo;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;

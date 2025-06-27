@@ -17,10 +17,10 @@ package com.oceanbase.odc.service.audit;
 
 import java.util.List;
 
-import javax.servlet.http.HttpServletRequest;
-
 import com.oceanbase.odc.metadb.audit.AuditEventEntity;
 import com.oceanbase.odc.service.audit.model.AuditEventMeta;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 public interface AuditEventHandler {
 

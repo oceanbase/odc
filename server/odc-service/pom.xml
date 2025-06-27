@@ -21,11 +21,7 @@
                 <artifactId>pty4j</artifactId>
                 <version>0.11.4</version>
             </dependency>
-            <dependency>
-                <groupId>org.jetbrains.pty4j</groupId>
-                <artifactId>purejavacomm</artifactId>
-                <version>0.0.11.1</version>
-            </dependency>
+
             <dependency>
                 <groupId>org.jetbrains</groupId>
                 <artifactId>annotations</artifactId>
@@ -54,6 +50,10 @@
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>odc-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate.common</groupId>
+            <artifactId>hibernate-commons-annotations</artifactId>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
@@ -88,6 +88,10 @@
             <artifactId>spring-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
@@ -96,6 +100,10 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-inline</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <artifactId>byte-buddy</artifactId>
+            <groupId>net.bytebuddy</groupId>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
@@ -151,7 +159,6 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-oauth2-jose</artifactId>
-            <version>5.7.0</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.security</groupId>
@@ -182,8 +189,18 @@
             <artifactId>druid</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>ob-loader-dumper</artifactId>
+            <exclusions>
+                <exclusion>
+                    <artifactId>antlr4-runtime</artifactId>
+                    <groupId>org.antlr</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
@@ -230,10 +247,6 @@
         <dependency>
             <groupId>org.jetbrains.pty4j</groupId>
             <artifactId>pty4j</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.jetbrains.pty4j</groupId>
-            <artifactId>purejavacomm</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jetbrains</groupId>

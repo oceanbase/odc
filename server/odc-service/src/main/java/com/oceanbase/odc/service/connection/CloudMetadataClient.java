@@ -18,9 +18,6 @@ package com.oceanbase.odc.service.connection;
 import java.util.List;
 import java.util.Map;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.odc.core.authority.exception.AccessDeniedException;
 import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.connection.model.OBDatabaseUser;
@@ -29,6 +26,9 @@ import com.oceanbase.odc.service.connection.model.OBInstanceType;
 import com.oceanbase.odc.service.connection.model.OBTenant;
 import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
 import com.oceanbase.odc.service.connection.model.OceanBaseAccessMode;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 public interface CloudMetadataClient {
     /**

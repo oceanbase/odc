@@ -16,10 +16,9 @@
 
 package com.oceanbase.odc.server.web.trace;
 
-import javax.servlet.annotation.WebFilter;
-
 import org.springframework.context.annotation.Profile;
 
+import jakarta.servlet.annotation.WebFilter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

@@ -20,8 +20,6 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import javax.validation.constraints.NotNull;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.context.refresh.ContextRefresher;
 import org.springframework.stereotype.Service;
@@ -35,6 +33,7 @@ import com.oceanbase.odc.service.config.model.Configuration;
 import com.oceanbase.odc.service.config.util.ConfigurationUtils;
 import com.oceanbase.odc.service.systemconfig.SystemConfigRefreshMatcher;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**

@@ -19,8 +19,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.function.Consumer;
 
-import javax.validation.constraints.NotEmpty;
-
+import jakarta.validation.constraints.NotEmpty;
 import lombok.NonNull;
 
 /**

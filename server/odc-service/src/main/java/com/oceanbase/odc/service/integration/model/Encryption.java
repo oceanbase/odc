@@ -15,14 +15,13 @@
  */
 package com.oceanbase.odc.service.integration.model;
 
-import javax.validation.constraints.NotNull;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.google.common.base.MoreObjects;
 import com.oceanbase.odc.common.json.SensitiveInput;
 import com.oceanbase.odc.core.shared.PreConditions;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

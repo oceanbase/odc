@@ -15,12 +15,12 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.oscfms.action;
 
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenApiService;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms.OmsSwapTableAction;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
+
+import jakarta.validation.constraints.NotNull;
 
 /**
  * @author longpeng.zlp

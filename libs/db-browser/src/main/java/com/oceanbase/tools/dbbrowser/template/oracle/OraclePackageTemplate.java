@@ -18,8 +18,6 @@ package com.oceanbase.tools.dbbrowser.template.oracle;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import javax.validation.constraints.NotNull;
-
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.jdbc.core.JdbcOperations;
@@ -33,6 +31,8 @@ import com.oceanbase.tools.dbbrowser.parser.PLParser;
 import com.oceanbase.tools.dbbrowser.parser.result.ParseOraclePLResult;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
+
+import jakarta.validation.constraints.NotNull;
 
 /**
  * {@link OraclePackageTemplate}

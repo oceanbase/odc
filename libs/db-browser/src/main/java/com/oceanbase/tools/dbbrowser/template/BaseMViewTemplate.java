@@ -20,8 +20,6 @@ import static com.oceanbase.tools.dbbrowser.model.DBConstraintType.PRIMARY_KEY;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import javax.validation.constraints.NotNull;
-
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -34,6 +32,8 @@ import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewRefreshMethod;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
+
+import jakarta.validation.constraints.NotNull;
 
 /**
  * @description:

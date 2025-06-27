@@ -17,8 +17,6 @@ package com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms;
 
 import java.util.Objects;
 
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
@@ -37,6 +35,7 @@ import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionContext;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionResult;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OscStates;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**

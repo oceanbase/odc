@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC
         "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.oceanbase.odc.metadb.feature.VersionDiffConfigDAO">
+<mapper namespace="com.oceanbase.odc.metadb.mapper.feature.VersionDiffConfigDAO">
     <sql id="sqlColumns">
        `id`, `config_key` as configKey,`db_mode` as dbMode,`config_value` as configValue,
         `min_version` as minVersion, `gmt_create` as gmtCreate, `gmt_modify` as gmtModify

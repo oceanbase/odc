@@ -15,9 +15,9 @@
  */
 package com.oceanbase.tools.dbbrowser.editor.mysql;
 
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
+
+import jakarta.validation.constraints.NotNull;
 
 /**
  * @author jingtian

@@ -18,6 +18,16 @@
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>ob-loader-dumper</artifactId>
+            <exclusions>
+                <exclusion>
+                    <artifactId>hadoop-client-api</artifactId>
+                    <groupId>org.apache.hadoop</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>antlr4-runtime</artifactId>
+                    <groupId>org.antlr</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
@@ -74,7 +84,7 @@
         <dependency>
             <groupId>com.fasterxml.woodstox</groupId>
             <artifactId>woodstox-core</artifactId>
-            <scope>provided</scope>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>info.picocli</groupId>

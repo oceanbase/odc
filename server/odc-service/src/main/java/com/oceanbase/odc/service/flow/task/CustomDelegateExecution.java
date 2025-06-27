@@ -24,6 +24,7 @@ import java.util.Set;
 import org.flowable.bpmn.model.FlowElement;
 import org.flowable.bpmn.model.FlowableListener;
 import org.flowable.engine.delegate.DelegateExecution;
+import org.flowable.engine.delegate.ReadOnlyDelegateExecution;
 import org.flowable.variable.api.persistence.entity.VariableInstance;
 
 import lombok.Getter;
@@ -82,8 +83,18 @@ public class CustomDelegateExecution implements DelegateExecution {
     }
 
     @Override
+    public String getProcessInstanceBusinessStatus() {
+        return null;
+    }
+
+    @Override
     public String getProcessDefinitionId() {
         return this.processDefinitionId;
+    }
+
+    @Override
+    public String getPropagatedStageInstanceId() {
+        return null;
     }
 
     @Override
@@ -99,6 +110,11 @@ public class CustomDelegateExecution implements DelegateExecution {
     @Override
     public String getCurrentActivityId() {
         return this.activityId;
+    }
+
+    @Override
+    public String getCurrentActivityName() {
+        return null;
     }
 
     @Override
@@ -124,6 +140,11 @@ public class CustomDelegateExecution implements DelegateExecution {
     @Override
     public void setCurrentFlowableListener(FlowableListener currentListener) {
 
+    }
+
+    @Override
+    public ReadOnlyDelegateExecution snapshotReadOnly() {
+        return null;
     }
 
     @Override

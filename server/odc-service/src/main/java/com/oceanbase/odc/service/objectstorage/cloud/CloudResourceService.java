@@ -18,8 +18,6 @@ package com.oceanbase.odc.service.objectstorage.cloud;
 import java.util.Objects;
 import java.util.UUID;
 
-import javax.validation.constraints.NotBlank;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -33,6 +31,7 @@ import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfigur
 import com.oceanbase.odc.service.objectstorage.cloud.model.UploadObjectTemporaryCredential;
 import com.oceanbase.odc.service.objectstorage.cloud.util.CloudObjectStorageUtil;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

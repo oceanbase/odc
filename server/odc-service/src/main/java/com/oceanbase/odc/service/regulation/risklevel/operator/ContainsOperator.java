@@ -17,7 +17,7 @@ package com.oceanbase.odc.service.regulation.risklevel.operator;
 
 import java.util.Objects;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * @Author: Lebie

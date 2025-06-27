@@ -19,7 +19,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyObject;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -107,7 +106,7 @@ public class ShadowTableComparingServiceTest extends ServiceTestEnv {
         req.setSchemaName(config.getDefaultSchema());
         req.setOriginTableNames(Arrays.asList("t1", "t2"));
         req.setDestTableNames(Arrays.asList("__t_t1", "__t_t2"));
-        when(flowInstanceService.mapFlowInstance(anyObject(), any(), any())).thenReturn(1L);
+        when(flowInstanceService.mapFlowInstance(any(), any(), any())).thenReturn(1L);
         String taskId = shadowTableComparingService.createShadowTableSync(req);
         await().atMost(20, SECONDS)
                 .until(() -> shadowTableComparingService.listShadowTableSyncs(Long.valueOf(taskId)).isCompleted());
@@ -132,7 +131,7 @@ public class ShadowTableComparingServiceTest extends ServiceTestEnv {
         req.setOriginTableNames(Arrays.asList("t3"));
         req.setDestTableNames(Arrays.asList("__t_t3"));
         String taskId = shadowTableComparingService.createShadowTableSync(req);
-        when(flowInstanceService.mapFlowInstance(anyObject(), any(), any())).thenReturn(1L);
+        when(flowInstanceService.mapFlowInstance(any(), any(), any())).thenReturn(1L);
         await().atMost(20, SECONDS)
                 .until(() -> shadowTableComparingService.listShadowTableSyncs(Long.valueOf(taskId)).isCompleted());
     }
@@ -156,7 +155,7 @@ public class ShadowTableComparingServiceTest extends ServiceTestEnv {
         req.setOriginTableNames(Arrays.asList("not_exists_table"));
         req.setDestTableNames(Arrays.asList("__t_not_exists_table"));
         String taskId = shadowTableComparingService.createShadowTableSync(req);
-        when(flowInstanceService.mapFlowInstance(anyObject(), any(), any())).thenReturn(1L);
+        when(flowInstanceService.mapFlowInstance(any(), any(), any())).thenReturn(1L);
         await().atMost(20, SECONDS)
                 .until(() -> shadowTableComparingService.listShadowTableSyncs(Long.valueOf(taskId)).isCompleted());
     }

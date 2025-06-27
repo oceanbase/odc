@@ -20,8 +20,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-import javax.transaction.Transactional;
-
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -31,6 +29,8 @@ import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
+
+import jakarta.transaction.Transactional;
 
 /**
  * Repository layer for {@link UserTaskInstanceEntity}

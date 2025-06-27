@@ -20,10 +20,10 @@ import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.nimbusds.oauth2.sdk.util.CollectionUtils;
 import com.oceanbase.odc.common.util.YamlUtils;
 import com.oceanbase.odc.core.migrate.JdbcMigratable;
 import com.oceanbase.odc.core.migrate.Migratable;
@@ -54,7 +54,8 @@ public class R4243NotificationPolicyMetaMigrate implements JdbcMigratable {
         List<PolicyMetadataEntity> actual = repository.findAll();
 
         List<PolicyMetadataEntity> toAdd =
-                expected.stream().filter(metadata -> !actual.contains(metadata)).collect(Collectors.toList());
+                expected.stream().filter(metadata -> !actual.contains(metadata))
+                        .collect(Collectors.toList());
         List<PolicyMetadataEntity> toRemove =
                 actual.stream().filter(metadata -> !expected.contains(metadata)).collect(Collectors.toList());
 
@@ -66,6 +67,7 @@ public class R4243NotificationPolicyMetaMigrate implements JdbcMigratable {
                         toRemove.size());
             }
 
+            toAdd.forEach(e -> e.setId(null));
             if (CollectionUtils.isNotEmpty(toAdd)) {
                 repository.saveAll(toAdd);
                 log.info("add new notification policy metadata successfully, total added count={}",

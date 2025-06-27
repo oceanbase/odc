@@ -20,8 +20,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
-import javax.validation.constraints.NotNull;
-
 import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.core.authority.model.SecurityResource;
@@ -29,6 +27,8 @@ import com.oceanbase.odc.core.authority.permission.Permission;
 import com.oceanbase.odc.core.shared.constant.PermissionType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.service.iam.model.User;
+
+import jakarta.validation.constraints.NotNull;
 
 /**
  * {@link AuthorizationFacade}

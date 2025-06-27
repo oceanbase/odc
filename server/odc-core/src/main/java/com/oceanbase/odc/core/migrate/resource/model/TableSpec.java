@@ -19,15 +19,14 @@ import java.lang.reflect.Field;
 import java.util.LinkedList;
 import java.util.List;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.oceanbase.odc.core.migrate.resource.Verifiable;
 import com.oceanbase.odc.core.migrate.resource.factory.ValueEncoderFactory.EncodeConfig;
 import com.oceanbase.odc.core.migrate.resource.factory.ValueGeneratorFactory.GeneratorConfig;
 import com.oceanbase.odc.core.shared.exception.VerifyException;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;

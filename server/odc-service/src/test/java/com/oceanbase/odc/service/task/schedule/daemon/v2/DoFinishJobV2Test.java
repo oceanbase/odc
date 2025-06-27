@@ -51,7 +51,7 @@ public class DoFinishJobV2Test extends DaemonV2TestBase {
                 .host(supervisorEndpoint.getHost())
                 .port(9999)
                 .protocol("test")
-                .namespace("-10000") // invalid pid
+                .namespace("1")
                 .executorName("test_identifier")
                 .build();
         jobEntity.setExecutorIdentifier(executorIdentifier.toString());
@@ -64,7 +64,7 @@ public class DoFinishJobV2Test extends DaemonV2TestBase {
         ArgumentCaptor<ResourceID> argumentCaptor = ArgumentCaptor.forClass(ResourceID.class);
         Mockito.verify(resourceManager).release(argumentCaptor.capture());
         Assert.assertEquals(argumentCaptor.getValue(),
-                new ResourceID(new ResourceLocation("test", "test"), "cloudK8sPod", "-10000", "test_identifier"));
+                new ResourceID(new ResourceLocation("test", "test"), "cloudK8sPod", "1", "test_identifier"));
     }
 
     @Test
@@ -135,6 +135,6 @@ public class DoFinishJobV2Test extends DaemonV2TestBase {
         ArgumentCaptor<ResourceID> captor = ArgumentCaptor.forClass(ResourceID.class);
         Mockito.verify(resourceManager).release(captor.capture());
         Assert.assertEquals(captor.getValue(),
-                new ResourceID(new ResourceLocation("test", "test"), "cloudK8sPod", "-10000", "test_identifier"));
+                new ResourceID(new ResourceLocation("test", "test"), "cloudK8sPod", "1", "test_identifier"));
     }
 }

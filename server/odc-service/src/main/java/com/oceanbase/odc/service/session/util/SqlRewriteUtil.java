@@ -17,8 +17,6 @@ package com.oceanbase.odc.service.session.util;
 
 import java.util.List;
 
-import javax.validation.constraints.NotEmpty;
-
 import org.apache.commons.collections.CollectionUtils;
 
 import com.oceanbase.odc.common.util.StringUtils;
@@ -39,6 +37,7 @@ import com.oceanbase.tools.sqlparser.statement.select.SelectBody;
 import com.oceanbase.tools.sqlparser.statement.select.oracle.Pivot;
 import com.oceanbase.tools.sqlparser.statement.select.oracle.UnPivot;
 
+import jakarta.validation.constraints.NotEmpty;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 

@@ -15,13 +15,12 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.oms.request;
 
-import javax.validation.constraints.NotBlank;
-
 import org.hibernate.validator.constraints.Length;
 
 import com.oceanbase.odc.service.onlineschemachange.oms.annotation.OmsEnumsCheck;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsOceanBaseType;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;

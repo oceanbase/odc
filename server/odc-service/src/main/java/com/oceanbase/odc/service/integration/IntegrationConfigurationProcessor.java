@@ -21,8 +21,6 @@ import java.util.List;
 import java.util.Objects;
 
 import javax.annotation.Nullable;
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -39,6 +37,9 @@ import com.oceanbase.odc.service.integration.model.SqlInterceptorProperties;
 import com.oceanbase.odc.service.integration.saml.SamlCredentialManager;
 import com.oceanbase.odc.service.integration.saml.SamlParameter;
 import com.oceanbase.odc.service.integration.saml.SamlParameter.SecretInfo;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * @author gaoda.xy

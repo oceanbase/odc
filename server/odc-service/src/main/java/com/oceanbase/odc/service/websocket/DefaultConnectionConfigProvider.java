@@ -16,8 +16,6 @@
 
 package com.oceanbase.odc.service.websocket;
 
-import javax.websocket.Session;
-
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
@@ -26,6 +24,8 @@ import com.oceanbase.odc.service.common.util.SidUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.util.ConnectionMapper;
 import com.oceanbase.odc.service.session.ConnectSessionService;
+
+import jakarta.websocket.Session;
 
 public class DefaultConnectionConfigProvider implements ConnectionConfigProvider {
 

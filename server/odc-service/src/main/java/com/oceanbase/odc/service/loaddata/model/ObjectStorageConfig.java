@@ -20,8 +20,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.net.URI;
 import java.text.MessageFormat;
 
-import javax.validation.constraints.NotBlank;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.s3a.S3AFileSystem;
 
@@ -31,6 +29,7 @@ import com.oceanbase.odc.service.cloud.model.CloudProvider;
 import com.oceanbase.odc.service.loaddata.util.CloudProviderUtil;
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectStorageConfiguration;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 

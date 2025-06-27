@@ -25,14 +25,14 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-import javax.validation.constraints.NotBlank;
-
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.service.objectstorage.cloud.model.ObjectTagging;
 import com.oceanbase.odc.service.objectstorage.model.ObjectMetadata;
 import com.oceanbase.odc.service.objectstorage.operator.ObjectBlockIterator;
 import com.oceanbase.odc.service.objectstorage.operator.ObjectBlockOperator;
+
+import jakarta.validation.constraints.NotBlank;
 
 /**
  * @author keyang

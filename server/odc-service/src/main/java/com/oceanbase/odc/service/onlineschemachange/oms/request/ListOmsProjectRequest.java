@@ -18,13 +18,12 @@ package com.oceanbase.odc.service.onlineschemachange.oms.request;
 
 import java.util.List;
 
-import javax.validation.constraints.Min;
-
 import org.hibernate.validator.constraints.Range;
 
 import com.oceanbase.odc.service.onlineschemachange.oms.annotation.OmsEnumsCheck;
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsProjectType;
 
+import jakarta.validation.constraints.Min;
 import lombok.Data;
 
 /**

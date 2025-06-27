@@ -19,11 +19,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import javax.persistence.AttributeConverter;
-import javax.persistence.Converter;
-
 import com.oceanbase.odc.common.json.JsonUtils;
 
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
 import lombok.extern.slf4j.Slf4j;
 
 /**

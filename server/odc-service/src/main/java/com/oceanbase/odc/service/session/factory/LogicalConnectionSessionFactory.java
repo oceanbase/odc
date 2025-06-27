@@ -17,8 +17,6 @@ package com.oceanbase.odc.service.session.factory;
 
 import java.util.concurrent.TimeUnit;
 
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionFactory;
@@ -28,6 +26,7 @@ import com.oceanbase.odc.core.session.LogicalConnectionSession;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.service.connection.model.CreateSessionReq;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 

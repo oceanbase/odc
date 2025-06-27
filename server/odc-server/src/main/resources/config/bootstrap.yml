@@ -14,7 +14,6 @@ spring:
     url: jdbc:oceanbase://${ODC_DATABASE_HOST}:${ODC_DATABASE_PORT}/${ODC_DATABASE_NAME}?${ODC_DATABASE_JDBC_PARAMETER:allowMultiQueries=true&zeroDateTimeBehavior=convertToNull&useCompatibleMetadata=true}
     username: ${ODC_DATABASE_USERNAME}
     password: ${ODC_DATABASE_PASSWORD}
-
   cloud:
     config:
       label: master
@@ -28,7 +27,6 @@ spring:
       schema-locations: classpath:schema.sql
       data-locations: classpath:data.sql
       mode: always
-
 jasypt:
   encryptor:
     password: ${ODC_PROPERTY_ENCRYPTION_PASSWORD}

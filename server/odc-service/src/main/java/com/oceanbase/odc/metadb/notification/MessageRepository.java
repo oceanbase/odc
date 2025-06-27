@@ -17,8 +17,6 @@ package com.oceanbase.odc.metadb.notification;
 
 import java.util.List;
 
-import javax.transaction.Transactional;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -31,6 +29,7 @@ import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.service.notification.model.MessageSendingStatus;
 import com.oceanbase.odc.service.notification.model.QueryMessageParams;
 
+import jakarta.transaction.Transactional;
 import lombok.NonNull;
 
 public interface MessageRepository extends OdcJpaRepository<MessageEntity, Long>,

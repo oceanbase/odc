@@ -89,6 +89,8 @@ public class SamlParameter implements SSOParameter {
      */
     private Decryption decryption = new Decryption();
 
+    private String nameIdFormat;
+
     public void fillSecret(String decryptSecret) {
         SecretInfo credential = JsonUtils.fromJson(decryptSecret, SecretInfo.class);
         if (credential == null) {

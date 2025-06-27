@@ -19,9 +19,6 @@ import java.sql.Connection;
 import java.util.Objects;
 import java.util.Optional;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcOperations;
@@ -40,6 +37,9 @@ import com.oceanbase.odc.service.config.OrganizationConfigUtils;
 import com.oceanbase.odc.service.regulation.ruleset.SqlConsoleRuleService;
 import com.oceanbase.odc.service.regulation.ruleset.model.SqlConsoleRules;
 import com.oceanbase.odc.service.session.model.SessionSettings;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Transaction service object, used to config some settings

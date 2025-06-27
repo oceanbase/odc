@@ -23,16 +23,11 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpServletResponseWrapper;
-
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.access.AccessDeniedHandlerImpl;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
@@ -55,6 +50,12 @@ import com.oceanbase.odc.service.common.response.OdcErrorResult;
 import com.oceanbase.odc.service.common.util.WebRequestUtils;
 import com.oceanbase.odc.service.common.util.WebResponseUtils;
 
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponseWrapper;
+
 /**
  * we always disable csrf for HttpSecurity configuration, create CsrfFilter manually for avoid
  * conflict with session management filter
@@ -72,7 +73,7 @@ public class CsrfConfigureHelper {
     private LocaleResolver localeResolver;
 
     public void configure(HttpSecurity http) throws Exception {
-        http.csrf().disable();
+        http.csrf(AbstractHttpConfigurer::disable);
         if (commonSecurityProperties.isCsrfEnabled()) {
             CsrfFilter csrfFilter = new CsrfFilter(new OdcCsrfTokenRepository());
             csrfFilter.setRequireCsrfProtectionMatcher(requestMatcher());

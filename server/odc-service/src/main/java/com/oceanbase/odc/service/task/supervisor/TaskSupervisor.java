@@ -18,7 +18,10 @@ package com.oceanbase.odc.service.task.supervisor;
 import java.io.File;
 import java.lang.ProcessBuilder.Redirect;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
@@ -101,6 +104,9 @@ public class TaskSupervisor {
         long pid = SystemUtils.getProcessPid(process);
         if (pid == -1) {
             process.destroyForcibly();
+            String logContent = readLastLinesFromFile("process-call.log", 200);
+            log.error("Get pid failed, job id={}. Process log content:\n{}", context.getJobIdentity().getId(),
+                    logContent);
             throw new JobException("Get pid failed, job id={0} ", context.getJobIdentity().getId());
         }
 
@@ -109,6 +115,9 @@ public class TaskSupervisor {
 
         if (!isProcessRunning) {
             process.destroyForcibly();
+            String logContent = readLastLinesFromFile("process-call.log", 200);
+            log.error("Start process failed, not process found, pid={}, executorName={}. Process log content:\n{}",
+                    pid, executorName, logContent);
             throw new JobException("Start process failed, not process found, pid={0},executorName={1}.",
                     pid, executorName);
         }
@@ -232,5 +241,37 @@ public class TaskSupervisor {
 
     public static ExecutorIdentifier getExecutorIdentifier(ExecutorEndpoint executorEndpoint) {
         return ExecutorIdentifierParser.parser(executorEndpoint.getIdentifier());
+    }
+
+    /**
+     * Read the last N lines from a file
+     * 
+     * @param filePath the path to the file
+     * @param numLines number of lines to read from the end
+     * @return the last N lines as a string, or empty string if file doesn't exist or can't be read
+     */
+    private String readLastLinesFromFile(String filePath, int numLines) {
+        try {
+            if (!Files.exists(Paths.get(filePath))) {
+                return "Log file does not exist: " + filePath;
+            }
+
+            List<String> lines = Files.readAllLines(Paths.get(filePath), Charset.defaultCharset());
+            if (lines.isEmpty()) {
+                return "Log file is empty: " + filePath;
+            }
+
+            int startIndex = Math.max(0, lines.size() - numLines);
+            List<String> lastLines = lines.subList(startIndex, lines.size());
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("Last ").append(lastLines.size()).append(" lines from ").append(filePath).append(":\n");
+            for (String line : lastLines) {
+                sb.append(line).append("\n");
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            return "Failed to read log file " + filePath + ": " + e.getMessage();
+        }
     }
 }

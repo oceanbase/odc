@@ -19,9 +19,6 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.Properties;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -52,6 +49,8 @@ import com.oceanbase.odc.service.session.factory.OBConsoleDataSourceFactory;
 import com.oceanbase.odc.service.session.initializer.BackupInstanceInitializer;
 import com.oceanbase.odc.service.session.initializer.DataSourceInitScriptInitializer;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 

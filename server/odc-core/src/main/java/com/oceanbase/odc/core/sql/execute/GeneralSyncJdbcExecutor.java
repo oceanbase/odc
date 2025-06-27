@@ -360,6 +360,12 @@ public class GeneralSyncJdbcExecutor implements SyncJdbcExecutor {
     }
 
     @Override
+    public int[] batchUpdate(PreparedStatementCreator psc, BatchPreparedStatementSetter pss,
+            KeyHolder generatedKeyHolder) throws DataAccessException {
+        return this.jdbcTemplate.batchUpdate(psc, pss, generatedKeyHolder);
+    }
+
+    @Override
     public int[] batchUpdate(String s, List<Object[]> list) throws DataAccessException {
         return this.jdbcTemplate.batchUpdate(s, list);
     }

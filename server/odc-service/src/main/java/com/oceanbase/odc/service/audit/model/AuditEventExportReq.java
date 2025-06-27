@@ -18,12 +18,11 @@ package com.oceanbase.odc.service.audit.model;
 import java.util.Date;
 import java.util.List;
 
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.odc.core.shared.constant.AuditEventAction;
 import com.oceanbase.odc.core.shared.constant.AuditEventResult;
 import com.oceanbase.odc.core.shared.constant.AuditEventType;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 /**

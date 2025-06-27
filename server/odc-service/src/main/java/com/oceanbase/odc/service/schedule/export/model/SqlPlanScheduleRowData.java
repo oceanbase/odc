@@ -17,11 +17,10 @@ package com.oceanbase.odc.service.schedule.export.model;
 
 import java.util.List;
 
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data

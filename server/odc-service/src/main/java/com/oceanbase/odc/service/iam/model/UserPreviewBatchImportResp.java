@@ -18,10 +18,9 @@ package com.oceanbase.odc.service.iam.model;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.validation.Valid;
-
 import com.oceanbase.odc.core.shared.constant.ErrorCode;
 
+import jakarta.validation.Valid;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;

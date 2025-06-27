@@ -15,11 +15,10 @@
  */
 package com.oceanbase.odc.service.db.model;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 /**

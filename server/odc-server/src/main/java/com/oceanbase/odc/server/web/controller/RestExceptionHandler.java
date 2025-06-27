@@ -19,9 +19,6 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.validation.ConstraintViolationException;
-
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.ConversionNotSupportedException;
 import org.springframework.beans.PropertyAccessException;
@@ -66,6 +63,8 @@ import com.oceanbase.odc.service.common.response.ErrorResponse;
 import com.oceanbase.odc.service.common.util.WebRequestUtils;
 import com.oceanbase.tools.datamocker.model.exception.MockerException;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 
 /**

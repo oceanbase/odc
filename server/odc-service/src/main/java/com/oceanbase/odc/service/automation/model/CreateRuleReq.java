@@ -17,10 +17,9 @@ package com.oceanbase.odc.service.automation.model;
 
 import java.util.List;
 
-import javax.validation.constraints.Size;
-
 import com.oceanbase.odc.common.validate.Name;
 
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data

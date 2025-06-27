@@ -15,11 +15,10 @@
  */
 package com.oceanbase.odc.service.collaboration.environment.model;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
-
 import com.oceanbase.odc.common.validate.Name;
 
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

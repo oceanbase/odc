@@ -25,8 +25,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.validation.constraints.NotEmpty;
-
 import org.springframework.util.CollectionUtils;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -45,6 +43,7 @@ import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
+import jakarta.validation.constraints.NotEmpty;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 

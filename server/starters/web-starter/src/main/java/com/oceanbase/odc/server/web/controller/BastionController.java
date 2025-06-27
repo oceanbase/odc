@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.server.web.controller;
 
-import javax.validation.constraints.NotBlank;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -28,6 +26,7 @@ import com.oceanbase.odc.service.bastion.BastionEncryptionService;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Validated

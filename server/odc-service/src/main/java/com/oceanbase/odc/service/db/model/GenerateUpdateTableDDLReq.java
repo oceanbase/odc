@@ -15,10 +15,9 @@
  */
 package com.oceanbase.odc.service.db.model;
 
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.tools.dbbrowser.model.DBTable;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

@@ -15,8 +15,7 @@
  */
 package com.oceanbase.odc.common.util;
 
-import javax.validation.constraints.NotNull;
-
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 

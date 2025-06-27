@@ -15,10 +15,9 @@
  */
 package com.oceanbase.odc.core.shared.model;
 
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.odc.core.shared.PreConditions;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

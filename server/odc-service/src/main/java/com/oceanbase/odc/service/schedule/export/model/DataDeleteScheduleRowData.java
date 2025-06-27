@@ -17,13 +17,12 @@ package com.oceanbase.odc.service.schedule.export.model;
 
 import java.util.List;
 
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.model.OffsetConfig;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.tools.migrator.common.enums.ShardingStrategy;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data

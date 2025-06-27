@@ -17,12 +17,11 @@ package com.oceanbase.odc.service.iam.model;
 
 import java.time.OffsetDateTime;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.odc.metadb.iam.LoginHistoryEntity;
 import com.oceanbase.odc.metadb.iam.LoginHistoryEntity.FailedReason;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
@@ -56,7 +55,7 @@ public class LoginHistory {
         model.setAccountName(entity.getAccountName());
         model.setLoginTime(entity.getLoginTime());
         model.setFailedReason(entity.getFailedReason());
-        model.setSuccess(entity.isSuccess());
+        model.setSuccess(entity.getSuccess());
         return model;
     }
 }

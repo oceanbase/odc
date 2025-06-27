@@ -18,8 +18,6 @@ package com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms;
 import java.util.List;
 import java.util.Objects;
 
-import javax.validation.constraints.NotNull;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.oceanbase.odc.common.json.JsonUtils;
@@ -45,6 +43,7 @@ import com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms.ProjectSte
 import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OscStates;
 import com.oceanbase.odc.service.onlineschemachange.rename.SwapTableUtil;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**

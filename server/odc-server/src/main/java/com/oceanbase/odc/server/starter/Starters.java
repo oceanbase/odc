@@ -15,13 +15,13 @@
  */
 package com.oceanbase.odc.server.starter;
 
+import static com.oceanbase.odc.server.PluginSpringApplication.addUrlToClassLoader;
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -67,14 +67,9 @@ public class Starters {
             return;
         }
         try {
-            URLClassLoader classLoader = (URLClassLoader) Starters.class.getClassLoader();
-            Method method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
-            method.setAccessible(true);
-            for (URL url : starterUrls) {
-                method.invoke(classLoader, url);
-                log.info("Starter has been added to classpath, url={}", url);
-            }
-        } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
+            addUrlToClassLoader(starterUrls, Starters.class.getClassLoader());
+        } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException | ClassNotFoundException
+                | NoSuchFieldException e) {
             log.warn("Failed to add starter to classpath", e);
             throw new IllegalStateException(e);
         }

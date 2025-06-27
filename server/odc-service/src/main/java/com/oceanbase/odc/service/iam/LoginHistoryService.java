@@ -22,8 +22,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import javax.validation.constraints.NotEmpty;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -36,6 +34,7 @@ import com.oceanbase.odc.metadb.iam.LoginHistoryEntity;
 import com.oceanbase.odc.metadb.iam.LoginHistoryRepository;
 import com.oceanbase.odc.service.iam.model.LoginHistory;
 
+import jakarta.validation.constraints.NotEmpty;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

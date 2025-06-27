@@ -3,7 +3,8 @@
 
 
 MAVEN_SETTING_PATH=${1:-"settings.xml"}
-MAVEN_SETTINGS=${ACI_VAR_MAVEN_SETTINGS}
+MAVEN_SETTINGS=${ACI_VAR_MAVEN_SETTINGS:-$2}
+
 if [ -f "$MAVEN_SETTING_PATH" ]; then
     echo "settings file already exists. ：$MAVEN_SETTING_PATH"
 else

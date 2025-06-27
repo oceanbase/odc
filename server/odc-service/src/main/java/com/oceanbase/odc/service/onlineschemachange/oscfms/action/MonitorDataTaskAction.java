@@ -15,13 +15,13 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.oscfms.action;
 
-import javax.validation.constraints.NotNull;
-
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
 import com.oceanbase.odc.service.onlineschemachange.oms.openapi.OmsProjectOpenApiService;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms.OmsMonitorDataTaskAction;
+
+import jakarta.validation.constraints.NotNull;
 
 /**
  * @author longpeng.zlp

@@ -17,8 +17,7 @@ package com.oceanbase.odc.service.datasecurity.model;
 
 import java.util.List;
 
-import javax.validation.constraints.NotNull;
-
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 

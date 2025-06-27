@@ -18,7 +18,7 @@ package com.oceanbase.odc.service.state.model;
 import java.util.List;
 import java.util.Set;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 public interface StateManager {
 

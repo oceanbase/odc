@@ -43,6 +43,8 @@ spring:
           log-slow-sql: true
   jpa:
     open-in-view: false
+    hibernate:
+      ddl-auto: none
   sql:
     init:
       mode: never
@@ -80,11 +82,10 @@ management:
       exposure:
         include: "business,application"
     enabled-by-default: ${odc.system.monitor.actuator.enabled:false}
-  metrics:
-    export:
-      prometheus:
-        enabled: ${odc.system.monitor.actuator.enabled:false}
-
   endpoint:
     prometheus:
       enabled: ${odc.system.monitor.actuator.enabled:false}
+  prometheus:
+    metrics:
+      export:
+        enabled: ${odc.system.monitor.actuator.enabled:false}

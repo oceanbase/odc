@@ -15,11 +15,11 @@
  */
 package com.oceanbase.tools.dbbrowser.editor.mysql;
 
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
+
+import jakarta.validation.constraints.NotNull;
 
 /**
  * @description: {@link OBMySQLSpecialDropIndexEditor#generateDropObjectDDL(DBTableIndex)} is used

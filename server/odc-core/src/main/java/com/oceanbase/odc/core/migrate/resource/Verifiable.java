@@ -17,13 +17,12 @@ package com.oceanbase.odc.core.migrate.resource;
 
 import java.util.Set;
 
-import javax.validation.ConstraintViolation;
-
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.odc.common.validate.ValidatorBuilder;
 import com.oceanbase.odc.core.shared.exception.VerifyException;
 
+import jakarta.validation.ConstraintViolation;
 import lombok.NonNull;
 
 /**

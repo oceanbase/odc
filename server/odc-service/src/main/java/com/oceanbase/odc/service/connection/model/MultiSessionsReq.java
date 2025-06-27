@@ -17,10 +17,9 @@ package com.oceanbase.odc.service.connection.model;
 
 import java.util.Set;
 
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.odc.core.session.ConnectionSession;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 /**

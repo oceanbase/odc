@@ -19,12 +19,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.odc.core.migrate.resource.Verifiable;
 import com.oceanbase.odc.core.shared.exception.VerifyException;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;

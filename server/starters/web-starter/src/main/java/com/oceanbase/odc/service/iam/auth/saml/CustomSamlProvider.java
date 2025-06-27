@@ -18,7 +18,7 @@ package com.oceanbase.odc.service.iam.auth.saml;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.saml2.provider.service.authentication.OpenSamlAuthenticationProvider;
+import org.springframework.security.saml2.provider.service.authentication.OpenSaml5AuthenticationProvider;
 import org.springframework.security.saml2.provider.service.authentication.Saml2Authentication;
 
 import com.oceanbase.odc.core.shared.Verify;
@@ -39,7 +39,7 @@ public class CustomSamlProvider implements AuthenticationProvider {
 
     public CustomSamlProvider(DefaultSamlUserService defaultSamlUserService) {
         this.defaultSamlUserService = defaultSamlUserService;
-        defaultAuthenticationProvider = new OpenSamlAuthenticationProvider();
+        defaultAuthenticationProvider = new OpenSaml5AuthenticationProvider();
     }
 
     @Override

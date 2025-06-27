@@ -24,14 +24,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.validation.ConstraintViolation;
-import javax.validation.Valid;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-
 import org.junit.Assert;
 import org.junit.Test;
 
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -146,7 +145,7 @@ public class ValidatorBuilderTest {
         Assert.assertEquals(result.size(), 1);
         Iterator<ConstraintViolation<App>> iter = result.iterator();
         ConstraintViolation<App> entry = iter.next();
-        Assert.assertEquals(entry.getPropertyPath().toString(), "printPerson3.arg0.name");
+        Assert.assertEquals(entry.getPropertyPath().toString(), "printPerson3.person.name");
     }
 
     @Test
@@ -160,7 +159,7 @@ public class ValidatorBuilderTest {
         Assert.assertEquals(result.size(), 1);
         Iterator<ConstraintViolation<App>> iter = result.iterator();
         ConstraintViolation<App> entry = iter.next();
-        Assert.assertEquals(entry.getPropertyPath().toString(), "printPerson1.arg0.testCarList");
+        Assert.assertEquals(entry.getPropertyPath().toString(), "printPerson1.person.testCarList");
         Assert.assertEquals(entry.getMessage(), "Test car list can not be null");
     }
 
@@ -173,7 +172,7 @@ public class ValidatorBuilderTest {
         Assert.assertEquals(result.size(), 1);
         Iterator<ConstraintViolation<App>> iter = result.iterator();
         ConstraintViolation<App> entry = iter.next();
-        Assert.assertEquals(entry.getPropertyPath().toString(), "printPerson1.arg0");
+        Assert.assertEquals(entry.getPropertyPath().toString(), "printPerson1.person");
         Assert.assertEquals(entry.getMessage(), "must not be null");
     }
 
@@ -188,7 +187,7 @@ public class ValidatorBuilderTest {
         Assert.assertEquals(result.size(), 1);
         Iterator<ConstraintViolation<App>> iter = result.iterator();
         ConstraintViolation<App> entry = iter.next();
-        Assert.assertEquals(entry.getPropertyPath().toString(), "printPerson1.arg0.testCarList");
+        Assert.assertEquals(entry.getPropertyPath().toString(), "printPerson1.person.testCarList");
         Assert.assertEquals(entry.getMessage(), "Test car list can not be null with second group");
     }
 
@@ -210,7 +209,7 @@ public class ValidatorBuilderTest {
         Assert.assertEquals(result.size(), 1);
         Iterator<ConstraintViolation<App>> iter = result.iterator();
         ConstraintViolation<App> entry = iter.next();
-        Assert.assertEquals(entry.getPropertyPath().toString(), "printPerson1.arg0.testCar.brand");
+        Assert.assertEquals(entry.getPropertyPath().toString(), "printPerson1.person.testCar.brand");
         Assert.assertEquals(entry.getMessage(), "Brand can not be null");
     }
 
@@ -232,7 +231,7 @@ public class ValidatorBuilderTest {
         Assert.assertEquals(result.size(), 1);
         Iterator<ConstraintViolation<App>> iter = result.iterator();
         ConstraintViolation<App> entry = iter.next();
-        Assert.assertEquals(entry.getPropertyPath().toString(), "printPerson1.arg0.testCar.doorData");
+        Assert.assertEquals(entry.getPropertyPath().toString(), "printPerson1.person.testCar.doorData");
         Assert.assertEquals(entry.getMessage(), "Door data can not be null");
     }
 
@@ -254,7 +253,7 @@ public class ValidatorBuilderTest {
         Assert.assertEquals(result.size(), 1);
         Iterator<ConstraintViolation<App>> iter = result.iterator();
         ConstraintViolation<App> entry = iter.next();
-        Assert.assertEquals(entry.getPropertyPath().toString(), "printPerson1.arg0.testCar.lengths");
+        Assert.assertEquals(entry.getPropertyPath().toString(), "printPerson1.person.testCar.lengths");
         Assert.assertEquals(entry.getMessage(), "Lengths can not be null");
     }
 

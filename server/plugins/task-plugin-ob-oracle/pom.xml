@@ -12,9 +12,19 @@
     <artifactId>task-plugin-ob-oracle</artifactId>
 
     <dependencies>
+    <dependency>
+        <groupId>org.antlr</groupId>
+        <artifactId>antlr4</artifactId>
+    </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>task-plugin-api</artifactId>
+            <exclusions>
+                <exclusion>
+                    <artifactId>antlr4-runtime</artifactId>
+                    <groupId>org.antlr</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>

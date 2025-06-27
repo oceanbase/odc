@@ -18,9 +18,9 @@ package com.oceanbase.odc.service.regulation.risklevel.operator;
 import java.util.List;
 import java.util.Objects;
 
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
+
+import jakarta.validation.constraints.NotNull;
 
 /**
  * @Author: Lebie

@@ -17,13 +17,11 @@ package com.oceanbase.odc.core.authority.session.manager;
 
 import java.util.Map;
 
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.oceanbase.odc.core.authority.session.SecuritySession;
 import com.oceanbase.odc.core.authority.session.SecuritySessionManager;
+
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 
 /**
  * Session manager, used to manage the life cycle of the session. Mainly used for session creation

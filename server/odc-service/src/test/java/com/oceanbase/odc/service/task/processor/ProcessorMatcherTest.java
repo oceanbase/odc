@@ -18,7 +18,7 @@ package com.oceanbase.odc.service.task.processor;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.oceanbase.odc.service.task.executor.task.TaskDescription;
+import com.oceanbase.odc.service.task.executor.TaskDescription;
 import com.oceanbase.odc.service.task.processor.matcher.DLMProcessorMatcher;
 import com.oceanbase.odc.service.task.processor.matcher.LogicalDBChangeProcessorMatcher;
 

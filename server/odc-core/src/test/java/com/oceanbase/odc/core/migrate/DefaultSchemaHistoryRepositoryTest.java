@@ -17,6 +17,7 @@ package com.oceanbase.odc.core.migrate;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 
@@ -34,7 +35,7 @@ public class DefaultSchemaHistoryRepositoryTest {
     private static final String JDBC_URL = "jdbc:h2:mem:test;MODE=MySQL";
 
     private DefaultSchemaHistoryRepository repository;
-    private Timestamp now = Timestamp.from(Instant.now());
+    private Timestamp now = Timestamp.from(Instant.now().truncatedTo(ChronoUnit.MICROS));
     private DataSource dataSource;
 
     @Before

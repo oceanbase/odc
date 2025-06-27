@@ -15,11 +15,11 @@
  */
 package com.oceanbase.odc.service.objectstorage.cloud;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.odc.service.objectstorage.cloud.client.CloudException;
 import com.oceanbase.odc.service.objectstorage.cloud.model.UploadObjectTemporaryCredential;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Cloud STS Service

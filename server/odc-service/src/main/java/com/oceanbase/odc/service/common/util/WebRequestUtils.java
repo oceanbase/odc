@@ -21,17 +21,12 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang.Validate;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpRequest;
-import org.springframework.http.server.ServletServerHttpRequest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -41,6 +36,11 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
 
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -93,10 +93,9 @@ public class WebRequestUtils {
 
     private static UriComponents getRequestUriComponents(HttpServletRequest request) {
         PreConditions.notNull(request, "request");
-        HttpRequest httpRequest = new ServletServerHttpRequest(request);
-        UriComponents uriComponents = UriComponentsBuilder.fromHttpRequest(httpRequest).build();
+        String requestURL = request.getRequestURL().toString();
+        UriComponents uriComponents = UriComponentsBuilder.fromUriString(requestURL).build();
         if (StringUtils.isEmpty(uriComponents.getHost())) {
-            String requestURL = request.getRequestURL().toString();
             uriComponents = UriComponentsBuilder.fromUriString(requestURL).build();
         }
         return uriComponents;
@@ -344,5 +343,9 @@ public class WebRequestUtils {
             value = (String) attribute;
         }
         return value;
+    }
+
+    public static HttpStatus convertToHttpStatus(HttpStatusCode statusCode) {
+        return HttpStatus.valueOf(statusCode.value());
     }
 }

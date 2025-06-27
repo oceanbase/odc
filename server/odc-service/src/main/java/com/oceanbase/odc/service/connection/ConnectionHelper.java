@@ -15,14 +15,14 @@
  */
 package com.oceanbase.odc.service.connection;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.service.connection.model.GenerateConnectionStringReq;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * @author yizhou.xw

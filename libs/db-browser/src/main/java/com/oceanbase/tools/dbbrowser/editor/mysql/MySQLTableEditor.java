@@ -17,8 +17,6 @@ package com.oceanbase.tools.dbbrowser.editor.mysql;
 
 import java.util.Objects;
 
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.tools.dbbrowser.editor.DBObjectEditor;
 import com.oceanbase.tools.dbbrowser.editor.DBTableEditor;
 import com.oceanbase.tools.dbbrowser.model.DBTable;
@@ -31,6 +29,7 @@ import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.NonNull;
 
 /**

@@ -18,8 +18,6 @@ package com.oceanbase.odc.service.onlineschemachange.oscfms.action;
 import java.util.Optional;
 import java.util.function.Predicate;
 
-import javax.validation.constraints.NotNull;
-
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -36,6 +34,7 @@ import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionContext;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.OscActionResult;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.state.OscStates;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**

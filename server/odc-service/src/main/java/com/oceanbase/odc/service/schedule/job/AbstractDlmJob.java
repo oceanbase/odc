@@ -36,7 +36,7 @@ import com.oceanbase.odc.service.quartz.util.ScheduleTaskUtils;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
-import com.oceanbase.odc.service.task.executor.task.TaskDescription;
+import com.oceanbase.odc.service.task.executor.TaskDescription;
 import com.oceanbase.odc.service.task.service.TaskFrameworkService;
 import com.oceanbase.tools.migrator.common.configure.DataSourceInfo;
 

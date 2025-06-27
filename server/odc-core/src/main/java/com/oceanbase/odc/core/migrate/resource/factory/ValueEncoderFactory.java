@@ -15,10 +15,9 @@
  */
 package com.oceanbase.odc.core.migrate.resource.factory;
 
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.odc.core.migrate.resource.value.ValueEncoder;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.NonNull;
 

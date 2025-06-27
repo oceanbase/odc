@@ -17,8 +17,6 @@ package com.oceanbase.tools.dbbrowser.editor.oracle;
 
 import java.util.Collection;
 
-import javax.validation.constraints.NotNull;
-
 import org.apache.commons.lang3.Validate;
 
 import com.oceanbase.tools.dbbrowser.editor.DBObjectEditor;
@@ -27,6 +25,8 @@ import com.oceanbase.tools.dbbrowser.model.DBSynonymType;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
+
+import jakarta.validation.constraints.NotNull;
 
 /**
  * {@link OracleSynonymEditor}

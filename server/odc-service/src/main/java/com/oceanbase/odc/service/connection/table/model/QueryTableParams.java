@@ -17,10 +17,9 @@ package com.oceanbase.odc.service.connection.table.model;
 
 import java.util.List;
 
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 

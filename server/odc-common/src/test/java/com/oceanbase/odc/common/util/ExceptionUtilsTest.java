@@ -38,7 +38,7 @@ public class ExceptionUtilsTest {
                 " \tat com.oceanbase.odc.common.util.ExceptionUtilsTest.rethrowException(ExceptionUtilsTest.java:71)"
                         + "  [wrapped] java.lang.RuntimeException: rethrow: "
                         + " \tat com.oceanbase.odc.common.util.ExceptionUtilsTest.rethrowException(ExceptionUtilsTest.java:69)"
-                        + " \tat com.oceanbase.odc.common.util.ExceptionUtilsTest.lambda$null$1(ExceptionUtilsTest.java:31)"
+                        + " \tat com.oceanbase.odc.common.util.ExceptionUtilsTest.lambda$getRootCauseReason$1(ExceptionUtilsTest.java:31)"
                         + " java.lang.RuntimeException: root cause",
                 rootCauseReason);
     }

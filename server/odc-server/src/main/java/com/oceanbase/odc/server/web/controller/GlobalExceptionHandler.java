@@ -20,8 +20,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -55,6 +53,7 @@ import com.oceanbase.odc.service.common.response.OdcErrorResult;
 import com.oceanbase.odc.service.common.util.WebRequestUtils;
 import com.oceanbase.tools.datamocker.model.exception.MockerException;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.log4j.Log4j2;
 
 /**

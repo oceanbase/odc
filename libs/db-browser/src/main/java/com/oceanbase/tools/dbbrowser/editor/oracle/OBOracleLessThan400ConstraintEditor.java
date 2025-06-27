@@ -15,10 +15,10 @@
  */
 package com.oceanbase.tools.dbbrowser.editor.oracle;
 
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
+
+import jakarta.validation.constraints.NotNull;
 
 /**
  * @author jingtian

@@ -18,10 +18,6 @@ package com.oceanbase.odc.server.web.controller.v2;
 import java.io.IOException;
 import java.util.List;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.Size;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Pageable;
@@ -44,6 +40,10 @@ import com.oceanbase.odc.service.script.ScriptService;
 import com.oceanbase.odc.service.script.model.Script;
 import com.oceanbase.odc.service.script.model.ScriptMeta;
 import com.oceanbase.odc.service.script.model.UpdateScriptReq;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
 
 /**
  * @Author: Lebie

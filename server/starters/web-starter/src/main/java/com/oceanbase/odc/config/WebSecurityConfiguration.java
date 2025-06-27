@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.config;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
@@ -23,16 +25,17 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.saml2.provider.service.metadata.OpenSamlMetadataResolver;
 import org.springframework.security.saml2.provider.service.registration.RelyingPartyRegistrationRepository;
 import org.springframework.security.saml2.provider.service.web.DefaultRelyingPartyRegistrationResolver;
 import org.springframework.security.saml2.provider.service.web.RelyingPartyRegistrationResolver;
 import org.springframework.security.saml2.provider.service.web.Saml2MetadataFilter;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.security.web.context.SecurityContextRepository;
@@ -74,7 +77,7 @@ import lombok.extern.slf4j.Slf4j;
 @Profile("alipay")
 @Configuration
 @ConditionalOnExpression("#{@environment.getProperty('odc.iam.auth.type') == 'local' && @environment.getProperty('odc.iam.auth.method') == 'jsession'}")
-public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
+public class WebSecurityConfiguration {
 
     @Value("${odc.iam.authentication.captcha.enabled:false}")
     private boolean captchaEnabled;
@@ -137,26 +140,41 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
     @Autowired
     private SamlSecurityConfigureHelper samlSecurityConfigureHelper;
 
-    private BastionAuthenticationProvider bastionAuthenticationProvider() {
+
+    @Bean
+    public BastionAuthenticationProvider bastionAuthenticationProvider() {
         return new BastionAuthenticationProvider(bastionUserDetailService);
     }
 
-    @Override
-    public void configure(AuthenticationManagerBuilder auth) {
-        auth.authenticationProvider(localDaoAuthenticationProvider)
-                .authenticationProvider(bastionAuthenticationProvider())
-                .authenticationProvider(new CustomSamlProvider(defaultSamlUserService))
-                .authenticationProvider(
-                        new ODCLdapAuthenticationProvider(new ODCLdapAuthenticator(ldapConfigRegistrationManager),
-                                ldapUserDetailsContextMapper));
+
+    @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        return (web) -> web.ignoring()
+                .requestMatchers(commonSecurityProperties.getStaticResources())
+                .and()
+                .ignoring().requestMatchers(commonSecurityProperties.getAuthWhitelist());
     }
 
-    @Override
-    public void configure(WebSecurity web) {
-        // 允许访问静态资源
-        web.ignoring().antMatchers(commonSecurityProperties.getStaticResources())
-                .and().ignoring().antMatchers(commonSecurityProperties.getAuthWhitelist());
+    @Bean
+    public CustomSamlProvider customSamlProvider() {
+        return new CustomSamlProvider(defaultSamlUserService);
     }
+
+    @Bean
+    public ODCLdapAuthenticationProvider odcLdapAuthenticationProvider() {
+        return new ODCLdapAuthenticationProvider(new ODCLdapAuthenticator(ldapConfigRegistrationManager),
+                ldapUserDetailsContextMapper);
+    }
+
+    @Bean
+    public SecurityFilterChain localFilterChain(HttpSecurity http,
+            List<AuthenticationProvider> authenticationProviderList) throws Exception {
+        ProviderManager providerManager = new ProviderManager(authenticationProviderList);
+        http.setSharedObject(AuthenticationManager.class, providerManager);
+        configure(http, providerManager);
+        return http.build();
+    }
+
 
     @Bean
     RelyingPartyRegistrationResolver relyingPartyRegistrationResolver(
@@ -173,14 +191,12 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
     }
 
 
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
+    protected void configure(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
         corsConfigureHelper.configure(http);
-        usernamePasswordConfigureHelper.configure(http, authenticationManager());
+        usernamePasswordConfigureHelper.configure(http, authenticationManager);
         oauth2SecurityConfigureHelper.configure(http);
-        samlSecurityConfigureHelper.configure(http, authenticationManager());
-
-        ldapSecurityConfigureHelper.configure(http, authenticationManager());
+        samlSecurityConfigureHelper.configure(http, authenticationManager);
+        ldapSecurityConfigureHelper.configure(http, authenticationManager);
 
         SecurityContextRepository securityContextRepository = securityContextRepository();
         if (securityContextRepository != null) {
@@ -188,24 +204,21 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
         }
 
         // @formatter:off
-        http.exceptionHandling()
-                .authenticationEntryPoint(new CustomAuthenticationEntryPoint(commonSecurityProperties.getLoginPage(),localeResolver))
-            .and()
-                .authorizeRequests()
-                .anyRequest().authenticated()
-            .and()
-                .logout()
-                .logoutUrl(commonSecurityProperties.getLogoutUri())
-                .logoutSuccessHandler(logoutSuccessHandler())
-                .deleteCookies(commonSecurityProperties.getSessionCookieKey())
-                .invalidateHttpSession(true).permitAll();
+        http.exceptionHandling(e->e.authenticationEntryPoint(new CustomAuthenticationEntryPoint(commonSecurityProperties.getLoginPage(),localeResolver)));
+
+        http.authorizeHttpRequests(auth ->
+            auth.anyRequest().authenticated() // 任何请求都需要认证
+        );
+        http.logout(logout->  logout.logoutUrl(commonSecurityProperties.getLogoutUri())
+            .logoutSuccessHandler(logoutSuccessHandler())
+            .deleteCookies(commonSecurityProperties.getSessionCookieKey())
+            .invalidateHttpSession(true).permitAll());
         configHttpSession(http);
 
         // @formatter:on
         csrfConfigureHelper.configure(http);
-
         if (bastionProperties.getAccount().isAutoLoginEnabled()) {
-            http.addFilterBefore(bastionAuthenticationProcessingFilter(authenticationManager()),
+            http.addFilterBefore(bastionAuthenticationProcessingFilter(authenticationManager),
                     UsernamePasswordAuthenticationFilter.class);
         }
 
@@ -224,13 +237,12 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
     }
 
     protected void configHttpSession(HttpSecurity http) throws Exception {
-        http.sessionManagement()
-                // SessionCreationPolicy.ALWAYS --> SessionCreationPolicy.IF_REQUIRED，防止登出后再次访问页面生成session造成无法跳转至登录页
-                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+        // SessionCreationPolicy.ALWAYS --> SessionCreationPolicy.IF_REQUIRED，防止登出后再次访问页面生成session造成无法跳转至登录页
+        http.sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 .sessionFixation()
                 .migrateSession()
                 .invalidSessionStrategy(
-                        new CustomInvalidSessionStrategy(commonSecurityProperties.getLoginPage(), localeResolver));
+                        new CustomInvalidSessionStrategy(commonSecurityProperties.getLoginPage(), localeResolver)));
     }
 
     private CaptchaAuthenticationProcessingFilter getCaptchaAuthenticationProcessingFilter() {

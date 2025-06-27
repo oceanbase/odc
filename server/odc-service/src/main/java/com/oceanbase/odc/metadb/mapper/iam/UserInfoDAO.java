@@ -13,46 +13,55 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.metadb.feature;
-
-import java.util.List;
+package com.oceanbase.odc.metadb.mapper.iam;
 
 import org.springframework.stereotype.Component;
 
-import com.oceanbase.odc.service.feature.model.VersionDiffConfig;
+import com.oceanbase.odc.service.iam.model.UserInfo;
 
 /**
  * @author
+ *
+ *         已过时，对应的是odc以前的用户表 odc_user_info, 该类目前仅在数据迁移中使用，业务中不要使用。
  */
-
 @Component
-public interface VersionDiffConfigDAO {
+@Deprecated
+public interface UserInfoDAO {
 
     /**
+     * get user by id
+     * 
+     * @param id
      * @return
      */
-    List<VersionDiffConfig> query(VersionDiffConfig config);
+    UserInfo get(long id);
 
     /**
-     * @param config
+     * @param email
      * @return
      */
-    int insert(VersionDiffConfig config);
+    UserInfo detail(String email);
+
+    /**
+     * @param odcUser
+     * @return
+     */
+    int insert(UserInfo odcUser);
 
     /**
      * update
      *
-     * @param config
+     * @param odcUser
      * @return
      */
-    int update(VersionDiffConfig config);
+    int update(UserInfo odcUser);
 
     /**
      * delete
      *
-     * @param config
+     * @param id
      * @return
      */
-    int delete(VersionDiffConfig config);
+    int delete(long id);
 
 }

@@ -19,12 +19,11 @@ import static com.oceanbase.odc.service.config.OrganizationConfigKeys.DEFAULT_CU
 
 import java.util.Objects;
 
-import javax.validation.constraints.NotBlank;
-
 import com.oceanbase.odc.metadb.config.OrganizationConfigEntity;
 import com.oceanbase.odc.metadb.config.UserConfigEntity;
 
 import cn.hutool.core.codec.Caesar;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

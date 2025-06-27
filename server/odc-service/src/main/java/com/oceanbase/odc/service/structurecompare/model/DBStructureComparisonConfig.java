@@ -20,11 +20,11 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.sql.DataSource;
-import javax.validation.constraints.NotNull;
 
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 /**

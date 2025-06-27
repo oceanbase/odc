@@ -17,8 +17,6 @@ package com.oceanbase.odc.service.flow.model;
 
 import java.util.Date;
 
-import javax.validation.constraints.NotNull;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -44,6 +42,7 @@ import com.oceanbase.odc.service.resultset.ResultSetExportTaskParameter;
 import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 import com.oceanbase.odc.service.schedule.model.LogicalDatabaseChangeParameters;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 /**

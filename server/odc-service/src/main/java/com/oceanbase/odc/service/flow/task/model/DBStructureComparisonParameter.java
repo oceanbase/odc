@@ -19,12 +19,11 @@ package com.oceanbase.odc.service.flow.task.model;
 import java.io.Serializable;
 import java.util.List;
 
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.structurecompare.StructureComparisonTaskEntity;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.NonNull;
 

@@ -17,12 +17,11 @@ package com.oceanbase.odc.service.onlineschemachange.oms.request;
 
 import java.util.List;
 
-import javax.validation.constraints.Null;
-
 import org.hibernate.validator.constraints.Range;
 
 import com.google.common.collect.Lists;
 
+import jakarta.validation.constraints.Null;
 import lombok.Data;
 
 /**

@@ -25,10 +25,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
-
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,6 +67,10 @@ import com.oceanbase.odc.service.permission.database.model.DatabasePermissionTyp
 import com.oceanbase.odc.service.permission.database.model.ExpirationStatusFilter;
 import com.oceanbase.odc.service.permission.database.model.QueryDatabasePermissionParams;
 import com.oceanbase.odc.service.permission.database.model.UserDatabasePermission;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * @author gaoda.xy

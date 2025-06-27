@@ -18,9 +18,6 @@ package com.oceanbase.odc.service.snippet;
 import java.util.List;
 import java.util.Objects;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,9 +26,11 @@ import org.springframework.validation.annotation.Validated;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
-import com.oceanbase.odc.metadb.snippet.SnippetsDAO;
+import com.oceanbase.odc.metadb.mapper.snippet.SnippetsDAO;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.extern.log4j.Log4j2;
 
 @Service

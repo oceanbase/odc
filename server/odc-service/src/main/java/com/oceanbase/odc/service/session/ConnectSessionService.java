@@ -33,7 +33,6 @@ import java.util.function.Supplier;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import javax.validation.constraints.NotNull;
 
 import org.apache.commons.io.FileExistsException;
 import org.apache.commons.io.FileUtils;
@@ -104,6 +103,7 @@ import com.oceanbase.odc.service.session.factory.LogicalConnectionSessionFactory
 import com.oceanbase.odc.service.session.factory.StateHostGenerator;
 import com.oceanbase.tools.dbbrowser.model.DBSession;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 

@@ -15,8 +15,7 @@
  */
 package com.oceanbase.odc.service.collaboration.project.model;
 
-import javax.validation.constraints.NotNull;
-
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

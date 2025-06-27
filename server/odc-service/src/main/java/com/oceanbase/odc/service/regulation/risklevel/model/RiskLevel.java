@@ -15,15 +15,14 @@
  */
 package com.oceanbase.odc.service.regulation.risklevel.model;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.common.i18n.Internationalizable;
 import com.oceanbase.odc.metadb.regulation.risklevel.RiskLevelStyle;
 import com.oceanbase.odc.service.regulation.approval.model.ApprovalFlowConfig;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 /**

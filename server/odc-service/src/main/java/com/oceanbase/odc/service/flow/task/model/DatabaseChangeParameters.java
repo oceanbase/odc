@@ -18,12 +18,11 @@ package com.oceanbase.odc.service.flow.task.model;
 import java.io.Serializable;
 import java.util.List;
 
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 /**

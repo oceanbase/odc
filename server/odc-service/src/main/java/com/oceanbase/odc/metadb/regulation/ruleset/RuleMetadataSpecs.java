@@ -19,15 +19,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import javax.persistence.criteria.Join;
-import javax.persistence.criteria.Predicate;
-
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.data.jpa.domain.Specification;
 
 import com.google.common.collect.Lists;
 import com.oceanbase.odc.service.regulation.ruleset.model.MetadataLabel;
 import com.oceanbase.odc.service.regulation.ruleset.model.RuleType;
+
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.Predicate;
 
 /**
  * @Author: Lebie

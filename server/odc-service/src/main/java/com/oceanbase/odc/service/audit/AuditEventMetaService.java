@@ -24,8 +24,6 @@ import java.util.Optional;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import javax.validation.constraints.NotNull;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -46,6 +44,7 @@ import com.oceanbase.odc.service.audit.model.QueryAuditEventMetaParams;
 import com.oceanbase.odc.service.audit.util.AuditEventMetaMapper;
 import com.oceanbase.odc.service.audit.util.AuditUtils;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**

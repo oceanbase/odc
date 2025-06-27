@@ -15,13 +15,12 @@
  */
 package com.oceanbase.odc.service.iam.auth.ldap;
 
-import javax.servlet.http.HttpServletRequest;
-
 import com.oceanbase.odc.service.iam.auth.local.AbstractTestLoginAuthenticationFilter;
 import com.oceanbase.odc.service.integration.model.LdapContextHolder;
 import com.oceanbase.odc.service.integration.model.LdapContextHolder.LdapContext;
 import com.oceanbase.odc.service.integration.oauth2.TestLoginManager;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor

@@ -15,12 +15,11 @@
  */
 package com.oceanbase.odc.service.dml.model;
 
-import javax.validation.constraints.Size;
-
 import com.oceanbase.odc.service.dml.DataValue;
 import com.oceanbase.odc.service.dml.ValueContentType;
 import com.oceanbase.odc.service.dml.ValueEncodeType;
 
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;

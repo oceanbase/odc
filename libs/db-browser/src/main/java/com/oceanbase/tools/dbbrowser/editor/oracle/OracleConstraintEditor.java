@@ -17,14 +17,14 @@ package com.oceanbase.tools.dbbrowser.editor.oracle;
 
 import java.util.Objects;
 
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.tools.dbbrowser.editor.DBTableConstraintEditor;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintDeferability;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
+
+import jakarta.validation.constraints.NotNull;
 
 /**
  * @Author: Lebie

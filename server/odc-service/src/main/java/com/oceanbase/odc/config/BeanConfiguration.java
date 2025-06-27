@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.Objects;
 
 import javax.annotation.PostConstruct;
-import javax.validation.constraints.NotBlank;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -59,6 +58,7 @@ import com.oceanbase.odc.service.connection.model.OBTenantEndpoint;
 import com.oceanbase.odc.service.connection.model.OceanBaseAccessMode;
 import com.oceanbase.odc.service.encryption.SensitivePropertyHandler;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.extern.slf4j.Slf4j;
 
 /**

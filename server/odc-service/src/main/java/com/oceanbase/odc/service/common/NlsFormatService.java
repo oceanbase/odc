@@ -20,9 +20,6 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-
 import org.apache.commons.lang3.Validate;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
@@ -36,6 +33,8 @@ import com.oceanbase.odc.core.sql.util.OracleTimestampFormat;
 import com.oceanbase.odc.core.sql.util.TimeZoneUtil;
 import com.oceanbase.odc.service.common.model.NlsFormatReq;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.NonNull;
 
 /**

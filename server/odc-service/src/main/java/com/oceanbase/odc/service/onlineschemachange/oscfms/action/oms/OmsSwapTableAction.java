@@ -18,8 +18,6 @@ package com.oceanbase.odc.service.onlineschemachange.oscfms.action.oms;
 import java.util.List;
 import java.util.Map;
 
-import javax.validation.constraints.NotNull;
-
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -43,6 +41,7 @@ import com.oceanbase.odc.service.onlineschemachange.rename.DefaultRenameTableInv
 import com.oceanbase.odc.service.onlineschemachange.rename.LockTableSupportDecider;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**

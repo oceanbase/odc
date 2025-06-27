@@ -62,8 +62,7 @@ import com.oceanbase.odc.core.task.TaskThreadFactory;
  */
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @Configuration
-@MapperScan(basePackages = {"com.oceanbase.odc.metadb"},
-        sqlSessionFactoryRef = "metadbSqlSessionFactory")
+@MapperScan(basePackages = {"com.oceanbase.odc.metadb.mapper"}, sqlSessionFactoryRef = "metadbSqlSessionFactory")
 @EnableJpaRepositories(basePackages = {"com.oceanbase.odc.metadb"}, repositoryBaseClass = EnhancedJpaRepository.class,
         entityManagerFactoryRef = "metadbEntityManagerFactory", transactionManagerRef = "metadbTransactionManager")
 @EntityScan({"com.oceanbase.odc.metadb"})

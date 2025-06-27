@@ -16,12 +16,12 @@
 
 package com.oceanbase.odc.plugin.task.obmysql.datatransfer.task;
 
-import org.jetbrains.annotations.NotNull;
-
 import com.oceanbase.tools.loaddump.client.LoadClient;
 import com.oceanbase.tools.loaddump.common.enums.DataFormat;
 import com.oceanbase.tools.loaddump.common.model.LoadParameter;
 import com.oceanbase.tools.loaddump.context.TaskContext;
+
+import jakarta.validation.constraints.NotNull;
 
 /**
  * {@link OceanBaseImportJob}

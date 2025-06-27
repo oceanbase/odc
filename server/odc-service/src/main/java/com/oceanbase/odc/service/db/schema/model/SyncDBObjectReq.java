@@ -15,10 +15,9 @@
  */
 package com.oceanbase.odc.service.db.schema.model;
 
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 /**

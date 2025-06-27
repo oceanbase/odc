@@ -17,8 +17,6 @@ package com.oceanbase.tools.dbbrowser.editor.mysql;
 
 import java.util.Objects;
 
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.tools.dbbrowser.editor.DBTableIndexEditor;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
 import com.oceanbase.tools.dbbrowser.model.DBIndexType;
@@ -26,6 +24,8 @@ import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
+
+import jakarta.validation.constraints.NotNull;
 
 /**
  * 适配 MySQL 版本：[5.7.00, ~)

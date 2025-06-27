@@ -15,12 +15,11 @@
  */
 package com.oceanbase.odc.service.connection.model;
 
-import javax.validation.constraints.NotEmpty;
-
 import org.springframework.validation.annotation.Validated;
 
 import com.oceanbase.odc.common.json.SensitiveInput;
 
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
 @Data

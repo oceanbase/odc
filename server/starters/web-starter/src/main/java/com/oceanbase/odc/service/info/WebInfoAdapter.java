@@ -19,8 +19,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.Set;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.info.BuildProperties;
@@ -32,6 +30,8 @@ import com.oceanbase.odc.service.common.util.ConditionalOnProperty;
 import com.oceanbase.odc.service.iam.auth.play.PlaysiteOpenApiProperties;
 import com.oceanbase.odc.service.integration.IntegrationService;
 import com.oceanbase.odc.service.integration.model.SSOIntegrationConfig;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @Service
 @Profile("alipay")

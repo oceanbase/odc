@@ -27,7 +27,7 @@ import com.oceanbase.odc.service.task.Task;
 import com.oceanbase.odc.service.task.base.dataarchive.DataArchiveTask;
 import com.oceanbase.odc.service.task.base.logicdatabasechange.LogicalDatabaseChangeTask;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
-import com.oceanbase.odc.service.task.executor.task.TaskDescription;
+import com.oceanbase.odc.service.task.executor.TaskDescription;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
 import com.oceanbase.odc.service.task.schedule.JobScheduler;
 import com.oceanbase.odc.service.task.util.JobPropertiesUtils;

@@ -15,14 +15,14 @@
  */
 package com.oceanbase.tools.dbbrowser.template.oracle;
 
-import javax.validation.constraints.NotNull;
-
 import org.apache.commons.lang3.Validate;
 
 import com.oceanbase.tools.dbbrowser.model.DBType;
 import com.oceanbase.tools.dbbrowser.model.DBTypeCode;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
+
+import jakarta.validation.constraints.NotNull;
 
 /**
  * {@link OracleTypeTemplate}

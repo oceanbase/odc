@@ -17,10 +17,10 @@ package com.oceanbase.odc.metadb.objectstorage;
 
 import java.util.Optional;
 
-import javax.transaction.Transactional;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+
+import jakarta.transaction.Transactional;
 
 public interface BucketRepository extends JpaSpecificationExecutor<BucketEntity>,
         JpaRepository<BucketEntity, Long> {

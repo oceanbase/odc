@@ -19,8 +19,6 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import javax.validation.constraints.NotNull;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -31,6 +29,7 @@ import com.oceanbase.odc.metadb.lab.TutorialEntity;
 import com.oceanbase.odc.metadb.lab.TutorialRepository;
 import com.oceanbase.odc.service.lab.model.Tutorial;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**

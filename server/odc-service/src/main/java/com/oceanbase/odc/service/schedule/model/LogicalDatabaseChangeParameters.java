@@ -15,8 +15,7 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
-import javax.validation.constraints.Size;
-
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 /**

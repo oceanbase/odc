@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+mvn_extra_args=("$@")
+
 # build libs only, only required in dev stage, after there exists changes in libs
 
 if ! source $(dirname "$0")/functions.sh; then
@@ -10,7 +12,5 @@ if ! maven_install_libs "${mvn_extra_args[@]}"; then
     echo "maven install libs failed"
     exit 2
 fi
-
 echo "maven install libs succeed"
-
 exit 0

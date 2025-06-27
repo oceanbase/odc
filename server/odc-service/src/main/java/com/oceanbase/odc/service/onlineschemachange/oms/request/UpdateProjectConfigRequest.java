@@ -15,9 +15,8 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.oms.request;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotEmpty;
-
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

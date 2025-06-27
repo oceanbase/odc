@@ -30,14 +30,13 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.validation.Constraint;
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
-import javax.validation.Payload;
-import javax.validation.ReportAsSingleViolation;
-
 import org.hibernate.validator.constraintvalidation.HibernateConstraintValidatorContext;
 
+import jakarta.validation.Constraint;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
+import jakarta.validation.Payload;
+import jakarta.validation.ReportAsSingleViolation;
 import lombok.extern.slf4j.Slf4j;
 
 /**

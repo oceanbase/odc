@@ -19,8 +19,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import javax.validation.constraints.NotEmpty;
-
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -43,6 +41,7 @@ import com.oceanbase.odc.service.connection.ConnectionService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.tools.loaddump.utils.StringUtils;
 
+import jakarta.validation.constraints.NotEmpty;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 

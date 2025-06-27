@@ -15,11 +15,10 @@
  */
 package com.oceanbase.odc.service.datasecurity.model;
 
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.odc.core.datamasking.algorithm.Segment;
 import com.oceanbase.odc.core.datamasking.algorithm.SegmentType;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

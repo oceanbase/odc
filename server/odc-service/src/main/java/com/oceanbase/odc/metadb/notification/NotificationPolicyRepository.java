@@ -20,8 +20,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-import javax.transaction.Transactional;
-
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -29,6 +27,8 @@ import org.springframework.data.repository.query.Param;
 
 import com.oceanbase.odc.common.jpa.InsertSqlTemplateBuilder;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
+
+import jakarta.transaction.Transactional;
 
 public interface NotificationPolicyRepository extends OdcJpaRepository<NotificationPolicyEntity, Long>,
         JpaSpecificationExecutor<NotificationPolicyEntity> {

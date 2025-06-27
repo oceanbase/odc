@@ -24,7 +24,7 @@ import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.converter.HttpMessageConversionException;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
-import org.springframework.security.oauth2.core.endpoint.MapOAuth2AccessTokenResponseConverter;
+import org.springframework.security.oauth2.core.endpoint.DefaultMapOAuth2AccessTokenResponseConverter;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AccessTokenResponse;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 
@@ -38,8 +38,8 @@ public class CasPlainConversionService implements ConversionService {
 
     private static final String EQUAL_PATTERN = "=";
 
-    private final Converter<Map<String, String>, OAuth2AccessTokenResponse> tokenResponseConverter =
-            new MapOAuth2AccessTokenResponseConverter();
+    private final Converter<Map<String, Object>, OAuth2AccessTokenResponse> tokenResponseConverter =
+            new DefaultMapOAuth2AccessTokenResponseConverter();
 
     @Override
     public boolean canConvert(Class<?> sourceType, @NonNull Class<?> targetType) {
@@ -69,12 +69,12 @@ public class CasPlainConversionService implements ConversionService {
             throw new HttpMessageConversionException(
                     "unsupported source object class'" + source.getClass() + "'");
         }
-        Map<String, String> responseParameterMap = convertToParameter((String) source);
+        Map<String, Object> responseParameterMap = convertToParameter((String) source);
         return tokenResponseConverter.convert(responseParameterMap);
     }
 
-    private Map<String, String> convertToParameter(String plainText) {
-        Map<String, String> res = new HashMap<>();
+    private Map<String, Object> convertToParameter(String plainText) {
+        Map<String, Object> res = new HashMap<>();
         if (StringUtils.isBlank(plainText)) {
             return res;
         }

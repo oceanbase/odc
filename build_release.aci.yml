@@ -55,14 +55,15 @@ stages:
   inputs:
     accurate: false
     ciConfig:
-      jdkVersion: "1.8"
-      mvnVersion: "3.5.4"
+      jdkVersion: "17"
+      mvnVersion: "3.6.3"
       encoding: "UTF-8"
-      mvnArgs: "-Dmaven.gitcommitid.skip=false -Dmaven.repo.local=/home/jenkins/agent/aci/.repository" #mvn参数 -D形式
+      mvnArgs: "-Dmaven.gitcommitid.skip=false -Dmaven.repo.cache=false" #mvn参数 -D形式
       parallelCount: "4"
       coverageExclusions: "**/test/**,**/controller/**,**/*Exception*,**/*Entity*,**/*Repository*,
           **/*Configuration*,**/*Dao*,**/*Constant*,**/*Dto*,**/*Param*,**/*Req*,**/*Resp*,**/*Response*,
           **/*Request*,**/integration/**,**/model/**,**/constant/**"
+      ciBeforeScript: script/build_libs.sh -s $(pwd)/settings.xml
     customEnvironmentVariables:
       ODC_CONFIG_SECRET: ${{parameters.ODC_CONFIG_SECRET}}
       ODC_OB_DEFAULT_MYSQL_COMMANDLINE: ${{parameters.ODC_OB_DEFAULT_MYSQL_COMMANDLINE}}

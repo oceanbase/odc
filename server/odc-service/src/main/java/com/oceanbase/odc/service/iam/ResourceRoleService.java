@@ -26,8 +26,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.validation.constraints.NotEmpty;
-
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -48,6 +46,7 @@ import com.oceanbase.odc.service.iam.model.ResourceRole;
 import com.oceanbase.odc.service.iam.model.UserGlobalResourceRole;
 import com.oceanbase.odc.service.iam.model.UserResourceRole;
 
+import jakarta.validation.constraints.NotEmpty;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 

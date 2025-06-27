@@ -15,12 +15,12 @@
  */
 package com.oceanbase.odc.config;
 
-import javax.websocket.server.ServerEndpointConfig;
-
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Configuration;
+
+import jakarta.websocket.server.ServerEndpointConfig;
 
 /**
  * @author wenniu.ly

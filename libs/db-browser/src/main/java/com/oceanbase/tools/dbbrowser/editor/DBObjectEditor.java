@@ -17,9 +17,9 @@ package com.oceanbase.tools.dbbrowser.editor;
 
 import java.util.Collection;
 
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.tools.dbbrowser.model.DBObject;
+
+import jakarta.validation.constraints.NotNull;
 
 public interface DBObjectEditor<T extends DBObject> {
     /**

@@ -34,19 +34,19 @@ import org.hibernate.usertype.UserType;
 import com.fasterxml.jackson.databind.JavaType;
 import com.oceanbase.odc.common.json.JsonUtils;
 
-public class JsonType implements UserType, DynamicParameterizedType {
+public class JsonType implements UserType<Object>, DynamicParameterizedType {
 
-    private Class<?> returnedClass;
+    private Class<Object> returnedClass;
 
     private JavaType targetJavaType;
 
     @Override
-    public int[] sqlTypes() {
-        return new int[] {Types.CLOB};
+    public int getSqlType() {
+        return Types.BLOB;
     }
 
     @Override
-    public Class<?> returnedClass() {
+    public Class<Object> returnedClass() {
         return returnedClass;
     }
 
@@ -61,12 +61,18 @@ public class JsonType implements UserType, DynamicParameterizedType {
     }
 
     @Override
-    public Object nullSafeGet(ResultSet rs, String[] names, SharedSessionContractImplementor session, Object owner)
-            throws HibernateException,
-            SQLException {
-        String value = rs.getString(names[0]);
-        return fromJson(value);
+    public Object nullSafeGet(ResultSet rs, int position, SharedSessionContractImplementor session, Object owner)
+            throws SQLException {
+        String json = rs.getString(position);
+
+        if (rs.wasNull()) {
+            return null;
+        }
+
+        return fromJson(json);
     }
+
+
 
     @Override
     public void nullSafeSet(PreparedStatement st, Object value, int index, SharedSessionContractImplementor session)
@@ -104,12 +110,23 @@ public class JsonType implements UserType, DynamicParameterizedType {
 
     @Override
     public Serializable disassemble(Object value) throws HibernateException {
-        throw new UnsupportedOperationException("disassemble is not supported");
+        if (value == null) {
+            return null;
+        }
+        return JsonUtils.toJson(value);
     }
 
     @Override
-    public Object assemble(Serializable cached, Object owner) throws HibernateException {
-        throw new UnsupportedOperationException("assemble is not supported");
+    public Object assemble(Serializable cached, Object owner) {
+        if (cached == null) {
+            return null;
+        }
+
+        if (!(cached instanceof String json)) {
+            throw new IllegalArgumentException("Cached data must be a JSON string");
+        }
+
+        return JsonUtils.fromJson(json, returnedClass());
     }
 
     @Override
@@ -122,7 +139,7 @@ public class JsonType implements UserType, DynamicParameterizedType {
         Object xProperty = parameters.get(DynamicParameterizedType.XPROPERTY);
         Field annotatedField = (Field) getAnnotatedElement(xProperty);
 
-        returnedClass = annotatedField.getType();
+        returnedClass = (Class<Object>) annotatedField.getType();
         Type type = annotatedField.getGenericType();
         targetJavaType = JsonUtils.constructType(type);
     }

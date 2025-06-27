@@ -25,9 +25,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcOperations;
@@ -64,6 +61,8 @@ import com.oceanbase.odc.service.sqlcheck.model.SqlCheckResponse;
 import com.oceanbase.odc.service.sqlcheck.rule.BaseAffectedRowsExceedLimit;
 import com.oceanbase.odc.service.sqlcheck.rule.SqlCheckRules;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 

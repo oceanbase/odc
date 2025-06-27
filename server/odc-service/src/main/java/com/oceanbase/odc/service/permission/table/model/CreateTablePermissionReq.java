@@ -18,11 +18,10 @@ package com.oceanbase.odc.service.permission.table.model;
 import java.util.Date;
 import java.util.List;
 
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 /**

@@ -18,8 +18,6 @@ package com.oceanbase.tools.dbbrowser.editor.oracle;
 import java.util.List;
 import java.util.Objects;
 
-import javax.validation.constraints.NotNull;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.util.CollectionUtils;
@@ -33,6 +31,7 @@ import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.NonNull;
 
 /**

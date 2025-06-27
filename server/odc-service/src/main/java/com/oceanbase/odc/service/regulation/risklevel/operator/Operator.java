@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.regulation.risklevel.operator;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 public interface Operator {
     boolean evaluate(String expression, @NotNull Object value);

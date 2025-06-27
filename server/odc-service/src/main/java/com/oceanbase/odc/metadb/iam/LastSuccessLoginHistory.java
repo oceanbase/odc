@@ -17,8 +17,7 @@ package com.oceanbase.odc.metadb.iam;
 
 import java.time.OffsetDateTime;
 
-import javax.persistence.Column;
-
+import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

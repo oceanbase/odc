@@ -19,6 +19,7 @@ import static com.oceanbase.odc.service.integration.util.EncryptionUtil.CERTIFIC
 import static com.oceanbase.odc.service.integration.util.EncryptionUtil.CERTIFICATE_KEY_SUFFIX;
 import static com.oceanbase.odc.service.integration.util.EncryptionUtil.PRIVATE_KEY_PREFIX;
 import static com.oceanbase.odc.service.integration.util.EncryptionUtil.PRIVATE_KEY_SUFFIX;
+import static org.springframework.security.saml2.provider.service.registration.RelyingPartyRegistrations.collectionFromMetadata;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -31,7 +32,6 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Collection;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -43,10 +43,9 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.security.saml2.Saml2Exception;
 import org.springframework.security.saml2.core.Saml2X509Credential;
 import org.springframework.security.saml2.core.Saml2X509Credential.Saml2X509CredentialType;
+import org.springframework.security.saml2.provider.service.registration.AssertingPartyMetadata;
 import org.springframework.security.saml2.provider.service.registration.RelyingPartyRegistration;
-import org.springframework.security.saml2.provider.service.registration.RelyingPartyRegistration.AssertingPartyDetails;
 import org.springframework.security.saml2.provider.service.registration.RelyingPartyRegistration.Builder;
-import org.springframework.security.saml2.provider.service.registration.RelyingPartyRegistrations;
 import org.springframework.security.saml2.provider.service.registration.Saml2MessageBinding;
 import org.springframework.util.StringUtils;
 
@@ -65,35 +64,47 @@ public final class SamlRegistrationConfigHelper {
         Verify.verify("SAML".equals(ssoIntegrationConfig.getType()), "Invalid type=" + ssoIntegrationConfig.getType());
         SamlParameter parameter = (SamlParameter) ssoIntegrationConfig.getSsoParameter();
         boolean usingMetadata = StringUtils.hasText(parameter.getMetadataUri());
-        Builder builder = (usingMetadata)
-                ? fromMetadataLocation(parameter.getMetadataUri())
-                        .registrationId(parameter.getRegistrationId())
-                : RelyingPartyRegistration.withRegistrationId(parameter.getRegistrationId());
+        String id = parameter.getRegistrationId();
+        Builder builder = (!usingMetadata) ? RelyingPartyRegistration.withRegistrationId(id)
+                : createBuilderUsingMetadata(parameter).registrationId(id);
         builder.assertionConsumerServiceLocation(parameter.getAcsLocation());
         builder.assertionConsumerServiceBinding(Saml2MessageBinding.valueOf(parameter.getAcsBinding()));
-        builder.assertingPartyDetails(mapAssertingParty(parameter, usingMetadata));
+        builder.assertingPartyMetadata(mapAssertingParty(parameter));
         builder.signingX509Credentials(
                 (credentials) -> addCredentialIfNotNull(credentials, () -> asSigningCredential(parameter)));
         builder.decryptionX509Credentials(
                 (credentials) -> addCredentialIfNotNull(credentials, () -> asDecryptionCredential(parameter)));
-        builder.assertingPartyDetails((details) -> details
+        builder.assertingPartyMetadata((details) -> details
                 .verificationX509Credentials((credentials) -> addCredentialIfNotNull(credentials,
                         () -> asVerificationCredential(parameter))));
         builder.entityId(parameter.getAcsEntityId());
+        builder.nameIdFormat(parameter.getNameIdFormat());
         RelyingPartyRegistration registration = builder.build();
-        boolean signRequest = registration.getAssertingPartyDetails().getWantAuthnRequestsSigned();
+        boolean signRequest = registration.getAssertingPartyMetadata().getWantAuthnRequestsSigned();
         validateSigningCredentials(parameter, signRequest);
         return registration;
     }
 
-    public static RelyingPartyRegistration.Builder fromMetadataLocation(String metadataLocation) {
-        Resource resource = resourceLoader.getResource(metadataLocation);
-        if (resource instanceof UrlResource) {
-            UrlResource urlResource = (UrlResource) resource;
+    private static RelyingPartyRegistration.Builder createBuilderUsingMetadata(SamlParameter parameter) {
+        String requiredEntityId = parameter.getProviderEntityId();
+
+        Collection<Builder> candidates = collectionFromMetadataLocation(parameter.getMetadataUri());
+        for (RelyingPartyRegistration.Builder candidate : candidates) {
+            if (requiredEntityId == null || requiredEntityId.equals(getEntityId(candidate))) {
+                return candidate;
+            }
+        }
+        throw new IllegalStateException("No relying party with Entity ID '" + requiredEntityId + "' found");
+    }
+
+    public static Collection<RelyingPartyRegistration.Builder> collectionFromMetadataLocation(String location) {
+        Resource resource = resourceLoader.getResource(location);
+        if (resource instanceof UrlResource urlResource) {
             resource = new TimeoutUrlResourceAdaptor(urlResource.getURL());
         }
+
         try (InputStream source = resource.getInputStream()) {
-            return RelyingPartyRegistrations.fromMetadata(source);
+            return collectionFromMetadata(source);
         } catch (IOException ex) {
             if (ex.getCause() instanceof Saml2Exception) {
                 throw (Saml2Exception) ex.getCause();
@@ -101,6 +112,14 @@ public final class SamlRegistrationConfigHelper {
             throw new Saml2Exception(ex);
         }
     }
+
+    private static Object getEntityId(RelyingPartyRegistration.Builder candidate) {
+        String[] result = new String[1];
+        candidate.assertingPartyMetadata((builder) -> result[0] = builder.build().getEntityId());
+        return result[0];
+    }
+
+
 
     private static void addCredentialIfNotNull(Collection<Saml2X509Credential> credentials,
             Supplier<Saml2X509Credential> supplier) {
@@ -110,25 +129,14 @@ public final class SamlRegistrationConfigHelper {
         }
     }
 
-    private static Consumer<AssertingPartyDetails.Builder> mapAssertingParty(SamlParameter parameter,
-            boolean usingMetadata) {
+    private static Consumer<AssertingPartyMetadata.Builder<?>> mapAssertingParty(SamlParameter parameter) {
         return (details) -> {
             PropertyMapper map = PropertyMapper.get().alwaysApplyingWhenNonNull();
             map.from(parameter::getProviderEntityId).to(details::entityId);
-            map.from(() -> Optional.ofNullable(parameter.getSinglesignon())
-                    .map(SamlParameter.Singlesignon::getBinding)
-                    .map(Saml2MessageBinding::valueOf)
-                    .orElse(null))
+            map.from(() -> Saml2MessageBinding.valueOf(parameter.getSinglesignon().getBinding()))
                     .to(details::singleSignOnServiceBinding);
-            map.from(() -> Optional.ofNullable(parameter.getSinglesignon())
-                    .map(SamlParameter.Singlesignon::getUrl)
-                    .orElse(null))
-                    .to(details::singleSignOnServiceLocation);
-            map.from(() -> Optional.ofNullable(parameter.getSinglesignon())
-                    .map(SamlParameter.Singlesignon::getSignRequest)
-                    .orElse(null))
-                    .when((ignored) -> !usingMetadata)
-                    .to(details::wantAuthnRequestsSigned);
+            map.from(parameter.getSinglesignon()::getUrl).to(details::singleSignOnServiceLocation);
+            map.from(parameter.getSinglesignon()::getSignRequest).to(details::wantAuthnRequestsSigned);
         };
     }
 

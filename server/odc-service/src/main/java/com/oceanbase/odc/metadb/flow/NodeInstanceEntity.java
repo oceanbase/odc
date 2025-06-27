@@ -17,15 +17,6 @@ package com.oceanbase.odc.metadb.flow;
 
 import java.util.Date;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
-
 import org.flowable.engine.runtime.Execution;
 import org.flowable.task.api.Task;
 import org.hibernate.annotations.Generated;
@@ -34,6 +25,14 @@ import org.hibernate.annotations.GenerationTime;
 import com.oceanbase.odc.core.flow.model.FlowableElementType;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;

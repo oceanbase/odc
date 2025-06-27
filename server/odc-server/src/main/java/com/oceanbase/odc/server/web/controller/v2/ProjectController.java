@@ -18,8 +18,6 @@ package com.oceanbase.odc.server.web.controller.v2;
 import java.util.List;
 import java.util.Set;
 
-import javax.validation.Valid;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
@@ -45,6 +43,7 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 
 import io.swagger.annotations.ApiOperation;
+import jakarta.validation.Valid;
 
 /**
  * @Author: Lebie

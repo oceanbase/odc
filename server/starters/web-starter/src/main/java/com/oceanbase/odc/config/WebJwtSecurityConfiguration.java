@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
@@ -48,8 +49,8 @@ public class WebJwtSecurityConfiguration extends WebSecurityConfiguration {
     private CustomJwtLogoutSuccessHandler customJwtLogoutSuccessHandler;
 
     @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        super.configure(http);
+    protected void configure(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
+        super.configure(http, authenticationManager);
         http.addFilterBefore(new CustomPostRequestSessionInvalidationFilter(), SecurityContextPersistenceFilter.class);
     }
 

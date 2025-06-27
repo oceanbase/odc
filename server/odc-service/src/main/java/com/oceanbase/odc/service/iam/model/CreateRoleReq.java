@@ -19,12 +19,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-import javax.validation.constraints.Size;
-
 import com.google.common.base.MoreObjects;
 import com.oceanbase.odc.common.validate.Name;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 /**

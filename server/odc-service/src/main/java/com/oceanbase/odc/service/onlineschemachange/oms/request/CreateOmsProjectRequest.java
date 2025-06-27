@@ -17,12 +17,11 @@ package com.oceanbase.odc.service.onlineschemachange.oms.request;
 
 import java.util.UUID;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-
 import com.oceanbase.odc.service.onlineschemachange.oms.enums.OmsProjectType;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

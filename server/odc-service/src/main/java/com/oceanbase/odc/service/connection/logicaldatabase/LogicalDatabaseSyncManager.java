@@ -18,8 +18,6 @@ package com.oceanbase.odc.service.connection.logicaldatabase;
 import java.util.concurrent.Future;
 import java.util.function.Supplier;
 
-import javax.validation.constraints.NotNull;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
@@ -38,6 +36,7 @@ import com.oceanbase.odc.service.connection.table.TableService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**

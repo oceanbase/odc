@@ -19,8 +19,6 @@ import java.lang.reflect.Executable;
 import java.util.Arrays;
 import java.util.Objects;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.MethodParameter;
@@ -30,6 +28,7 @@ import com.oceanbase.odc.config.CommonSecurityProperties;
 import com.oceanbase.odc.service.common.util.WebRequestUtils;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 
 /**

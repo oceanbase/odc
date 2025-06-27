@@ -17,8 +17,7 @@ package com.oceanbase.odc.service.snippet;
 
 import java.sql.Timestamp;
 
-import javax.validation.constraints.Size;
-
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data

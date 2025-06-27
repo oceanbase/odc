@@ -17,8 +17,6 @@ package com.oceanbase.tools.dbbrowser.editor.oracle;
 
 import java.util.Objects;
 
-import javax.validation.constraints.NotNull;
-
 import org.apache.commons.collections4.CollectionUtils;
 
 import com.oceanbase.tools.dbbrowser.editor.DBObjectEditor;
@@ -32,6 +30,8 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartition;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
+
+import jakarta.validation.constraints.NotNull;
 
 /**
  * @Author: Lebie

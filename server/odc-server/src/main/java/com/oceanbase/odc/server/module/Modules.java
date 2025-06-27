@@ -15,12 +15,12 @@
  */
 package com.oceanbase.odc.server.module;
 
+import static com.oceanbase.odc.server.PluginSpringApplication.addUrlToClassLoader;
+
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
@@ -48,14 +48,9 @@ public class Modules {
             return;
         }
         try {
-            URLClassLoader classLoader = (URLClassLoader) Modules.class.getClassLoader();
-            Method method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
-            method.setAccessible(true);
-            for (URL url : moduleUrls) {
-                method.invoke(classLoader, url);
-                log.info("Module has been added to classpath, url={}", url);
-            }
-        } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
+            addUrlToClassLoader(moduleUrls, Modules.class.getClassLoader());
+        } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException | ClassNotFoundException
+                | NoSuchFieldException e) {
             log.warn("Failed to add module to classpath", e);
             throw new IllegalStateException(e);
         }

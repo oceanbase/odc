@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.service.task.processor.matcher;
 
-import com.oceanbase.odc.service.task.executor.task.TaskDescription;
+import com.oceanbase.odc.service.task.executor.TaskDescription;
 import com.oceanbase.odc.service.task.processor.ProcessorMatcher;
 
 /**

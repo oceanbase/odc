@@ -18,13 +18,12 @@ package com.oceanbase.tools.dbbrowser.model;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Positive;
-
 import org.apache.commons.lang3.StringUtils;
 
 import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

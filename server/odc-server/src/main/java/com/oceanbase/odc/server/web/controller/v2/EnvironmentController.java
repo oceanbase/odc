@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.server.web.controller.v2;
 
-import javax.validation.Valid;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -37,6 +35,7 @@ import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 
 import io.swagger.annotations.ApiOperation;
+import jakarta.validation.Valid;
 
 /**
  * @Author: Lebie
