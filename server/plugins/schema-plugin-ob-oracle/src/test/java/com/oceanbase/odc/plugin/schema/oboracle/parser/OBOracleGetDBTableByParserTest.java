@@ -63,6 +63,7 @@ public class OBOracleGetDBTableByParserTest {
     private static String dropTables;
     private static String dropMVs;
     private static boolean isSupportMaterializedView = false;
+    private static boolean isSupportIndexColumnGroup = false;
 
     @BeforeClass
     public static void setUp() throws Exception {
@@ -71,29 +72,62 @@ public class OBOracleGetDBTableByParserTest {
         longQueryTimeoutDataSource.setQueryTimeout(30);
         connection = longQueryTimeoutDataSource.getConnection();
         dropTables = FileUtil.loadAsString(BASE_PATH + "drop.sql");
-        batchExcuteSql(dropTables);
+        batchExecuteSql(dropTables);
         ddl = FileUtil.loadAsString(BASE_PATH + "testGetTableByParser.sql");
         JdbcOperationsUtil.getJdbcOperations(connection).execute(ddl);
-        isSupportMaterializedView = VersionUtils.isGreaterThanOrEqualsTo(OBUtils.getObVersion(connection), "4.3.5.1");
+        String obVersion = OBUtils.getObVersion(connection);
+        isSupportMaterializedView = VersionUtils.isGreaterThanOrEqualsTo(obVersion, "4.3.5.1");
         if (isSupportMaterializedView) {
             dropMVs = FileUtil.loadAsString(BASE_PATH + "dropMV.sql");
-            batchExcuteSql(dropMVs);
+            batchExecuteSql(dropMVs);
             String createMViewDdl = FileUtil.loadAsString(BASE_PATH + "testGetPartitionInMViewByParser.sql");
-            batchExcuteSql(createMViewDdl);
+            batchExecuteSql(createMViewDdl);
+        }
+        isSupportIndexColumnGroup = VersionUtils.isGreaterThanOrEqualsTo(obVersion, "4.3.1");
+        if (isSupportIndexColumnGroup) {
+            String indexColumnGroupDDL = FileUtil.loadAsString(BASE_PATH + "testIndexColumnGroup.sql");
+            JdbcOperationsUtil.getJdbcOperations(connection).execute(indexColumnGroupDDL);
         }
     }
 
     @AfterClass
     public static void tearDown() throws Exception {
-        batchExcuteSql(dropTables);
+        batchExecuteSql(dropTables);
         if (isSupportMaterializedView) {
-            batchExcuteSql(dropMVs);
+            batchExecuteSql(dropMVs);
         }
     }
 
-    private static void batchExcuteSql(String str) {
+    private static void batchExecuteSql(String str) {
         for (String ddl : str.split("/")) {
             JdbcOperationsUtil.getJdbcOperations(connection).execute(ddl);
+        }
+    }
+
+    @Test
+    public void getIndex_testColumnGroups_Success() {
+        if (isSupportIndexColumnGroup) {
+            OBOracleGetDBTableByParser parser =
+                    new OBOracleGetDBTableByParser(connection, TEST_DATABASE_NAME, "INDEX_COLUMN_GROUP_TABLE");
+            List<DBTableIndex> dbTableIndices = parser.listIndexes();
+            System.out.println(dbTableIndices);
+            for (DBTableIndex dbTableIndex : dbTableIndices) {
+                if ("IDX_ALL_AND_EACH".equals(dbTableIndex.getName())) {
+                    Assert.assertEquals(2, dbTableIndex.getColumnGroups().size());
+                    Assert.assertTrue(dbTableIndex.getColumnGroups().get(0).isAllColumns() == dbTableIndex
+                            .getColumnGroups().get(1).isEachColumn());
+                    Assert.assertTrue(dbTableIndex.getColumnGroups().get(0).isEachColumn() == dbTableIndex
+                            .getColumnGroups().get(1).isAllColumns());
+                } else if ("IDX_ALL".equals(dbTableIndex.getName())) {
+                    Assert.assertEquals(1, dbTableIndex.getColumnGroups().size());
+                    Assert.assertTrue(dbTableIndex.getColumnGroups().get(0).isAllColumns());
+                    Assert.assertFalse(dbTableIndex.getColumnGroups().get(0).isEachColumn());
+                } else if ("IDX_EACH".equals(dbTableIndex.getName())) {
+                    Assert.assertEquals(1, dbTableIndex.getColumnGroups().size());
+                    Assert.assertTrue(dbTableIndex.getColumnGroups().get(0).isEachColumn());
+                    Assert.assertFalse(dbTableIndex.getColumnGroups().get(0).isAllColumns());
+                }
+            }
         }
     }
 

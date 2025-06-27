@@ -26,9 +26,12 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
+
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.plugin.schema.obmysql.parser.BaseOBGetDBTableByParser;
+import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintDeferability;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBForeignKeyModifyRule;
@@ -333,6 +336,10 @@ public class OBOracleGetDBTableByParser extends BaseOBGetDBTableByParser {
                     CreateIndex createIndexStmt = parseIndexDDL(idxDDL);
                     if (createIndexStmt == null) {
                         return;
+                    }
+                    if (CollectionUtils.isNotEmpty(createIndexStmt.getColumnGroupElements())) {
+                        idx.setColumnGroups(createIndexStmt.getColumnGroupElements().stream().filter(Objects::nonNull)
+                                .map(DBColumnGroupElement::ofColumnGroupElement).collect(Collectors.toList()));
                     }
                     idx.setGlobal(
                             Objects.nonNull(createIndexStmt.getIndexOptions()) ? createIndexStmt.getIndexOptions()
