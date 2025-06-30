@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcOperations;
@@ -46,6 +47,8 @@ import com.oceanbase.tools.sqlparser.statement.select.FromReference;
 import com.oceanbase.tools.sqlparser.statement.select.JoinReference;
 import com.oceanbase.tools.sqlparser.statement.select.NameReference;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * {@link AbstractRollbackGenerator}
  *
@@ -53,6 +56,7 @@ import com.oceanbase.tools.sqlparser.statement.select.NameReference;
  * @date 2023/5/16
  * @since ODC_release_4.2.0
  */
+@Slf4j
 public abstract class AbstractRollbackGenerator implements GenerateRollbackPlan {
     protected final JdbcOperations jdbcOperations;
     private final JdbcRowMapper jdbcRowMapper;
@@ -64,12 +68,15 @@ public abstract class AbstractRollbackGenerator implements GenerateRollbackPlan 
             Arrays.asList("TINYBLOB", "MEDIUMBLOB", "LONGBLOB", "BLOB", "CLOB", "RAW");
     private final Long timeOutMilliSeconds;
     private long startTimeMilliSeconds;
+    // if rollback plan generation is interrupted
+    protected final Supplier<Boolean> interruptSupplier;
 
     public AbstractRollbackGenerator(String sql, JdbcOperations jdbcOperations, RollbackProperties rollbackProperties,
-            Long timeOutMilliSeconds) {
+            Long timeOutMilliSeconds, Supplier<Boolean> interruptSupplier) {
         this.sql = sql;
         this.jdbcOperations = jdbcOperations;
         this.rollbackProperties = rollbackProperties;
+        this.interruptSupplier = interruptSupplier;
         this.jdbcRowMapper = getJdbcRowMapper();
         this.timeOutMilliSeconds = timeOutMilliSeconds;
     }
@@ -104,6 +111,7 @@ public abstract class AbstractRollbackGenerator implements GenerateRollbackPlan 
             rollbackPlan.setQuerySqls(querySqls);
             batchQuerySqls.addAll(getBatchQuerySql());
         } catch (Exception e) {
+            log.info("generate rollback plan failed, error message = {}", e.getMessage());
             rollbackPlan.setErrorMessage(e.getMessage());
             return rollbackPlan;
         }
@@ -154,6 +162,9 @@ public abstract class AbstractRollbackGenerator implements GenerateRollbackPlan 
                 JdbcQueryResult jdbcQueryResult = new JdbcQueryResult(resultSet.getMetaData(), jdbcRowMapper);
                 while (resultSet.next()) {
                     try {
+                        if (interruptSupplier.get()) {
+                            throw new RuntimeException("interrupted while generating rollback sql = " + querySql);
+                        }
                         jdbcQueryResult.addLine(resultSet);
                     } catch (IOException e) {
                         throw new RuntimeException(e);

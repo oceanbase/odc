@@ -63,13 +63,16 @@ public class K8SResourceManageStrategy implements ResourceManageStrategy {
     protected final K8sProperties k8sProperties;
     protected final Supplier<Integer> supervisorListenPortProvider;
     protected final SupervisorEndpointRepositoryWrap supervisorEndpointRepositoryWrap;
+    protected final long podExpireTimeSeconds;
 
     public K8SResourceManageStrategy(K8sProperties k8sProperties, ResourceManager resourceManager,
-            SupervisorEndpointRepository supervisorEndpointRepository, Supplier<Integer> supervisorListenPortProvider) {
+            SupervisorEndpointRepository supervisorEndpointRepository, Supplier<Integer> supervisorListenPortProvider,
+            long podExpireTimeSeconds) {
         this.resourceManager = resourceManager;
         this.k8sProperties = k8sProperties;
         this.supervisorListenPortProvider = supervisorListenPortProvider;
         this.supervisorEndpointRepositoryWrap = new SupervisorEndpointRepositoryWrap(supervisorEndpointRepository);
+        this.podExpireTimeSeconds = podExpireTimeSeconds;
     }
 
     /**
@@ -206,7 +209,7 @@ public class K8SResourceManageStrategy implements ResourceManageStrategy {
         toReleased.sort((e1, e2) -> e2.getUpdateTime().compareTo(e1.getUpdateTime()));
         SupervisorEndpointEntity first = toReleased.get(0);
         // maintain at most one agent for most 300 seconds
-        if (Duration.between(first.getUpdateTime().toInstant(), Instant.now()).getSeconds() > 300) {
+        if (Duration.between(first.getUpdateTime().toInstant(), Instant.now()).getSeconds() > podExpireTimeSeconds) {
             return entity;
         } else {
             toReleased.remove(0);

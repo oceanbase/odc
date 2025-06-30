@@ -882,3 +882,13 @@ ON DUPLICATE KEY UPDATE `id` = `id`;
 
 -- 调整后台数据库元数据同步的时间间隔为 4h 一次
 update config_system_configuration set `value`='14400000' where `key`='odc.connect.database.sync.interval-millis';
+
+--
+-- v4.3.4
+--
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES('odc.pldebug.ob-query-timeout-seconds',
+'600','The query timeout of the two connections, debuggee and debugger. The unit is seconds. The default value is 600 seconds')
+  ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES('odc.pldebug.debug-timeout-seconds',
+'120','The debug timeout of the debuggee. The unit is seconds. The default value is 120 seconds')
+  ON DUPLICATE KEY UPDATE `id` = `id`;

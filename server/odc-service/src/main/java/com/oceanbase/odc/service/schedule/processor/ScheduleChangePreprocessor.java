@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.schedule.processor;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,8 @@ import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.loaddata.model.LoadDataParameters;
+import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
+import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
 import com.oceanbase.odc.service.schedule.model.LogicalDatabaseChangeParameters;
@@ -59,6 +62,8 @@ public class ScheduleChangePreprocessor implements InitializingBean {
     private ScheduleService scheduleService;
     @Autowired
     private List<Preprocessor> preprocessors;
+    @Autowired
+    private DBResourcePermissionHelper permissionHelper;
 
     private final Map<ScheduleType, Preprocessor> type2Processor = new HashMap<>();
 
@@ -72,6 +77,8 @@ public class ScheduleChangePreprocessor implements InitializingBean {
             type = scheduleService.nullSafeGetModelById(params.getScheduleId()).getType();
         }
         adaptScheduleChangeParams(params);
+        permissionHelper.checkDBPermissions(Collections.singleton(params.getDatabaseId()), Collections.singleton(
+                DatabasePermissionType.CHANGE));
         if (type2Processor.containsKey(type)) {
             type2Processor.get(type).process(params);
         }
