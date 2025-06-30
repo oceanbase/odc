@@ -895,3 +895,6 @@ INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES
 --
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.features.workbench.enabled', 'true',
 'Whether to enable the workbench feature, default is true, indicating enabled.') ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.column-sync-enabled', 'true',
+'Whether to enable the column metadata sync, default is true, indicating enabled.') ON DUPLICATE KEY UPDATE `id`=`id`;
+
