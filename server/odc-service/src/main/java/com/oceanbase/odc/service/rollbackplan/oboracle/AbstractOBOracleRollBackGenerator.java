@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import org.springframework.jdbc.core.JdbcOperations;
 
@@ -49,8 +50,8 @@ import com.oceanbase.tools.sqlparser.statement.select.SelectBody;
 public abstract class AbstractOBOracleRollBackGenerator extends AbstractRollbackGenerator {
 
     public AbstractOBOracleRollBackGenerator(String sql, JdbcOperations jdbcOperations,
-            RollbackProperties rollbackProperties, Long timeOutMilliSeconds) {
-        super(sql, jdbcOperations, rollbackProperties, timeOutMilliSeconds);
+            RollbackProperties rollbackProperties, Long timeOutMilliSeconds, Supplier<Boolean> interruptSupplier) {
+        super(sql, jdbcOperations, rollbackProperties, timeOutMilliSeconds, interruptSupplier);
     }
 
     @Override

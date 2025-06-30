@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import org.springframework.jdbc.core.JdbcOperations;
 
@@ -46,8 +47,8 @@ import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
  */
 public abstract class AbstractOBMySqlRollBackGenerator extends AbstractRollbackGenerator {
     public AbstractOBMySqlRollBackGenerator(String sql, JdbcOperations jdbcOperations,
-            RollbackProperties rollbackProperties, Long timeOutMilliSeconds) {
-        super(sql, jdbcOperations, rollbackProperties, timeOutMilliSeconds);
+            RollbackProperties rollbackProperties, Long timeOutMilliSeconds, Supplier<Boolean> interruptSupplier) {
+        super(sql, jdbcOperations, rollbackProperties, timeOutMilliSeconds, interruptSupplier);
     }
 
     @Override

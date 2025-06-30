@@ -69,7 +69,6 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @Slf4j
 public abstract class AbstractDebugSession implements AutoCloseable {
-    public static final Long DEBUG_TIMEOUT_MS = 10 * 60 * 1000L;
     public static final int PL_LOG_CACHE_SIZE = 1000000;
     protected String debugId;
     protected ConnectionSession connectionSession;

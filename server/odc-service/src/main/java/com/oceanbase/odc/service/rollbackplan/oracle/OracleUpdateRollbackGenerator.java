@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.rollbackplan.oracle;
 
+import java.util.function.Supplier;
+
 import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
@@ -34,8 +36,9 @@ public class OracleUpdateRollbackGenerator extends OBOracleUpdateRollbackGenerat
             @NonNull Update update,
             @NonNull JdbcOperations jdbcOperations,
             @NonNull RollbackProperties rollbackProperties,
-            Long timeOutMilliSeconds) {
-        super(sql, update, jdbcOperations, rollbackProperties, timeOutMilliSeconds);
+            Long timeOutMilliSeconds,
+            @NonNull Supplier<Boolean> interruptSupplier) {
+        super(sql, update, jdbcOperations, rollbackProperties, timeOutMilliSeconds, interruptSupplier);
     }
 
     @Override
