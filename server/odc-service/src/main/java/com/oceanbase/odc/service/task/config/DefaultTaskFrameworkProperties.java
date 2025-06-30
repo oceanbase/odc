@@ -130,6 +130,10 @@ public class DefaultTaskFrameworkProperties implements TaskFrameworkProperties {
     // server
     private int taskSupervisorAgentListenPort = -1;
 
-    // keep supervisor endpoint alive for a period if there is no task running on it or release it
+    // wait time for if supervisor has ready
+    // if supervisor not ready for this time, release it, failed resource allocate
     private int supervisorEndpointKeepAliveSeconds = 300;
+
+    // keep supervisor endpoint alive for a period if there is no task running on it or release it
+    private int supervisorReleaseBackSeconds = 300;
 }

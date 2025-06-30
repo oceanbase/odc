@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.rollbackplan;
 
 import java.io.StringReader;
+import java.util.function.Supplier;
 
 import org.apache.commons.lang3.Validate;
 
@@ -49,7 +50,8 @@ import lombok.NonNull;
 public class RollbackGeneratorFactory {
 
     public static GenerateRollbackPlan create(@NonNull String sql, @NonNull RollbackProperties rollbackProperties,
-            @NonNull ConnectionSession connectionSession, Long timeOutMilliSeconds) {
+            @NonNull ConnectionSession connectionSession, Long timeOutMilliSeconds,
+            Supplier<Boolean> interruptSupplier) {
         ConnectType connectType = connectionSession.getConnectType();
         Validate.notNull(connectType, "ConnectType can not be null");
         SyncJdbcExecutor syncJdbcExecutor =
@@ -65,41 +67,42 @@ public class RollbackGeneratorFactory {
         }
 
         return getRollbackPlan(connectType.getDialectType(), sql, statement, syncJdbcExecutor,
-                rollbackProperties, timeOutMilliSeconds);
+                rollbackProperties, timeOutMilliSeconds, interruptSupplier);
     }
 
     private static GenerateRollbackPlan getRollbackPlan(DialectType dialectType, String sql, Statement statement,
-            SyncJdbcExecutor syncJdbcExecutor, RollbackProperties rollbackProperties, Long timeOutMilliSeconds) {
+            SyncJdbcExecutor syncJdbcExecutor, RollbackProperties rollbackProperties, Long timeOutMilliSeconds,
+            Supplier<Boolean> interruptSupplier) {
         switch (dialectType) {
             case MYSQL:
             case OB_MYSQL:
             case ODP_SHARDING_OB_MYSQL:
                 if (statement instanceof Update) {
                     return new OBMySqlUpdateRollbackGenerator(sql, (Update) statement, syncJdbcExecutor,
-                            rollbackProperties, timeOutMilliSeconds);
+                            rollbackProperties, timeOutMilliSeconds, interruptSupplier);
                 } else if (statement instanceof Delete) {
                     return new OBMySqlDeleteRollbackGenerator(sql, (Delete) statement, syncJdbcExecutor,
-                            rollbackProperties, timeOutMilliSeconds);
+                            rollbackProperties, timeOutMilliSeconds, interruptSupplier);
                 } else {
                     throw new UnsupportedSqlTypeForRollbackPlanException("Unsupported sql type, sql: " + sql);
                 }
             case OB_ORACLE:
                 if (statement instanceof Update) {
                     return new OBOracleUpdateRollbackGenerator(sql, (Update) statement, syncJdbcExecutor,
-                            rollbackProperties, timeOutMilliSeconds);
+                            rollbackProperties, timeOutMilliSeconds, interruptSupplier);
                 } else if (statement instanceof Delete) {
                     return new OBOracleDeleteRollbackGenerator(sql, (Delete) statement, syncJdbcExecutor,
-                            rollbackProperties, timeOutMilliSeconds);
+                            rollbackProperties, timeOutMilliSeconds, interruptSupplier);
                 } else {
                     throw new UnsupportedSqlTypeForRollbackPlanException("Unsupported sql type, sql: " + sql);
                 }
             case ORACLE:
                 if (statement instanceof Update) {
                     return new OracleUpdateRollbackGenerator(sql, (Update) statement, syncJdbcExecutor,
-                            rollbackProperties, timeOutMilliSeconds);
+                            rollbackProperties, timeOutMilliSeconds, interruptSupplier);
                 } else if (statement instanceof Delete) {
                     return new OracleDeleteRollbackGenerator(sql, (Delete) statement, syncJdbcExecutor,
-                            rollbackProperties, timeOutMilliSeconds);
+                            rollbackProperties, timeOutMilliSeconds, interruptSupplier);
                 } else {
                     throw new UnsupportedSqlTypeForRollbackPlanException("Unsupported sql type, sql: " + sql);
                 }
