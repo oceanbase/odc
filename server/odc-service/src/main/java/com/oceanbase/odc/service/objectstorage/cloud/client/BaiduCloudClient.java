@@ -15,16 +15,23 @@
  */
 package com.oceanbase.odc.service.objectstorage.cloud.client;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
+
+import org.apache.commons.lang3.StringUtils;
 
 import com.baidubce.auth.DefaultBceCredentials;
 import com.baidubce.http.HttpMethodName;
 import com.baidubce.services.bos.BosClient;
 import com.baidubce.services.bos.BosClientConfiguration;
 import com.baidubce.services.bos.model.GeneratePresignedUrlRequest;
+import com.baidubce.services.bos.model.ResponseHeaderOverrides;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.service.objectstorage.client.CloudObjectStorageClient;
+import com.oceanbase.odc.service.objectstorage.cloud.util.CloudObjectStorageUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -63,4 +70,37 @@ public class BaiduCloudClient extends AmazonCloudClient {
             return bosClient.generatePresignedUrl(request);
         });
     }
+
+    @Override
+    public URL generatePresignedUrl(String bucketName, String key, Date expiration) throws CloudException {
+        return generatePresignedUrlWithCustomFileName(bucketName, key, expiration, null);
+    }
+
+    @Override
+    public URL generatePresignedUrlWithCustomFileName(String bucketName, String key, Date expiration,
+            String customFileName) throws CloudException {
+        Verify.notBlank(key, "key");
+        return callAmazonMethod("Generate presigned URL", () -> {
+            GeneratePresignedUrlRequest request = new GeneratePresignedUrlRequest(bucketName, key);
+            // passed time expire end time, directly use PRESIGNED_UPLOAD_URL_EXPIRATION_SECONDS
+            request.setExpiration(CloudObjectStorageClient.PRESIGNED_UPLOAD_URL_EXPIRATION_SECONDS);
+            request.setMethod(HttpMethodName.GET);
+            request.setContentType("application/octet-stream");
+            String fileName = customFileName;
+            if (StringUtils.isBlank(customFileName)) {
+                fileName = CloudObjectStorageUtil.getOriginalFileName(key);
+            }
+            ResponseHeaderOverrides responseHeaderOverrides = new ResponseHeaderOverrides();
+            try {
+                responseHeaderOverrides.setContentDisposition(
+                        String.format("attachment;filename*=UTF-8''%s",
+                                URLEncoder.encode(fileName, StandardCharsets.UTF_8.name())));
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
+            request.setResponseHeaders(responseHeaderOverrides);
+            return bosClient.generatePresignedUrl(request);
+        });
+    }
+
 }
