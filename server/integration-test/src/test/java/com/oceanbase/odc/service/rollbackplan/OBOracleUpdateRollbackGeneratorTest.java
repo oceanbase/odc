@@ -73,7 +73,8 @@ public class OBOracleUpdateRollbackGeneratorTest {
         properties.setQueryDataBatchSize(2);
         properties.setDefaultTimeZone("Asia/Shanghai");
         String sql = "UPDATE ROLLBACK_TAB2 PARTITION(p1,p2) SET ROLLBACK_TAB2.C2 = 100 WHERE ROLLBACK_TAB2.C1 = 5;";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
 
         RollbackPlan actual = rollbackPlan.generate();
         List<String> rollbackSql = new ArrayList<>();
@@ -93,7 +94,8 @@ public class OBOracleUpdateRollbackGeneratorTest {
         properties.setQueryDataBatchSize(2);
         properties.setDefaultTimeZone("Asia/Shanghai");
         String sql = "UPDATE (SELECT * FROM ROLLBACK_TAB1) V SET V.C2 = 10 WHERE V.C1 = 1;";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
 
         RollbackPlan actual = rollbackPlan.generate();
         List<String> rollbackSql = new ArrayList<>();
@@ -112,7 +114,8 @@ public class OBOracleUpdateRollbackGeneratorTest {
         properties.setQueryDataBatchSize(2);
         properties.setDefaultTimeZone("Asia/Shanghai");
         String sql = "UPDATE ROLLBACK_TAB1 V SET V.C2 = 10 WHERE V.C1 = 1;";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
 
         RollbackPlan actual = rollbackPlan.generate();
         List<String> rollbackSql = new ArrayList<>();
@@ -131,7 +134,8 @@ public class OBOracleUpdateRollbackGeneratorTest {
         properties.setDefaultTimeZone("Asia/Shanghai");
         String sql =
                 "UPDATE ROLLBACK_TAB1 SET (C1,C2) = (SELECT ROLLBACK_TAB2.C1 from ROLLBACK_TAB2 where ROLLBACK_TAB2.C2=5);";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
 
         RollbackPlan actual = rollbackPlan.generate();
         List<String> rollbackSql = new ArrayList<>();
@@ -155,7 +159,8 @@ public class OBOracleUpdateRollbackGeneratorTest {
         properties.setQueryDataBatchSize(2);
         properties.setDefaultTimeZone("Asia/Shanghai");
         String sql = "UPDATE ROLLBACK_TAB1 SET ROW=VALUE_A;";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
 
         RollbackPlan actual = rollbackPlan.generate();
         RollbackPlan expect = new RollbackPlan(sql, DialectType.OB_ORACLE, null, null,
@@ -174,7 +179,8 @@ public class OBOracleUpdateRollbackGeneratorTest {
                 jdbcExecutor.queryForObject("select rowid from ROLLBACK_TEST_TIME_TYPE where ID=1;", String.class);
         String sql = "UPDATE ROLLBACK_TEST_TIME_TYPE SET COL_DATE=to_date('2023-06-04','yyyy-mm-dd') where \"ROWID\"='"
                 + rowid + "'";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
 
         RollbackPlan actual = rollbackPlan.generate();
         String querySql =
@@ -195,7 +201,8 @@ public class OBOracleUpdateRollbackGeneratorTest {
         properties.setQueryDataBatchSize(2);
         properties.setDefaultTimeZone("Asia/Shanghai");
         String sql = "UPDATE ROLLBACK_TAB1 SET C1=100;";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
 
         RollbackPlan actual = rollbackPlan.generate();
         RollbackPlan expect = new RollbackPlan(sql, DialectType.OB_ORACLE,

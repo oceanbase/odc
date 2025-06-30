@@ -33,6 +33,7 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.sql.util.OBUtils;
 import com.oceanbase.odc.service.db.model.DBMSOutput;
+import com.oceanbase.odc.service.pldebug.model.PLDebugProperties;
 import com.oceanbase.odc.service.pldebug.model.PLDebugResult;
 import com.oceanbase.odc.service.pldebug.model.StartPLDebugReq;
 import com.oceanbase.odc.service.pldebug.util.PLDebugTask;
@@ -60,12 +61,14 @@ public class DebuggeeSession extends AbstractDebugSession {
     private Integer dbmsoutputMaxRows = null;
 
     public DebuggeeSession(ConnectionSession connectionSession, ThreadPoolExecutor debugThreadPoolExecutor,
-            StartPLDebugReq req) throws Exception {
-        // 设置超时时间, 单位：us
-        // 设置debug工作线程的超时时间，单位：s 2min
+            StartPLDebugReq req, PLDebugProperties plDebugProperties) throws Exception {
         List<String> initSqls = Arrays.asList(
-                String.format("set session ob_query_timeout = %s;", DEBUG_TIMEOUT_MS * 1000),
-                String.format("select dbms_debug.set_timeout(%s) from dual;", 120));
+                // Set the query timeout period, unit: microseconds, default value: 600*1000*1000us
+                String.format("set session ob_query_timeout = %s;",
+                        plDebugProperties.getObQueryTimeoutSeconds() * 1000 * 1000),
+                // Set the timeout of the debug worker thread, unit: seconds, default value:120s
+                String.format("select dbms_debug.set_timeout(%s) from dual;",
+                        plDebugProperties.getDebugTimeoutSeconds()));
         acquireNewConnection(connectionSession, () -> acquireDataSource(connectionSession, initSqls));
         // OceanBaseConnection can accept null as executor
         // 0 for timeout means wait infinitely

@@ -138,7 +138,8 @@ public class DefaultSpringJobConfiguration extends DefaultJobConfiguration
                                     ctx.getBean(SupervisorEndpointRepository.class),
                                     taskFrameworkProperties.isEnableK8sLocalDebugMode()
                                             ? this::getPortForLocalDebugSupervisorEndpoint
-                                            : taskFrameworkProperties.getK8sProperties()::getSupervisorListenPort),
+                                            : taskFrameworkProperties.getK8sProperties()::getSupervisorListenPort,
+                                    taskFrameworkProperties.getSupervisorReleaseBackSeconds()),
                             taskFrameworkProperties);
         }
 

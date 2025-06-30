@@ -31,6 +31,8 @@ public class JobEnvKeyConstants {
 
     public static final String ODC_TASK_RUN_MODE = "ODC_TASK_RUN_MODE";
 
+    public static final String ODC_UPLOAD_LOG = "ODC_TASK_UPLOAD_LOG";
+
     public static final String ODC_BOOT_MODE = "ODC_BOOT_MODE";
 
     public static final String ODC_LOG_DIRECTORY = "odc.log.directory";
@@ -38,7 +40,6 @@ public class JobEnvKeyConstants {
     public static final String ODC_EXECUTOR_PORT = "ODC_EXECUTOR_PORT";
 
     public static final String ODC_SUPERVISOR_LISTEN_PORT = "ODC_SUPERVISOR_LISTEN_PORT";
-
 
     public static final String ODC_SERVICE_HOST = "ODC_SERVICE_HOST";
 

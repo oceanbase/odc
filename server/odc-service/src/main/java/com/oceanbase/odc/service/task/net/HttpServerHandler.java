@@ -69,7 +69,7 @@ public class HttpServerHandler<T> extends SimpleChannelInboundHandler<FullHttpRe
             log.info("{} get uri {}", moduleName, uri);
         }
         if (StringUtils.isNotBlank(requestData)) {
-            log.info("{} get requestData {}", moduleName, requestData);
+            log.debug("{} get requestData {}", moduleName, requestData);
         }
 
         // invoke

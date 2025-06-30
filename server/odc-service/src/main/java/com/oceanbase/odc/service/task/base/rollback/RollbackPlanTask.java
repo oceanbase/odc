@@ -128,7 +128,7 @@ public class RollbackPlanTask extends TaskBase<FlowTaskResult> {
                             return this.success;
                         }
                         GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql,
-                                parameters.getRollbackProperties(), session, timeoutForCurrentSql);
+                                parameters.getRollbackProperties(), session, timeoutForCurrentSql, () -> false);
                         RollbackPlan result = rollbackPlan.generate();
                         totalChangeLines += result.getChangeLineCount();
                         rollbackPlans.append(result);

@@ -50,6 +50,7 @@ import com.oceanbase.odc.service.pldebug.model.DBPLError;
 import com.oceanbase.odc.service.pldebug.model.PLDebugBreakpoint;
 import com.oceanbase.odc.service.pldebug.model.PLDebugErrorCode;
 import com.oceanbase.odc.service.pldebug.model.PLDebugPrintBacktrace;
+import com.oceanbase.odc.service.pldebug.model.PLDebugProperties;
 import com.oceanbase.odc.service.pldebug.model.PLDebugResult;
 import com.oceanbase.odc.service.pldebug.model.PLDebugStatusReason;
 import com.oceanbase.odc.service.pldebug.model.PLDebugVariable;
@@ -102,7 +103,8 @@ public class DebuggerSession extends AbstractDebugSession {
     private String plName;
     private static final int MAX_TRY_STEP_INTO_TIMES = 5;
 
-    public DebuggerSession(DebuggeeSession debuggeeSession, StartPLDebugReq req, boolean syncEnabled)
+    public DebuggerSession(DebuggeeSession debuggeeSession, StartPLDebugReq req, boolean syncEnabled,
+            PLDebugProperties plDebugProperties)
             throws Exception {
         debugId = debuggeeSession.getDebugId();
         debugType = req.getDebugType();
@@ -114,7 +116,8 @@ public class DebuggerSession extends AbstractDebugSession {
         // Debugger must connect to database host the same as debuggee
         // Set the timeout period, which is measured in microseconds (µs)
         List<String> initSqls = Collections.singletonList(
-                String.format("set session ob_query_timeout = %s;", DEBUG_TIMEOUT_MS * 1000));
+                String.format("set session ob_query_timeout = %s;",
+                        plDebugProperties.getObQueryTimeoutSeconds() * 1000 * 1000));
         acquireNewConnection(debuggeeSession.getConnectionSession(),
                 () -> cloneDataSource(debuggeeSession.getNewDataSource(), initSqls));
         try (Statement stmt = connection.createStatement()) {

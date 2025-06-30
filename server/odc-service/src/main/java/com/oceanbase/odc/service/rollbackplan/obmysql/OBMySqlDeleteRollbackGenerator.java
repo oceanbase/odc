@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.rollbackplan.obmysql;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 import org.springframework.jdbc.core.JdbcOperations;
 
@@ -47,8 +48,9 @@ public class OBMySqlDeleteRollbackGenerator extends AbstractOBMySqlRollBackGener
 
     public OBMySqlDeleteRollbackGenerator(@NonNull String sql, @NonNull Delete delete,
             @NonNull JdbcOperations jdbcOperations,
-            @NonNull RollbackProperties rollbackProperties, Long timeOutMilliSeconds) {
-        super(sql, jdbcOperations, rollbackProperties, timeOutMilliSeconds);
+            @NonNull RollbackProperties rollbackProperties, Long timeOutMilliSeconds,
+            @NonNull Supplier<Boolean> interruptSupplier) {
+        super(sql, jdbcOperations, rollbackProperties, timeOutMilliSeconds, interruptSupplier);
         this.sqlParser = new OBMySQLParser();
         this.delete = delete;
     }

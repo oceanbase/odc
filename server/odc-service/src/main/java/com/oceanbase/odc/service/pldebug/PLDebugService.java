@@ -51,6 +51,7 @@ import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.pldebug.model.PLDebugBreakpoint;
 import com.oceanbase.odc.service.pldebug.model.PLDebugConstants;
 import com.oceanbase.odc.service.pldebug.model.PLDebugContextResp;
+import com.oceanbase.odc.service.pldebug.model.PLDebugProperties;
 import com.oceanbase.odc.service.pldebug.model.PLDebugVariable;
 import com.oceanbase.odc.service.pldebug.model.StartPLDebugReq;
 import com.oceanbase.odc.service.pldebug.operator.DBPLOperators;
@@ -96,6 +97,9 @@ public class PLDebugService {
 
     @Autowired
     private StatefulUuidStateIdGenerator statefulUuidStateIdGenerator;
+
+    @Autowired
+    private PLDebugProperties plDebugProperties;
 
     @PostConstruct
     public void init() {
@@ -166,7 +170,7 @@ public class PLDebugService {
             throw OBException.executeFailed(ErrorCodes.DebugPackageCreateFailed, e.getMessage());
         }
         PLDebugSession plDebugSession =
-                new PLDebugSession(authenticationFacade.currentUserId(),
+                new PLDebugSession(authenticationFacade.currentUserId(), plDebugProperties,
                         () -> statefulUuidStateIdGenerator.generateStateId("PLDebugSession"));
         plDebugSession.setDbmsoutputMaxRows(sessionProperties.getDbmsOutputMaxRows());
         plDebugSession.start(connectionSession, debugSessionExecutor, req, sessionTimeoutSeconds, syncEnabled);
