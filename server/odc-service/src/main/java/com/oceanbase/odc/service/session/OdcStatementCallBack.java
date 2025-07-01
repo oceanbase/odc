@@ -641,7 +641,17 @@ public class OdcStatementCallBack implements StatementCallback<List<JdbcGeneralR
 
     private void setClientStreamReadIfNeeded(Statement statement) throws SQLException {
         if (isClientStreamReadEnabled) {
-            statement.setFetchSize(Integer.MIN_VALUE);
+            switch (connectType) {
+                // only process ob and mysql
+                // oracle default is cursor read mode
+                case OB_ORACLE:
+                case OB_MYSQL:
+                case MYSQL:
+                    statement.setFetchSize(Integer.MIN_VALUE);
+                    break;
+                default:
+                    break;
+            }
         }
     }
 

@@ -86,18 +86,25 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
     @Setter
     private EventPublisher eventPublisher;
     protected final ConnectionExtensionPoint connectionExtensionPoint;
+    protected final boolean enableClientStreamRead;
 
     public OBConsoleDataSourceFactory(@NonNull ConnectionConfig connectionConfig, Boolean autoCommit) {
-        this(connectionConfig, autoCommit, true, true, false);
+        this(connectionConfig, autoCommit, true, true, false, false);
+    }
+
+    public OBConsoleDataSourceFactory(@NonNull ConnectionConfig connectionConfig, Boolean autoCommit,
+            boolean enableClientStreamRead) {
+        this(connectionConfig, autoCommit, true, true, false, enableClientStreamRead);
     }
 
     public OBConsoleDataSourceFactory(@NonNull ConnectionConfig connectionConfig,
             Boolean autoCommit, boolean initConnection, boolean keepAlive) {
-        this(connectionConfig, autoCommit, initConnection, true, keepAlive);
+        this(connectionConfig, autoCommit, initConnection, true, keepAlive, false);
     }
 
     public OBConsoleDataSourceFactory(@NonNull ConnectionConfig connectionConfig,
-            Boolean autoCommit, boolean initConnection, boolean autoReConnect, boolean keepAlive) {
+            Boolean autoCommit, boolean initConnection, boolean autoReConnect, boolean keepAlive,
+            boolean enableClientStreamRead) {
         this.autoCommit = autoCommit;
         this.connectionConfig = connectionConfig;
         this.initConnection = initConnection;
@@ -110,10 +117,11 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         this.serviceName = connectionConfig.getServiceName();
         this.userRole = connectionConfig.getUserRole();
         this.catalogName = connectionConfig.getCatalogName();
-        this.parameters = getJdbcParams(connectionConfig);
+        this.parameters = getJdbcParams(connectionConfig, enableClientStreamRead);
         this.autoReConnect = autoReConnect;
         this.keepAlive = keepAlive;
         this.connectionExtensionPoint = ConnectionPluginUtil.getConnectionExtension(connectionConfig.getDialectType());
+        this.enableClientStreamRead = enableClientStreamRead;
     }
 
     public String getJdbcUrl() {
@@ -145,7 +153,8 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         return connectionConfig.getPassword();
     }
 
-    public static Map<String, String> getJdbcParams(@NonNull ConnectionConfig connectionConfig) {
+    public static Map<String, String> getJdbcParams(@NonNull ConnectionConfig connectionConfig,
+            boolean enableClientStreamRead) {
         Map<String, String> jdbcUrlParams = new HashMap<>();
         jdbcUrlParams.put("maxAllowedPacket", "64000000");
         jdbcUrlParams.put("allowMultiQueries", "true");
@@ -153,7 +162,11 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
         jdbcUrlParams.put("zeroDateTimeBehavior", DEFAULT_ZERO_DATE_TIME_BEHAVIOR);
         jdbcUrlParams.put("noDatetimeStringSync", "true");
         jdbcUrlParams.put("jdbcCompliantTruncation", "false");
-
+        if (enableClientStreamRead && DialectType.OB_ORACLE.equals(connectionConfig.getDialectType())) {
+            // this config required ob client version >= 2.4.10
+            // statement can only perform READ_ONLY and FORWARD_ONLY type operation
+            jdbcUrlParams.put("extendOracleResultSetClass", "true");
+        }
         jdbcUrlParams.put("sendConnectionAttributes", "true");
         jdbcUrlParams.put("defaultConnectionAttributesBanList", "__client_ip");
 
@@ -249,7 +262,8 @@ public class OBConsoleDataSourceFactory implements CloneableDataSourceFactory {
     @Override
     public CloneableDataSourceFactory deepCopy() {
         ConnectionMapper mapper = ConnectionMapper.INSTANCE;
-        return new OBConsoleDataSourceFactory(mapper.clone(connectionConfig), this.autoCommit);
+        return new OBConsoleDataSourceFactory(mapper.clone(connectionConfig), this.autoCommit,
+                this.enableClientStreamRead);
     }
 
     @Override
