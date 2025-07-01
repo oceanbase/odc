@@ -166,11 +166,11 @@ public class ConnectConsoleService {
         } else {
             throw new IllegalArgumentException("Unsupported dialect type, " + dialectType);
         }
-        sqlBuilder.append("SELECT ");
+        sqlBuilder.append("SELECT t.*");
         if (req.isAddROWID() && connectionSession.getDialectType().isOracle()) {
-            sqlBuilder.append(" t.ROWID, ");
+            sqlBuilder.append(",t.ROWID");
         }
-        sqlBuilder.append(" t.* ").append(" FROM ")
+        sqlBuilder.append(" FROM ")
                 .schemaPrefixIfNotBlank(req.getSchemaName()).identifier(req.getTableOrViewName()).append(" t");
 
         Integer queryLimit = checkQueryLimit(req.getQueryLimit());
