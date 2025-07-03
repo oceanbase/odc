@@ -78,7 +78,7 @@ public class ApprovalClient {
 
     /**
      * Start a external approval process instance
-     * 
+     *
      * @param properties Properties for invoking external API, {@link ApprovalProperties}
      * @param variables Template variables for building request, more details reference {@link Variable}
      * @return The process instance ID
@@ -90,17 +90,26 @@ public class ApprovalClient {
         HttpUriRequest request;
         try {
             request = httpService.buildHttpRequest(start, http, encryption, variables);
+            log.debug("The approval start request uri={}, method={}", request.getURI(), request.getMethod());
         } catch (Exception e) {
             throw new UnexpectedException("Build request failed: " + e.getMessage());
         }
         OdcIntegrationResponse response;
+        long requestTime = System.currentTimeMillis();
+        long responseTime;
         try {
             response = httpClient.execute(request, new OdcIntegrationResponseHandler());
+            responseTime = System.currentTimeMillis();
+            log.debug("Before decrypt, the approval start response content={}, time cost={}ms", response.getContent(),
+                    responseTime - requestTime);
         } catch (Exception e) {
             throw new ExternalServiceError(ErrorCodes.ExternalServiceError,
                     "Request execute failed: " + e.getMessage());
         }
         response.setContent(EncryptionUtil.decrypt(response.getContent(), encryption));
+        log.debug("After decrypt, the approval start response content={}, decrypt time cost={}ms",
+                response.getContent(),
+                System.currentTimeMillis() - responseTime);
         checkResponse(response, start.getRequestSuccessExpression());
         try {
             return httpService.extractHttpResponse(response, start.getExtractInstanceIdExpression(), String.class);
@@ -184,7 +193,7 @@ public class ApprovalClient {
 
     /**
      * Build hyperlink for accessing integrated approval system or platform
-     * 
+     *
      * @param expression Expression for building customized hyperlink
      * @param variables Template variables for building request, more details reference {@link Variable}
      * @return URL hyperlink

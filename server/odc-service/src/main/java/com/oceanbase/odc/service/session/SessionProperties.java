@@ -122,4 +122,10 @@ public class SessionProperties {
     @Value("${odc.session.full-link-trace-timeout-seconds:60}")
     private int fullLinkTraceTimeoutSeconds;
 
+    /**
+     * Timeout for querying full link trace
+     */
+    @Value("${odc.session.client-stream-read-enabled:false}")
+    private boolean clientStreamReadEnabled = false;
+
 }
