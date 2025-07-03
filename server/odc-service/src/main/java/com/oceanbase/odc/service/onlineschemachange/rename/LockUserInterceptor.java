@@ -150,6 +150,7 @@ public class LockUserInterceptor implements RenameTableInterceptor {
 
     private Predicate<OdcDBSession> getSessionFilter(List<String> lockUsers) {
         // kill all sessions relational lockUsers
-        return dbSession -> lockUsers.contains(dbSession.getDbUser());
+        return dbSession -> lockUsers.contains(dbSession.getDbUser())
+                && !StringUtils.equalsIgnoreCase(dbSession.getStatus(), "SESSION_KILLED");
     }
 }

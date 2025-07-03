@@ -70,11 +70,7 @@ import com.oceanbase.odc.service.flow.task.model.SqlCheckTaskResult;
 import com.oceanbase.odc.service.flow.task.util.DatabaseChangeFileReader;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
-import com.oceanbase.odc.service.onlineschemachange.OscTableUtil;
-import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
-import com.oceanbase.odc.service.onlineschemachange.model.ForbiddenWriteType;
 import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
-import com.oceanbase.odc.service.onlineschemachange.rename.OscDBUserUtil;
 import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.ApplyDatabaseParameter;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
@@ -138,9 +134,6 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
 
     @Autowired
     private TablePermissionService tablePermissionService;
-
-    @Autowired
-    private OnlineSchemaChangeProperties onlineSchemaChangeProperties;
 
 
     private static final String CHECK_RESULT_FILE_NAME = "sql-check-result.json";
@@ -266,39 +259,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
             this.serviceTaskRepository.updateStatusById(getTargetTaskInstanceId(), FlowNodeStatus.FAILED);
             throw new ServiceTaskError(ex);
         }
-        checkOnlineSchemaChange(taskEntity);
         return null;
-    }
-
-    protected void checkOnlineSchemaChange(TaskEntity taskEntity) {
-        if (taskEntity.getTaskType() != TaskType.ONLINE_SCHEMA_CHANGE) {
-            return;
-        }
-        OnlineSchemaChangeParameters parameters = JsonUtils.fromJson(
-                taskEntity.getParametersJson(), OnlineSchemaChangeParameters.class);
-        if (parameters.getForbiddenWriteType() == ForbiddenWriteType.LOCK_USER) {
-            log.info("onlineSchemaChange task, forbiddenWriteType is LOCK_USER, taskID = {}, ignore it",
-                    taskEntity.getId());
-            return;
-        }
-        boolean lockUserRequired = OscDBUserUtil.isLockUserRequired(connectionConfig, onlineSchemaChangeProperties);
-        if (lockUserRequired) {
-            // lock user and lock table can't assign at the same time
-            if (parameters.getForbiddenWriteType() == ForbiddenWriteType.LOCK_TABLE) {
-                throw new ServiceTaskError(new IllegalStateException(
-                        "task not support lock table, but lock table given, please check config, taskID = "
-                                + taskEntity.getId()));
-            } else {
-                log.info("onlineSchemaChange task, databaseType is not support lock table, taskID = {}, ignore it",
-                        taskEntity.getId());
-                return;
-            }
-        }
-        if (!OscTableUtil.isEnableLockPrioritySet(connectionConfig)) {
-            throw new ServiceTaskError(new IllegalStateException(
-                    "task not support lock table, cause db enable_lock_priority tenant parameter not set, taskID = "
-                            + taskEntity.getId()));
-        }
     }
 
     @Override

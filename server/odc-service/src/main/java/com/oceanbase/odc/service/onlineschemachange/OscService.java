@@ -121,6 +121,9 @@ public class OscService {
         OscLockDatabaseUserInfo oscDatabase = new OscLockDatabaseUserInfo();
         oscDatabase.setDatabaseId(database.getDatabaseId());
         oscDatabase.setLockDatabaseUserRequired(getLockUserIsRequired(database.getDataSource().getId()));
+        if (!oscDatabase.isLockDatabaseUserRequired()) {
+            oscDatabase.setDbEnableLockPriorityFlagSet(isDbEnableLockPriorityFlagSet(database.getDataSource().getId()));
+        }
         return oscDatabase;
     }
 
@@ -300,5 +303,11 @@ public class OscService {
                 connectionService.getForConnectionSkipPermissionCheck(connectionId);
 
         return OscDBUserUtil.isLockUserRequired(decryptedConnConfig, onlineSchemaChangeProperties);
+    }
+
+    private boolean isDbEnableLockPriorityFlagSet(Long connectionId) {
+        ConnectionConfig decryptedConnConfig =
+                connectionService.getForConnectionSkipPermissionCheck(connectionId);
+        return OscTableUtil.isEnableLockPrioritySet(decryptedConnConfig);
     }
 }

@@ -35,4 +35,7 @@ public class OscLockDatabaseUserInfo implements Serializable {
 
     @JsonProperty(access = Access.READ_ONLY)
     private boolean lockDatabaseUserRequired;
+
+    @JsonProperty(access = Access.READ_ONLY)
+    private boolean isDbEnableLockPriorityFlagSet;
 }
