@@ -39,6 +39,8 @@ public class CloudProviderUtil {
                 return CloudProvider.BAIDU_CLOUD;
             case "azure":
             case "azblob":
+            case "wasbs":
+            case "wasb":
                 return CloudProvider.AZURE;
             case "gcs":
             case "gs":
