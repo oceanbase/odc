@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 
@@ -73,6 +74,8 @@ public class DBSchemaSyncService {
         Map<String, DBSchemaSyncer> beans = beanFactory.getBeansOfType(DBSchemaSyncer.class);
         List<DBSchemaSyncer> implementations = new ArrayList<>(beans.values());
         implementations.sort(Comparator.comparingInt(Ordered::getOrder));
+        log.info("DBSchemaSyncer implementations loaded object types={}",
+                implementations.stream().map(i -> i.getObjectType()).collect(Collectors.toList()));
         this.syncers = implementations;
     }
 

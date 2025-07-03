@@ -76,10 +76,11 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
     private long sessionTimeoutMillis;
     @Setter
     private ConnectionSessionIdGenerator<CreateSessionReq> idGenerator;
+    private final boolean enableClientStreamRead;
 
     public DefaultConnectSessionFactory(@NonNull ConnectionConfig connectionConfig,
             Boolean autoCommit, TaskManagerFactory<SqlExecuteTaskManager> taskManagerFactory, boolean autoReconnect,
-            boolean keepAlive) {
+            boolean keepAlive, boolean enableClientStreamRead) {
         this.sessionTimeoutMillis = TimeUnit.MILLISECONDS.convert(
                 ConnectionSessionConstants.SESSION_EXPIRATION_TIME_SECONDS, TimeUnit.SECONDS);
         this.connectionConfig = connectionConfig;
@@ -89,15 +90,23 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
         this.idGenerator = new DefaultConnectSessionIdGenerator();
         this.autoReconnect = autoReconnect;
         this.keepAlive = keepAlive;
+        this.enableClientStreamRead = enableClientStreamRead;
     }
 
     public DefaultConnectSessionFactory(@NonNull ConnectionConfig connectionConfig,
-            Boolean autoCommit, TaskManagerFactory<SqlExecuteTaskManager> taskManagerFactory) {
-        this(connectionConfig, autoCommit, taskManagerFactory, true, true);
+            Boolean autoCommit, TaskManagerFactory<SqlExecuteTaskManager> taskManagerFactory, boolean autoReconnect,
+            boolean keepAlive) {
+        this(connectionConfig, autoCommit, taskManagerFactory, autoReconnect, keepAlive, false);
+    }
+
+    public DefaultConnectSessionFactory(@NonNull ConnectionConfig connectionConfig,
+            Boolean autoCommit, TaskManagerFactory<SqlExecuteTaskManager> taskManagerFactory,
+            boolean enableClientStreamRead) {
+        this(connectionConfig, autoCommit, taskManagerFactory, true, true, enableClientStreamRead);
     }
 
     public DefaultConnectSessionFactory(@NonNull ConnectionConfig connectionConfig) {
-        this(connectionConfig, null, null, true, false);
+        this(connectionConfig, null, null, true, false, false);
     }
 
     @Override
@@ -112,7 +121,8 @@ public class DefaultConnectSessionFactory implements ConnectionSessionFactory {
 
     private void registerConsoleDataSource(ConnectionSession session) {
         OBConsoleDataSourceFactory dataSourceFactory =
-                new OBConsoleDataSourceFactory(connectionConfig, autoCommit, true, autoReconnect, keepAlive);
+                new OBConsoleDataSourceFactory(connectionConfig, autoCommit, true, autoReconnect, keepAlive,
+                        enableClientStreamRead);
         try {
             JdbcUrlParser urlParser = ConnectionPluginUtil
                     .getConnectionExtension(connectionConfig.getDialectType())

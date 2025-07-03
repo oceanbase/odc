@@ -158,7 +158,7 @@ public class ExternalSqlInterceptor extends BaseTimeConsumingInterceptor {
     private TemplateVariables buildTemplateVariables(String sql, ConnectionSession session) {
         TemplateVariables variables = new TemplateVariables();
         // set SQL content
-        variables.setAttribute(Variable.SQL_CONTENT, sql);
+        variables.setAttribute(Variable.SQL_CONTENT, JsonUtils.toJson(sql));
         // set SQL content json array
         List<String> statements = SqlUtils.split(session, sql, true);
         variables.setAttribute(Variable.SQL_CONTENT_JSON_ARRAY, JsonUtils.toJson(statements));
