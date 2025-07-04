@@ -23,6 +23,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.common.util.SystemUtils;
+import com.oceanbase.odc.service.common.util.LockTemplate;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +31,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class BaseLockConfiguration {
 
-    private static final int LOCK_TIME_TO_LIVE_SECONDS = 60;
     private static final int CREATE_LOCK_TABLE_TIMEOUT_SECONDS = 10;
     private static final String CREATE_LOCK_TABLE_SQL = "CREATE TABLE IF NOT EXISTS DISTRIBUTED_LOCK (\n"
             + "  LOCK_KEY CHAR(36) NOT NULL,\n"
@@ -49,7 +49,7 @@ public abstract class BaseLockConfiguration {
         defaultLockRepository.setApplicationContext(SpringContextUtil.getApplicationContext());
         defaultLockRepository.afterSingletonsInstantiated();
         defaultLockRepository.setPrefix("DISTRIBUTED_");
-        defaultLockRepository.setTimeToLive(LOCK_TIME_TO_LIVE_SECONDS * 1000);
+        defaultLockRepository.setTimeToLive(LockTemplate.DEFAULT_LOCK_EXPIRE_SECONDS * 1000);
         log.info("odc lock repository created.");
         return defaultLockRepository;
     }

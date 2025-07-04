@@ -25,4 +25,35 @@ public class CryptoUtilsTest {
         String salt = CryptoUtils.generateSalt();
         Assert.assertEquals(16, salt.length());
     }
+
+    @Test
+    public void generateAes_256Bit_ExpectLength64() {
+        String aesKey = CryptoUtils.generateAes(256);
+        Assert.assertEquals(64, aesKey.length()); // 256 bits = 32 bytes = 64 hex chars
+    }
+
+    @Test
+    public void generateAes_192Bit_ExpectLength48() {
+        String aesKey = CryptoUtils.generateAes(192);
+        Assert.assertEquals(48, aesKey.length()); // 192 bits = 24 bytes = 48 hex chars
+    }
+
+    @Test
+    public void generateAes_128Bit_ExpectLength32() {
+        String aesKey = CryptoUtils.generateAes(128);
+        Assert.assertEquals(32, aesKey.length()); // 128 bits = 16 bytes = 32 hex chars
+    }
+
+    @Test
+    public void generateAes_DifferentCalls_DifferentKeys() {
+        String key1 = CryptoUtils.generateAes(256);
+        String key2 = CryptoUtils.generateAes(256);
+        Assert.assertNotEquals(key1, key2);
+    }
+
+    @Test
+    public void generateAes_ValidHexString() {
+        String aesKey = CryptoUtils.generateAes(256);
+        Assert.assertTrue(aesKey.matches("[0-9a-f]+"));
+    }
 }

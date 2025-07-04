@@ -118,6 +118,9 @@ public class OrganizationAuthenticationInterceptor implements HandlerInterceptor
         if (StringUtils.isEmpty(actual)) {
             actual = request.getHeader("currentOrganizationId");
         }
+        if (StringUtils.isEmpty(actual)) {
+            actual = String.valueOf(request.getAttribute("currentOrganizationId"));
+        }
         if (StringUtils.isEmpty(actual) && StringUtils.isNotEmpty(TraceContextHolder.getProjectId())) {
             String obProjectId = TraceContextHolder.getProjectId();
             Project project = projectService.getByIdentifier(obProjectId);

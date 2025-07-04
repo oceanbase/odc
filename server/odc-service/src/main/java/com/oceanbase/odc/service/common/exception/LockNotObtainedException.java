@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.common.exception;
 
-package com.oceanbase.odc.server.web.trace;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.exception.OdcException;
 
-import org.springframework.context.annotation.Profile;
+public class LockNotObtainedException extends OdcException {
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
-@Profile({"alipay"})
-public class WebRequestBodyCopyFilter extends RequestBodyCopyFilter {
+    public LockNotObtainedException() {
+        super(ErrorCodes.LockNotObtain);
+    }
 }

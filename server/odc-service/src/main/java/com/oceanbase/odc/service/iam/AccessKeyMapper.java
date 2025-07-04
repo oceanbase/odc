@@ -13,14 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.iam;
 
-package com.oceanbase.odc.server.web.trace;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.factory.Mappers;
 
-import org.springframework.context.annotation.Profile;
+import com.oceanbase.odc.metadb.iam.AccessKeyEntity;
+import com.oceanbase.odc.service.iam.model.AccessKeyDTO;
 
-import lombok.extern.slf4j.Slf4j;
+@Mapper
+public interface AccessKeyMapper {
+    AccessKeyMapper INSTANCE = Mappers.getMapper(AccessKeyMapper.class);
 
-@Slf4j
-@Profile({"alipay"})
-public class WebRequestBodyCopyFilter extends RequestBodyCopyFilter {
+
+    @Mapping(target = "secretAccessKey", ignore = true) // Never include secret in DTO
+    AccessKeyDTO entityToDTO(AccessKeyEntity entity);
+
 }

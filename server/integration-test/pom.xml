@@ -25,7 +25,6 @@
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>odc-service</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.oceanbase</groupId>
@@ -35,6 +34,11 @@
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>desktop-starter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>web-starter</artifactId>
             <scope>test</scope>
         </dependency>
         <!--below test dependencies-->

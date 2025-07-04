@@ -43,14 +43,17 @@ import org.springframework.web.servlet.LocaleResolver;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.oceanbase.odc.metadb.iam.UserRepository;
 import com.oceanbase.odc.service.bastion.model.BastionProperties;
 import com.oceanbase.odc.service.captcha.CaptchaAuthenticationProcessingFilter;
+import com.oceanbase.odc.service.iam.AccessKeyService;
 import com.oceanbase.odc.service.iam.auth.CustomAuthenticationEntryPoint;
 import com.oceanbase.odc.service.iam.auth.CustomAuthenticationFailureHandler;
 import com.oceanbase.odc.service.iam.auth.CustomAuthenticationSuccessHandler;
 import com.oceanbase.odc.service.iam.auth.CustomInvalidSessionStrategy;
 import com.oceanbase.odc.service.iam.auth.CustomLogoutSuccessHandler;
 import com.oceanbase.odc.service.iam.auth.UsernamePasswordConfigureHelper;
+import com.oceanbase.odc.service.iam.auth.accesskey.AccessKeyAuthenticationFilter;
 import com.oceanbase.odc.service.iam.auth.bastion.BastionAuthenticationProcessingFilter;
 import com.oceanbase.odc.service.iam.auth.bastion.BastionAuthenticationProvider;
 import com.oceanbase.odc.service.iam.auth.bastion.BastionUserDetailService;
@@ -81,6 +84,9 @@ public class WebSecurityConfiguration {
 
     @Value("${odc.iam.authentication.captcha.enabled:false}")
     private boolean captchaEnabled;
+
+    @Value("${odc.iam.authentication.access-key.enabled:true}")
+    private boolean accessKeyEnabled;
 
     @Autowired
     private LoadingCache<String, FailedLoginAttemptLimiter> clientAddressLoginAttemptCache;
@@ -140,6 +146,11 @@ public class WebSecurityConfiguration {
     @Autowired
     private SamlSecurityConfigureHelper samlSecurityConfigureHelper;
 
+    @Autowired
+    private AccessKeyService accessKeyService;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Bean
     public BastionAuthenticationProvider bastionAuthenticationProvider() {
@@ -226,6 +237,14 @@ public class WebSecurityConfiguration {
             http.addFilterBefore(getCaptchaAuthenticationProcessingFilter(),
                     UsernamePasswordAuthenticationFilter.class);
         }
+
+        if (accessKeyEnabled) {
+            AccessKeyAuthenticationFilter accessKeyAuthenticationFilter =
+                    new AccessKeyAuthenticationFilter(accessKeyService,
+                            userRepository);
+            http.addFilterBefore(accessKeyAuthenticationFilter,
+                    UsernamePasswordAuthenticationFilter.class);
+        }
     }
 
     protected SecurityContextRepository securityContextRepository() {
@@ -262,6 +281,4 @@ public class WebSecurityConfiguration {
         filter.setAuthenticationFailureHandler(customAuthenticationFailureHandler);
         return filter;
     }
-
-
 }

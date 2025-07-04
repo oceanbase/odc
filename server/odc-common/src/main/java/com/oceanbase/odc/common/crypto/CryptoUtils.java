@@ -15,7 +15,12 @@
  */
 package com.oceanbase.odc.common.crypto;
 
+import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
+
+import javax.crypto.SecretKey;
+
+import org.apache.commons.codec.binary.Hex;
 
 /**
  * @author yizhou.xw
@@ -31,6 +36,24 @@ public class CryptoUtils {
     public static String generateSaltWithSize(int size) {
         return UUID.randomUUID().toString().replaceAll("-", "")
                 .substring(0, size).toLowerCase();
+    }
+
+    /**
+     * Generate AES key with specified key size
+     * 
+     * @param keySize the key size in bits (128, 192, or 256)
+     * @return hex string representation of the generated AES key
+     */
+    public static String generateAes(int keySize) {
+        javax.crypto.KeyGenerator keyGenerator;
+        try {
+            keyGenerator = javax.crypto.KeyGenerator.getInstance("AES");
+            keyGenerator.init(keySize);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("No AES algorithm.");
+        }
+        SecretKey secretKey = keyGenerator.generateKey();
+        return Hex.encodeHexString(secretKey.getEncoded());
     }
 
 }

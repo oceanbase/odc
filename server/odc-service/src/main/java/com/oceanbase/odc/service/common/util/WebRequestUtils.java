@@ -27,6 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -74,6 +75,11 @@ public class WebRequestUtils {
 
     public static String getRequestHost(HttpServletRequest request) {
         return getRequestUriComponents(request).getHost();
+    }
+
+    public static boolean isMultipart(HttpServletRequest request) {
+        String contentType = request.getContentType();
+        return StringUtils.startsWithIgnoreCase(contentType, MediaType.MULTIPART_FORM_DATA_VALUE);
     }
 
     public static String getRequestFullURL(HttpServletRequest request) {
@@ -225,6 +231,11 @@ public class WebRequestUtils {
                         h -> Collections.list(httpRequest.getHeaders(h)),
                         (oldValue, newValue) -> newValue,
                         HttpHeaders::new));
+    }
+
+    public static boolean isAccessKeyAuth(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        return StringUtils.isNotBlank(authHeader) && authHeader.startsWith("ODC-ACCESS-KEY");
     }
 
     @SuppressWarnings("all")

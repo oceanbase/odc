@@ -48,12 +48,14 @@ import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.WebResponseUtils;
 import com.oceanbase.odc.service.flow.model.BinaryDataResult;
+import com.oceanbase.odc.service.iam.AccessKeyService;
 import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.ResourceRoleService;
 import com.oceanbase.odc.service.iam.RoleService;
 import com.oceanbase.odc.service.iam.UserBatchImportPreviewer;
 import com.oceanbase.odc.service.iam.UserPermissionService;
 import com.oceanbase.odc.service.iam.UserService;
+import com.oceanbase.odc.service.iam.model.AccessKeyDTO;
 import com.oceanbase.odc.service.iam.model.ChangePasswordReq;
 import com.oceanbase.odc.service.iam.model.CreateRoleReq;
 import com.oceanbase.odc.service.iam.model.CreateUserReq;
@@ -61,6 +63,7 @@ import com.oceanbase.odc.service.iam.model.Organization;
 import com.oceanbase.odc.service.iam.model.QueryUserParams;
 import com.oceanbase.odc.service.iam.model.ResourceRole;
 import com.oceanbase.odc.service.iam.model.Role;
+import com.oceanbase.odc.service.iam.model.UpdateAccessKeyRequest;
 import com.oceanbase.odc.service.iam.model.UpdateRoleReq;
 import com.oceanbase.odc.service.iam.model.UpdateUserReq;
 import com.oceanbase.odc.service.iam.model.User;
@@ -98,6 +101,9 @@ public class IamController {
 
     @Autowired
     private OrganizationService organizationService;
+
+    @Autowired
+    private AccessKeyService accessKeyService;
 
     /**
      * Get verification code
@@ -425,6 +431,41 @@ public class IamController {
     @RequestMapping(value = "/users/batchImport", method = RequestMethod.POST)
     public ListResponse<User> batchCreateUsers(@RequestBody List<CreateUserReq> createUserReqs) {
         return Responses.list(userService.batchImport(createUserReqs));
+    }
+
+
+    /**
+     * Create a new access key
+     *
+     * @param request the create request
+     * @return Created access key information
+     */
+    @ApiOperation(value = "createAccessKey", notes = "创建访问密钥")
+    @RequestMapping(value = "/users/{userId}/accessKeys", method = RequestMethod.POST)
+    public SuccessResponse<AccessKeyDTO> createAccessKey(@PathVariable long userId) {
+        return Responses.success(accessKeyService.create(userId));
+    }
+
+
+    @ApiOperation(value = "updateAccessKey", notes = "更新访问密钥信息，id为访问密钥唯一id")
+    @RequestMapping(value = "/users/{userId}/accessKeys/{accessKey}", method = RequestMethod.PUT)
+    public SuccessResponse<AccessKeyDTO> updateAccessKey(@PathVariable long userId, @PathVariable String accessKey,
+            @RequestBody UpdateAccessKeyRequest request) {
+        return Responses.success(accessKeyService.update(userId, accessKey, request));
+    }
+
+    @ApiOperation(value = "deleteAccessKey", notes = "删除访问密钥，id为访问密钥唯一id")
+    @RequestMapping(value = "/users/{userId}/accessKeys/{accessKey}", method = RequestMethod.DELETE)
+    public SuccessResponse<AccessKeyDTO> deleteAccessKey(@PathVariable long userId, @PathVariable String accessKey) {
+        return Responses.success(accessKeyService.delete(userId, accessKey));
+    }
+
+
+    @ApiOperation(value = "listAccessKeys", notes = "查询指定用户的访问密钥列表")
+    @RequestMapping(value = "/users/{userId}/accessKeys", method = RequestMethod.GET)
+    public PaginatedResponse<AccessKeyDTO> listAccessKeys(@PathVariable long userId,
+            @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable) {
+        return Responses.paginated(accessKeyService.listByUserId(userId, pageable));
     }
 
 }

@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.iam.model;
 
-package com.oceanbase.odc.server.web.trace;
+import com.oceanbase.odc.core.shared.constant.AccessKeyStatus;
 
-import org.springframework.context.annotation.Profile;
+import lombok.Data;
 
-import lombok.extern.slf4j.Slf4j;
+@Data
+public class UpdateAccessKeyRequest {
 
-@Slf4j
-@Profile({"alipay"})
-public class WebRequestBodyCopyFilter extends RequestBodyCopyFilter {
+    private AccessKeyStatus status;
 }

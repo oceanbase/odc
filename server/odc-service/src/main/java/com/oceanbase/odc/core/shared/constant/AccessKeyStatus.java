@@ -13,14 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.core.shared.constant;
 
-package com.oceanbase.odc.server.web.trace;
+/**
+ * Access Key Status Enum
+ * 
+ * @author your-name
+ * @date 2024/01/01
+ */
+public enum AccessKeyStatus {
 
-import org.springframework.context.annotation.Profile;
+    /**
+     * Active - Access key is enabled and can be used
+     */
+    ACTIVE,
 
-import lombok.extern.slf4j.Slf4j;
+    /**
+     * Suspended - Access key is disabled/suspended and cannot be used
+     */
+    SUSPENDED,
 
-@Slf4j
-@Profile({"alipay"})
-public class WebRequestBodyCopyFilter extends RequestBodyCopyFilter {
+    /**
+     * Deleted - Access key is deleted (soft delete)
+     */
+    DELETED;
+
+
+    public boolean isValid() {
+        return this == ACTIVE;
+    }
+
+
 }

@@ -13,14 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.oceanbase.odc.service.iam.auth.accesskey;
 
-package com.oceanbase.odc.server.web.trace;
+import java.util.Map;
 
-import org.springframework.context.annotation.Profile;
+import lombok.Builder;
+import lombok.Data;
 
-import lombok.extern.slf4j.Slf4j;
+@Builder
+@Data
+public class AuthenticationParam {
 
-@Slf4j
-@Profile({"alipay"})
-public class WebRequestBodyCopyFilter extends RequestBodyCopyFilter {
+    private String host;
+    private String path;
+    private String method;
+    private Map<String, String> queryParams;
+    private String algorithm;
+    private String accessKeyId;
+    private String signature;
+    private String headerDate;
+    private String nonce;
+    private byte[] body;
+
 }

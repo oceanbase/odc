@@ -54,6 +54,7 @@ public enum ErrorCodes implements ErrorCode {
     Unknown,
     InvalidFileFormat,
     IllegalFileName,
+    LockNotObtain,
 
     /**
      * common argument validation
