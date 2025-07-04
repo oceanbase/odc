@@ -204,7 +204,7 @@ public class DBSchemaIndexService {
         Set<Database> databases = new HashSet<>();
         if (req.getResourceType() == ResourceType.ODC_CONNECTION) {
             try {
-                databaseService.internalSyncDataSourceSchemas(req.getResourceId());
+                databaseService.internalSyncDataSourceSchemas(req.getResourceId(), false);
             } catch (InterruptedException ex) {
                 log.warn("sync data sources failed, datasourceId={}, errorMessage={}", req.getResourceId(),
                         ex.getMessage());

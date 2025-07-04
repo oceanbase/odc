@@ -304,7 +304,7 @@ public class DatabaseService {
         if (Objects.nonNull(params.getDataSourceId())
                 && authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
             try {
-                internalSyncDataSourceSchemas(params.getDataSourceId());
+                internalSyncDataSourceSchemas(params.getDataSourceId(), false);
             } catch (Exception ex) {
                 log.warn("sync data sources in individual space failed when listing databases, errorMessage={}",
                         ex.getLocalizedMessage());
@@ -509,7 +509,7 @@ public class DatabaseService {
 
     @PreAuthenticate(actions = "update", resourceType = "ODC_CONNECTION", indexOfIdParam = 0)
     public Boolean syncDataSourceSchemas(@NonNull Long dataSourceId) throws InterruptedException {
-        Boolean res = internalSyncDataSourceSchemas(dataSourceId);
+        Boolean res = internalSyncDataSourceSchemas(dataSourceId, false);
         if (res) {
             try {
                 refreshExpiredPendingDBObjectStatus();
@@ -522,8 +522,16 @@ public class DatabaseService {
         return res;
     }
 
+    /**
+     *
+     * @param dataSourceId 待同步的数据源 ID
+     * @param triggerBySchedule 是否是后台定时任务触发的
+     * @return 同步是否成功
+     * @throws InterruptedException
+     */
     @SkipAuthorize("internal usage")
-    public Boolean internalSyncDataSourceSchemas(@NonNull Long dataSourceId) throws InterruptedException {
+    public Boolean internalSyncDataSourceSchemas(@NonNull Long dataSourceId, boolean triggerBySchedule)
+            throws InterruptedException {
         Lock lock = jdbcLockRegistry.obtain(connectionService.getUpdateDsSchemaLockKey(dataSourceId));
         if (!lock.tryLock(3, TimeUnit.SECONDS)) {
             throw new ConflictException(ErrorCodes.ResourceSynchronizing,
@@ -535,6 +543,11 @@ public class DatabaseService {
             connection = connectionService.getForConnectionSkipPermissionCheck(dataSourceId);
             if (connection.getType().isFileSystem()) {
                 return true;
+            }
+            if (triggerBySchedule && Objects.nonNull(connection.getEndpoint())
+                    && connection.getEndpoint().isFreeTrial()) {
+                // 如果是 freetrial 实例，则跳过后台触发的定时同步任务
+                return false;
             }
             horizontalDataPermissionValidator.checkCurrentOrganization(connection);
             organizationOpt = organizationService.get(connection.getOrganizationId());

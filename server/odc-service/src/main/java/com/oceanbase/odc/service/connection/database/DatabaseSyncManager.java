@@ -74,13 +74,13 @@ public class DatabaseSyncManager {
 
     @SkipAuthorize("internal usage")
     public Future<Boolean> submitSyncDataSourceTask(@NonNull ConnectionConfig connection) {
-        return doExecute(() -> executor.submit(() -> syncDBForDataSource(connection)));
+        return doExecute(() -> executor.submit(() -> syncDBForDataSource(connection, true)));
     }
 
     @SkipAuthorize("internal usage")
     public Future<Boolean> submitSyncDataSourceAndDBSchemaTask(@NonNull ConnectionConfig connection) {
         return doExecute(() -> executor.submit(() -> {
-            Boolean res = syncDBForDataSource(connection);
+            Boolean res = syncDBForDataSource(connection, false);
             try {
                 databaseService.refreshExpiredPendingDBObjectStatus();
                 dbSchemaSyncTaskManager.submitTaskByDataSource(connection);
@@ -91,10 +91,11 @@ public class DatabaseSyncManager {
         }));
     }
 
-    public Boolean syncDBForDataSource(@NonNull ConnectionConfig dataSource) throws InterruptedException {
+    public Boolean syncDBForDataSource(@NonNull ConnectionConfig dataSource, boolean triggerBySchedule)
+            throws InterruptedException {
         Long creatorId = dataSource.getCreatorId();
         SecurityContextUtils.setCurrentUser(creatorId, dataSource.getOrganizationId(), getAccountName(creatorId));
-        return databaseService.internalSyncDataSourceSchemas(dataSource.getId());
+        return databaseService.internalSyncDataSourceSchemas(dataSource.getId(), triggerBySchedule);
     }
 
     private Future<Boolean> doExecute(Supplier<Future<Boolean>> supplier) {

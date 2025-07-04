@@ -17,6 +17,8 @@ package com.oceanbase.odc.service.connection.model;
 
 import java.io.Serializable;
 
+import org.eclipse.jgit.util.StringUtils;
+
 import lombok.Data;
 
 /**
@@ -54,4 +56,12 @@ public class OBTenantEndpoint implements Serializable {
      * 虚拟 Port，通过代理服务访问的目标 Port，代替直连模式 port，多云和阿里云公有云适用
      */
     private Integer virtualPort;
+    /**
+     * 用来区分是否是 freetrial 实例，如果是 freetrial 实例，该字段值为 freetrial
+     */
+    private String productScenario;
+
+    public boolean isFreeTrial() {
+        return StringUtils.equalsIgnoreCase(this.productScenario, "freetrial");
+    }
 }
