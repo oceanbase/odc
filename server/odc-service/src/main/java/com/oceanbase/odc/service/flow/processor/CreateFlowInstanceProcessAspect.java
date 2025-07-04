@@ -117,7 +117,8 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
      * get connectionId and projectId from database.
      */
     private void adaptCreateFlowInstanceReq(CreateFlowInstanceReq req) {
-        Database database = databaseService.detail(req.getDatabaseId());
+        Database database = req.isInnerCreated() ? databaseService.detailSkipPermissionCheck(req.getDatabaseId())
+                : databaseService.detail(req.getDatabaseId());
         if (Objects.isNull(database.getProject())
                 && authenticationFacade.currentUser().getOrganizationType() == OrganizationType.TEAM) {
             throw new BadRequestException("Cannot create flow under default project in TEAM organization");

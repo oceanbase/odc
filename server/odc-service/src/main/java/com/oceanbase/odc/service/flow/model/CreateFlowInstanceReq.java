@@ -125,6 +125,8 @@ public class CreateFlowInstanceReq {
     private Long environmentId;
     @JsonProperty(access = Access.READ_ONLY)
     private String environmentName;
+    @JsonProperty(access = Access.READ_ONLY)
+    private boolean innerCreated = false;
 
     public void validate() {
         if (executionStrategy == FlowTaskExecutionStrategy.TIMER) {

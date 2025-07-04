@@ -182,6 +182,7 @@ public class PartitionPlanJob implements OdcJob {
         flowInstanceReq.setDatabaseId(databaseId);
         flowInstanceReq.setParentFlowInstanceId(parentFlowInstanceId);
         flowInstanceReq.setExecutionStrategy(FlowTaskExecutionStrategy.AUTO);
+        flowInstanceReq.setInnerCreated(true);
         List<FlowInstanceDetailResp> flowInstance = this.flowInstanceService.createWithoutApprovalNode(
                 flowInstanceReq);
         if (flowInstance.isEmpty()) {
