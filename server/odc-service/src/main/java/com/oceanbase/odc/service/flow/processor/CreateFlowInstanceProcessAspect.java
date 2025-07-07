@@ -117,7 +117,7 @@ public class CreateFlowInstanceProcessAspect implements InitializingBean {
      * get connectionId and projectId from database.
      */
     private void adaptCreateFlowInstanceReq(CreateFlowInstanceReq req) {
-        Database database = req.isInnerCreated() ? databaseService.detailSkipPermissionCheck(req.getDatabaseId())
+        Database database = req.isInnerCreated() ? databaseService.innerDetailSkipPermissionCheck(req.getDatabaseId())
                 : databaseService.detail(req.getDatabaseId());
         if (Objects.isNull(database.getProject())
                 && authenticationFacade.currentUser().getOrganizationType() == OrganizationType.TEAM) {

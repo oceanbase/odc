@@ -270,6 +270,12 @@ public class DatabaseService {
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)), true);
     }
 
+    @SkipAuthorize("internal usage")
+    public Database innerDetailSkipPermissionCheck(@NonNull Long id) {
+        return entityToModel(databaseRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)), false);
+    }
+
     /**
      * This method provides database details for a task. Permission checks are skipped for internal use
      * only. The returned datasource includes decrypted attributes and password.
