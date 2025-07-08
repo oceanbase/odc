@@ -22,7 +22,7 @@
     <parent>
         <artifactId>plugin-parent</artifactId>
         <groupId>com.oceanbase</groupId>
-        <version>4.3.4-SNAPSHOT</version>
+        <version>4.4.0-SNAPSHOT-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>connect-plugin-postgres</artifactId>
