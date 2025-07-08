@@ -105,6 +105,10 @@ RPM&JAR打包:
       - rpm_file_name="distribution/docker/resources/x86/$(ls distribution/docker/resources/x86 | grep odc-server)"
       - echo "rpm name=$(rpm -qp --queryformat '%{NAME}-%{VERSION}-%{RELEASE}' ${rpm_file_name})"
     outputs:
+      - name: odc-artifact-jar
+        type: custom # 存入OSS
+        paths: [ "./artifact.zip" ]
+        desc: "odc artifact jar zip"
       - name: odc_server_x86_rpm
         type: custom # 存入OSS
         paths: [ "./distribution/docker/resources/x86/odc-server*.rpm" ]
