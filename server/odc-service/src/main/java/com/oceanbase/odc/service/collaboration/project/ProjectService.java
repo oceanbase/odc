@@ -246,6 +246,13 @@ public class ProjectService {
     }
 
     @SkipAuthorize("odc internal usage")
+    public Project innerDetailForTask(@NotNull Long id) {
+        ProjectEntity entity = repository.findByIdAndOrganizationId(id, currentOrganizationId())
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_PROJECT, "id", id));
+        return entityToModel(entity);
+    }
+
+    @SkipAuthorize("odc internal usage")
     public List<ProjectMember> getProjectMembers(@NotNull Long projectId, @NotNull Long organizationId) {
         ProjectEntity entity = repository.findByIdAndOrganizationId(projectId, organizationId)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_PROJECT, "id", projectId));

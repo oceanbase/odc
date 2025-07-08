@@ -1192,7 +1192,7 @@ public class DatabaseService {
     private Database innerDetailForTask(DatabaseEntity entity) {
         Database model = databaseMapper.entityToModel(entity);
         if (Objects.nonNull(entity.getProjectId())) {
-            model.setProject(projectService.detail(entity.getProjectId()));
+            model.setProject(projectService.innerDetailForTask(entity.getProjectId()));
         }
         // for logical database, the connection id may be null
         if (entity.getConnectionId() != null) {
