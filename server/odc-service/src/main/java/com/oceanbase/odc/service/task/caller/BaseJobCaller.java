@@ -96,7 +96,7 @@ public abstract class BaseJobCaller implements JobCaller {
         TaskExecutorClient taskExecutorClient = jobConfiguration.getTaskExecutorClient();
 
         JobEntity jobEntity = taskFrameworkService.find(ji.getId());
-        String executorEndpoint = jobEntity.getExecutorIdentifier();
+        String executorEndpoint = jobEntity.getExecutorEndpoint();
         try {
             if (!StringUtils.isEmpty(jobEntity.getExecutorIdentifier())) {
                 ExecutorIdentifier identifier = ExecutorIdentifierParser.parser(jobEntity.getExecutorIdentifier());
