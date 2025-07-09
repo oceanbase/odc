@@ -1362,7 +1362,8 @@ public class FlowInstanceService {
             FlowTaskUtil.setSchemaName(variables, taskEntity.getDatabaseName());
         }
         if (taskEntity.getDatabaseId() != null) {
-            FlowTaskUtil.setSchemaName(variables, databaseService.detail(taskEntity.getDatabaseId()).getName());
+            FlowTaskUtil.setSchemaName(variables,
+                    databaseService.innerDetailForTask(taskEntity.getDatabaseId()).getName());
         }
         FlowTaskUtil.setTaskCreator(variables, authenticationFacade.currentUser());
         FlowTaskUtil.setOrganizationId(variables, authenticationFacade.currentOrganizationId());
@@ -1414,7 +1415,7 @@ public class FlowInstanceService {
         variables.setAttribute(Variable.PROJECT_OWNER_NAMES, JsonUtils.toJson(projectOwnerNames));
         // set database related variables
         if (Objects.nonNull(flowInstanceReq.getDatabaseId())) {
-            Database database = databaseService.detail(flowInstanceReq.getDatabaseId());
+            Database database = databaseService.innerDetailForTask(flowInstanceReq.getDatabaseId());
             variables.setAttribute(Variable.DATABASE_NAME, database.getName());
             if (Objects.nonNull(database.getEnvironment())) {
                 String environmentNameKey = database.getEnvironment().getName();
