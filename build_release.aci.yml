@@ -92,7 +92,7 @@ RPM&JAR打包:
   passEnv: true            # 将outputs 的数据传递到其他任务
   pluginConfig:
     computeType: large
-    image: reg.docker.alibaba-inc.com/oceanbase/odc-build:latest
+    image: reg.docker.alibaba-inc.com/oceanbase/odc-build:4.0.0
     script:
       # Build rpm package
       - TZ='Asia/Shanghai'; export TZ; echo "[ODC Pipeline] Begin rpm build at `date`"
@@ -129,7 +129,7 @@ AARCH-RPM&JAR打包:
   passEnv: true            # 将outputs 的数据传递到其他任务
   pluginConfig:
     computeType: large
-    image: reg.docker.alibaba-inc.com/oceanbase/odc-build-arm:latest
+    image: reg.docker.alibaba-inc.com/oceanbase/odc-build-arm:4.0.0
     architecture: aarch64
     environments:
       GIT_SUBMODULE_STRATEGY: recursive
@@ -160,7 +160,7 @@ AARCH-RPM&JAR打包:
   stage: 构建Docker
   plugin: ANT-BUILD
   pluginConfig:
-    image: reg.docker.alibaba-inc.com/oceanbase/odc-build:latest
+    image: reg.docker.alibaba-inc.com/oceanbase/odc-build:4.0.0
     script:
       - TZ='Asia/Shanghai'; export TZ; echo "[ODC Pipeline] Begin docker build at `date`"
       - filename=$(echo "${odc_server_x86_rpm}" | grep --only-matching 'odc-server.*rpm' ) || true

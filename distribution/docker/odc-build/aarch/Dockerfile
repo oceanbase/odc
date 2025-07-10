@@ -19,8 +19,9 @@ ARG WORKDIR=/home/admin
 ARG USER_HOME_DIR="/root"
 ARG NODE_VERSION="14.19.1"
 ARG JDK_VERSION="java-17-openjdk-headless java-17-openjdk java-17-openjdk-devel"
-ARG MAVEN_VERSION=3.5.4
-ARG MAVEN_BASE_URL=https://mirrors.aliyun.com/apache/maven/maven-3/${MAVEN_VERSION}/binaries
+ARG MAVEN_VERSION=3.6.3
+ARG MAVEN_BASE_URL=https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz
+
 ARG BUILD_UTIL_HOME=/home/admin/util
 
 RUN useradd -ms /bin/bash ${USERNAME}
@@ -40,7 +41,7 @@ RUN mkdir -p /etc/yum.repos.d/bak/ \
     && yum install -y --exclude=ali-jdk ${JDK_VERSION}
 
 RUN mkdir -p /usr/share/maven /usr/share/maven/ref \
-  && curl -fsSL -o /tmp/apache-maven.tar.gz ${MAVEN_BASE_URL}/apache-maven-${MAVEN_VERSION}-bin.tar.gz \
+  && curl -fsSL -o /tmp/apache-maven.tar.gz ${MAVEN_BASE_URL} \
   && tar -xzf /tmp/apache-maven.tar.gz -C /usr/share/maven --strip-components=1 \
   && rm -f /tmp/apache-maven.tar.gz \
   && ln -s /usr/share/maven/bin/mvn /usr/bin/mvn

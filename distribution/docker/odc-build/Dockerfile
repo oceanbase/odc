@@ -18,9 +18,9 @@ ARG USERNAME=admin
 ARG WORKDIR=/home/admin
 ARG USER_HOME_DIR="/root"
 ARG NODE_VERSION="14.19.1"
-ARG JDK_VERSION="java-1.8.0-openjdk-headless-1.8.0.312.b07 java-1.8.0-openjdk-1.8.0.312.b07 java-1.8.0-openjdk-devel-1.8.0.312.b07"
-ARG MAVEN_VERSION=3.5.4
-ARG MAVEN_BASE_URL=https://mirrors.aliyun.com/apache/maven/maven-3/${MAVEN_VERSION}/binaries
+ARG JDK_VERSION="java-17-openjdk-headless java-17-openjdk java-17-openjdk-devel"
+ARG MAVEN_VERSION=3.6.3
+ARG MAVEN_BASE_URL=https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz
 ARG BUILD_UTIL_HOME=/home/admin/util
 
 RUN useradd -ms /bin/bash ${USERNAME}
@@ -40,7 +40,7 @@ RUN mkdir -p /etc/yum.repos.d/bak/ \
     && yum install -y --exclude=ali-jdk ${JDK_VERSION}
 
 RUN mkdir -p /usr/share/maven /usr/share/maven/ref \
-  && curl -fsSL -o /tmp/apache-maven.tar.gz ${MAVEN_BASE_URL}/apache-maven-${MAVEN_VERSION}-bin.tar.gz \
+  && curl -fsSL -o /tmp/apache-maven.tar.gz ${MAVEN_BASE_URL} \
   && tar -xzf /tmp/apache-maven.tar.gz -C /usr/share/maven --strip-components=1 \
   && rm -f /tmp/apache-maven.tar.gz \
   && ln -s /usr/share/maven/bin/mvn /usr/bin/mvn
@@ -50,7 +50,7 @@ RUN mkdir -p /usr/share/maven /usr/share/maven/ref \
 # create node develop env & ossutil
 RUN sh ${WORKDIR}/create_node_env.sh && ${WORKDIR}/install_ossutil.sh ${BUILD_UTIL_HOME}
 
-ENV JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.312.b07-2.el8_5.x86_64
+ENV JAVA_HOME=/usr/lib/jvm/java-17
 ENV MAVEN_HOME=/usr/share/maven
 ENV MAVEN_CONFIG=$USER_HOME_DIR/.m2
 ENV NVS_HOME=/usr/local/nvs

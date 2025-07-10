@@ -17,24 +17,23 @@ LABEL description="OceanBase Developer Center (ODC)"
 # parameters
 ARG ODC_INSTALL_DIR=/opt/odc
 ARG JDK_VERSION="java-17-openjdk-headless java-17-openjdk java-17-openjdk-devel"
-ARG PYTHON_VERSION=python2
-ARG PYTHON_PIP_VERSION=python2-pip-9.0.3
-ARG PYTHON_PIP_UPGRADE_VERSION=20.0.2
+ARG PYTHON_VERSION=python38
+ARG PYTHON_PIP_UPGRADE_VERSION=23.3.1
+
 
 ENV LC_ALL=en_US.UTF-8
 ENV LANG=en_US.utf-8
 
+
 # install jdk/supervisor, tcpdump, supervisor (install by python pip)
 RUN yum clean all && yum makecache \
-    && yum install -y --exclude=ali-jdk ${JDK_VERSION} ${PYTHON_VERSION} ${PYTHON_PIP_VERSION} tcpdump passwd langpacks-en glibc-all-langpacks glibc-locale-source glibc-langpack-en \
+    && yum update -y --exclude=ali-jdk\
+    && yum install -y --exclude=ali-jdk ${JDK_VERSION} ${PYTHON_VERSION} tcpdump passwd langpacks-en glibc-all-langpacks glibc-locale-source glibc-langpack-en \
     && ln -sf /usr/share/zoneinfo/Asia/Shanghai  /etc/localtime \
     && localedef -i en_US -f UTF-8 en_US.UTF-8 \
-    && yum update -y --exclude=ali-jdk \
-    && ln -s /usr/bin/python2 /usr/bin/python \
-    && ln -s /usr/bin/pip2 /usr/bin/pip \
     && ln -s /usr/lib64/libtinfo.so.6.1 /usr/lib64/libtinfo.so.5 \
-    && pip install --upgrade pip==${PYTHON_PIP_UPGRADE_VERSION} -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com \
-    && pip install supervisor -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com --ignore-installed \
+    && pip3 install --upgrade pip==${PYTHON_PIP_UPGRADE_VERSION} -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com \
+    && pip3 install supervisor -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com --ignore-installed \
     && yum clean all \
     && rm -rf /var/cache/yum
 
@@ -72,4 +71,4 @@ RUN rpm -ivh ${ODC_INSTALL_DIR}/tmp/*.rpm \
 
 EXPOSE 8989
 
-ENTRYPOINT ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
+ENTRYPOINT ["/usr/local/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
