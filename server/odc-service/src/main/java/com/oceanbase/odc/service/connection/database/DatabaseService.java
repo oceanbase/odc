@@ -272,6 +272,12 @@ public class DatabaseService {
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)), true);
     }
 
+    @SkipAuthorize("internal usage")
+    public Database innerDetailSkipPermissionCheck(@NonNull Long id) {
+        return entityToModel(databaseRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)), false);
+    }
+
     /**
      * This method provides database details for a task. Permission checks are skipped for internal use
      * only. The returned datasource includes decrypted attributes and password.
@@ -1190,7 +1196,7 @@ public class DatabaseService {
     private Database innerDetailForTask(DatabaseEntity entity) {
         Database model = databaseMapper.entityToModel(entity);
         if (Objects.nonNull(entity.getProjectId())) {
-            model.setProject(projectService.detail(entity.getProjectId()));
+            model.setProject(projectService.innerDetailForTask(entity.getProjectId()));
         }
         // for logical database, the connection id may be null
         if (entity.getConnectionId() != null) {

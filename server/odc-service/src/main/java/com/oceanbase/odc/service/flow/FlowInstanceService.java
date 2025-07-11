@@ -687,22 +687,27 @@ public class FlowInstanceService {
 
         if (CollectionUtils.isNotEmpty(params.getProjectIds())) {
             specification = specification.and(FlowInstanceViewSpecs.projectIdIn(params.getProjectIds()));
-        } else {
+        } else if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.TEAM) {
             Set<Long> joinedProjectIds = userService.getCurrentUserJoinedProjectIds();
             // If the user does not join any projects in team space, and it filters out the
             // APPLY_PROJECT_PERMISSION, then return empty directly
-            if (CollectionUtils.isEmpty(joinedProjectIds)
-                    && authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM
-                    && !taskTypes.contains(TaskType.APPLY_PROJECT_PERMISSION)) {
+            if (CollectionUtils.isEmpty(joinedProjectIds) && !taskTypes.contains(TaskType.APPLY_PROJECT_PERMISSION)) {
                 return Page.empty();
             }
             // Add the condition of joined project ids or if it contains APPLY_PROJECT_PERMISSION, we only need
             // to require creatorId equals currentUserId because user should be allowed to view the
             // APPLY_PROJECT_PERMISSION tickets even if they have not joined that project
-            specification =
-                    specification.and(FlowInstanceViewSpecs.projectIdIn(userService.getCurrentUserJoinedProjectIds())
-                            .or(FlowInstanceViewSpecs.creatorIdEquals(authenticationFacade.currentUserId())
-                                    .and(FlowInstanceViewSpecs.taskTypeEquals(TaskType.APPLY_PROJECT_PERMISSION))));
+            if (CollectionUtils.isEmpty(joinedProjectIds)) {
+                // If user has not joined any projects, only show APPLY_PROJECT_PERMISSION tickets created by
+                // current user
+                specification =
+                        specification.and(FlowInstanceViewSpecs.creatorIdEquals(authenticationFacade.currentUserId())
+                                .and(FlowInstanceViewSpecs.taskTypeEquals(TaskType.APPLY_PROJECT_PERMISSION)));
+            } else {
+                specification = specification.and(FlowInstanceViewSpecs.projectIdIn(joinedProjectIds)
+                        .or(FlowInstanceViewSpecs.creatorIdEquals(authenticationFacade.currentUserId())
+                                .and(FlowInstanceViewSpecs.taskTypeEquals(TaskType.APPLY_PROJECT_PERMISSION))));
+            }
         }
         if (params.getContainsAll()) {
             return flowInstanceViewRepository.findAll(specification, pageable).map(FlowInstanceEntity::from);
@@ -1440,7 +1445,8 @@ public class FlowInstanceService {
             FlowTaskUtil.setSchemaName(variables, taskEntity.getDatabaseName());
         }
         if (taskEntity.getDatabaseId() != null) {
-            FlowTaskUtil.setSchemaName(variables, databaseService.detail(taskEntity.getDatabaseId()).getName());
+            FlowTaskUtil.setSchemaName(variables,
+                    databaseService.innerDetailForTask(taskEntity.getDatabaseId()).getName());
         }
         FlowTaskUtil.setTaskCreator(variables, authenticationFacade.currentUser());
         FlowTaskUtil.setOrganizationId(variables, authenticationFacade.currentOrganizationId());
@@ -1492,7 +1498,7 @@ public class FlowInstanceService {
         variables.setAttribute(Variable.PROJECT_OWNER_NAMES, JsonUtils.toJson(projectOwnerNames));
         // set database related variables
         if (Objects.nonNull(flowInstanceReq.getDatabaseId())) {
-            Database database = databaseService.detail(flowInstanceReq.getDatabaseId());
+            Database database = databaseService.innerDetailForTask(flowInstanceReq.getDatabaseId());
             variables.setAttribute(Variable.DATABASE_NAME, database.getName());
             if (Objects.nonNull(database.getEnvironment())) {
                 String environmentNameKey = database.getEnvironment().getName();
