@@ -34,6 +34,8 @@ mkdir -p "${ODC_DIR}"/artifact/modules
 cp -R "${ODC_DIR}"/distribution/modules/. "${ODC_DIR}"/artifact/modules
 
 echo "Compress artifact files into a zip package"
-zip -r "${ODC_DIR}"/artifact.zip "${ODC_DIR}"/artifact/*
+
+cd "${ODC_DIR}"/artifact
+zip -r "${ODC_DIR}/artifact.zip" ./*
 
 exit $?
