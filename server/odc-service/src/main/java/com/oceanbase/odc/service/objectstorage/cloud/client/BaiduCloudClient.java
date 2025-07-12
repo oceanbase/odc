@@ -85,7 +85,6 @@ public class BaiduCloudClient extends AmazonCloudClient {
             // passed time expire end time, directly use PRESIGNED_UPLOAD_URL_EXPIRATION_SECONDS
             request.setExpiration(CloudObjectStorageClient.PRESIGNED_UPLOAD_URL_EXPIRATION_SECONDS);
             request.setMethod(HttpMethodName.GET);
-            request.setContentType("application/octet-stream");
             String fileName = customFileName;
             if (StringUtils.isBlank(customFileName)) {
                 fileName = CloudObjectStorageUtil.getOriginalFileName(key);
