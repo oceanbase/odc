@@ -27,10 +27,12 @@ import org.springframework.jdbc.core.JdbcOperations;
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
+import com.oceanbase.tools.dbbrowser.model.DBMViewLogPurgeParameter;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecord;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewLog;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBPackage;
@@ -62,6 +64,21 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
 
     public PostgresSchemaAccessor(@NonNull JdbcOperations jdbcOperations) {
         this.jdbcOperations = jdbcOperations;
+    }
+
+    @Override
+    public List<DBObjectIdentity> listMViewLogs(String schemaName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public Boolean purgeMViewLog(DBMViewLogPurgeParameter parameter) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public DBMaterializedViewLog getMViewLog(String schemaName, String mViewLogName) {
+        throw new UnsupportedOperationException("not support yet");
     }
 
     @Override

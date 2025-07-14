@@ -21,10 +21,12 @@ import java.util.Map;
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
+import com.oceanbase.tools.dbbrowser.model.DBMViewLogPurgeParameter;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecord;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewLog;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBPackage;
@@ -167,6 +169,21 @@ public interface DBSchemaAccessor {
      * Gets all indexes in the specified materialized view
      */
     List<DBTableIndex> listMViewIndexes(String schemaName, String mViewName);
+
+    /**
+     * List all materialized view logs as DBObjectIdentity in the specified schema
+     */
+    List<DBObjectIdentity> listMViewLogs(String schemaName);
+
+    /**
+     * Purge expired data in the materialized view log
+     */
+    Boolean purgeMViewLog(DBMViewLogPurgeParameter parameter);
+
+    /**
+     * Get materialized view log details
+     */
+    DBMaterializedViewLog getMViewLog(String schemaName, String mViewLogName);
 
     /**
      * List all variables

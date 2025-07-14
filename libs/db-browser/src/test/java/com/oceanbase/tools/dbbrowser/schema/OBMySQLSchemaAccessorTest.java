@@ -16,10 +16,11 @@
 package com.oceanbase.tools.dbbrowser.schema;
 
 import static com.oceanbase.tools.dbbrowser.editor.DBObjectUtilsTest.loadAsString;
+import static com.oceanbase.tools.dbbrowser.model.DBConstraintType.PRIMARY_KEY;
+import static org.junit.Assume.assumeTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -37,10 +38,12 @@ import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
+import com.oceanbase.tools.dbbrowser.model.DBMViewLogPurgeParameter;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecord;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewLog;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewRefreshMethod;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
@@ -58,7 +61,6 @@ import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
 import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessors;
 import com.oceanbase.tools.dbbrowser.util.VersionUtils;
-import com.oceanbase.tools.sqlparser.statement.createtable.ColumnAttributes;
 
 import lombok.Data;
 
@@ -74,6 +76,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     private static String ddl;
     private static String dropTables;
     private static String dropMVs;
+    private static String dropMVLogs;
     private static String testProcedureDDL;
     private static String testFunctionDDL;
     private static final List<DataType> verifyDataTypes = new ArrayList<>();
@@ -82,6 +85,8 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     private static final DBSchemaAccessors dbSchemaAccessors = new DBSchemaAccessors(getOBMySQLDataSource());
     private static final DBSchemaAccessor accessor = dbSchemaAccessors.createOBMysql();
     private static final boolean isSupportMaterializedView =
+            VersionUtils.isGreaterThanOrEqualsTo(dbSchemaAccessors.getVersion(), "4.3.5.2");
+    private static final boolean isSupportMaterializedViewLog =
             VersionUtils.isGreaterThanOrEqualsTo(dbSchemaAccessors.getVersion(), "4.3.5.2");
 
     @BeforeClass
@@ -94,7 +99,11 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
 
         if (isSupportMaterializedView) {
             dropMVs = loadAsString(BASE_PATH + "dropMV.sql");
-            jdbcTemplate.execute(dropTables);
+            batchExecuteSqlIgnoreErrors(dropMVs);
+        }
+        if (isSupportMaterializedViewLog) {
+            dropMVLogs = loadAsString(BASE_PATH + "dropMVLog.sql");
+            batchExecuteSqlIgnoreErrors(dropMVLogs);
         }
 
         ddl = loadAsString(BASE_PATH + "testTableColumnDDL.sql", BASE_PATH + "testTableIndexDDL.sql",
@@ -103,14 +112,19 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
         jdbcTemplate.execute(ddl);
 
         testProcedureDDL = loadAsString(BASE_PATH + "testProcedureDDL.sql");
-        batchExcuteSql(testProcedureDDL);
+        batchExecuteSql(testProcedureDDL);
         testFunctionDDL = loadAsString(BASE_PATH + "testFunctionDDL.sql");
-        batchExcuteSql(testFunctionDDL);
+        batchExecuteSql(testFunctionDDL);
 
         if (isSupportMaterializedView) {
             String createMV = loadAsString(BASE_PATH + "testMVDDL.sql");
             jdbcTemplate.execute(createMV);
         }
+        if (isSupportMaterializedViewLog) {
+            String createMVLog = loadAsString(BASE_PATH + "testMVLogDDL.sql");
+            jdbcTemplate.execute(createMVLog);
+        }
+
     }
 
     @AfterClass
@@ -119,12 +133,78 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
         if (isSupportMaterializedView) {
             jdbcTemplate.execute(dropMVs);
         }
+        if (isSupportMaterializedViewLog) {
+            jdbcTemplate.execute(dropMVLogs);
+        }
     }
 
-    private static void batchExcuteSql(String str) {
+    private static void batchExecuteSql(String str) {
         for (String ddl : str.split("/")) {
             jdbcTemplate.execute(ddl);
         }
+    }
+
+    private static void batchExecuteSqlIgnoreErrors(String str) {
+        for (String ddl : str.split(";")) {
+            try {
+                jdbcTemplate.execute(ddl);
+            } catch (Exception e) {
+                // ignore errors
+            }
+        }
+    }
+
+    @Test
+    public void getMViewLog_testParallelIs5_Success() {
+        assumeTrue(isSupportMaterializedView);
+        DBMaterializedViewLog actual = accessor.getMViewLog(getOBMySQLDataBaseName(), "mlog$_test_mvlog_parallel");
+        Assert.assertEquals("mlog$_test_mvlog_parallel", actual.getMViewLogName());
+        Assert.assertEquals("test_mvlog_parallel", actual.getBaseTableName());
+        Assert.assertEquals(getOBMySQLDataBaseName(), actual.getSchemaName());
+        Assert.assertTrue(actual.getIncludeNewValues());
+        Assert.assertTrue(actual.getPurgeParallelismDegree() == 5);
+    }
+
+    @Test
+    public void getMViewLog_testDisableAutoPurge_Success() {
+        assumeTrue(isSupportMaterializedView);
+        DBMaterializedViewLog actual =
+                accessor.getMViewLog(getOBMySQLDataBaseName(), "mlog$_test_mvlog_disable_auto_purge");
+        Assert.assertEquals("mlog$_test_mvlog_disable_auto_purge", actual.getMViewLogName());
+        Assert.assertEquals("test_mvlog_disable_auto_purge", actual.getBaseTableName());
+        Assert.assertEquals(getOBMySQLDataBaseName(), actual.getSchemaName());
+        Assert.assertTrue(actual.getIncludeNewValues());
+        Assert.assertNull(actual.getPurgeSchedule());
+    }
+
+    @Test
+    public void getMViewLog_testEnableAutoPurge_Success() {
+        assumeTrue(isSupportMaterializedView);
+        DBMaterializedViewLog actual =
+                accessor.getMViewLog(getOBMySQLDataBaseName(), "mlog$_test_mvlog_enable_auto_purge");
+        Assert.assertEquals("mlog$_test_mvlog_enable_auto_purge", actual.getMViewLogName());
+        Assert.assertEquals("test_mvlog_enable_auto_purge", actual.getBaseTableName());
+        Assert.assertEquals(getOBMySQLDataBaseName(), actual.getSchemaName());
+        Assert.assertTrue(actual.getIncludeNewValues());
+        Assert.assertNotNull(actual.getPurgeSchedule());
+        Assert.assertNotNull(actual.getPurgeSchedule().getStartDate());
+        Assert.assertEquals("sysdate() + INTERVAL 1 DAY", actual.getPurgeSchedule().getNextExpression());
+    }
+
+    @Test
+    public void listMViewLogs_Success() {
+        assumeTrue(isSupportMaterializedView);
+        List<DBObjectIdentity> actual = accessor.listMViewLogs(getOBMySQLDataBaseName());
+        Assert.assertTrue(actual.size() >= 3);
+    }
+
+    @Test
+    public void purgeMViewLog_Success() {
+        assumeTrue(isSupportMaterializedView);
+        DBMViewLogPurgeParameter parameter =
+                new DBMViewLogPurgeParameter(getOBMySQLDataBaseName(), "mlog$_test_mv_base");
+        Boolean actual = accessor.purgeMViewLog(parameter);
+        Assert.assertTrue(actual);
     }
 
     @Test
@@ -261,7 +341,10 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
         if (isSupportMaterializedView) {
             List<DBTableConstraint> constraints =
                     accessor.listMViewConstraints(getOBMySQLDataBaseName(), "test_mv_all_syntax");
-            Assert.assertEquals(Collections.emptyList(), constraints);
+            Assert.assertEquals(1, constraints.size());
+            Assert.assertEquals(getOBMySQLDataBaseName(), constraints.get(0).getSchemaName());
+            Assert.assertEquals(DBConstraintType.PRIMARY_KEY, constraints.get(0).getType());
+            Assert.assertEquals(Arrays.asList("prim"), constraints.get(0).getColumnNames());
         }
     }
 
