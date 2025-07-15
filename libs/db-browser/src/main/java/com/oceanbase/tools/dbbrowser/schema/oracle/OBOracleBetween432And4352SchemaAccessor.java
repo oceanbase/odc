@@ -26,6 +26,7 @@ import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewLog;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
+import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.tools.dbbrowser.model.DBTableConstraint;
 import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
 import com.oceanbase.tools.dbbrowser.util.OracleDataDictTableNames;
@@ -55,6 +56,11 @@ public class OBOracleBetween432And4352SchemaAccessor extends OBOracleSchemaAcces
 
     @Override
     public DBMaterializedViewLog getMViewLog(String schemaName, String mViewLogName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public List<DBTableColumn> listMViewLogColumns(String schemaName, String mViewLogName) {
         throw new UnsupportedOperationException("not support yet");
     }
 

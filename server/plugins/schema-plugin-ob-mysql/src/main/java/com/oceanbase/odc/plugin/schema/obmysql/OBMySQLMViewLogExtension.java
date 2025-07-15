@@ -18,6 +18,8 @@ package com.oceanbase.odc.plugin.schema.obmysql;
 import java.sql.Connection;
 import java.util.List;
 
+import org.pf4j.Extension;
+
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.schema.api.MViewLogExtensionPoint;
 import com.oceanbase.odc.plugin.schema.obmysql.utils.DBAccessorUtil;
@@ -29,16 +31,20 @@ import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @description:
  * @author: zijia.cj
  * @date: 2025/7/15 08:29
  * @since: 4.4.0
  */
+@Extension
+@Slf4j
 public class OBMySQLMViewLogExtension implements MViewLogExtensionPoint {
     @Override
     public List<DBObjectIdentity> list(Connection connection, String schemaName) {
-        return getSchemaAccessor(connection).listMViews(schemaName);
+        return getSchemaAccessor(connection).listMViewLogs(schemaName);
     }
 
     @Override

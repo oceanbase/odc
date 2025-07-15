@@ -186,6 +186,11 @@ public interface DBSchemaAccessor {
     DBMaterializedViewLog getMViewLog(String schemaName, String mViewLogName);
 
     /**
+     * List all columns in the specified materialized view log
+     */
+    List<DBTableColumn> listMViewLogColumns(String schemaName, String mViewLogName);
+
+    /**
      * List all variables
      */
     List<DBVariable> showVariables();
@@ -258,7 +263,7 @@ public interface DBSchemaAccessor {
     /**
      * Get all table columns in the specified schema and table
      */
-    List<DBTableColumn> listTableColumns(String schemeName, String tableName);
+    List<DBTableColumn> listTableColumns(String schemaName, String tableName);
 
     /**
      * Get all table columns(hold only basic info) in the specified schema

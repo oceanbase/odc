@@ -209,10 +209,10 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
-    public void listTableColumns_TestMViewLog_Success() {
+    public void listMViewLogColumns_TestMViewLog_Success() {
         assumeTrue(isSupportMaterializedViewLog);
         List<DBTableColumn> columns =
-                accessor.listTableColumns(getOBMySQLDataBaseName(), "mlog$_test_mvlog_parallel");
+                accessor.listMViewLogColumns(getOBMySQLDataBaseName(), "mlog$_test_mvlog_parallel");
         Set<String> collectNames = columns.stream().map(DBTableColumn::getName).collect(Collectors.toSet());
         Set<String> shouldContainedCollectNames = Set.of("col1", "col2", "col3", "col4");
         Assert.assertTrue(collectNames.containsAll(shouldContainedCollectNames));

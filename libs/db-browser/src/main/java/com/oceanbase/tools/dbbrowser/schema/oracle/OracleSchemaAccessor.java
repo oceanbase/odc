@@ -340,6 +340,11 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
+    public List<DBTableColumn> listMViewLogColumns(String schemaName, String mViewLogName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
     public List<DBObjectIdentity> listMViews(String schemaName) {
         throw new UnsupportedOperationException("not support yet");
     }

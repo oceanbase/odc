@@ -214,10 +214,10 @@ public class OBOracleSchemaAccessorTest extends BaseTestEnv {
 
 
     @Test
-    public void listTableColumns_TestMViewLog_Success() {
+    public void listMViewLogColumns_TestMViewLog_Success() {
         assumeTrue(isSupportMaterializedViewLog);
         List<DBTableColumn> columns =
-                accessor.listTableColumns(getOBOracleSchema(), "MLOG$_TEST_MVLOG_PARALLEL");
+                accessor.listMViewLogColumns(getOBOracleSchema(), "MLOG$_TEST_MVLOG_PARALLEL");
         Set<String> collectNames = columns.stream().map(DBTableColumn::getName).collect(Collectors.toSet());
         Set<String> shouldContainedCollectNames = Set.of("COL1", "COL2", "COL3", "COL4");
         Assert.assertTrue(collectNames.containsAll(shouldContainedCollectNames));

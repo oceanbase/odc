@@ -82,6 +82,11 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
+    public List<DBTableColumn> listMViewLogColumns(String schemaName, String mViewLogName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
     public List<String> showDatabases() {
         String sql = "SELECT schema_name FROM information_schema.schemata "
                 + "where schema_name not like 'pg_%' "
@@ -313,7 +318,7 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public List<DBTableColumn> listTableColumns(String schemeName, String tableName) {
+    public List<DBTableColumn> listTableColumns(String schemaName, String tableName) {
         throw new UnsupportedOperationException("Not supported yet");
     }
 

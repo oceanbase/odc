@@ -17,6 +17,8 @@ package com.oceanbase.odc.plugin.schema.oboracle;
 
 import java.sql.Connection;
 
+import org.pf4j.Extension;
+
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLMViewLogExtension;
 import com.oceanbase.odc.plugin.schema.oboracle.utils.DBAccessorUtil;
@@ -24,12 +26,16 @@ import com.oceanbase.tools.dbbrowser.editor.DBObjectOperator;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleObjectOperator;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @description:
  * @author: zijia.cj
  * @date: 2025/7/15 10:08
  * @since: 4.4.0
  */
+@Extension
+@Slf4j
 public class OBOracleMViewLogExtension extends OBMySQLMViewLogExtension {
     @Override
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {

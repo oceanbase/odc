@@ -137,6 +137,11 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
+    public List<DBTableColumn> listMViewLogColumns(String schemaName, String mViewLogName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
     public List<String> showDatabases() {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
         sb.append("SHOW DATABASES");

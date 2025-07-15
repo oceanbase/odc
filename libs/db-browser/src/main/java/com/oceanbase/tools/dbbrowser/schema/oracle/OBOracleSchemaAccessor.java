@@ -1215,6 +1215,12 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         return mViewLog;
     }
 
+
+    @Override
+    public List<DBTableColumn> listMViewLogColumns(String schemaName, String mViewLogName) {
+        return listTableColumns(schemaName, mViewLogName);
+    }
+
     @Override
     public List<DBObjectIdentity> listMViews(String schemaName) {
         OracleSqlBuilder sb = new OracleSqlBuilder();

@@ -59,6 +59,11 @@ public class OBMySQLBetween432And4352SchemaAccessor extends OBMySQLSchemaAccesso
     }
 
     @Override
+    public List<DBTableColumn> listMViewLogColumns(String schemaName, String mViewLogName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
     public List<DBObjectIdentity> listMViews(String schemaName) {
         throw new UnsupportedOperationException("not support yet");
     }

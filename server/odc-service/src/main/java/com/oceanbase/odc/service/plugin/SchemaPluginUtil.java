@@ -23,6 +23,7 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.schema.api.DatabaseExtensionPoint;
 import com.oceanbase.odc.plugin.schema.api.FunctionExtensionPoint;
 import com.oceanbase.odc.plugin.schema.api.MViewExtensionPoint;
+import com.oceanbase.odc.plugin.schema.api.MViewLogExtensionPoint;
 import com.oceanbase.odc.plugin.schema.api.PackageExtensionPoint;
 import com.oceanbase.odc.plugin.schema.api.ProcedureExtensionPoint;
 import com.oceanbase.odc.plugin.schema.api.SequenceExtensionPoint;
@@ -57,6 +58,10 @@ public class SchemaPluginUtil {
 
     public static MViewExtensionPoint getMViewExtension(DialectType dialectType) {
         return getSingletonExtension(dialectType, MViewExtensionPoint.class);
+    }
+
+    public static MViewLogExtensionPoint getMViewLogExtension(DialectType dialectType) {
+        return getSingletonExtension(dialectType, MViewLogExtensionPoint.class);
     }
 
     public static FunctionExtensionPoint getFunctionExtension(DialectType dialectType) {

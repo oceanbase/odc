@@ -15,21 +15,25 @@
  */
 package com.oceanbase.odc.server.web.controller.v2;
 
-import java.util.List;
-
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.common.model.ResourceSql;
 import com.oceanbase.odc.service.common.response.ListResponse;
+import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
-import com.oceanbase.odc.service.db.model.DBViewResponse;
+import com.oceanbase.odc.service.db.DBMaterializedViewLogService;
+import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.odc.service.state.model.StateName;
 import com.oceanbase.odc.service.state.model.StatefulRoute;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewLog;
+import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBView;
 
 import io.swagger.annotations.ApiOperation;
@@ -44,21 +48,29 @@ import io.swagger.annotations.ApiOperation;
 @RequestMapping("/api/v2/connect/sessions")
 public class DBMaterializedViewLogController {
 
+    @Autowired
+    private DBMaterializedViewLogService dbMaterializedViewLogService;
+
+    @Autowired
+    private ConnectSessionService sessionService;
+
     @ApiOperation(value = "list", notes = "obtain the log list of the materialized view logs.")
-    @RequestMapping(value = "/{sessionId}/databases/{databaseId}/materializedViewLogs", method = RequestMethod.GET)
+    @RequestMapping(value = "/{sessionId}/databases/{databaseName}/materializedViewLogs", method = RequestMethod.GET)
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
-    public ListResponse<List<DBViewResponse>> list(@PathVariable String sessionId, @PathVariable Long databaseId) {
-        throw new NotImplementedException("not implemented");
+    public ListResponse<DBObjectIdentity> list(@PathVariable String sessionId, @PathVariable String databaseName) {
+        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
+        return Responses.list(dbMaterializedViewLogService.list(session, databaseName));
     }
 
     @ApiOperation(value = "detail", notes = "obtain detail about materialized view log.")
     @RequestMapping(value = "/{sessionId}/databases/{databaseName}/materializedViewLogs/{mvLogName}",
             method = RequestMethod.GET)
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
-    public SuccessResponse<DBViewResponse> detail(@PathVariable String sessionId,
+    public SuccessResponse<DBMaterializedViewLog> detail(@PathVariable String sessionId,
             @PathVariable String databaseName,
             @PathVariable String mvLogName) {
-        throw new NotImplementedException("not implemented");
+        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
+        return Responses.success(dbMaterializedViewLogService.detail(session, databaseName, mvLogName));
     }
 
     @ApiOperation(value = "getCreateSql", notes = "obtain the sql to create the materialized view log.")
@@ -78,7 +90,8 @@ public class DBMaterializedViewLogController {
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public SuccessResponse<Boolean> purge(@PathVariable String sessionId, @PathVariable String databaseName,
             @PathVariable String mvLogName) {
-        throw new NotImplementedException("not implemented");
+        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
+        return Responses.success(dbMaterializedViewLogService.purge(session, databaseName, mvLogName));
     }
 
 }

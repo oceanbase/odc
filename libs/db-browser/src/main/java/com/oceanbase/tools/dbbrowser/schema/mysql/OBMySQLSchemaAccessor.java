@@ -137,6 +137,11 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     }
 
     @Override
+    public List<DBTableColumn> listMViewLogColumns(String schemaName, String mViewLogName) {
+        return super.listTableColumns(schemaName, mViewLogName);
+    }
+
+    @Override
     public List<DBObjectIdentity> listMViews(String schemaName) {
         MySQLSqlBuilder sb = new MySQLSqlBuilder();
         sb.append("select MVIEW_NAME FROM OCEANBASE.DBA_MVIEWS WHERE OWNER = ").value(schemaName);
