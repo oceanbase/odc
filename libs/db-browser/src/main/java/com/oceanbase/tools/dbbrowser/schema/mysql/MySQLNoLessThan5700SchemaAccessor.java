@@ -58,10 +58,12 @@ import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
 import com.oceanbase.tools.dbbrowser.model.DBIndexType;
+import com.oceanbase.tools.dbbrowser.model.DBMViewLogPurgeParameter;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecord;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewLog;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.model.DBPLObjectIdentity;
@@ -383,6 +385,21 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public List<DBTableIndex> listMViewIndexes(String schemaName, String mViewName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public List<DBObjectIdentity> listMViewLogs(String schemaName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public Boolean purgeMViewLog(DBMViewLogPurgeParameter parameter) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public DBMaterializedViewLog getMViewLog(String schemaName, String mViewLogName) {
         throw new UnsupportedOperationException("not support yet");
     }
 

@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -41,10 +42,13 @@ import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
 import com.oceanbase.tools.dbbrowser.model.DBIndexType;
+import com.oceanbase.tools.dbbrowser.model.DBMViewLogPurgeParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMViewLogPurgeSchedule;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecord;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewLog;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewRefreshMethod;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
@@ -79,6 +83,7 @@ import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessorSqlMappers;
 import com.oceanbase.tools.dbbrowser.schema.constant.Statements;
 import com.oceanbase.tools.dbbrowser.schema.constant.StatementsFiles;
 import com.oceanbase.tools.dbbrowser.util.DBSchemaAccessorUtil;
+import com.oceanbase.tools.dbbrowser.util.MySQLSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.OracleDataDictTableNames;
 import com.oceanbase.tools.dbbrowser.util.OracleSqlBuilder;
 import com.oceanbase.tools.dbbrowser.util.PLObjectErrMsgUtils;
@@ -98,6 +103,9 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
+
+    private static final String MVIEW_LOG_PREFIX = "MLOG$_";
+
     private static final Set<String> ESCAPE_USER_SET = new HashSet<>(4);
 
     static {
@@ -1154,6 +1162,57 @@ public class OBOracleSchemaAccessor extends OracleSchemaAccessor {
         }
         sb.append(" ORDER BY TABLE_NAME ASC");
         return jdbcOperations.queryForList(sb.toString(), String.class);
+    }
+
+    @Override
+    public List<DBObjectIdentity> listMViewLogs(String schemaName) {
+        MySQLSqlBuilder sb = new MySQLSqlBuilder();
+        sb.append("SELECT LOG_TABLE FROM ")
+                .append(dataDictTableNames.MVIEW_LOGS())
+                .append(" WHERE LOG_OWNER = ")
+                .value(schemaName);
+        return jdbcOperations.query(sb.toString(),
+                (rs, rowNum) -> DBObjectIdentity.of(schemaName, DBObjectType.MATERIALIZED_VIEW_LOG, rs.getString(1)));
+    }
+
+    @Override
+    public Boolean purgeMViewLog(DBMViewLogPurgeParameter parameter) {
+        OracleSqlBuilder sb = new OracleSqlBuilder();
+        sb.append("call DBMS_MVIEW.PURGE_LOG('");
+        if (Objects.nonNull(parameter.getSchemaName())) {
+            sb.append(parameter.getSchemaName()).append(".");
+        }
+        sb.append(parameter.getMViewLogName().replaceFirst(Pattern.quote(MVIEW_LOG_PREFIX), "")).append("');");
+        jdbcOperations.execute(sb.toString());
+        return Boolean.TRUE;
+    }
+
+    @Override
+    public DBMaterializedViewLog getMViewLog(String schemaName, String mViewLogName) {
+        OracleSqlBuilder getOptions = new OracleSqlBuilder();
+        getOptions.append(
+                "SELECT MASTER,INCLUDE_NEW_VALUES,PURGE_START,PURGE_INTERVAL,LAST_PURGE_DATE,PURGE_DOP FROM ")
+                .append(dataDictTableNames.MVIEW_LOGS())
+                .append(" WHERE LOG_OWNER = ")
+                .value(schemaName)
+                .append(" AND LOG_TABLE = ")
+                .value(mViewLogName);
+        DBMaterializedViewLog mViewLog = new DBMaterializedViewLog();
+        mViewLog.setMViewLogName(mViewLogName);
+        mViewLog.setSchemaName(schemaName);
+        jdbcOperations.query(getOptions.toString(), (rs) -> {
+            mViewLog.setBaseTableName(rs.getString("MASTER"));
+            mViewLog.setIncludeNewValues(rs.getBoolean("INCLUDE_NEW_VALUES"));
+            if (rs.getDate("PURGE_START") != null || rs.getDate("PURGE_INTERVAL") != null) {
+                DBMViewLogPurgeSchedule dbmViewLogPurgeSchedule = new DBMViewLogPurgeSchedule();
+                dbmViewLogPurgeSchedule.setStartDate(rs.getDate("PURGE_START"));
+                dbmViewLogPurgeSchedule.setNextExpression(rs.getString("PURGE_INTERVAL"));
+                mViewLog.setPurgeSchedule(dbmViewLogPurgeSchedule);
+            }
+            mViewLog.setLastPurgeDate(rs.getDate("LAST_PURGE_DATE"));
+            mViewLog.setPurgeParallelismDegree(rs.getLong("PURGE_DOP"));
+        });
+        return mViewLog;
     }
 
     @Override

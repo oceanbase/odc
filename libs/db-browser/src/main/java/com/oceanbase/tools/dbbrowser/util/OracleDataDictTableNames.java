@@ -40,6 +40,11 @@ public interface OracleDataDictTableNames {
     String MVIEWS();
 
     /**
+     * materialized view log
+     */
+    String MVIEW_LOGS();
+
+    /**
      * 表的列，和 TAB_COLS 的差别在于 TAB_COLUMNS 不包含系统自动生成的列
      */
     String TAB_COLUMNS();

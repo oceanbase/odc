@@ -55,7 +55,7 @@ import lombok.extern.slf4j.Slf4j;
  * @Description: []
  */
 @Slf4j
-public class OBMySQLBetween2277And3XSchemaAccessor extends OBMySQLSchemaAccessor {
+public class OBMySQLBetween2277And3XSchemaAccessor extends OBMySQLBetween400And432SchemaAccessor {
 
     /**
      * 以下对象名为 mysql schema 下的视图，但 table_type='BASE_TYPE'

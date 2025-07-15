@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -32,10 +33,13 @@ import org.springframework.jdbc.core.JdbcOperations;
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
+import com.oceanbase.tools.dbbrowser.model.DBMViewLogPurgeParameter;
+import com.oceanbase.tools.dbbrowser.model.DBMViewLogPurgeSchedule;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecord;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshRecordParam;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewLog;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewRefreshMethod;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
@@ -68,6 +72,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
 
+    private static final String MVIEW_LOG_PREFIX = "mlog$_";
+
     protected static final Set<String> ESCAPE_SCHEMA_SET = new HashSet<>(4);
 
     static {
@@ -80,6 +86,54 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     public OBMySQLSchemaAccessor(JdbcOperations jdbcOperations) {
         super(jdbcOperations);
         this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.OBMYSQL_432x);
+    }
+
+    @Override
+    public List<DBObjectIdentity> listMViewLogs(String schemaName) {
+        MySQLSqlBuilder sb = new MySQLSqlBuilder();
+        sb.append("SELECT LOG_TABLE FROM oceanbase.DBA_MVIEW_LOGS WHERE LOG_OWNER = ")
+                .value(schemaName);
+        return jdbcOperations.query(sb.toString(),
+                (rs, rowNum) -> DBObjectIdentity.of(schemaName, DBObjectType.MATERIALIZED_VIEW_LOG, rs.getString(1)));
+    }
+
+    @Override
+    public Boolean purgeMViewLog(DBMViewLogPurgeParameter parameter) {
+        MySQLSqlBuilder sb = new MySQLSqlBuilder();
+        sb.append("call DBMS_MVIEW.PURGE_LOG('");
+        if (Objects.nonNull(parameter.getSchemaName())) {
+            sb.append(parameter.getSchemaName()).append(".");
+        }
+        sb.append(parameter.getMViewLogName().replaceFirst(Pattern.quote(MVIEW_LOG_PREFIX), "")).append("');");
+        jdbcOperations.execute(sb.toString());
+        return Boolean.TRUE;
+    }
+
+    @Override
+    public DBMaterializedViewLog getMViewLog(String schemaName, String mViewLogName) {
+        MySQLSqlBuilder getOptions = new MySQLSqlBuilder();
+        getOptions.append(
+                "SELECT MASTER,INCLUDE_NEW_VALUES,PURGE_START,PURGE_INTERVAL,LAST_PURGE_DATE,PURGE_DOP FROM OCEANBASE.DBA_MVIEW_LOGS WHERE LOG_OWNER = ")
+                .value(schemaName)
+                .append(" AND LOG_TABLE = ")
+                .value(mViewLogName);
+        DBMaterializedViewLog mViewLog = new DBMaterializedViewLog();
+        mViewLog.setMViewLogName(mViewLogName);
+        mViewLog.setSchemaName(schemaName);
+        jdbcOperations.query(getOptions.toString(), (rs) -> {
+            mViewLog.setBaseTableName(rs.getString("MASTER"));
+            mViewLog.setIncludeNewValues(rs.getBoolean("INCLUDE_NEW_VALUES"));
+            if (rs.getDate("PURGE_START") != null || rs.getDate("PURGE_INTERVAL") != null) {
+                DBMViewLogPurgeSchedule dbmViewLogPurgeSchedule = new DBMViewLogPurgeSchedule();
+                dbmViewLogPurgeSchedule.setStartDate(rs.getDate("PURGE_START"));
+                dbmViewLogPurgeSchedule.setNextExpression(rs.getString("PURGE_INTERVAL"));
+                mViewLog.setPurgeSchedule(dbmViewLogPurgeSchedule);
+            }
+            mViewLog.setLastPurgeDate(rs.getDate("LAST_PURGE_DATE"));
+            mViewLog.setPurgeParallelismDegree(rs.getLong("PURGE_DOP"));
+        });
+        return mViewLog;
+
     }
 
     @Override
