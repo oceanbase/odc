@@ -34,9 +34,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
-import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.session.ConnectionSessionFactory;
-import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
@@ -69,12 +66,10 @@ import com.oceanbase.odc.service.onlineschemachange.model.RateLimiterConfig;
 import com.oceanbase.odc.service.onlineschemachange.model.SwapTableType;
 import com.oceanbase.odc.service.onlineschemachange.model.UpdateRateLimiterConfigRequest;
 import com.oceanbase.odc.service.onlineschemachange.oscfms.ActionScheduler;
-import com.oceanbase.odc.service.onlineschemachange.rename.LockTableSupportDecider;
 import com.oceanbase.odc.service.onlineschemachange.rename.OscDBUserUtil;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.ScheduleTaskService;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
-import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.task.TaskService;
 
 import lombok.NonNull;
@@ -126,6 +121,9 @@ public class OscService {
         OscLockDatabaseUserInfo oscDatabase = new OscLockDatabaseUserInfo();
         oscDatabase.setDatabaseId(database.getDatabaseId());
         oscDatabase.setLockDatabaseUserRequired(getLockUserIsRequired(database.getDataSource().getId()));
+        if (!oscDatabase.isLockDatabaseUserRequired()) {
+            oscDatabase.setDbEnableLockPriorityFlagSet(isDbEnableLockPriorityFlagSet(database.getDataSource().getId()));
+        }
         return oscDatabase;
     }
 
@@ -304,23 +302,12 @@ public class OscService {
         ConnectionConfig decryptedConnConfig =
                 connectionService.getForConnectionSkipPermissionCheck(connectionId);
 
-        return OscDBUserUtil.isLockUserRequired(decryptedConnConfig.getDialectType(),
-                () -> {
-                    ConnectionSessionFactory factory = new DefaultConnectSessionFactory(decryptedConnConfig);
-                    String version = null;
-                    ConnectionSession connSession = null;
-                    try {
-                        connSession = factory.generateSession();
-                        version = ConnectionSessionUtil.getVersion(connSession);
-                    } catch (Exception ex) {
-                        log.info("Get connection occur error", ex);
-                    } finally {
-                        if (connSession != null) {
-                            connSession.expire();
-                        }
-                    }
-                    return version;
-                }, () -> LockTableSupportDecider.createWithJsonArrayWithDefaultValue(
-                        onlineSchemaChangeProperties.getSupportLockTableObVersionJson()));
+        return OscDBUserUtil.isLockUserRequired(decryptedConnConfig, onlineSchemaChangeProperties);
+    }
+
+    private boolean isDbEnableLockPriorityFlagSet(Long connectionId) {
+        ConnectionConfig decryptedConnConfig =
+                connectionService.getForConnectionSkipPermissionCheck(connectionId);
+        return OscTableUtil.isEnableLockPrioritySet(decryptedConnConfig);
     }
 }

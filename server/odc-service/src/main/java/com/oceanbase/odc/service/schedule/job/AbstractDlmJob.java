@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.schedule.job;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections.MapUtils;
 import org.quartz.JobExecutionContext;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -94,7 +95,11 @@ public abstract class AbstractDlmJob extends AbstractOdcJob {
                 dlmService.findByScheduleTaskId(dlmJobReq.getScheduleTaskId()).stream()
                         .collect(
                                 Collectors.toMap(DlmTableUnit::getTableName, o -> o));
-        dlmJobReq.getTables().forEach(o -> o.setLastProcessedStatus(tableName2Unit.get(o.getTableName()).getStatus()));
+        dlmJobReq.getTables().forEach(o -> {
+            if (MapUtils.isNotEmpty(tableName2Unit) && tableName2Unit.containsKey(o.getTableName())) {
+                o.setLastProcessedStatus(tableName2Unit.get(o.getTableName()).getStatus());
+            }
+        });
         return dlmJobReq;
     }
 

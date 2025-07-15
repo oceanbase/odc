@@ -18,7 +18,9 @@ package com.oceanbase.odc.config;
 import java.nio.charset.Charset;
 import java.time.Duration;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
@@ -35,7 +37,14 @@ import com.oceanbase.odc.service.common.util.IgnoreResponseErrorHandler;
  * @version 2020-02-25
  */
 @Configuration
+@RefreshScope
 public class RestTemplateConfig {
+
+    @Value("${odc.rest.vpc.read-timeout-seconds:20}")
+    private Integer vpcReadTimeoutSeconds = 20;
+
+    @Value("${odc.rest.oms.read-timeout-seconds:60}")
+    private Integer omsReadTimeoutSeconds = 60;
 
     @Bean("vpcRestTemplate")
     public RestTemplate vpcRestTemplate() {
@@ -47,7 +56,7 @@ public class RestTemplateConfig {
         RestTemplate restTemplate = new RestTemplateBuilder()
                 .additionalMessageConverters(stringHttpMc, fastJsonHttpMc)
                 .setConnectTimeout(Duration.ofSeconds(5))
-                .setReadTimeout(Duration.ofSeconds(10))
+                .setReadTimeout(Duration.ofSeconds(vpcReadTimeoutSeconds))
                 .build();
         return new OdcRestTemplate(restTemplate, "ocpApi");
     }
@@ -57,7 +66,7 @@ public class RestTemplateConfig {
     public RestTemplate omsRestTemplate() {
         RestTemplate build = new RestTemplateBuilder()
                 .setConnectTimeout(Duration.ofSeconds(1))
-                .setReadTimeout(Duration.ofSeconds(60))
+                .setReadTimeout(Duration.ofSeconds(omsReadTimeoutSeconds))
                 .errorHandler(new IgnoreResponseErrorHandler())
                 .build();
         return new OdcRestTemplate(build, "omsApi", false);

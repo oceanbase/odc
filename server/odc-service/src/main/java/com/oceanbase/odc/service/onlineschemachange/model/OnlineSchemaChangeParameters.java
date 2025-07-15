@@ -77,6 +77,8 @@ public class OnlineSchemaChangeParameters implements Serializable, TaskParameter
 
     private List<String> lockUsers;
     private SwapTableType swapTableType;
+    // forbidden write type
+    private ForbiddenWriteType forbiddenWriteType;
     // flow instance id
     private Long flowInstanceId;
     // flow task id

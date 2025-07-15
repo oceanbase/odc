@@ -21,6 +21,8 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.DialectType;
+import com.oceanbase.odc.service.onlineschemachange.model.ForbiddenWriteType;
+import com.oceanbase.odc.service.onlineschemachange.model.OnlineSchemaChangeParameters;
 import com.oceanbase.odc.service.session.DBSessionManageFacade;
 
 import lombok.extern.slf4j.Slf4j;
@@ -33,18 +35,24 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class LockRenameTableFactory {
 
-    public RenameTableInterceptor generate(ConnectionSession connectionSession,
+    public RenameTableInterceptor generate(OnlineSchemaChangeParameters parameters, ConnectionSession connectionSession,
             DBSessionManageFacade dbSessionManageFacade,
             Supplier<LockTableSupportDecider> lockTableSupportDeciderSupplier) {
         PreConditions.notNull(connectionSession, "connectionSession");
-
-        DialectType dialectType = connectionSession.getDialectType();
-        PreConditions.notNull(dialectType, "dialectType");
-        String obVersion = ConnectionSessionUtil.getVersion(connectionSession);
-        PreConditions.notNull(obVersion, "obVersion");
-        return OscDBUserUtil.isLockUserRequired(dialectType, () -> obVersion, lockTableSupportDeciderSupplier)
-                ? new LockUserInterceptor(connectionSession, dbSessionManageFacade)
-                : new LockTableInterceptor(connectionSession);
+        if (parameters.getForbiddenWriteType() == ForbiddenWriteType.LOCK_USER) {
+            return new LockUserInterceptor(connectionSession, dbSessionManageFacade);
+        } else if (parameters.getForbiddenWriteType() == ForbiddenWriteType.LOCK_TABLE) {
+            return new LockTableInterceptor(connectionSession);
+        } else {
+            // auto detect
+            DialectType dialectType = connectionSession.getDialectType();
+            PreConditions.notNull(dialectType, "dialectType");
+            String obVersion = ConnectionSessionUtil.getVersion(connectionSession);
+            PreConditions.notNull(obVersion, "obVersion");
+            return OscDBUserUtil.isLockUserRequired(dialectType, () -> obVersion, lockTableSupportDeciderSupplier)
+                    ? new LockUserInterceptor(connectionSession, dbSessionManageFacade)
+                    : new LockTableInterceptor(connectionSession);
+        }
     }
 
 }

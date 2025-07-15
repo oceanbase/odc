@@ -49,7 +49,7 @@ public class TaskSupervisorTest {
         processConfig.setJvmXmsMB(1024);
         processConfig.setJvmXmxMB(1024);
         processConfig.setEnvironments(new HashMap<>());
-        taskSupervisor = new TaskSupervisor(supervisorEndpoint, 8989, TaskSupervisor.class.getName());
+        taskSupervisor = new TaskSupervisor(supervisorEndpoint, 8989, TaskSupervisorTest.class.getName());
         taskSupervisor.setJobInfoSerializer(null);
     }
 

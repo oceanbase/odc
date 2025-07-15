@@ -21,16 +21,45 @@ import java.util.function.Supplier;
 
 import com.google.common.collect.Sets;
 import com.oceanbase.odc.common.util.VersionUtils;
+import com.oceanbase.odc.core.session.ConnectionSession;
+import com.oceanbase.odc.core.session.ConnectionSessionFactory;
+import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.onlineschemachange.configuration.OnlineSchemaChangeProperties;
+import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author yaobin
  * @date 2023-10-16
  * @since 4.2.3
  */
+@Slf4j
 public class OscDBUserUtil {
+
+    public static boolean isLockUserRequired(ConnectionConfig config, OnlineSchemaChangeProperties properties) {
+        return OscDBUserUtil.isLockUserRequired(config.getDialectType(),
+                () -> {
+                    ConnectionSessionFactory factory = new DefaultConnectSessionFactory(config);
+                    String version = null;
+                    ConnectionSession connSession = null;
+                    try {
+                        connSession = factory.generateSession();
+                        version = ConnectionSessionUtil.getVersion(connSession);
+                    } catch (Exception ex) {
+                        log.info("Get connection occur error", ex);
+                    } finally {
+                        if (connSession != null) {
+                            connSession.expire();
+                        }
+                    }
+                    return version;
+                }, () -> LockTableSupportDecider.createWithJsonArrayWithDefaultValue(
+                        properties.getSupportLockTableObVersionJson()));
+    }
 
     public static boolean isLockUserRequired(DialectType dialectType, Supplier<String> obVersion,
             Supplier<LockTableSupportDecider> lockTableSupportDeciderSupplier) {

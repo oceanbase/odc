@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -181,7 +182,7 @@ public class DataArchiveTask extends TaskBase<List<DlmTableUnit>> {
             jobParameter.setReaderBatchSize(req.getRateLimit().getBatchSize());
             jobParameter.setWriterBatchSize(req.getRateLimit().getBatchSize());
             jobParameter.setMigrationInsertAction(req.getMigrationInsertAction());
-            jobParameter.setMigratePartitions(table.getPartitions());
+            jobParameter.setMigratePartitions(new HashSet<>(table.getPartitions()));
             jobParameter.setSyncDBObjectType(req.getSyncTableStructure());
             jobParameter.setShardingStrategy(req.getShardingStrategy());
             jobParameter.setPartName2MinKey(table.getPartName2MinKey());

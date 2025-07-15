@@ -81,7 +81,7 @@ public class DefaultRenameTableInvoker implements RenameTableInvoker {
         boolean succeed = false;
         do {
             // try whole rename table flow
-            succeed = tryRenameTable(connectionProvider, taskParameters, renameTableParameters, retryTime);
+            succeed = tryRenameTable(parameters, connectionProvider, taskParameters, renameTableParameters, retryTime);
         } while (!succeed && retryTime.incrementAndGet() < swapTableNameRetryTimes);
 
         if (!succeed) {
@@ -92,7 +92,7 @@ public class DefaultRenameTableInvoker implements RenameTableInvoker {
         }
     }
 
-    private boolean tryRenameTable(ConnectionProvider connectionProvider,
+    private boolean tryRenameTable(OnlineSchemaChangeParameters parameters, ConnectionProvider connectionProvider,
             OnlineSchemaChangeScheduleTaskParameters taskParameters,
             RenameTableParameters renameTableParameters, AtomicInteger retryTime) {
         // every retry use whole new connection session, in case session not valid for some reason (eg
@@ -109,7 +109,7 @@ public class DefaultRenameTableInvoker implements RenameTableInvoker {
             List<RenameTableInterceptor> interceptors = new LinkedList<>();
             LockRenameTableFactory lockRenameTableFactory = new LockRenameTableFactory();
             RenameTableInterceptor lockInterceptor =
-                    lockRenameTableFactory.generate(connectionSession, dbSessionManageFacade,
+                    lockRenameTableFactory.generate(parameters, connectionSession, dbSessionManageFacade,
                             lockTableSupportDeciderSupplier);
             interceptors.add(lockInterceptor);
             interceptors.add(new ForeignKeyInterceptor(connectionSession));

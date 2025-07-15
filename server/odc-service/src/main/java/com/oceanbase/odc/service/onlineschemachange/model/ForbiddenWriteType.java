@@ -15,27 +15,14 @@
  */
 package com.oceanbase.odc.service.onlineschemachange.model;
 
-import java.io.Serializable;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonProperty.Access;
-
-import lombok.Data;
-
 /**
- * @author yaobin
- * @date 2023-11-06
- * @since 4.2.3
+ * @author longpeng.zlp
+ * @date 2025/6/17 18:13
  */
-@Data
-public class OscLockDatabaseUserInfo implements Serializable {
-
-    @JsonProperty(access = Access.READ_ONLY)
-    private String databaseId;
-
-    @JsonProperty(access = Access.READ_ONLY)
-    private boolean lockDatabaseUserRequired;
-
-    @JsonProperty(access = Access.READ_ONLY)
-    private boolean isDbEnableLockPriorityFlagSet;
+public enum ForbiddenWriteType {
+    // lock user, ob general supported
+    LOCK_USER,
+    // lock table, only parts ob version supported, and it needs configure OBP and target server
+    // parameters
+    LOCK_TABLE,
 }

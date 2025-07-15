@@ -252,6 +252,8 @@ class TaskMonitor {
         if (null != logMap) {
             logMetaData.putAll(logMap);
         }
+        boolean cloudStorageSupported = cloudObjectStorageService != null && cloudObjectStorageService.supported();
+        log.info("upload enabled = {}, cloudStorageSupported= {}", JobUtils.isUploadLogNeeded(), cloudStorageSupported);
         if (cloudObjectStorageService != null && cloudObjectStorageService.supported()
                 && JobUtils.isUploadLogNeeded()) {
             logMetaData.putAll(new LogBizImpl().uploadLogFileToCloudStorage(finalResult.getJobIdentity(),

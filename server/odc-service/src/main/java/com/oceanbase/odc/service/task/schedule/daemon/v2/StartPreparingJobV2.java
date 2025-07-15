@@ -47,6 +47,7 @@ import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
+import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
 import com.oceanbase.odc.service.task.listener.JobTerminateEvent;
 import com.oceanbase.odc.service.task.schedule.DefaultJobContextBuilder;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
@@ -238,6 +239,14 @@ public class StartPreparingJobV2 implements Job {
         if (properties.getRunMode() == TaskRunMode.K8S) {
             // introduce upload log tag to tell agent should upload log if needed
             defaultEnv.put(JobEnvKeyConstants.ODC_UPLOAD_LOG, "true");
+            // encryption related properties
+            JasyptEncryptorConfigProperties jasyptProperties = configuration
+                    .getJasyptEncryptorConfigProperties();
+
+            defaultEnv.put(JobEnvKeyConstants.ODC_PROPERTY_ENCRYPTION_ALGORITHM, jasyptProperties.getAlgorithm());
+            defaultEnv.put(JobEnvKeyConstants.ODC_PROPERTY_ENCRYPTION_PREFIX, jasyptProperties.getPrefix());
+            defaultEnv.put(JobEnvKeyConstants.ODC_PROPERTY_ENCRYPTION_SUFFIX, jasyptProperties.getSuffix());
+            defaultEnv.put(JobEnvKeyConstants.ODC_PROPERTY_ENCRYPTION_SALT, jasyptProperties.getSalt());
         }
         ProcessJobCaller jobCaller = JobCallerBuilder.buildProcessCaller(jobContext,
                 defaultEnv,
