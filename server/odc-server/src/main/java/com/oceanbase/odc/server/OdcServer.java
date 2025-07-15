@@ -45,6 +45,7 @@ import com.oceanbase.odc.core.alarm.AlarmUtils;
 import com.oceanbase.odc.core.authority.interceptor.MethodAuthorizedPostProcessor;
 import com.oceanbase.odc.migrate.AbstractMetaDBMigrate;
 import com.oceanbase.odc.service.config.SystemConfigBootstrap;
+import com.ulisesbocchio.jasyptspringboot.annotation.EnableEncryptableProperties;
 
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
@@ -64,6 +65,7 @@ import lombok.extern.slf4j.Slf4j;
 @ServletComponentScan(value = {"com.oceanbase.odc.server.web", "com.oceanbase.odc.web.trace"})
 @EnableConfigServer
 @EnableJdbcHttpSession
+@EnableEncryptableProperties
 public class OdcServer {
 
     /**
