@@ -10,7 +10,7 @@ spring:
   main:
     allow-circular-references: true
   datasource:
-    url: jdbc:h2:${DB_PATH:~}/odc2.0;MODE=MySQL
+    url: jdbc:h2:file:${DB_PATH:~}/odc4.0;MODE=MySQL;NON_KEYWORDS=KEY,VALUE
     username: sa
     password:
     driver-class-name: org.h2.Driver
@@ -103,4 +103,4 @@ management:
       enabled: false
 
 flowable:
-  database-schema-update: true
+  database-schema-update: false
