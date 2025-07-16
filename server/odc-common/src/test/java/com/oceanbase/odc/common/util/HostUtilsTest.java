@@ -35,4 +35,94 @@ public class HostUtilsTest {
         String ipAndPort = "1.1.1.1";
         HostUtils.extractServerAddress(ipAndPort);
     }
+
+    @Test
+    public void testExtractServerAddress_IPv6_ValidExpression() {
+        String ipAndPort = "[2001:db8::1]:8080";
+        ServerAddress actual = HostUtils.extractServerAddress(ipAndPort);
+        Assert.assertEquals("2001:db8::1", actual.getIpAddress());
+        Assert.assertEquals("8080", actual.getPort());
+    }
+
+    @Test
+    public void testExtractServerAddress_IPv6_Localhost() {
+        String ipAndPort = "[::1]:3306";
+        ServerAddress actual = HostUtils.extractServerAddress(ipAndPort);
+        Assert.assertEquals("::1", actual.getIpAddress());
+        Assert.assertEquals("3306", actual.getPort());
+    }
+
+    @Test
+    public void testExtractServerAddress_IPv6_FullAddress() {
+        String ipAndPort = "[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:443";
+        ServerAddress actual = HostUtils.extractServerAddress(ipAndPort);
+        Assert.assertEquals("2001:0db8:85a3:0000:0000:8a2e:0370:7334", actual.getIpAddress());
+        Assert.assertEquals("443", actual.getPort());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testExtractServerAddress_IPv6_MissingCloseBracket() {
+        String ipAndPort = "[2001:db8::1:8080";
+        HostUtils.extractServerAddress(ipAndPort);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testExtractServerAddress_IPv6_EmptyAddress() {
+        String ipAndPort = "[:8080";
+        HostUtils.extractServerAddress(ipAndPort);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testExtractServerAddress_IPv6_NoPort() {
+        String ipAndPort = "[2001:db8::1]";
+        HostUtils.extractServerAddress(ipAndPort);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testExtractServerAddress_IPv6_EmptyPort() {
+        String ipAndPort = "[2001:db8::1]:";
+        HostUtils.extractServerAddress(ipAndPort);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testExtractServerAddress_IPv6_InvalidPortFormat() {
+        String ipAndPort = "[2001:db8::1]8080";
+        HostUtils.extractServerAddress(ipAndPort);
+    }
+
+    @Test
+    public void testExtractServerAddress_IPv6WithBrackets() {
+        String ipAndPort = "[::1]:8080";
+        ServerAddress actual = HostUtils.extractServerAddress(ipAndPort);
+        Assert.assertEquals("::1", actual.getIpAddress());
+        Assert.assertEquals("8080", actual.getPort());
+    }
+
+    @Test
+    public void testExtractServerAddress_IPv6ComplexAddress() {
+        String ipAndPort = "[2001:db8:85a3::8a2e:370:7334]:9090";
+        ServerAddress actual = HostUtils.extractServerAddress(ipAndPort);
+        Assert.assertEquals("2001:db8:85a3::8a2e:370:7334", actual.getIpAddress());
+        Assert.assertEquals("9090", actual.getPort());
+    }
+
+    @Test
+    public void testExtractServerAddress_IPv6WithZoneId() {
+        String ipAndPort = "[fe80::1%lo0]:3306";
+        ServerAddress actual = HostUtils.extractServerAddress(ipAndPort);
+        Assert.assertEquals("fe80::1%lo0", actual.getIpAddress());
+        Assert.assertEquals("3306", actual.getPort());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testExtractServerAddress_IPv6MissingCloseBracket() {
+        String ipAndPort = "[::1:8080";
+        HostUtils.extractServerAddress(ipAndPort);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testExtractServerAddress_IPv6MissingPort() {
+        String ipAndPort = "[::1]";
+        HostUtils.extractServerAddress(ipAndPort);
+    }
 }

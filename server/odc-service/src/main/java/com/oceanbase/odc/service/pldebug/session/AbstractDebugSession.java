@@ -31,6 +31,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
@@ -71,6 +72,7 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class AbstractDebugSession implements AutoCloseable {
     public static final Long DEBUG_TIMEOUT_MS = 10 * 60 * 1000L;
     public static final int PL_LOG_CACHE_SIZE = 1000000;
+    private static final String OB_JDBC_PROTOCOL = "oceanbase";
     protected String debugId;
     protected ConnectionSession connectionSession;
     protected Connection connection;
@@ -78,7 +80,6 @@ public abstract class AbstractDebugSession implements AutoCloseable {
     protected JdbcOperations jdbcOperations;
     protected DialectType dialectType;
     protected PLDebugODPSpecifiedRoute plDebugODPSpecifiedRoute;
-    private static final String OB_JDBC_PROTOCOL = "oceanbase";
 
     public abstract boolean detectSessionAlive();
 
@@ -175,7 +176,8 @@ public abstract class AbstractDebugSession implements AutoCloseable {
     }
 
     private String buildJdbcUrl(HostAddress hostAddress, String schema) {
-        return String.format("jdbc:%s://%s:%d/\"%s\"", OB_JDBC_PROTOCOL, hostAddress.getHost(), hostAddress.getPort(),
+        return String.format("jdbc:%s://%s:%d/\"%s\"", OB_JDBC_PROTOCOL,
+                SystemUtils.addBracketsToIpv6AddressIfNeed(hostAddress.getHost()), hostAddress.getPort(),
                 schema);
     }
 

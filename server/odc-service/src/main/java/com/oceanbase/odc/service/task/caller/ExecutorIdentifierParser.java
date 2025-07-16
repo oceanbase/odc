@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.task.caller;
 import org.springframework.web.util.UriComponents;
 
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.common.util.UrlUtils;
 import com.oceanbase.odc.service.task.exception.TaskRuntimeException;
 
@@ -44,7 +45,8 @@ public class ExecutorIdentifierParser {
             // old version
             namespace = regionAndNamespace[0];
         }
-        return DefaultExecutorIdentifier.builder().host(uriComponents.getHost())
+        return DefaultExecutorIdentifier.builder()
+                .host(SystemUtils.removeBracketsToIpv6AddressIfNeed(uriComponents.getHost()))
                 .port(uriComponents.getPort())
                 .protocol(uriComponents.getScheme())
                 .namespace(StringUtils.isEmpty(namespace) ? null : UrlUtils.decode(namespace))

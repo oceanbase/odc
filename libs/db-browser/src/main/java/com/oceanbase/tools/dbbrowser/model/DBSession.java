@@ -72,7 +72,7 @@ public class DBSession {
     private String host;
 
     /**
-     * 服务端地址（带端口号）
+     * 服务端地址（带端口号） 如果是ipv6地址，ip地址会被[]包裹，例： [::1]:port
      */
     private String svrIp;
     /**

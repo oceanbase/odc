@@ -194,7 +194,8 @@ public class ProcessJobCaller extends BaseJobCaller {
      * @return
      */
     public boolean isRemoteTaskSupervisorAlive(ExecutorEndpoint executorEndpoint) {
-        String url = String.format("http://%s:%s/api/v1/heartbeat/isHealthy", executorEndpoint.getHost(),
+        String url = String.format("http://%s:%s/api/v1/heartbeat/isHealthy",
+                SystemUtils.addBracketsToIpv6AddressIfNeed(executorEndpoint.getHost()),
                 executorEndpoint.getSupervisorPort());
         try {
             OdcResult<Boolean> result = HttpClientUtils.request("GET", url, new TypeReference<OdcResult<Boolean>>() {});
@@ -212,7 +213,7 @@ public class ProcessJobCaller extends BaseJobCaller {
      * @return
      */
     protected boolean isSameTaskSupervisor(ExecutorEndpoint executorEndpoint, SupervisorEndpoint supervisorEndpoint) {
-        return StringUtils.equalsIgnoreCase(executorEndpoint.getHost(), supervisorEndpoint.getHost())
+        return SystemUtils.ipEquals(executorEndpoint.getHost(), supervisorEndpoint.getHost())
                 && Integer.compare(executorEndpoint.getSupervisorPort(), supervisorEndpoint.getPort()) == 0;
     }
 

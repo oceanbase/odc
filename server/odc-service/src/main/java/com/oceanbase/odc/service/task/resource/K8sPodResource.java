@@ -20,6 +20,7 @@ import java.util.Date;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.resource.Resource;
 import com.oceanbase.odc.service.resource.ResourceEndPoint;
 import com.oceanbase.odc.service.resource.ResourceID;
@@ -80,6 +81,67 @@ public class K8sPodResource implements Resource {
 
     private Date createDate;
 
+    public static Pair<String, String> parseIpv4IPAndPort(String k8sEndPoint) {
+        String[] infos = StringUtils.splitByWholeSeparator(k8sEndPoint, "::");
+        if (null == infos || infos.length != 6) {
+            throw new IllegalStateException(
+                    "expect k8s endpoint constructed by k8s::region::namespace::arn::ip::port, but current is "
+                            + k8sEndPoint);
+        }
+        String host = "null".equalsIgnoreCase(infos[4]) ? null : infos[4];
+        String port = "null".equalsIgnoreCase(infos[5]) ? null : infos[5];
+        return Pair.of(host, port);
+    }
+
+
+    public static Pair<String, String> parseIPAndPort(String k8sEndPoint) {
+        if (StringUtils.isEmpty(k8sEndPoint)) {
+            throw new IllegalArgumentException("K8s endpoint cannot be null or empty");
+        }
+
+        if (!isIpv6Endpoint(k8sEndPoint)) {
+            return parseIpv4IPAndPort(k8sEndPoint);
+        }
+
+        int ipv6StartIndex = k8sEndPoint.indexOf("::[");
+        if (ipv6StartIndex == -1) {
+            throw new IllegalArgumentException("Invalid IPv6 k8s endpoint format: " + k8sEndPoint);
+        }
+
+        int ipv6EndIndex = k8sEndPoint.indexOf("]::", ipv6StartIndex);
+        if (ipv6EndIndex == -1) {
+            throw new IllegalArgumentException("Invalid IPv6 k8s endpoint format, missing ']::': " + k8sEndPoint);
+        }
+
+        String ipPart = k8sEndPoint.substring(ipv6StartIndex + 3, ipv6EndIndex);
+
+        String portPart = k8sEndPoint.substring(ipv6EndIndex + 3);
+
+        String host = parseIPAddress(ipPart);
+
+        String port = "null".equalsIgnoreCase(portPart) ? null : portPart;
+
+        return Pair.of(host, port);
+    }
+
+    private static boolean isIpv6Endpoint(String endpoint) {
+        return endpoint.contains("::[") && endpoint.contains("]::");
+    }
+
+    private static String parseIPAddress(String ipPart) {
+        if (StringUtils.isEmpty(ipPart) || "null".equalsIgnoreCase(ipPart)) {
+            return null;
+        }
+
+        // IPv6地址可能带有方括号，需要移除
+        // 例如：[2001:db8::1] -> 2001:db8::1
+        if (ipPart.startsWith("[") && ipPart.endsWith("]")) {
+            return ipPart.substring(1, ipPart.length() - 1);
+        }
+
+        return ipPart;
+    }
+
     public ResourceID resourceID() {
         return new ResourceID(new ResourceLocation(region, group), type, namespace, arn);
     }
@@ -94,21 +156,10 @@ public class K8sPodResource implements Resource {
                 .append(region).append("::")
                 .append(namespace).append("::")
                 .append(arn).append("::")
-                .append(podIpAddress).append("::")
+                .append(SystemUtils.addBracketsToIpv6AddressIfNeed(podIpAddress)).append("::")
                 .append(servicePort);
-        return new ResourceEndPoint(sb.toString());
-    }
 
-    public static Pair<String, String> parseIPAndPort(String k8sEndPoint) {
-        String[] infos = StringUtils.splitByWholeSeparator(k8sEndPoint, "::");
-        if (null == infos || infos.length != 6) {
-            throw new IllegalStateException(
-                    "expect k8s endpoint constructed by k8s::region::namespace::arn::ip::port, but current is "
-                            + k8sEndPoint);
-        }
-        String host = "null".equalsIgnoreCase(infos[4]) ? null : infos[4];
-        String port = "null".equalsIgnoreCase(infos[5]) ? null : infos[5];
-        return Pair.of(host, port);
+        return new ResourceEndPoint(sb.toString());
     }
 
     public ResourceState resourceState() {

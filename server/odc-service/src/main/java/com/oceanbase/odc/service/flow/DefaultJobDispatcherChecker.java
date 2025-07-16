@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.service.flow;
 
-import java.util.Objects;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -54,6 +52,6 @@ public class DefaultJobDispatcherChecker implements JobDispatchChecker {
         ExecutorIdentifier ei = ExecutorIdentifierParser.parser(identifier);
         String host =
                 hostProperties.getOdcHost() == null ? SystemUtils.getLocalIpAddress() : hostProperties.getOdcHost();
-        return Objects.equals(host, ei.getHost());
+        return SystemUtils.ipEquals(ei.getHost(), host);
     }
 }

@@ -34,6 +34,15 @@ public class HostUtils {
             log.info("unable to extract server address, text is empty");
             throw new IllegalArgumentException("Empty server address!");
         }
+
+        if (trimmed.startsWith("[")) {
+            return getIpv6ServerAddress(trimmed);
+        }
+
+        return getIpv4ServerAddress(trimmed);
+    }
+
+    private static ServerAddress getIpv4ServerAddress(String trimmed) {
         String[] segments = StringUtils.split(trimmed, ":");
         if (segments.length != 2) {
             log.info("unable to extract server address, segments={}", segments);
@@ -46,7 +55,37 @@ public class HostUtils {
         return new ServerAddress(segments[0], segments[1]);
     }
 
+    private static ServerAddress getIpv6ServerAddress(String trimmed) {
+        int closeBracketIndex = trimmed.indexOf(']');
+        if (closeBracketIndex == -1) {
+            log.info("unable to extract server address, invalid IPv6 format: {}", trimmed);
+            throw new IllegalArgumentException("Invalid IPv6 server address format!");
+        }
 
+        String ipv6Address = trimmed.substring(1, closeBracketIndex);
+        if (StringUtils.isEmpty(ipv6Address)) {
+            log.info("unable to extract server address, empty IPv6 address: {}", trimmed);
+            throw new IllegalArgumentException("Empty IPv6 address!");
+        }
+
+        if (closeBracketIndex + 1 >= trimmed.length()) {
+            log.info("unable to extract server address, no port specified for IPv6: {}", trimmed);
+            throw new IllegalArgumentException("No port specified for IPv6 address!");
+        }
+
+        if (trimmed.charAt(closeBracketIndex + 1) != ':') {
+            log.info("unable to extract server address, invalid IPv6 port format: {}", trimmed);
+            throw new IllegalArgumentException("Invalid IPv6 port format!");
+        }
+
+        String port = trimmed.substring(closeBracketIndex + 2);
+        if (StringUtils.isEmpty(port)) {
+            log.info("unable to extract server address, empty port for IPv6: {}", trimmed);
+            throw new IllegalArgumentException("Empty port for IPv6 address!");
+        }
+
+        return new ServerAddress(ipv6Address, port);
+    }
 
     @Data
     public static class ServerAddress {

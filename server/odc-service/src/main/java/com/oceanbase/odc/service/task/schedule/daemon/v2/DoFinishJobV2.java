@@ -194,8 +194,7 @@ public class DoFinishJobV2 implements Job {
             return true;
         }
         ExecutorIdentifier identifier = ExecutorIdentifierParser.parser(executorIdentifier);
-        if (StringUtils.equals(StringUtils.trim(identifier.getHost()),
-                StringUtils.trim(SystemUtils.getLocalIpAddress()))) {
+        if (SystemUtils.ipEquals(identifier.getHost(), SystemUtils.getLocalIpAddress())) {
             // in same machine, kill it
             TaskSupervisor taskSupervisor = new TaskSupervisor(null, null, null);
             taskSupervisor.destroyTask(identifier);

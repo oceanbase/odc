@@ -117,7 +117,8 @@ public class JobUtils {
     }
 
     public static String getExecutorPoint() {
-        return "http://" + SystemUtils.getLocalIpAddress() + ":" + JobUtils.getExecutorPort().get();
+        return "http://" + SystemUtils.addBracketsToIpv6AddressIfNeed(SystemUtils.getLocalIpAddress()) + ":"
+                + JobUtils.getExecutorPort().get();
     }
 
     public static String getExecutorDataPath() {

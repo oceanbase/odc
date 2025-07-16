@@ -18,15 +18,19 @@ package com.oceanbase.odc.common.util;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.regex.Pattern;
@@ -46,26 +50,61 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public abstract class SystemUtils {
-    private static final String UNIX_PROCESS_CLASS_NAME = "java.lang.UNIXProcess";
-    private static final String PID_FIELD_NAME = "pid";
+
+    public static final String ODC_SERVER_IP_KEY = "ODC_SERVER_IP";
     private static final String LOCAL_HOST = "127.0.0.1";
     private static final String ANY_HOST = "0.0.0.0";
     private static final String DEFAULT_HOSTNAME = "localhost";
     private static final Pattern IP_PATTERN =
             Pattern.compile("^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");
-
-    private static volatile InetAddress LOCAL_ADDRESS = null;
-    private static volatile String HOSTNAME = null;
+    private static String INIT_SERVER_IP = null;
+    private static volatile InetAddress LOCAL_ADDRESS_CACHE = null;
+    private static volatile String HOSTNAME_CACHE = null;
 
     private SystemUtils() {}
 
+    public static void initServerIp() {
+        String serverIp = System.getenv(ODC_SERVER_IP_KEY);
+        if (serverIp == null) {
+            serverIp = System.getProperty(ODC_SERVER_IP_KEY);
+        }
+        if (serverIp != null) {
+            log.info("INIT_SERVER_IP has been loaded,serverIp={}", serverIp);
+            INIT_SERVER_IP = serverIp;
+        }
+    }
+
     public static String getHostName() {
-        if (HOSTNAME != null) {
-            return HOSTNAME;
+        if (HOSTNAME_CACHE != null) {
+            return HOSTNAME_CACHE;
         }
         String hostName = innerGetHostName();
-        HOSTNAME = hostName;
+        HOSTNAME_CACHE = hostName;
         return hostName;
+    }
+
+    public static boolean isValidIPv6Address(String ipAddress) {
+        try {
+            InetAddress address = InetAddress.getByName(ipAddress);
+            return address instanceof Inet6Address;
+        } catch (UnknownHostException e) {
+            return false;
+        }
+    }
+
+    public static String addBracketsToIpv6AddressIfNeed(String ipv6Address) {
+        if (isValidIPv6Address(ipv6Address) && !ipv6Address.startsWith("[")) {
+            log.debug("add brackets to address={}", ipv6Address);
+            return "[" + ipv6Address + "]";
+        }
+        return ipv6Address;
+    }
+
+    public static String removeBracketsToIpv6AddressIfNeed(String ipv6Address) {
+        if (isValidIPv6Address(ipv6Address) && ipv6Address.startsWith("[") && ipv6Address.endsWith("]")) {
+            return ipv6Address.substring(1, ipv6Address.length() - 1);
+        }
+        return ipv6Address;
     }
 
     public static Long getPid() {
@@ -83,9 +122,32 @@ public abstract class SystemUtils {
         return ManagementFactory.getRuntimeMXBean().getStartTime();
     }
 
+    public static boolean ipEquals(String ip1, String ip2) {
+        return Objects.equals(addBracketsToIpv6AddressIfNeed(ip1), addBracketsToIpv6AddressIfNeed(ip2));
+    }
+
     public static String getLocalIpAddress() {
+        if (INIT_SERVER_IP != null) {
+            return INIT_SERVER_IP;
+        }
         InetAddress address = getLocalAddress();
-        return address == null ? LOCAL_HOST : address.getHostAddress();
+        if (address == null) {
+            return LOCAL_HOST;
+        }
+        if (address instanceof Inet6Address inet6Address) {
+            return removeIPv6ScopeIdentifierByReconstruction(inet6Address);
+        }
+        return address.getHostAddress();
+    }
+
+    public static String removeIPv6ScopeIdentifierByReconstruction(Inet6Address ipv6Address) {
+        try {
+            byte[] addressBytes = ipv6Address.getAddress();
+            Inet6Address newAddress = Inet6Address.getByAddress(null, addressBytes, null);
+            return newAddress.getHostAddress();
+        } catch (UnknownHostException e) {
+            return ipv6Address.getHostAddress();
+        }
     }
 
     public static String getEnvOrProperty(@NonNull String propertyName) {
@@ -260,57 +322,169 @@ public abstract class SystemUtils {
     }
 
     private static InetAddress getLocalAddress() {
-        if (LOCAL_ADDRESS != null) {
-            return LOCAL_ADDRESS;
+        if (LOCAL_ADDRESS_CACHE != null) {
+            return LOCAL_ADDRESS_CACHE;
         }
         InetAddress localAddress = innerGetLocalAddress();
-        LOCAL_ADDRESS = localAddress;
+        LOCAL_ADDRESS_CACHE = localAddress;
+        log.info("localAddress have been loaded,localAddress={}", localAddress.getHostAddress());
         return localAddress;
     }
 
     private static InetAddress innerGetLocalAddress() {
+
         InetAddress localAddress = null;
         try {
             localAddress = InetAddress.getLocalHost();
-            if (isValidAddress(localAddress)) {
+            if (isServerValidAddress(localAddress)) {
                 return localAddress;
             }
         } catch (Throwable e) {
             log.warn("Failed to retrieving ip address {}", e.getMessage());
         }
+
+        return getInetAddressFromNetworkInterfaces(localAddress);
+    }
+
+    /**
+     * 如果是ipv6，优先选择global的地址，如果没有global的地址，再使用local-link的地址
+     * 
+     * @return
+     */
+    private static InetAddress getInetAddressFromNetworkInterfaces(InetAddress localAddress) {
+        AddressPreference addressPreference = getAddressPreference();
+        List<InetAddress> ipv6BackupAddresses = new ArrayList<>();
+
         try {
-            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-            if (interfaces != null) {
-                while (interfaces.hasMoreElements()) {
-                    try {
-                        NetworkInterface network = interfaces.nextElement();
-                        Enumeration<InetAddress> addresses = network.getInetAddresses();
-                        while (addresses.hasMoreElements()) {
-                            try {
-                                InetAddress address = addresses.nextElement();
-                                if (isValidAddress(address)) {
-                                    return address;
-                                }
-                            } catch (Throwable e) {
-                                log.warn("Failed to retrieving ip address, " + e.getMessage(), e);
-                            }
-                        }
-                    } catch (Throwable e) {
-                        log.warn("Failed to retrieving ip address, " + e.getMessage(), e);
-                    }
+            InetAddress preferredAddress = findPreferredAddress(addressPreference, ipv6BackupAddresses);
+            if (preferredAddress != null) {
+                return preferredAddress;
+            }
+        } catch (Exception e) {
+            log.warn("Failed to retrieve IP address from network interfaces: {}", e.getMessage(), e);
+        }
+
+        return selectFallbackAddress(ipv6BackupAddresses, localAddress);
+    }
+
+
+    private static InetAddress findPreferredAddress(AddressPreference addressPreference,
+            List<InetAddress> ipv6BackupAddresses) throws SocketException {
+        Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+        while (interfaces.hasMoreElements()) {
+            NetworkInterface networkInterface = interfaces.nextElement();
+            InetAddress preferredAddress =
+                    processNetworkInterface(networkInterface, addressPreference, ipv6BackupAddresses);
+            if (preferredAddress != null) {
+                return preferredAddress;
+            }
+        }
+        return null;
+    }
+
+
+    private static InetAddress processNetworkInterface(NetworkInterface networkInterface,
+            AddressPreference addressPreference,
+            List<InetAddress> ipv6BackupAddresses) {
+        try {
+            Enumeration<InetAddress> addresses = networkInterface.getInetAddresses();
+            while (addresses.hasMoreElements()) {
+                InetAddress address =
+                        processInetAddress(addresses.nextElement(), addressPreference, ipv6BackupAddresses);
+                if (address != null) {
+                    return address;
                 }
             }
-        } catch (Throwable e) {
-            log.warn("Failed to retrieving ip address, " + e.getMessage(), e);
+        } catch (Exception e) {
+            log.warn("Failed to process network interface {}: {}", networkInterface.getName(), e.getMessage());
         }
-        log.warn("Could not get local host ip address, will use 127.0.0.1 instead.");
+        return null;
+    }
+
+
+    private static InetAddress processInetAddress(InetAddress address,
+            AddressPreference addressPreference,
+            List<InetAddress> ipv6BackupAddresses) {
+        try {
+            if (isServerValidAddress(address)) {
+                return address;
+            }
+
+            if (addressPreference == AddressPreference.IPV6_PREFERRED
+                    && isValidServerIPV6Address(address, true)) {
+                ipv6BackupAddresses.add(address);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to process IP address {}: {}", address.getHostAddress(), e.getMessage());
+        }
+        return null;
+    }
+
+
+    private static InetAddress selectFallbackAddress(List<InetAddress> ipv6BackupAddresses,
+            InetAddress localAddress) {
+        log.warn("Could not get local host IP address, using fallback strategy.");
+
+        if (!ipv6BackupAddresses.isEmpty()) {
+            InetAddress selectedAddress = ipv6BackupAddresses.get(0);
+            log.info("Using IPv6 backup address: {}", selectedAddress.getHostAddress());
+            return selectedAddress;
+        }
+
+        log.warn("No suitable IP address found, falling back to local address: {}",
+                localAddress != null ? localAddress.getHostAddress() : "127.0.0.1");
         return localAddress;
     }
 
-    private static boolean isValidAddress(InetAddress address) {
+    private static boolean isServerValidAddress(InetAddress address) {
+        AddressPreference addressPreference = getAddressPreference();
         if (address == null || address.isLoopbackAddress()) {
             return false;
         }
+        if (addressPreference == AddressPreference.IPV4_ONLY) {
+            return isValidLocalIPV4Address(address);
+        }
+        if (addressPreference == AddressPreference.IPV6_PREFERRED) {
+            return isValidServerIPV6Address(address, false);
+        }
+        return isValidLocalIPV4Address(address) || isValidServerIPV6Address(address, false);
+    }
+
+    private static boolean isValidServerIPV6Address(InetAddress address, boolean allowULA) {
+        if (!(address instanceof Inet6Address ipv6Address)) {
+            return false;
+        }
+        if (ipv6Address.isMulticastAddress() ||
+                ipv6Address.isLoopbackAddress() ||
+                ipv6Address.isAnyLocalAddress() ||
+                ipv6Address.isSiteLocalAddress() ||
+                ipv6Address.isLinkLocalAddress()) {
+            return false;
+        }
+
+        if (isUniqueLocalAddress(ipv6Address)) {
+            return allowULA;
+        }
+
+        return true;
+    }
+
+    /**
+     * 检查是否为ULA地址 (Unique Local Address) ULA地址范围: fc00::/7 (包含 fc00::/8 和 fd00::/8)
+     * https://www.rfc-editor.org/rfc/rfc4193
+     */
+    private static boolean isUniqueLocalAddress(Inet6Address ipv6Address) {
+        byte[] address = ipv6Address.getAddress();
+        if (address.length != 16) {
+            return false;
+        }
+        // 检查第一个字节是否在 fc00::/7 范围内
+        // fc00::/7 意味着第一个字节的前7位是 1111110x
+        // 即第一个字节是 0xfc (11111100) 或 0xfd (11111101)
+        return (address[0] & 0xfe) == 0xfc;
+    }
+
+    private static boolean isValidLocalIPV4Address(InetAddress address) {
         String name = address.getHostAddress();
         if (name == null) {
             return false;
@@ -322,6 +496,26 @@ public abstract class SystemUtils {
             return false;
         }
         return IP_PATTERN.matcher(name).matches();
+    }
+
+    private static AddressPreference getAddressPreference() {
+        String preferIPv4Stack = System.getProperty("java.net.preferIPv4Stack");
+        if ("true".equalsIgnoreCase(preferIPv4Stack)) {
+            return AddressPreference.IPV4_ONLY;
+        }
+
+        String preferIPv6Addresses = System.getProperty("java.net.preferIPv6Addresses");
+        if ("true".equalsIgnoreCase(preferIPv6Addresses)) {
+            return AddressPreference.IPV6_PREFERRED;
+        }
+
+        return AddressPreference.IPV4_PREFERRED;
+    }
+
+    private enum AddressPreference {
+        IPV4_ONLY,
+        IPV4_PREFERRED,
+        IPV6_PREFERRED
     }
 
 }

@@ -376,7 +376,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             ExecutorIdentifier identifier = ExecutorIdentifierParser.parser(executorIdentifier);
             String host = identifier.getHost();
             if (!StringUtils.startsWith(host, "http")) {
-                host = "http://" + host;
+                host = "http://" + SystemUtils.addBracketsToIpv6AddressIfNeed(host);
             }
             String port = String.valueOf(executorListenPort);
             return jobRepository.updateExecutorEndpointAndExecutorIdentifierById(jobEntity.getId(), host + ":" + port,

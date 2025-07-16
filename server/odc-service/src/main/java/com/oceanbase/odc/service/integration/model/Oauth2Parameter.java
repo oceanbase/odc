@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.integration.model;
 import static com.oceanbase.odc.core.shared.constant.OdcConstants.ODC_BACK_URL_PARAM;
 import static com.oceanbase.odc.service.integration.model.SSOIntegrationConfig.parseOrganizationId;
 
-import java.net.URL;
 import java.util.Set;
 
 import org.springframework.boot.autoconfigure.security.oauth2.client.OAuth2ClientProperties.Provider;
@@ -79,18 +78,7 @@ public class Oauth2Parameter implements SSOParameter {
 
     @SneakyThrows
     private static String getRedirectHost(String redirectUrl) {
-        URL url = new URL(redirectUrl);
-        StringBuilder host = new StringBuilder();
-        host.append(url.getProtocol()).append("://").append(url.getHost());
-        int port = url.getPort();
-        if (port <= 0) {
-            return host.toString();
-        }
-        if ("http".equals(url.getProtocol()) && port != 80 ||
-                "https".equals(url.getProtocol()) && port != 443) {
-            host.append(":").append(url.getPort());
-        }
-        return host.toString();
+        return UrlUtils.getUrlHost(redirectUrl);
     }
 
     private static Builder getBuilder(Builder builder, Provider provider) {

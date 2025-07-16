@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.cloud.model.CloudProvider;
@@ -91,7 +92,8 @@ public class ExecutorEndpointManager {
                 String podIpAddress = response.getPodIpAddress();
                 if (StringUtils.isNotBlank(podIpAddress)) {
                     String adaptedHost = adaptHost(podIpAddress, jobProperties);
-                    executorEndpoint = "http://" + adaptedHost + ":" + executorListenPort;
+                    executorEndpoint = "http://" + SystemUtils.addBracketsToIpv6AddressIfNeed(adaptedHost) + ":"
+                            + executorListenPort;
                     taskFrameworkService.updateExecutorEndpoint(jobId, executorEndpoint);
                     return executorEndpoint;
                 } else {

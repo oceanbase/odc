@@ -46,6 +46,6 @@ public class SiteUrlResolver {
                 .orElse(SystemUtils.getLocalIpAddress());
         String port = Optional.ofNullable(hostProperties.getOdcMappingPort())
                 .orElse(hostProperties.getPort());
-        return String.format("%s:%s", host, port);
+        return String.format("%s:%s", SystemUtils.addBracketsToIpv6AddressIfNeed(host), port);
     }
 }

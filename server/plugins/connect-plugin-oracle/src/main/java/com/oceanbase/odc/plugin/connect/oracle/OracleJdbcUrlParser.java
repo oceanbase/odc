@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.plugin.connect.api.HostAddress;
 import com.oceanbase.odc.plugin.connect.api.JdbcUrlParser;
 
@@ -35,8 +36,8 @@ import lombok.NonNull;
  */
 public class OracleJdbcUrlParser implements JdbcUrlParser {
     private final String ORACLE_JDBC_PREFIX = "jdbc:oracle:thin:@";
-    private static final Pattern SERVICE_NAME_PATTERN = Pattern.compile("@//([^:/]*):(\\d+)/.*");
-    private static final Pattern SID_PATTERN = Pattern.compile("@([^:/]*):(\\d+):.*");
+    private static final Pattern SERVICE_NAME_PATTERN = Pattern.compile("@//([^:/]+|\\[[^\\]]+\\]):(\\d+)/.*");
+    private static final Pattern SID_PATTERN = Pattern.compile("@([^:/]+|\\[[^\\]]+\\]):(\\d+):.*");
     private String jdbcUrl;
     private List<HostAddress> addresses;
     private Map<String, Object> parameters;
@@ -58,10 +59,10 @@ public class OracleJdbcUrlParser implements JdbcUrlParser {
         Matcher sidMatcher = SID_PATTERN.matcher(jdbcUrl);
 
         if (serviceNameMatcher.find()) {
-            hostAddress.setHost(serviceNameMatcher.group(1));
+            hostAddress.setHost(SystemUtils.removeBracketsToIpv6AddressIfNeed(serviceNameMatcher.group(1)));
             hostAddress.setPort(Integer.valueOf(serviceNameMatcher.group(2)));
         } else if (sidMatcher.find()) {
-            hostAddress.setHost(sidMatcher.group(1));
+            hostAddress.setHost(SystemUtils.removeBracketsToIpv6AddressIfNeed(sidMatcher.group(1)));
             hostAddress.setPort(Integer.valueOf(sidMatcher.group(2)));
         }
         return Collections.singletonList(hostAddress);

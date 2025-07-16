@@ -30,6 +30,7 @@ import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.google.common.base.MoreObjects;
+import com.oceanbase.odc.common.util.SystemUtils;
 
 import lombok.SneakyThrows;
 
@@ -74,7 +75,7 @@ public class UrlUtils {
     public static String getUrlHost(String targetUrl) {
         URL url = new URL(targetUrl);
         StringBuilder host = new StringBuilder();
-        host.append(url.getProtocol()).append("://").append(url.getHost());
+        host.append(url.getProtocol()).append("://").append(SystemUtils.addBracketsToIpv6AddressIfNeed(url.getHost()));
         int port = url.getPort();
         if (port <= 0) {
             return host.toString();

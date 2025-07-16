@@ -22,6 +22,7 @@ import java.util.Map;
 import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.tools.dbbrowser.model.DBSession;
+import com.oceanbase.tools.dbbrowser.util.HostUtils;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
 
 import lombok.NonNull;
@@ -48,7 +49,8 @@ public class OBMySQLStatsAccessor extends MySQLNoLessThan5700StatsAccessor {
         jdbcOperations.query(LIST_SESSIONS_BY_SHOW_PROCESSLIST, rs -> {
             if (rs.getMetaData().getColumnCount() == 11) {
                 String id = rs.getString("Id");
-                String svrIp = StringUtils.join(rs.getString("Ip"), ":", rs.getString("Port"));
+                String svrIp = StringUtils.join(HostUtils.addBracketsToIpv6AddressIfNeed(rs.getString("Ip")), ":",
+                        rs.getString("Port"));
                 sessionId2SvrIp.put(id, svrIp);
             }
         });

@@ -95,10 +95,12 @@ public class WebResponseUtils {
 
     public static void addCookie(HttpServletRequest request, HttpServletResponse response, Cookie cookie) {
         String requestHost = WebRequestUtils.getRequestHost(request);
-        String domain = InetAddresses.isInetAddress(requestHost) ? requestHost : calcParentDomain(requestHost);
-        cookie.setDomain(domain);
-        cookie.setPath(getRequestContext(request));
-        response.addCookie(cookie);
+        if (InetAddresses.isInetAddress(requestHost)) {
+            String domain = calcParentDomain(requestHost);
+            cookie.setDomain(domain);
+            cookie.setPath(getRequestContext(request));
+            response.addCookie(cookie);
+        }
     }
 
     public static <T> void writeJsonObjectWithOkStatus(T responseBody, HttpServletRequest request,

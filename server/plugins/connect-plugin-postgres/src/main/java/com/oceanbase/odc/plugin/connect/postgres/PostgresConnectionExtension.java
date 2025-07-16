@@ -28,6 +28,7 @@ import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.util.ExceptionUtils;
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.datasource.ConnectionInitializer;
 import com.oceanbase.odc.core.shared.constant.OdcConstants;
 import com.oceanbase.odc.plugin.connect.api.TestResult;
@@ -41,7 +42,7 @@ public class PostgresConnectionExtension extends OBMySQLConnectionExtension {
 
     @Override
     public String generateJdbcUrl(@NonNull JdbcUrlProperty properties) {
-        String host = properties.getHost();
+        String host = SystemUtils.addBracketsToIpv6AddressIfNeed(properties.getHost());
         Validate.notEmpty(host, "host can not be null");
         Integer port = properties.getPort();
         Validate.notNull(port, "port can not be null");

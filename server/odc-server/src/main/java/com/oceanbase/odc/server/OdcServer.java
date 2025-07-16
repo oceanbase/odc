@@ -103,6 +103,7 @@ public class OdcServer {
         // for work around path variable contains slash
         System.setProperty("org.apache.catalina.connector.CoyoteAdapter.ALLOW_BACKSLASH", "true");
         System.setProperty("org.apache.tomcat.util.buf.UDecoder.ALLOW_ENCODED_SLASH", "true");
+        SystemUtils.initServerIp();
     }
 
     @Bean

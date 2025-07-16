@@ -15,6 +15,7 @@
  */
 package com.oceanbase.tools.dbbrowser.model;
 
+import com.oceanbase.tools.dbbrowser.util.HostUtils;
 import com.oceanbase.tools.dbbrowser.util.StringUtils;
 
 import lombok.Data;
@@ -78,7 +79,7 @@ public class DBMySQLProcess {
         session.setHost(host);
         session.setProxyHost(host);
         session.setExecuteTime(Integer.parseInt(time));
-        session.setSvrIp(StringUtils.join(ip, ":", port));
+        session.setSvrIp(StringUtils.join(HostUtils.addBracketsToIpv6AddressIfNeed(ip), ":", port));
         return session;
     }
 }

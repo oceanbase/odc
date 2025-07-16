@@ -42,6 +42,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
@@ -96,7 +97,8 @@ public class RequestDispatcher {
     }
 
     public String getHostUrl(@NonNull String ip, @NonNull Integer port) {
-        return String.format("%s://%s:%s", PROTOCAL, ip, port);
+        String processedIp = SystemUtils.addBracketsToIpv6AddressIfNeed(ip);
+        return String.format("%s://%s:%s", PROTOCAL, processedIp, port);
     }
 
     public String getRequestUrlByRequest(HttpServletRequest request) {

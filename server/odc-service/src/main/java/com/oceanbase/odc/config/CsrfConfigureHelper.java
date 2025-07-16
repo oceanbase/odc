@@ -36,6 +36,7 @@ import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.csrf.InvalidCsrfTokenException;
 import org.springframework.security.web.csrf.MissingCsrfTokenException;
+import org.springframework.security.web.csrf.XorCsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.session.SessionManagementFilter;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.stereotype.Component;
@@ -76,8 +77,10 @@ public class CsrfConfigureHelper {
         http.csrf(AbstractHttpConfigurer::disable);
         if (commonSecurityProperties.isCsrfEnabled()) {
             CsrfFilter csrfFilter = new CsrfFilter(new OdcCsrfTokenRepository());
+            XorCsrfTokenRequestAttributeHandler delegate = new XorCsrfTokenRequestAttributeHandler();
             csrfFilter.setRequireCsrfProtectionMatcher(requestMatcher());
             csrfFilter.setAccessDeniedHandler(accessDeniedHandler());
+            csrfFilter.setRequestHandler(delegate::handle);
             http.addFilterAfter(csrfFilter, SessionManagementFilter.class);
         }
     }
@@ -154,7 +157,15 @@ public class CsrfConfigureHelper {
         @Override
         public void addCookie(Cookie cookie) {
             String requestHost = WebRequestUtils.getRequestHost(this.request);
-            String domain = InetAddresses.isInetAddress(requestHost) ? requestHost : calcParentDomain(requestHost);
+            String domain = null;
+            // IPV6 domain as cookie domain is not allowed by RFC 6265
+            if (!SystemUtils.isValidIPv6Address(requestHost)) {
+                if (InetAddresses.isInetAddress(requestHost)) {
+                    domain = requestHost;
+                } else {
+                    domain = calcParentDomain(requestHost);
+                }
+            }
             cookie.setDomain(domain);
             super.addCookie(cookie);
         }

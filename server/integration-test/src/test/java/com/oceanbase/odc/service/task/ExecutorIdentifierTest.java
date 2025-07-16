@@ -63,6 +63,11 @@ public class ExecutorIdentifierTest {
         ExecutorIdentifier identifierOld3 = ExecutorIdentifierParser.parser(str4);
         Assert.assertNull(identifierOld3.getNamespace());
         Assert.assertEquals(identifierOld3.getExecutorName(), "");
+
+        var st5 = "http://[::1]:8989/xxx:xxxx001";
+        ExecutorIdentifier parser5 = ExecutorIdentifierParser.parser(st5);
+        Assert.assertEquals(parser5.getHost(), "::1");
+
     }
 
     @Test

@@ -16,6 +16,7 @@
 package com.oceanbase.odc.service.task.caller;
 
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.common.util.UrlUtils;
 
 import lombok.Builder;
@@ -52,7 +53,7 @@ public class DefaultExecutorIdentifier implements ExecutorIdentifier {
         StringBuilder sb = new StringBuilder();
         sb.append(protocol)
                 .append("://")
-                .append(host == null ? "" : host);
+                .append(host == null ? "" : SystemUtils.addBracketsToIpv6AddressIfNeed(host));
         if (port > 0) {
             sb.append(":")
                     .append(port);

@@ -54,8 +54,11 @@ public class DefaultHostUrlProvider implements HostUrlProvider {
         }
         if (StringUtils.isNotBlank(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_SERVICE_HOST)) &&
                 StringUtils.isNotBlank(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_SERVICE_PORT))) {
+
+            var host = SystemUtils
+                    .addBracketsToIpv6AddressIfNeed(SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_SERVICE_HOST));
             return Collections
-                    .singletonList("http://" + SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_SERVICE_HOST)
+                    .singletonList("http://" + host
                             + ":" + SystemUtils.getEnvOrProperty(JobEnvKeyConstants.ODC_SERVICE_PORT));
         }
 
@@ -63,7 +66,7 @@ public class DefaultHostUrlProvider implements HostUrlProvider {
                 configProperties.getOdcHost() == null ? SystemUtils.getLocalIpAddress()
                         : configProperties.getOdcHost();
         int port = Integer.parseInt(configProperties.getPort());
-        return Collections.singletonList("http://" + host + ":" + port);
+        return Collections.singletonList("http://" + SystemUtils.addBracketsToIpv6AddressIfNeed(host) + ":" + port);
     }
 
 }

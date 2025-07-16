@@ -50,12 +50,14 @@ public class SimpleJdbcUrlParserTest {
                 {"jdbc:postgresql://0.0.0.0:5432/testdb", "postgresql", "0.0.0.0", 5432, "testdb"},
                 {"jdbc:sqlserver://0.0.0.0:1433/testdb", "sqlserver", "0.0.0.0", 1433, "testdb"},
                 {"jdbc:oceanbase://0.0.0.0:2883/testdb", "oceanbase", "0.0.0.0", 2883, "testdb"},
+                {"jdbc:oceanbase://[::1]:2883/testdb", "oceanbase", "[::1]", 2883, "testdb"},
 
                 // without port in jdbc url
                 {"jdbc:mysql://0.0.0.0/testdb", "mysql", "0.0.0.0", 3306, "testdb"},
                 {"jdbc:oracle://0.0.0.0/testdb", "oracle", "0.0.0.0", 1521, "testdb"},
                 {"jdbc:postgresql://0.0.0.0/testdb", "postgresql", "0.0.0.0", 5432, "testdb"},
                 {"jdbc:sqlserver://0.0.0.0/testdb", "sqlserver", "0.0.0.0", 1433, "testdb"},
+                {"jdbc:sqlserver://[::1]/testdb", "sqlserver", "[::1]", 1433, "testdb"},
                 {"jdbc:oceanbase://0.0.0.0/testdb", "oceanbase", "0.0.0.0", 2883, "testdb"}
         });
     }

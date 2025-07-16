@@ -35,7 +35,7 @@ public abstract class BaseLockConfiguration {
     private static final String CREATE_LOCK_TABLE_SQL = "CREATE TABLE IF NOT EXISTS DISTRIBUTED_LOCK (\n"
             + "  LOCK_KEY CHAR(36) NOT NULL,\n"
             + "  REGION VARCHAR(100) NOT NULL,\n"
-            + "  CLIENT_ID CHAR(36),\n"
+            + "  CLIENT_ID CHAR(128),\n"
             + "  CREATED_DATE DATETIME(6) NOT NULL,\n"
             + "  constraint DISTRIBUTED_LOCK_PK primary key (LOCK_KEY, REGION)\n"
             + ")";
@@ -44,7 +44,7 @@ public abstract class BaseLockConfiguration {
         String localIpAddress = SystemUtils.getLocalIpAddress();
         log.info("create odc lock repository..., localIpAddress={}, listenPort={}", localIpAddress, listenPort);
         initLockTable(dataSource);
-        String lockId = String.format("%s:%s", localIpAddress, listenPort);
+        String lockId = String.format("%s:%s", SystemUtils.addBracketsToIpv6AddressIfNeed(localIpAddress), listenPort);
         DefaultLockRepository defaultLockRepository = new OdcLockRepository(dataSource, lockId);
         defaultLockRepository.setApplicationContext(SpringContextUtil.getApplicationContext());
         defaultLockRepository.afterSingletonsInstantiated();

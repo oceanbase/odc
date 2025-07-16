@@ -41,6 +41,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.authority.exception.AccessDeniedException;
 import com.oceanbase.odc.core.authority.model.DefaultSecurityResource;
@@ -376,7 +377,8 @@ public class ConnectSessionService {
         if (session == null) {
             CreateSessionReq req = new DefaultConnectSessionIdGenerator().getKeyFromId(sessionId);
             if (!autoCreate
-                    || (!StringUtils.equals(req.getFrom(), stateHostGenerator.getHost()) && !isOBCloudEnvironment())) {
+                    || (!SystemUtils.ipEquals(req.getFrom(), stateHostGenerator.getHost())
+                            && !isOBCloudEnvironment())) {
                 throw new NotFoundException(ResourceType.ODC_SESSION, "ID", sessionId);
             }
             Lock lock = this.sessionId2Lock.computeIfAbsent(sessionId, s -> new ReentrantLock());

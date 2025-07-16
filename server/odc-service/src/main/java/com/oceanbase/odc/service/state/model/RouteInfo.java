@@ -34,8 +34,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RouteInfo {
 
-    private static final RestTemplate restTemplate = new RestTemplateBuilder().setConnectTimeout(Duration.ofSeconds(3))
-            .setReadTimeout(Duration.ofSeconds(3)).build();
+    private static final RestTemplate restTemplate = new RestTemplateBuilder().connectTimeout(Duration.ofSeconds(3))
+            .readTimeout(Duration.ofSeconds(3)).build();
 
     private String hostName;
     private Integer port;
@@ -50,7 +50,7 @@ public class RouteInfo {
         if (!Objects.equals(port, currentPort)) {
             return false;
         }
-        return hostName.equalsIgnoreCase(currentHost);
+        return SystemUtils.ipEquals(hostName, currentHost);
     }
 
     public static String currentNodeHostName() {
@@ -63,7 +63,8 @@ public class RouteInfo {
 
     public boolean isHealthyHost() {
         try {
-            String url = "http://" + hostName + ":" + port + "/api/v1/heartbeat/isHealthy";
+            String url = "http://" + SystemUtils.addBracketsToIpv6AddressIfNeed(hostName) + ":" + port
+                    + "/api/v1/heartbeat/isHealthy";
             String response = restTemplate.getForObject(url, String.class);
             return response.contains("true");
         } catch (Exception e) {

@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.task.supervisor.protocol;
 import java.io.IOException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.task.supervisor.endpoint.SupervisorEndpoint;
 import com.oceanbase.odc.service.task.util.HttpClientUtils;
 
@@ -67,7 +68,7 @@ public class TaskNetClient {
     protected void appendHttpURlBase(SupervisorEndpoint supervisorEndpoint, StringBuilder sb) {
         // create base
         sb.append("http://")
-                .append(supervisorEndpoint.getHost()).append(":")
+                .append(SystemUtils.addBracketsToIpv6AddressIfNeed(supervisorEndpoint.getHost())).append(":")
                 .append(supervisorEndpoint.getPort());
     }
 }

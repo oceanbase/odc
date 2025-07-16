@@ -68,6 +68,15 @@ public class OracleJdbcUrlParserTest {
     }
 
     @Test
+    public void getHostAndPort_with_ipv6_jdbcUrl() throws SQLException {
+        JdbcUrlParser parser = new OracleJdbcUrlParser("jdbc:oracle:thin:@[::1]:1234:sid", null);
+        List<HostAddress> expect = new ArrayList<>();
+        expect.add(new HostAddress("::1", 1234));
+        List<HostAddress> acutal = parser.getHostAddresses();
+        Assert.assertEquals(expect, acutal);
+    }
+
+    @Test
     public void getParameters_noParametersExists_returnEmpty() throws SQLException {
         JdbcUrlParser parser = new OracleJdbcUrlParser("jdbc:oracle:thin:@0.0.0.0:1234:sid", null);
         Assert.assertTrue(parser.getParameters().isEmpty());

@@ -32,4 +32,24 @@ public class K8sPodResourceTest {
         Assert.assertNull(ret.getLeft());
         Assert.assertNull(ret.getRight());
     }
+
+
+    @Test
+    public void testParseIpv4IpAndPort() {
+        String ipAndPortStr =
+                "k8s::cn-shanghai::default::obc:aliyun:iaas:cn-shanghai:oceanbase:pod:p-T5205qKf9N0001::127.0.0.1::8089";
+        Pair<String, String> ret = K8sPodResource.parseIPAndPort(ipAndPortStr);
+        Assert.assertEquals(ret.getLeft(), "127.0.0.1");
+        Assert.assertEquals(ret.getRight(), "8089");
+    }
+
+
+    @Test
+    public void testParseIpv6IpAndPort() {
+        String ipAndPortStr =
+                "k8s::cn-shanghai::default::obc:aliyun:iaas:cn-shanghai:oceanbase:pod:p-T5205qKf9N0001::[::1]::8089";
+        Pair<String, String> ret = K8sPodResource.parseIPAndPort(ipAndPortStr);
+        Assert.assertEquals(ret.getLeft(), "::1");
+        Assert.assertEquals(ret.getRight(), "8089");
+    }
 }

@@ -25,7 +25,7 @@ import lombok.NonNull;
 
 public class SimpleJdbcUrlParser {
     private static final String REGEX =
-            "jdbc:(mysql|oracle|oceanbase|postgresql|sqlserver)://([^/:]+)(?::([0-9]+))?/([^?;]*)";
+            "jdbc:(mysql|oracle|oceanbase|postgresql|sqlserver)://([^/:]+|\\[[^\\]]+\\])(?::([0-9]+))?/([^?;]*)";
     private static final Pattern PATTERN = Pattern.compile(REGEX);
 
     /**

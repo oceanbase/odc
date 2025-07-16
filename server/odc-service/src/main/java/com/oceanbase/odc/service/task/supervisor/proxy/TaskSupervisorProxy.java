@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.task.supervisor.proxy;
 
 import java.io.IOException;
 
+import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.caller.ProcessConfig;
 import com.oceanbase.odc.service.task.exception.JobException;
@@ -78,6 +79,7 @@ public interface TaskSupervisorProxy {
     }
 
     static String getExecutorEndpoint(ExecutorEndpoint executorEndpoint) {
-        return "http://" + executorEndpoint.getHost() + ":" + executorEndpoint.getExecutorPort();
+        return "http://" + SystemUtils.addBracketsToIpv6AddressIfNeed(executorEndpoint.getHost()) + ":"
+                + executorEndpoint.getExecutorPort();
     }
 }
