@@ -41,4 +41,6 @@ public interface MViewLogExtensionPoint extends ExtensionPoint {
 
     Boolean purge(Connection connection, DBMViewLogPurgeParameter parameter);
 
+    String generateCreateTemplate(DBMaterializedViewLog mViewLog);
+
 }

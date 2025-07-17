@@ -68,6 +68,14 @@ public class DBMaterializedViewLogService {
                         .purge(con, new DBMViewLogPurgeParameter(schemaName, dbName)));
     }
 
+    public String generateCreateTemplate(@NonNull ConnectionSession connectionSession,
+            @NonNull DBMaterializedViewLog resource) {
+        return connectionSession.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<String>) con -> getDBMViewLogExtensionPoint(connectionSession)
+                        .generateCreateTemplate(resource));
+    }
+
     private MViewLogExtensionPoint getDBMViewLogExtensionPoint(@NonNull ConnectionSession session) {
         return SchemaPluginUtil.getMViewLogExtension(session.getDialectType());
     }

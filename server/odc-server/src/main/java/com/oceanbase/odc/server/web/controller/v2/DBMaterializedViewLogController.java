@@ -23,8 +23,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.oceanbase.odc.core.session.ConnectionSession;
-import com.oceanbase.odc.core.shared.exception.NotImplementedException;
-import com.oceanbase.odc.service.common.model.ResourceSql;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
@@ -34,7 +32,6 @@ import com.oceanbase.odc.service.state.model.StateName;
 import com.oceanbase.odc.service.state.model.StatefulRoute;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewLog;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
-import com.oceanbase.tools.dbbrowser.model.DBView;
 
 import io.swagger.annotations.ApiOperation;
 
@@ -74,14 +71,18 @@ public class DBMaterializedViewLogController {
     }
 
     @ApiOperation(value = "getCreateSql", notes = "obtain the sql to create the materialized view log.")
-    @RequestMapping(value = "/{sessionId}/databases/{databaseName}/materializedViewLogs/{mvLogName}/generateCreateDDL",
-            method = RequestMethod.PATCH)
+    @RequestMapping(
+            value = "/{sessionId}/databases/{databaseName}/materializedViewLogs/{baseTableName}/generateCreateDDL",
+            method = RequestMethod.POST)
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
-    public SuccessResponse<ResourceSql> getCreateSql(@PathVariable String sessionId,
+    public SuccessResponse<String> getCreateSql(@PathVariable String sessionId,
             @PathVariable String databaseName,
-            @PathVariable String mvLogName,
-            @RequestBody DBView resource) {
-        throw new NotImplementedException("not implemented");
+            @PathVariable String baseTableName,
+            @RequestBody DBMaterializedViewLog resource) {
+        resource.setBaseTableName(baseTableName);
+        resource.setSchemaName(databaseName);
+        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
+        return Responses.success(dbMaterializedViewLogService.generateCreateTemplate(session, resource));
     }
 
     @ApiOperation(value = "purge", notes = "purge expired data of materialized view log")

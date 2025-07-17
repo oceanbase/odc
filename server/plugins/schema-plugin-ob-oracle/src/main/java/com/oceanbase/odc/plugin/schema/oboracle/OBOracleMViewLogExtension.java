@@ -20,11 +20,15 @@ import java.sql.Connection;
 import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLMViewLogExtension;
 import com.oceanbase.odc.plugin.schema.oboracle.utils.DBAccessorUtil;
+import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.editor.DBObjectOperator;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleObjectOperator;
+import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewLog;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
+import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -45,6 +49,12 @@ public class OBOracleMViewLogExtension extends OBMySQLMViewLogExtension {
     @Override
     protected DBObjectOperator getOperator(Connection connection) {
         return new OracleObjectOperator(JdbcOperationsUtil.getJdbcOperations(connection));
+    }
+
+    @Override
+    protected DBObjectTemplate<DBMaterializedViewLog> getTemplate() {
+        return DBBrowser.objectTemplate().mViewLogTemplate()
+                .setType(DialectType.OB_ORACLE.getDBBrowserDialectTypeName()).create();
     }
 
 }

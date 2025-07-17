@@ -121,12 +121,12 @@ public abstract class BaseMViewTemplate implements DBObjectTemplate<DBMaterializ
         return sqlBuilder.toString();
     }
 
-    private String getFullyQualifiedTableName(@NotNull DBMaterializedView DBMaterializedView) {
+    private String getFullyQualifiedTableName(@NotNull DBMaterializedView mView) {
         SqlBuilder sqlBuilder = sqlBuilder();
-        if (StringUtils.isNotEmpty(DBMaterializedView.getSchemaName())) {
-            sqlBuilder.identifier(DBMaterializedView.getSchemaName()).append(".");
+        if (StringUtils.isNotEmpty(mView.getSchemaName())) {
+            sqlBuilder.identifier(mView.getSchemaName()).append(".");
         }
-        sqlBuilder.identifier(DBMaterializedView.getName());
+        sqlBuilder.identifier(mView.getName());
         return sqlBuilder.toString();
     }
 

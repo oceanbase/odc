@@ -21,8 +21,10 @@ import java.util.List;
 import org.pf4j.Extension;
 
 import com.oceanbase.odc.common.util.JdbcOperationsUtil;
+import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.schema.api.MViewLogExtensionPoint;
 import com.oceanbase.odc.plugin.schema.obmysql.utils.DBAccessorUtil;
+import com.oceanbase.tools.dbbrowser.DBBrowser;
 import com.oceanbase.tools.dbbrowser.editor.DBObjectOperator;
 import com.oceanbase.tools.dbbrowser.editor.mysql.MySQLObjectOperator;
 import com.oceanbase.tools.dbbrowser.model.DBMViewLogPurgeParameter;
@@ -30,6 +32,7 @@ import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewLog;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.model.DBObjectType;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
+import com.oceanbase.tools.dbbrowser.template.DBObjectTemplate;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -65,12 +68,22 @@ public class OBMySQLMViewLogExtension implements MViewLogExtensionPoint {
         return getSchemaAccessor(connection).purgeMViewLog(parameter);
     }
 
+    @Override
+    public String generateCreateTemplate(DBMaterializedViewLog mViewLog) {
+        return getTemplate().generateCreateObjectTemplate(mViewLog);
+    }
+
     protected DBSchemaAccessor getSchemaAccessor(Connection connection) {
         return DBAccessorUtil.getSchemaAccessor(connection);
     }
 
     protected DBObjectOperator getOperator(Connection connection) {
         return new MySQLObjectOperator(JdbcOperationsUtil.getJdbcOperations(connection));
+    }
+
+    protected DBObjectTemplate<DBMaterializedViewLog> getTemplate() {
+        return DBBrowser.objectTemplate().mViewLogTemplate()
+                .setType(DialectType.OB_MYSQL.getDBBrowserDialectTypeName()).create();
     }
 
 }
