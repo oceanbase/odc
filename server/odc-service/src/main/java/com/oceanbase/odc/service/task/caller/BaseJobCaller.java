@@ -16,6 +16,8 @@
 
 package com.oceanbase.odc.service.task.caller;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.oceanbase.odc.common.event.AbstractEvent;
 import com.oceanbase.odc.metadb.task.JobEntity;
 import com.oceanbase.odc.service.resource.ResourceID;
@@ -99,13 +101,17 @@ public abstract class BaseJobCaller implements JobCaller {
 
         JobEntity jobEntity = taskFrameworkService.find(ji.getId());
         String executorEndpoint = jobEntity.getExecutorEndpoint();
-        ExecutorIdentifier identifier = ExecutorIdentifierParser.parser(jobEntity.getExecutorIdentifier());
-        ResourceID resourceID = ResourceIDUtil.getResourceID(identifier, jobEntity,
-                jobConfiguration.getTaskFrameworkProperties());
         try {
-            if (executorEndpoint != null
-                    && isExecutorExist(identifier, resourceID)) {
-                taskExecutorClient.stop(executorEndpoint, ji);
+            if (!StringUtils.isEmpty(jobEntity.getExecutorIdentifier())) {
+                ExecutorIdentifier identifier = ExecutorIdentifierParser.parser(jobEntity.getExecutorIdentifier());
+                ResourceID resourceID = ResourceIDUtil.getResourceID(identifier, jobEntity,
+                        jobConfiguration.getTaskFrameworkProperties());
+                if (executorEndpoint != null
+                        && isExecutorExist(identifier, resourceID)) {
+                    taskExecutorClient.stop(executorEndpoint, ji);
+                }
+            } else {
+                log.info("executorIdentifier not existed for jobId={}, ignore stop call", jobEntity.getId());
             }
             afterStopSucceed(ji);
         } catch (Exception e) {
