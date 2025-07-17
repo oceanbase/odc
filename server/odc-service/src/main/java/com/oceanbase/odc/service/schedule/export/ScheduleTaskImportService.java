@@ -40,14 +40,17 @@ import com.oceanbase.odc.service.schedule.export.model.ScheduleTaskImportRequest
 import com.oceanbase.odc.service.state.StatefulUuidStateIdGenerator;
 import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
 public class ScheduleTaskImportService {
 
     @Autowired
     private FutureCache futureCache;
 
     @Autowired
-    private ThreadPoolTaskExecutor scheduleImportExecutor;
+    private ThreadPoolTaskExecutor commonAsyncTaskExecutor;
 
     @Autowired
     private ScheduleTaskImporter scheduleTaskImporter;
@@ -65,10 +68,16 @@ public class ScheduleTaskImportService {
     public String startPreviewImportTask(ScheduleTaskImportRequest request) {
         String previewId = statefulUuidStateIdGenerator.generateCurrentUserIdStateId("scheduleImportReview");
         User user = authenticationFacade.currentUser();
-        Future<List<ImportScheduleTaskView>> future = scheduleImportExecutor.submit(
+        Future<List<ImportScheduleTaskView>> future = commonAsyncTaskExecutor.submit(
                 () -> {
-                    SecurityContextUtils.setCurrentUser(user);
-                    return scheduleTaskImporter.preview(request);
+                    try {
+                        SecurityContextUtils.setCurrentUser(user);
+                        return scheduleTaskImporter.preview(request);
+                    } catch (Exception e) {
+                        log.info("Preview Import task failed", e);
+                        throw e;
+                    }
+
                 });
         futureCache.put(previewId, future);
         return previewId;
@@ -103,7 +112,7 @@ public class ScheduleTaskImportService {
         String previewId = statefulUuidStateIdGenerator.generateCurrentUserIdStateId("scheduleImport");
         User user = authenticationFacade.currentUser();
 
-        Future<List<ImportTaskResult>> future = scheduleImportExecutor.submit(
+        Future<List<ImportTaskResult>> future = commonAsyncTaskExecutor.submit(
                 new ScheduleTaskImportCallable(user, previewId, scheduleTaskImporter, request));
         futureCache.put(previewId, future);
         return previewId;

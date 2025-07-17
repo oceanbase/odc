@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.plugin.schema.api.ColumnExtensionPoint;
@@ -40,6 +41,7 @@ import lombok.NonNull;
  * @date 2024/4/10 20:13
  */
 @Component
+@ConditionalOnProperty(value = {"odc.database.schema.sync.column-sync-enabled"}, havingValue = "true")
 public class DBTableAndViewColumnSyncer extends AbstractDBColumnSyncer<ColumnExtensionPoint> {
 
     @Override

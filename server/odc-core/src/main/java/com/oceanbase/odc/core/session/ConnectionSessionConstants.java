@@ -135,4 +135,10 @@ public class ConnectionSessionConstants {
     public static String NLS_TIMESTAMP_FORMAT_NAME = "NLS_TIMESTAMP_FORMAT";
     public static String NLS_TIMESTAMP_TZ_FORMAT_NAME = "NLS_TIMESTAMP_TZ_FORMAT";
 
+    /**
+     * Flag if it is a client stream read is enabled If this flag is enabled, ResultSet must be closed
+     * before next query
+     */
+    public static final String IS_CLIENT_STREAM_READ_ENABLED = "CLIENT_STREAM_READ_ENABLED";
+
 }

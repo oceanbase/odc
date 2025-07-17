@@ -54,3 +54,30 @@
   default_value: ''
   nullable: true
   description: 'Team organization datasource encryption key.'
+- id: 7
+  key: 'odc.task.databaseChange.executionStrategy'
+  type: 'string'
+  max_value:
+  min_value:
+  allowed_values: ['AUTO', 'MANUAL', 'TIMER']
+  default_value: 'MANUAL'
+  nullable: true
+  description: 'Execution strategy of the database change tasks.'
+- id: 8
+  key: 'odc.task.databaseChange.allowDownloadResultSets'
+  type: 'boolean'
+  max_value:
+  min_value:
+  allowed_values: ['true', 'false']
+  default_value: 'true'
+  nullable: true
+  description: 'Whether or not to allow download result sets when database change tasks end'
+- id: 9
+  key: 'odc.task.databaseChange.allowShowResultSets'
+  type: 'boolean'
+  max_value:
+  min_value:
+  allowed_values: ['true', 'false']
+  default_value: 'true'
+  nullable: true
+  description: 'Whether or not to allow show result sets in the sql console when database change tasks end'

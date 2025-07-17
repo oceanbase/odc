@@ -57,12 +57,14 @@ import com.oceanbase.odc.service.integration.util.EncryptionUtil;
 
 import lombok.Data;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author gaoda.xy
  * @date 2023/4/11 15:03
  */
 @Component
+@Slf4j
 public class HttpOperationService {
 
     @Autowired
@@ -126,6 +128,7 @@ public class HttpOperationService {
             Class<T> type) {
         String content = decryptedResponse.getContent();
         String mineType = decryptedResponse.getContentType().getMimeType();
+        log.debug("The sql check response content type is {}, content={}", mineType, content);
         // ODC treats the response body as a JSON string by default.
         // If the Content-Type is XML, then try to convert it to JSON.
         switch (mineType) {
@@ -139,6 +142,7 @@ public class HttpOperationService {
             default:
                 break;
         }
+        log.debug("The sql check response content is {}, extract expression is {}", content, extractExpression);
         Object responseObject = JsonPathUtils.read(content, "$");
         StandardEvaluationContext context = new StandardEvaluationContext(responseObject);
         // If you don't have MapAccessor configured, you can only use [a][b] to parse.

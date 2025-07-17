@@ -322,67 +322,6 @@ public class ConnectionConfigRepositoryTest extends ServiceTestEnv {
         }
     }
 
-    @Test
-    public void findSyncableConnections_HasSyncable_Succeed() {
-        ConnectionEntity c1 = createEntity(ConnectionVisibleScope.ORGANIZATION);
-        ConnectionEntity saved = repository.save(c1);
-        ConnectionSyncHistoryEntity historyEntity = createSuccessSyncHistoryEntity(saved.getId());
-        syncHistoryRepository.save(historyEntity);
-
-        List<ConnectionEntity> syncableConnections = repository.findSyncableConnections();
-
-        Assert.assertEquals(1, syncableConnections.size());
-    }
-
-    @Test
-    public void findSyncableConnections_NoSyncable_Succeed() {
-        ConnectionEntity c1 = createEntity(ConnectionVisibleScope.ORGANIZATION);
-        ConnectionEntity saved = repository.save(c1);
-        ConnectionSyncHistoryEntity historyEntity = createClusterNotExistsSyncHistoryEntity(saved.getId());
-        syncHistoryRepository.save(historyEntity);
-
-        List<ConnectionEntity> syncableConnections = repository.findSyncableConnections();
-
-        Assert.assertEquals(0, syncableConnections.size());
-    }
-
-    @Test
-    public void findSyncableConnections_NoHistory_Succeed() {
-        ConnectionEntity c1 = createEntity(ConnectionVisibleScope.ORGANIZATION);
-        repository.save(c1);
-        List<ConnectionEntity> syncableConnections = repository.findSyncableConnections();
-        Assert.assertEquals(1, syncableConnections.size());
-    }
-
-    @Test
-    public void findSyncableConnectionsByOrganizationIdsIn_NoHistory_Succeed() {
-        ConnectionEntity c1 = createEntity(ConnectionVisibleScope.ORGANIZATION);
-        repository.save(c1);
-        List<ConnectionEntity> syncableConnections =
-                repository.findSyncableConnectionsByOrganizationIdIn(Arrays.asList(ORGANIZATION_ID));
-        Assert.assertEquals(1, syncableConnections.size());
-    }
-
-    @Test
-    public void findSyncableConnectionsByOrganizationIdsIn_ClusterNotExists_Succeed() {
-        ConnectionEntity c1 = createEntity(ConnectionVisibleScope.ORGANIZATION);
-        ConnectionEntity saved = repository.save(c1);
-        ConnectionSyncHistoryEntity historyEntity = createClusterNotExistsSyncHistoryEntity(saved.getId());
-        syncHistoryRepository.save(historyEntity);
-        List<ConnectionEntity> syncableConnections =
-                repository.findSyncableConnectionsByOrganizationIdIn(Arrays.asList(ORGANIZATION_ID));
-        Assert.assertEquals(0, syncableConnections.size());
-    }
-
-    @Test
-    public void findSyncableConnectionsByOrganizationIdsIn_OrganizationNotExists_Succeed() {
-        ConnectionEntity c1 = createEntity(ConnectionVisibleScope.ORGANIZATION);
-        repository.save(c1);
-        List<ConnectionEntity> syncableConnections =
-                repository.findSyncableConnectionsByOrganizationIdIn(Arrays.asList(999L));
-        Assert.assertEquals(0, syncableConnections.size());
-    }
-
     private ConnectionEntity createEntity(ConnectionVisibleScope visibleScope) {
         ConnectionEntity entity = TestRandom.nextObject(ConnectionEntity.class);
         entity.setId(null);

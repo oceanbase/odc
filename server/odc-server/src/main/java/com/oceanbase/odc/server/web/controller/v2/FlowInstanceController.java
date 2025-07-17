@@ -16,6 +16,7 @@
 package com.oceanbase.odc.server.web.controller.v2;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +50,7 @@ import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.WebResponseUtils;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.flow.FlowTaskInstanceService;
+import com.oceanbase.odc.service.flow.model.BatchTerminateFlowResult;
 import com.oceanbase.odc.service.flow.model.BinaryDataResult;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.model.FlowInstanceApprovalReq;
@@ -61,6 +63,8 @@ import com.oceanbase.odc.service.partitionplan.PartitionPlanScheduleService;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
+import com.oceanbase.odc.service.state.model.StateName;
+import com.oceanbase.odc.service.state.model.StatefulRoute;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
 import io.swagger.annotations.ApiOperation;
@@ -249,6 +253,26 @@ public class FlowInstanceController {
     @GetMapping(value = "/{id:[\\d]+}/tasks/partitionPlans/getDetail")
     public SuccessResponse<PartitionPlanConfig> getPartitionPlan(@PathVariable Long id) {
         return Responses.ok(this.partitionPlanScheduleService.getPartitionPlanByFlowInstanceId(id));
+    }
+
+    @ApiOperation(value = "cancelFlowInstance", notes = "批量终止流程")
+    @RequestMapping(value = "/asyncCancel", method = RequestMethod.POST)
+    public SuccessResponse<String> batchCancelFlowInstance(@RequestBody Collection<Long> flowInstanceIds) {
+        return Responses.single(flowInstanceService.startBatchCancelFlowInstance(flowInstanceIds));
+    }
+
+    @ApiOperation(value = "getBatchCancelResult", notes = "获取批量终止结果")
+    @RequestMapping(value = "/asyncCancelResult", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.UUID_STATEFUL_ID, stateIdExpression = "#terminateId")
+    public SuccessResponse<List<BatchTerminateFlowResult>> getBatchCancelResult(String terminateId) {
+        return Responses.single(flowInstanceService.getBatchCancelResult(terminateId));
+    }
+
+    @ApiOperation(value = "getBatchCancelLog", notes = "获取批量终止日志")
+    @RequestMapping(value = "/asyncCancelLog", method = RequestMethod.GET)
+    @StatefulRoute(stateName = StateName.UUID_STATEFUL_ID, stateIdExpression = "#terminateId")
+    public SuccessResponse<String> getBatchCancelLog(String terminateId) {
+        return Responses.single(flowInstanceService.getBatchCancelLog(terminateId));
     }
 
 }

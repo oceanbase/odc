@@ -13,24 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.git.model;
-
-import org.mapstruct.Mapper;
-import org.mapstruct.factory.Mappers;
-
-import com.oceanbase.odc.metadb.git.GitRepositoryEntity;
+package com.oceanbase.odc.service.onlineschemachange.model;
 
 /**
- * @author: liuyizhuo.lyz
- * @date: 2024/7/29
+ * @author longpeng.zlp
+ * @date 2025/6/17 18:13
  */
-@Mapper
-public interface GitRepositoryMapper {
-
-    GitRepositoryMapper INSTANCE = Mappers.getMapper(GitRepositoryMapper.class);
-
-    GitRepositoryEntity modelToEntity(GitRepository model);
-
-    GitRepository entityToModel(GitRepositoryEntity entity);
-
+public enum ForbiddenWriteType {
+    // lock user, ob general supported
+    LOCK_USER,
+    // lock table, only parts ob version supported, and it needs configure OBP and target server
+    // parameters
+    LOCK_TABLE,
 }

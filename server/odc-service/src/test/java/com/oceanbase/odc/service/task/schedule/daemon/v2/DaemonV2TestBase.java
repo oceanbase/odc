@@ -35,6 +35,7 @@ import com.oceanbase.odc.service.task.config.K8sProperties;
 import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.exception.JobException;
+import com.oceanbase.odc.service.task.jasypt.JasyptEncryptorConfigProperties;
 import com.oceanbase.odc.service.task.resource.SupervisorAgentAllocator;
 import com.oceanbase.odc.service.task.schedule.JobCredentialProvider;
 import com.oceanbase.odc.service.task.schedule.StartJobRateLimiter;
@@ -103,6 +104,13 @@ public abstract class DaemonV2TestBase {
         Mockito.when(configuration.getJobCredentialProvider()).thenReturn(jobCredentialProvider);
         Mockito.when(configuration.getEventPublisher()).thenReturn(eventPublisher);
         Mockito.when(configuration.getHostProperties()).thenReturn(hostProperties);
+        JasyptEncryptorConfigProperties jasyptEncryptorConfigProperties =
+                Mockito.mock(JasyptEncryptorConfigProperties.class);
+        Mockito.when(jasyptEncryptorConfigProperties.getAlgorithm()).thenReturn("Aes");
+        Mockito.when(jasyptEncryptorConfigProperties.getPrefix()).thenReturn("ENC(");
+        Mockito.when(jasyptEncryptorConfigProperties.getSuffix()).thenReturn(")");
+        Mockito.when(jasyptEncryptorConfigProperties.getSalt()).thenReturn("test");
+        Mockito.when(configuration.getJasyptEncryptorConfigProperties()).thenReturn(jasyptEncryptorConfigProperties);
         jobEntity = new JobEntity();
         jobEntity.setId(1024L);
         Map<String, String> jobProperties = new HashMap<>();

@@ -667,4 +667,15 @@ public class ConnectionSessionUtil {
         return session.getSyncJdbcExecutor(ConnectionSessionConstants.CONSOLE_DS_KEY);
     }
 
+    public static boolean isClientStreamReadEnabled(@NonNull ConnectionSession connectionSession) {
+        Boolean isClientStreamReadEnabled =
+                (Boolean) connectionSession.getAttribute(ConnectionSessionConstants.IS_CLIENT_STREAM_READ_ENABLED);
+        return null != isClientStreamReadEnabled && isClientStreamReadEnabled;
+    }
+
+    public static void setClientStreamReadEnabled(@NonNull ConnectionSession connectionSession,
+            Boolean clientStreamReadEnabled) {
+        connectionSession.setAttribute(ConnectionSessionConstants.IS_CLIENT_STREAM_READ_ENABLED,
+                clientStreamReadEnabled);
+    }
 }

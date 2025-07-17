@@ -31,6 +31,7 @@ import com.oceanbase.odc.service.task.resource.K8sResourceContext;
 import com.oceanbase.odc.service.task.resource.PodConfig;
 import com.oceanbase.odc.service.task.schedule.JobIdentity;
 import com.oceanbase.odc.service.task.supervisor.endpoint.ExecutorEndpoint;
+import com.oceanbase.odc.service.task.util.JobPropertiesUtils;
 import com.oceanbase.odc.service.task.util.JobUtils;
 
 import lombok.extern.slf4j.Slf4j;
@@ -64,15 +65,24 @@ public class K8sJobCaller extends BaseJobCaller {
             ResourceWithID<K8sPodResource> resource =
                     resourceManager.create(resourceLocation, buildK8sResourceContext(context, resourceLocation));
             K8sPodResource k8sPodResource = resource.getResource();
+            log.info("create k8s with response={}", k8sPodResource);
             String arn = k8sPodResource.resourceID().getIdentifier();
+            Integer port = JobPropertiesUtils.getExecutorListenPort(context.getJobProperties());
+            if (null != k8sPodResource.getServicePort()) {
+                port = Integer.valueOf(k8sPodResource.getServicePort());
+            }
+            String host = DefaultExecutorIdentifier.DEFAULT_HOST;
+            if (StringUtils.isNotEmpty(resource.getResource().getPodIpAddress())) {
+                host = k8sPodResource.getPodIpAddress();
+            }
             ExecutorIdentifier executorIdentifier =
                     DefaultExecutorIdentifier.builder().namespace(resource.getResource().getNamespace())
-                            .host(resource.getResource().getPodIpAddress())
-                            .port(Integer.valueOf(resource.getResource().getServicePort()))
+                            .host(host)
+                            .port(port)
                             .executorName(arn).build();
-            ExecutorEndpoint executorEndpoint = new ExecutorEndpoint("k8s", resource.getResource().getPodIpAddress(),
+            ExecutorEndpoint executorEndpoint = new ExecutorEndpoint("k8s", host,
                     -1, -1,
-                    Integer.valueOf(resource.getResource().getServicePort()), executorIdentifier.toString());
+                    port, executorIdentifier.toString());
             return new ExecutorInfo(k8sPodResource.resourceID(),
                     executorEndpoint);
         } catch (Throwable e) {

@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.schedule.export.model;
 
 import javax.annotation.Nullable;
 
+import com.oceanbase.odc.common.i18n.Internationalizable;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 
 import lombok.Data;
@@ -39,6 +40,9 @@ public class ImportScheduleTaskView {
      */
     @Nullable
     private ScheduleNonImportableType nonImportableType;
+
+    @Internationalizable
+    private String description;
 
     /**
      * Schedule id of the system before export

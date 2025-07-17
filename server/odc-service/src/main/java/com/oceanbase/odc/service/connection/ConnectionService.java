@@ -429,8 +429,8 @@ public class ConnectionService {
 
     @SkipAuthorize("odc internal usage")
     public List<ConnectionConfig> listSyncableDataSourcesByOrganizationIdIn(@NonNull Collection<Long> organizationIds) {
-        return repository.findSyncableConnectionsByOrganizationIdIn(organizationIds).stream()
-                .map(mapper::entityToModel).collect(Collectors.toList());
+        return repository.findByOrganizationIdIn(organizationIds).stream().map(mapper::entityToModel)
+                .collect(Collectors.toList());
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -571,11 +571,6 @@ public class ConnectionService {
     public List<ConnectionConfig> listByVisibleScope(ConnectionVisibleScope visibleScope) {
         return repository.findByVisibleScope(visibleScope).stream().map(mapper::entityToModel)
                 .collect(Collectors.toList());
-    }
-
-    @SkipAuthorize("internal usage")
-    public List<ConnectionConfig> listSyncableDataSources() {
-        return repository.findSyncableConnections().stream().map(mapper::entityToModel).collect(Collectors.toList());
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -891,8 +886,7 @@ public class ConnectionService {
             if (input == null) {
                 throw new UnexpectedException(DATASOURCE_TEMPLATE_FILE_NAME + " is not found");
             }
-            byte[] buffer = new byte[input.available()];
-            IOUtils.read(input, buffer);
+            byte[] buffer = IOUtils.toByteArray(input);
             return new ByteArrayDataResult(DATASOURCE_TEMPLATE_FILE_NAME, buffer);
         }
     }

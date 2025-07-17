@@ -20,6 +20,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.validation.constraints.NotNull;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -43,7 +45,6 @@ import com.oceanbase.odc.service.git.model.QueryGitRepositoryParams;
 import com.oceanbase.odc.service.git.vcs.VcsFacadeMapper;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
-import jakarta.validation.constraints.NotNull;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 

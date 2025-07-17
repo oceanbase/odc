@@ -34,6 +34,9 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nullable;
+import javax.validation.constraints.NotNull;
+
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.compress.utils.Lists;
 import org.apache.commons.io.FileUtils;
@@ -535,7 +538,7 @@ public class FlowTaskInstanceService {
 
     public List<SqlExecuteResult> getExecuteResult(Long flowInstanceId) throws IOException {
         Optional<TaskEntity> taskEntityOptional = getCompleteTaskEntity(flowInstanceId,
-                flowPermissionHelper.withProjectMemberCheck());
+                flowPermissionHelper.withExecutableCheck());
         if (!taskEntityOptional.isPresent()) {
             return Collections.emptyList();
         }
@@ -782,7 +785,10 @@ public class FlowTaskInstanceService {
             return;
         }
         for (FlowTaskResult result : results) {
-            TaskDownloadUrls urls = databaseChangeOssUrlCache.get(taskId);
+            TaskDownloadUrls urls = getTaskDownloadUrls(taskId);
+            if (urls == null) {
+                return;
+            }
             if (result instanceof AbstractFlowTaskResult) {
                 ((AbstractFlowTaskResult) result)
                         .setFullLogDownloadUrl(urls.getLogDownloadUrl());
@@ -794,6 +800,16 @@ public class FlowTaskInstanceService {
                             .setResultFileDownloadUrl(urls.getRollBackPlanResultFileDownloadUrl());
                 }
             }
+        }
+    }
+
+    @Nullable
+    private TaskDownloadUrls getTaskDownloadUrls(Long taskId) {
+        try {
+            return databaseChangeOssUrlCache.get(taskId);
+        } catch (NotFoundException e) {
+            log.warn("Failed to retrieve task download urls from cloud object storage, taskId={}", taskId, e);
+            return null;
         }
     }
 

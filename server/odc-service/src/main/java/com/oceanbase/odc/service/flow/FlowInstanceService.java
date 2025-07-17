@@ -30,6 +30,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -41,10 +42,13 @@ import javax.annotation.PreDestroy;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.engine.HistoryService;
+import org.flowable.engine.RuntimeService;
 import org.flowable.engine.history.HistoricProcessInstance;
 import org.flowable.engine.history.HistoricProcessInstanceQuery;
+import org.flowable.engine.runtime.ProcessInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
@@ -56,6 +60,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.validation.annotation.Validated;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -64,6 +69,7 @@ import com.oceanbase.odc.common.event.EventPublisher;
 import com.oceanbase.odc.common.i18n.I18n;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.lang.Holder;
+import com.oceanbase.odc.common.task.RouteLogCallable;
 import com.oceanbase.odc.common.util.ObjectUtil;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -100,6 +106,7 @@ import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.plugin.task.api.datatransfer.model.DataTransferConfig;
 import com.oceanbase.odc.service.collaboration.environment.EnvironmentService;
 import com.oceanbase.odc.service.collaboration.project.ProjectService;
+import com.oceanbase.odc.service.common.FutureCache;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.common.util.SqlUtils;
@@ -128,6 +135,7 @@ import com.oceanbase.odc.service.flow.instance.FlowInstance;
 import com.oceanbase.odc.service.flow.instance.FlowInstanceConfigurer;
 import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 import com.oceanbase.odc.service.flow.listener.AutoApproveUserTaskListener;
+import com.oceanbase.odc.service.flow.model.BatchTerminateFlowResult;
 import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
 import com.oceanbase.odc.service.flow.model.ExecutionStrategyConfig;
 import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
@@ -155,6 +163,7 @@ import com.oceanbase.odc.service.iam.UserService;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.model.UserResourceRole;
+import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 import com.oceanbase.odc.service.integration.IntegrationService;
 import com.oceanbase.odc.service.integration.client.ApprovalClient;
 import com.oceanbase.odc.service.integration.model.ApprovalProperties;
@@ -183,9 +192,12 @@ import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriberIdentifier;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
+import com.oceanbase.odc.service.state.StatefulUuidStateIdGenerator;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.base.precheck.PreCheckRiskLevel;
+import com.oceanbase.odc.service.task.executor.logger.LogUtils;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
+import com.oceanbase.odc.service.task.service.SpringTransactionManager;
 import com.oceanbase.tools.loaddump.common.enums.ObjectType;
 
 import io.micrometer.core.instrument.Tag;
@@ -222,6 +234,8 @@ public class FlowInstanceService {
     private ConnectionService connectionService;
     @Autowired
     private TaskService taskService;
+    @Autowired
+    private RuntimeService runtimeService;
     @Autowired
     private FlowFactory flowFactory;
     @Autowired
@@ -277,6 +291,12 @@ public class FlowInstanceService {
     @Autowired
     private EnvironmentService environmentService;
     @Autowired
+    private StatefulUuidStateIdGenerator statefulUuidStateIdGenerator;
+    @Autowired
+    private ThreadPoolTaskExecutor commonAsyncTaskExecutor;
+    @Autowired
+    private FutureCache futureCache;
+    @Autowired
     private FlowPermissionHelper flowPermissionHelper;
     @Autowired
     private MeterManager meterManager;
@@ -288,7 +308,10 @@ public class FlowInstanceService {
     private ProjectService projectService;
     @Autowired
     private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
-
+    @Autowired
+    private TransactionTemplate transactionTemplate;
+    @Value("${odc.log.directory:./log}")
+    private String logPath;
     private static final long MAX_EXPORT_OBJECT_COUNT = 10000;
     private static final String ODC_SITE_URL = "odc.site.url";
     private static final int MAX_APPLY_DATABASE_SIZE = 10;
@@ -664,22 +687,27 @@ public class FlowInstanceService {
 
         if (CollectionUtils.isNotEmpty(params.getProjectIds())) {
             specification = specification.and(FlowInstanceViewSpecs.projectIdIn(params.getProjectIds()));
-        } else {
+        } else if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.TEAM) {
             Set<Long> joinedProjectIds = userService.getCurrentUserJoinedProjectIds();
             // If the user does not join any projects in team space, and it filters out the
             // APPLY_PROJECT_PERMISSION, then return empty directly
-            if (CollectionUtils.isEmpty(joinedProjectIds)
-                    && authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM
-                    && !taskTypes.contains(TaskType.APPLY_PROJECT_PERMISSION)) {
+            if (CollectionUtils.isEmpty(joinedProjectIds) && !taskTypes.contains(TaskType.APPLY_PROJECT_PERMISSION)) {
                 return Page.empty();
             }
             // Add the condition of joined project ids or if it contains APPLY_PROJECT_PERMISSION, we only need
             // to require creatorId equals currentUserId because user should be allowed to view the
             // APPLY_PROJECT_PERMISSION tickets even if they have not joined that project
-            specification =
-                    specification.and(FlowInstanceViewSpecs.projectIdIn(userService.getCurrentUserJoinedProjectIds())
-                            .or(FlowInstanceViewSpecs.creatorIdEquals(authenticationFacade.currentUserId())
-                                    .and(FlowInstanceViewSpecs.taskTypeEquals(TaskType.APPLY_PROJECT_PERMISSION))));
+            if (CollectionUtils.isEmpty(joinedProjectIds)) {
+                // If user has not joined any projects, only show APPLY_PROJECT_PERMISSION tickets created by
+                // current user
+                specification =
+                        specification.and(FlowInstanceViewSpecs.creatorIdEquals(authenticationFacade.currentUserId())
+                                .and(FlowInstanceViewSpecs.taskTypeEquals(TaskType.APPLY_PROJECT_PERMISSION)));
+            } else {
+                specification = specification.and(FlowInstanceViewSpecs.projectIdIn(joinedProjectIds)
+                        .or(FlowInstanceViewSpecs.creatorIdEquals(authenticationFacade.currentUserId())
+                                .and(FlowInstanceViewSpecs.taskTypeEquals(TaskType.APPLY_PROJECT_PERMISSION))));
+            }
         }
         if (params.getContainsAll()) {
             return flowInstanceViewRepository.findAll(specification, pageable).map(FlowInstanceEntity::from);
@@ -725,6 +753,53 @@ public class FlowInstanceService {
         return cancel(flowInstance, true);
     }
 
+    public String startBatchCancelFlowInstance(Collection<Long> flowInstanceIds) {
+        String terminateId = statefulUuidStateIdGenerator.generateCurrentUserIdStateId("BatchFlowTerminate");
+        User user = authenticationFacade.currentUser();
+        Future<List<BatchTerminateFlowResult>> future = commonAsyncTaskExecutor.submit(
+                new RouteLogCallable<List<BatchTerminateFlowResult>>("BatchFlowTerminate", terminateId, "terminate") {
+                    @Override
+                    public List<BatchTerminateFlowResult> doCall() {
+                        SecurityContextUtils.setCurrentUser(user);
+                        List<BatchTerminateFlowResult> results = new ArrayList<>();
+                        for (Long id : flowInstanceIds) {
+                            try {
+                                new SpringTransactionManager(transactionTemplate)
+                                        .doInTransactionWithoutResult(() -> cancelWithWritePermission(id, false));
+                                results.add(BatchTerminateFlowResult.success(id));
+                                log.info("Terminate flow success, flowInstanceId={}", id);
+                            } catch (Exception e) {
+                                log.info("Terminate flow failed, flowInstanceId={}", id, e);
+                                results.add(BatchTerminateFlowResult.failed(id, e.getMessage()));
+                            }
+                        }
+                        return results;
+                    }
+                });
+        futureCache.put(terminateId, future);
+        return terminateId;
+    }
+
+    public List<BatchTerminateFlowResult> getBatchCancelResult(String terminateId) {
+        statefulUuidStateIdGenerator.checkCurrentUserId(terminateId);
+        Future<List<BatchTerminateFlowResult>> future =
+                (Future<List<BatchTerminateFlowResult>>) futureCache.get(terminateId);
+        if (!future.isDone()) {
+            return Collections.emptyList();
+        }
+        try {
+            futureCache.invalid(terminateId);
+            return future.get();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public String getBatchCancelLog(String terminateId) {
+        statefulUuidStateIdGenerator.checkCurrentUserId(terminateId);
+        return LogUtils.getRouteTaskLog(logPath, "BatchFlowTerminate", terminateId, "terminate");
+    }
+
     public Map<Long, FlowStatus> getStatus(Set<Long> ids) {
         Specification<FlowInstanceEntity> specification = Specification.where(FlowInstanceSpecs.idIn(ids))
                 .and(FlowInstanceSpecs.organizationIdEquals(authenticationFacade.currentOrganizationId()));
@@ -744,7 +819,8 @@ public class FlowInstanceService {
             if (instance instanceof FlowTaskInstance) {
                 taskTypeHolder.setValue(((FlowTaskInstance) instance).getTaskType());
             }
-            return instance.getStatus() == FlowNodeStatus.EXECUTING
+            return instance.getStatus() == FlowNodeStatus.CREATED
+                    || instance.getStatus() == FlowNodeStatus.EXECUTING
                     || instance.getStatus() == FlowNodeStatus.PENDING;
         });
         Verify.notNull(taskTypeHolder.getValue(), "TaskType");
@@ -754,14 +830,13 @@ public class FlowInstanceService {
                     return (FlowApprovalInstance) instance;
                 }).collect(Collectors.toList());
         if (CollectionUtils.isNotEmpty(approvalInstances)) {
-            Verify.singleton(approvalInstances, "FlowApprovalInstance");
-            FlowApprovalInstance instance = approvalInstances.get(0);
-            Verify.verify(instance.isPresentOnThisMachine(), "Approval instance is not on this machine");
+            for (FlowApprovalInstance instance : approvalInstances) {
+                tryCancelFlowApprovalInstance(flowInstance.getId(), instance, skipAuth);
+            }
             // Cancel external process instance when related ODC flow instance is cancelled
             cancelAllRelatedExternalInstance(flowInstance);
-            instance.disApprove(null, !skipAuth);
-            flowInstanceRepository.updateStatusById(instance.getFlowInstanceId(), FlowStatus.CANCELLED);
-            userTaskInstanceRepository.updateStatusById(instance.getId(), FlowNodeStatus.CANCELLED);
+            deleteFlowProcessInstance(flowInstance.getProcessInstanceId(), flowInstance.getId());
+            flowInstanceRepository.updateStatusById(flowInstance.getId(), FlowStatus.CANCELLED);
             return FlowInstanceDetailResp.withIdAndType(id, taskTypeHolder.getValue());
         }
 
@@ -773,6 +848,19 @@ public class FlowInstanceService {
         if (CollectionUtils.isNotEmpty(taskInstances)) {
             Verify.singleton(taskInstances, "FlowTaskInstance");
             FlowTaskInstance taskInstance = taskInstances.get(0);
+            // waiting to execute, cancel flow directly
+            if (taskInstance.getStatus() == FlowNodeStatus.CREATED || null == taskInstance.getTargetTaskId()) {
+                if (null == taskInstance.getTargetTaskId()) {
+                    log.info("flowInstance = {} canceled, task has not dispatched", taskInstance.getId());
+                } else {
+                    log.info("flowInstance = {} canceled and not dispatched", taskInstance.getId());
+                }
+                deleteFlowProcessInstance(flowInstance.getProcessInstanceId(), flowInstance.getId());
+                serviceTaskRepository.updateStatusById(taskInstance.getId(), FlowNodeStatus.CANCELLED);
+                flowInstanceRepository.updateStatusById(taskInstance.getFlowInstanceId(), FlowStatus.CANCELLED);
+                return FlowInstanceDetailResp.withIdAndType(id, taskInstance.getTaskType());
+            }
+
             if (taskInstance.getStatus() == FlowNodeStatus.PENDING) {
                 taskInstance.abort();
                 serviceTaskRepository.updateStatusById(taskInstance.getId(), FlowNodeStatus.CANCELLED);
@@ -780,11 +868,6 @@ public class FlowInstanceService {
                 return FlowInstanceDetailResp.withIdAndType(id, taskInstance.getTaskType());
             }
             Long taskId = taskInstance.getTargetTaskId();
-            if (taskId == null) {
-                throw new UnsupportedException(ErrorCodes.FlowTaskNotSupportCancel,
-                        new Object[] {taskTypeHolder.getValue().getLocalizedMessage()},
-                        "The currently executing task does not support cancellation.");
-            }
             TaskEntity taskEntity = taskService.detail(taskId);
             if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
                 /**
@@ -826,6 +909,19 @@ public class FlowInstanceService {
                     "The current task has been completed and cannot be terminated");
         }
         return FlowInstanceDetailResp.withIdAndType(id, taskTypeHolder.getValue());
+    }
+
+    private void tryCancelFlowApprovalInstance(Long flowInstanceID, FlowApprovalInstance instance, boolean skipAuth) {
+        try {
+            if (instance.isPresentOnThisMachine()) {
+                instance.disApprove(null, !skipAuth);
+                userTaskInstanceRepository.updateStatusById(instance.getId(), FlowNodeStatus.CANCELLED);
+            } else {
+                log.info("Approval instance {} it not on this machine", instance.getId());
+            }
+        } catch (Throwable e) {
+            log.warn("cancel flow instance failed, flowInstanceId={}, nodeID={}", flowInstanceID, instance.getId());
+        }
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -925,6 +1021,23 @@ public class FlowInstanceService {
         Verify.singleton(taskIds, "Multi task for one instance is not allowed, id " + id);
         Long taskId = taskIds.iterator().next();
         return taskService.detail(taskId);
+    }
+
+    public Map<Long, TaskEntity> getTaskByFlowInstanceIds(Collection<Long> flowInstanceIds) {
+        List<ServiceTaskInstanceEntity> serviceTaskInstanceEntities = serviceTaskRepository
+                .findByFlowInstanceIdIn(flowInstanceIds)
+                .stream()
+                .filter(e -> e.getTaskType() != TaskType.GENERATE_ROLLBACK && e.getTaskType() != TaskType.SQL_CHECK
+                        && e.getTaskType() != TaskType.PRE_CHECK)
+                .collect(Collectors.toList());
+        Map<Long, Long> flowId2taskIds = serviceTaskInstanceEntities.stream().collect(
+                Collectors.toMap(ServiceTaskInstanceEntity::getFlowInstanceId,
+                        ServiceTaskInstanceEntity::getTargetTaskId, (exist, duplicate) -> exist));
+        List<TaskEntity> taskEntities = taskService.findByIds(flowId2taskIds.values());
+        Map<Long, TaskEntity> idTaskEntityMap =
+                taskEntities.stream().collect(Collectors.toMap(TaskEntity::getId, t -> t));
+        return flowId2taskIds.entrySet().stream()
+                .collect(Collectors.toMap(Entry::getKey, v -> idTaskEntityMap.get(v.getValue())));
     }
 
     private void checkCreateFlowInstancePermission(CreateFlowInstanceReq req) {
@@ -1332,7 +1445,8 @@ public class FlowInstanceService {
             FlowTaskUtil.setSchemaName(variables, taskEntity.getDatabaseName());
         }
         if (taskEntity.getDatabaseId() != null) {
-            FlowTaskUtil.setSchemaName(variables, databaseService.detail(taskEntity.getDatabaseId()).getName());
+            FlowTaskUtil.setSchemaName(variables,
+                    databaseService.innerDetailForTask(taskEntity.getDatabaseId()).getName());
         }
         FlowTaskUtil.setTaskCreator(variables, authenticationFacade.currentUser());
         FlowTaskUtil.setOrganizationId(variables, authenticationFacade.currentOrganizationId());
@@ -1384,7 +1498,7 @@ public class FlowInstanceService {
         variables.setAttribute(Variable.PROJECT_OWNER_NAMES, JsonUtils.toJson(projectOwnerNames));
         // set database related variables
         if (Objects.nonNull(flowInstanceReq.getDatabaseId())) {
-            Database database = databaseService.detail(flowInstanceReq.getDatabaseId());
+            Database database = databaseService.innerDetailForTask(flowInstanceReq.getDatabaseId());
             variables.setAttribute(Variable.DATABASE_NAME, database.getName());
             if (Objects.nonNull(database.getEnvironment())) {
                 String environmentNameKey = database.getEnvironment().getName();
@@ -1451,6 +1565,9 @@ public class FlowInstanceService {
         HistoricProcessInstanceQuery historyQuery = historyService.createHistoricProcessInstanceQuery()
                 .processInstanceIds(Collections.singleton(flowInstance.getProcessInstanceId()))
                 .includeProcessVariables();
+        if (CollectionUtils.isEmpty(historyQuery.list())) {
+            return;
+        }
         HistoricProcessInstance processInstance = historyQuery.list().get(0);
         TemplateVariables variables = FlowTaskUtil.getTemplateVariables(processInstance.getProcessVariables());
         externalApprovalInstance.forEach(inst -> {
@@ -1524,7 +1641,7 @@ public class FlowInstanceService {
 
     /**
      * This is a temporary method that only uses ODC 4.3.4
-     * 
+     *
      * @param params
      * @return
      */
@@ -1582,7 +1699,7 @@ public class FlowInstanceService {
 
     /**
      * This is a temporary method that only uses ODC 4.3.4
-     * 
+     *
      * @param params
      * @return
      */
@@ -1611,9 +1728,26 @@ public class FlowInstanceService {
         return partitionPlanFlowInstanceStates;
     }
 
+    private void deleteFlowProcessInstance(String processInstanceID, Long flowInstanceId) {
+        if (null == processInstanceID) {
+            log.info("processInstanceID is null for instance id {}, return", flowInstanceId);
+            return;
+        }
+        try {
+            ProcessInstance processInstance =
+                    runtimeService.createProcessInstanceQuery().processInstanceId(processInstanceID).singleResult();
+            if (null != processInstance) {
+                runtimeService.deleteProcessInstance(processInstanceID, "flow is deleted");
+            }
+        } catch (Exception e) {
+            log.warn("Failed to delete external approval instance, flowInstanceId={}, processInstanceID={}",
+                    flowInstanceId, processInstanceID, e);
+        }
+    }
+
     /**
      * This is a temporary method that only uses ODC 4.3.4
-     * 
+     *
      * @param params
      * @return
      */
@@ -1646,7 +1780,7 @@ public class FlowInstanceService {
 
     /**
      * This is a temporary method that only uses ODC 4.3.4
-     * 
+     *
      * @param params
      * @return
      */

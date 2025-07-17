@@ -49,13 +49,14 @@ import lombok.extern.slf4j.Slf4j;
 public class DLMJobStore implements IJobStore {
 
     private DruidDataSource dataSource;
-    private boolean enableBreakpointRecovery = false;
+    private boolean enableBreakpointRecovery = true;
     @Setter
     private DlmTableUnit dlmTableUnit;
 
     public DLMJobStore(ConnectionConfig metaDBConfig) {
         // only supports odc meta db to record save points
-        if ("odc_job".equals(metaDBConfig.getDefaultSchema())) {
+        log.info("Job metadb is {}", metaDBConfig.getDefaultSchema());
+        if ("odc_job".equalsIgnoreCase(metaDBConfig.getDefaultSchema().trim())) {
             log.info("Only ODC Meta DB is supported for recording and closing save points now.");
             enableBreakpointRecovery = false;
             return;
@@ -63,6 +64,7 @@ public class DLMJobStore implements IJobStore {
         try {
             DruidDataSourceFactory druidDataSourceFactory = new DruidDataSourceFactory(metaDBConfig);
             dataSource = (DruidDataSource) druidDataSourceFactory.getDataSource();
+            dataSource.init();
             log.info("Connect to the meta database success.");
         } catch (Exception e) {
             log.warn("Failed to connect to the meta database and closing save point.");
@@ -154,6 +156,7 @@ public class DLMJobStore implements IJobStore {
                 ps.setString(9, taskGenerator.getPartitionSavePoint());
                 ps.setString(10, JsonUtils.toJson(taskGenerator.getPartName2MinKey()));
                 ps.setString(11, JsonUtils.toJson(taskGenerator.getPartName2MaxKey()));
+                ps.execute();
             }
         }
     }
@@ -226,6 +229,7 @@ public class DLMJobStore implements IJobStore {
                 ps.setString(7,
                         taskMeta.getCursorPrimaryKey() == null ? "" : taskMeta.getCursorPrimaryKey().toSqlString());
                 ps.setString(8, taskMeta.getPartitionName());
+                ps.execute();
             }
         }
     }

@@ -322,6 +322,10 @@ public enum ErrorCodes implements ErrorCode {
      */
     WorkspaceDatabaseUserTypeMustBeAdmin,
     /**
+     * non-fast-forward update occurred while pushing code to the remote repository
+     */
+    GitPushRejectedNonFastForward,
+    /**
      * oss
      */
     BucketNotExist,

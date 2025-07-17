@@ -38,6 +38,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -59,6 +60,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.validation.annotation.Validated;
 
+import com.oceanbase.odc.common.concurrent.ExecutorUtils;
 import com.oceanbase.odc.common.event.LocalEventPublisher;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
@@ -112,8 +114,6 @@ import com.oceanbase.odc.service.connection.database.model.ModifyDatabaseOwnerRe
 import com.oceanbase.odc.service.connection.database.model.QueryDatabaseParams;
 import com.oceanbase.odc.service.connection.database.model.TransferDatabasesReq;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
-import com.oceanbase.odc.service.connection.model.ConnectionSyncErrorReason;
-import com.oceanbase.odc.service.connection.model.ConnectionSyncResult;
 import com.oceanbase.odc.service.connection.model.InnerQueryConnectionParams;
 import com.oceanbase.odc.service.db.DBSchemaService;
 import com.oceanbase.odc.service.db.schema.DBSchemaSyncTaskManager;
@@ -268,6 +268,12 @@ public class DatabaseService {
     public Database detailSkipPermissionCheck(@NonNull Long id) {
         return entityToModel(databaseRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)), true);
+    }
+
+    @SkipAuthorize("internal usage")
+    public Database innerDetailSkipPermissionCheck(@NonNull Long id) {
+        return entityToModel(databaseRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "id", id)), false);
     }
 
     /**
@@ -610,11 +616,9 @@ public class DatabaseService {
             } else {
                 syncTeamDataSources(connection);
             }
-            connectionSyncHistoryService.upsert(connection.getId(), ConnectionSyncResult.SUCCESS,
-                    connection.getOrganizationId(), null, null);
             return true;
         } catch (Exception ex) {
-            handleSyncException(ex, dataSourceId, organizationOpt);
+            log.info("sync databases failed, dataSourceId={}, errorMessage={}", dataSourceId, ex.getMessage());
             return false;
         } finally {
             lock.unlock();
@@ -633,32 +637,33 @@ public class DatabaseService {
         List<String> excludeSchemas = dbSchemaSyncProperties.getExcludeSchemas(connection.getDialectType());
         DataSource teamDataSource = getDataSourceFactory(connection).getDataSource();
         ExecutorService executorService = Executors.newFixedThreadPool(1);
-        Future<List<DatabaseEntity>> future = executorService.submit(() -> {
-            try (Connection conn = teamDataSource.getConnection()) {
-                return dbSchemaService.listDatabases(connection.getDialectType(), conn).stream().map(database -> {
-                    DatabaseEntity entity = new DatabaseEntity();
-                    entity.setDatabaseId(com.oceanbase.odc.common.util.StringUtils.uuid());
-                    entity.setConnectType(connection.getType());
-                    entity.setExisted(Boolean.TRUE);
-                    entity.setName(database.getName());
-                    entity.setCharsetName(database.getCharset());
-                    entity.setCollationName(database.getCollation());
-                    entity.setTableCount(0L);
-                    entity.setOrganizationId(connection.getOrganizationId());
-                    entity.setEnvironmentId(connection.getEnvironmentId());
-                    entity.setConnectionId(connection.getId());
-                    entity.setSyncStatus(DatabaseSyncStatus.SUCCEEDED);
-                    entity.setProjectId(currentProjectId);
-                    entity.setObjectSyncStatus(DBObjectSyncStatus.INITIALIZED);
-                    if (blockExcludeSchemas && excludeSchemas.contains(database.getName())) {
-                        entity.setProjectId(null);
-                    }
-                    entity.setLastSyncTime(new Date(System.currentTimeMillis()));
-                    return entity;
-                }).collect(Collectors.toList());
-            }
-        });
+
         try {
+            Future<List<DatabaseEntity>> future = executorService.submit(() -> {
+                try (Connection conn = teamDataSource.getConnection()) {
+                    return dbSchemaService.listDatabases(connection.getDialectType(), conn).stream().map(database -> {
+                        DatabaseEntity entity = new DatabaseEntity();
+                        entity.setDatabaseId(com.oceanbase.odc.common.util.StringUtils.uuid());
+                        entity.setConnectType(connection.getType());
+                        entity.setExisted(Boolean.TRUE);
+                        entity.setName(database.getName());
+                        entity.setCharsetName(database.getCharset());
+                        entity.setCollationName(database.getCollation());
+                        entity.setTableCount(0L);
+                        entity.setOrganizationId(connection.getOrganizationId());
+                        entity.setEnvironmentId(connection.getEnvironmentId());
+                        entity.setConnectionId(connection.getId());
+                        entity.setSyncStatus(DatabaseSyncStatus.SUCCEEDED);
+                        entity.setProjectId(currentProjectId);
+                        entity.setObjectSyncStatus(DBObjectSyncStatus.INITIALIZED);
+                        if (blockExcludeSchemas && excludeSchemas.contains(database.getName())) {
+                            entity.setProjectId(null);
+                        }
+                        entity.setLastSyncTime(new Date(System.currentTimeMillis()));
+                        return entity;
+                    }).collect(Collectors.toList());
+                }
+            });
             List<DatabaseEntity> latestDatabases = future.get(10, TimeUnit.SECONDS);
             Map<String, List<DatabaseEntity>> latestDatabaseName2Database =
                     latestDatabases.stream().filter(Objects::nonNull)
@@ -723,14 +728,8 @@ public class DatabaseService {
                         "update connect_database set table_count=?, collation_name=?, charset_name=?, project_id=?, last_sync_time=? where id = ?";
                 jdbcTemplate.batchUpdate(update, toUpdate);
             }
-            connectionSyncHistoryService.upsert(connection.getId(), ConnectionSyncResult.SUCCESS,
-                    connection.getOrganizationId(), null, null);
         } finally {
-            try {
-                executorService.shutdownNow();
-            } catch (Exception e) {
-                // eat the exception
-            }
+            ExecutorUtils.gracefulShutdown(executorService, Thread.currentThread().getName(), 10);
             if (teamDataSource instanceof AutoCloseable) {
                 try {
                     ((AutoCloseable) teamDataSource).close();
@@ -768,12 +767,17 @@ public class DatabaseService {
             throws ExecutionException, InterruptedException, TimeoutException {
         DataSource individualDataSource = getDataSourceFactory(connection).getDataSource();
         ExecutorService executorService = Executors.newFixedThreadPool(1);
-        Future<Set<String>> future = executorService.submit(() -> {
-            try (Connection conn = individualDataSource.getConnection()) {
-                return dbSchemaService.showDatabases(connection.getDialectType(), conn);
-            }
-        });
         try {
+            Future<Set<String>> future = executorService.submit(() -> {
+                log.debug("Start to sync individual data source, connectionId={}, type={}", connection.getId(),
+                        connection.getType());
+                try (Connection conn = individualDataSource.getConnection()) {
+                    return dbSchemaService.showDatabases(connection.getDialectType(), conn);
+                } catch (Exception ex) {
+                    log.debug("Failed to get connection data source, ex=", ex);
+                    throw ex;
+                }
+            });
             Set<String> latestDatabaseNames = future.get(10, TimeUnit.SECONDS);
             List<DatabaseEntity> existedDatabasesInDb = databaseRepository.findByConnectionId(connection.getId())
                     .stream().filter(DatabaseEntity::getExisted).collect(Collectors.toList());
@@ -811,14 +815,8 @@ public class DatabaseService {
             if (!CollectionUtils.isEmpty(toDelete)) {
                 jdbcTemplate.batchUpdate("delete from connect_database where id = ?", toDelete);
             }
-            connectionSyncHistoryService.upsert(connection.getId(), ConnectionSyncResult.SUCCESS,
-                    connection.getOrganizationId(), null, null);
         } finally {
-            try {
-                executorService.shutdownNow();
-            } catch (Exception e) {
-                // eat the exception
-            }
+            ExecutorUtils.gracefulShutdown(executorService, Thread.currentThread().getName(), 10);
             if (individualDataSource instanceof AutoCloseable) {
                 try {
                     ((AutoCloseable) individualDataSource).close();
@@ -1186,7 +1184,7 @@ public class DatabaseService {
     private Database innerDetailForTask(DatabaseEntity entity) {
         Database model = databaseMapper.entityToModel(entity);
         if (Objects.nonNull(entity.getProjectId())) {
-            model.setProject(projectService.detail(entity.getProjectId()));
+            model.setProject(projectService.innerDetailForTask(entity.getProjectId()));
         }
         // for logical database, the connection id may be null
         if (entity.getConnectionId() != null) {
@@ -1259,44 +1257,17 @@ public class DatabaseService {
         return userResourceRoles;
     }
 
-    private void handleSyncException(@NonNull Exception ex, @NonNull Long dataSourceId,
-            @NonNull Optional<Organization> organizationOpt) {
-        String errorMessage = ex.getMessage();
-        log.warn("Sync database failed, dataSourceId={}, errorMessage={}", dataSourceId, errorMessage);
-        if (!organizationOpt.isPresent()) {
-            return;
-        }
-        Organization organization = organizationOpt.get();
-        ConnectionSyncErrorReason failedReason = ConnectionSyncErrorReason.UNKNOWN;
-        if (StringUtils.containsIgnoreCase(errorMessage, "cluster not exist")) {
-            failedReason = ConnectionSyncErrorReason.CLUSTER_NOT_EXISTS;
-            deleteDatabaseIfInstanceNotExists(dataSourceId, organization.getType());
-        } else if (StringUtils.containsIgnoreCase(errorMessage, "No tenants found") || StringUtils
-                .containsIgnoreCase(errorMessage, "tenant expected 1 but was")) {
-            failedReason = ConnectionSyncErrorReason.TENANT_NOT_EXISTS;
-            deleteDatabaseIfInstanceNotExists(dataSourceId, organization.getType());
-        }
-        connectionSyncHistoryService.upsert(dataSourceId, ConnectionSyncResult.FAILURE, organization.getId(),
-                failedReason, errorMessage);
-    }
-
-    private void deleteDatabaseIfInstanceNotExists(Long connectionId, OrganizationType organizationType) {
-        log.info(
-                "Cluster or tenant not exist, set existed to false for all databases in this data source, data source id = {}",
-                connectionId);
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-        String deleteSql;
-        if (organizationType == OrganizationType.INDIVIDUAL) {
-            deleteSql = "delete from connect_database where connection_id=?";
-        } else {
-            deleteSql = "update connect_database set is_existed = 0 where connection_id=?";
-        }
-        try {
-            jdbcTemplate.update(deleteSql, connectionId);
-        } catch (Exception ex) {
-            log.warn("Failed to delete databases when cluster not exist, errorMessage={}",
-                    ex.getLocalizedMessage());
-        }
-
+    public <T> void assignDatabaseById(List<T> content, Function<T, Long> databaseIdProvider,
+            BiConsumer<T, Database> databaseSetter) {
+        List<Long> databaseIds = content.stream().map(databaseIdProvider).collect(
+                Collectors.toList());
+        List<DatabaseEntity> entities = databaseRepository.findByIdIn(databaseIds);
+        List<Database> databases = entitiesToModels(new PageImpl<>(entities), false).getContent();
+        Map<Long, Database> idDatabaseEntityMap = databases.stream().collect(
+                Collectors.toMap(Database::getId, t -> t));
+        content.forEach(c -> {
+            Database database = idDatabaseEntityMap.get(databaseIdProvider.apply(c));
+            databaseSetter.accept(c, database);
+        });
     }
 }

@@ -70,7 +70,8 @@ public class OBMySqlUpdateRollbackGeneratorTest {
         properties.setEachSqlMaxChangeLines(100000);
         properties.setQueryDataBatchSize(2);
         String sql = "SELECT * FROM rollback_tab3;";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
     }
 
     @Test
@@ -80,7 +81,7 @@ public class OBMySqlUpdateRollbackGeneratorTest {
         properties.setEachSqlMaxChangeLines(100000);
         properties.setQueryDataBatchSize(2);
         String sql = "SELECT * FROM rollback_tab3;";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, 1L);
+        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, 1L, () -> false);
     }
 
     @Test
@@ -89,7 +90,8 @@ public class OBMySqlUpdateRollbackGeneratorTest {
         properties.setEachSqlMaxChangeLines(100000);
         properties.setQueryDataBatchSize(2);
         String sql = "UPDATE rollback_noPriOrUqKey SET c2=2 WHERE c1=1;";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
         RollbackPlan actual = rollbackPlan.generate();
         RollbackPlan expect = new RollbackPlan(sql, DialectType.OB_MYSQL, null, null,
                 "It is not supported to generate rollback plan for tables without primary key or unique key",
@@ -103,7 +105,8 @@ public class OBMySqlUpdateRollbackGeneratorTest {
         properties.setEachSqlMaxChangeLines(100000);
         properties.setQueryDataBatchSize(3);
         String sql = "UPDATE rollback_pri SET name = \"test\" WHERE id1 > 1;";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
 
         RollbackPlan actual = rollbackPlan.generate();
         List<String> rollbackSql = new ArrayList<>();
@@ -127,7 +130,8 @@ public class OBMySqlUpdateRollbackGeneratorTest {
         properties.setEachSqlMaxChangeLines(100000);
         properties.setQueryDataBatchSize(2);
         String sql = "UPDATE rollback_tab2 SET c2 = 100 WHERE c1 > 100;";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
 
         RollbackPlan actual = rollbackPlan.generate();
         RollbackPlan expect = new RollbackPlan(sql, DialectType.OB_MYSQL,
@@ -142,7 +146,8 @@ public class OBMySqlUpdateRollbackGeneratorTest {
         properties.setEachSqlMaxChangeLines(100000);
         properties.setQueryDataBatchSize(2);
         String sql = "UPDATE rollback_tab1, rollback_tab2 SET c2 = 100 WHERE rollback_tab1.c1 > 100;";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
 
         RollbackPlan actual = rollbackPlan.generate();
         RollbackPlan expect = new RollbackPlan(sql, DialectType.OB_MYSQL, null, null,
@@ -157,7 +162,8 @@ public class OBMySqlUpdateRollbackGeneratorTest {
         properties.setEachSqlMaxChangeLines(100000);
         properties.setQueryDataBatchSize(2);
         String sql = "UPDATE rollback_tab2 PARTITION(p2) SET rollback_tab2.c2 = 100 WHERE rollback_tab2.c1 > 2;";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
 
         RollbackPlan actual = rollbackPlan.generate();
         RollbackPlan expect = new RollbackPlan(sql, DialectType.OB_MYSQL,
@@ -172,7 +178,8 @@ public class OBMySqlUpdateRollbackGeneratorTest {
         properties.setEachSqlMaxChangeLines(100000);
         properties.setQueryDataBatchSize(2);
         String sql = "UPDATE rollback_tab2 PARTITION(p2) SET c2 = 100 WHERE c1 > 2;";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
         RollbackPlan actual = rollbackPlan.generate();
         RollbackPlan expect = new RollbackPlan(sql, DialectType.OB_MYSQL,
                 Arrays.asList("SELECT rollback_tab2.* FROM rollback_tab2 PARTITION(p2) WHERE c1 > 2;"),
@@ -187,7 +194,8 @@ public class OBMySqlUpdateRollbackGeneratorTest {
         properties.setQueryDataBatchSize(2);
         String sql =
                 "UPDATE rollback_tab1,rollback_tab2 PARTITION(p2) SET rollback_tab1.c2 = 100, rollback_tab2.c2 = 200 WHERE rollback_tab1.c2 = rollback_tab2.c2;";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
 
         RollbackPlan actual = rollbackPlan.generate();
         List<String> rollbackSql = new ArrayList<>();
@@ -211,7 +219,8 @@ public class OBMySqlUpdateRollbackGeneratorTest {
         properties.setQueryDataBatchSize(2);
         String sql =
                 "UPDATE rollback_tab1,rollback_tab2 SET rollback_tab1.c2 = 100, rollback_tab2.c2 = 200, rollback_tab1.c1 = 200 WHERE rollback_tab1.c2 = rollback_tab2.c2;";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
 
         RollbackPlan actual = rollbackPlan.generate();
         List<String> rollbackSql = new ArrayList<>();
@@ -235,7 +244,8 @@ public class OBMySqlUpdateRollbackGeneratorTest {
         properties.setQueryDataBatchSize(2);
         String sql =
                 "UPDATE rollback_tab1 as a, rollback_tab2 as b SET a.c2 = 100, b.c2 = 200, a.c1 = 200 WHERE a.c2 = b.c2;";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
 
         RollbackPlan actual = rollbackPlan.generate();
         List<String> rollbackSql = new ArrayList<>();
@@ -259,7 +269,8 @@ public class OBMySqlUpdateRollbackGeneratorTest {
         properties.setQueryDataBatchSize(2);
         String sql =
                 "UPDATE rollback_tab1 v1 inner join rollback_tab2 v2 inner join rollback_tab4 v3 on v1.c1 = v2.c1 and v1.c1=v3.c1 SET v1.c2=200;";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
 
         RollbackPlan actual = rollbackPlan.generate();
         List<String> rollbackSql = new ArrayList<>();
@@ -279,7 +290,8 @@ public class OBMySqlUpdateRollbackGeneratorTest {
         properties.setQueryDataBatchSize(3);
         String sql =
                 "UPDATE rollback_use_default_value set c3=100 where c1<3;";
-        GenerateRollbackPlan rollbackPlan = RollbackGeneratorFactory.create(sql, properties, session, null);
+        GenerateRollbackPlan rollbackPlan =
+                RollbackGeneratorFactory.create(sql, properties, session, null, () -> false);
 
         RollbackPlan actual = rollbackPlan.generate();
         List<String> rollbackSql = new ArrayList<>();
