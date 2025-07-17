@@ -87,6 +87,13 @@ public class AmazonCloudClient implements CloudClient {
         this.roleArn = roleArn;
     }
 
+    public AmazonCloudClient(AmazonCloudClient other) {
+        this.s3 = other.s3;
+        this.sts = other.sts;
+        this.roleSessionName = other.roleSessionName;
+        this.roleArn = other.roleArn;
+    }
+
     @Override
     public boolean supported() {
         return true;
