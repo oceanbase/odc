@@ -18,6 +18,12 @@
         <dependency>
             <groupId>com.oceanbase</groupId>
             <artifactId>odc-server</artifactId>
+            <exclusions>
+                <exclusion>
+                    <artifactId>bce-java-sdk</artifactId>
+                    <groupId>com.baidubce</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.alibaba</groupId>
