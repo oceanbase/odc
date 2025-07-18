@@ -24,6 +24,7 @@ import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.schema.obmysql.OBMySQLMViewLogExtension;
 import com.oceanbase.odc.plugin.schema.oboracle.utils.DBAccessorUtil;
 import com.oceanbase.tools.dbbrowser.DBBrowser;
+import com.oceanbase.tools.dbbrowser.editor.DBMViewLogEditor;
 import com.oceanbase.tools.dbbrowser.editor.DBObjectOperator;
 import com.oceanbase.tools.dbbrowser.editor.oracle.OracleObjectOperator;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewLog;
@@ -55,6 +56,11 @@ public class OBOracleMViewLogExtension extends OBMySQLMViewLogExtension {
     protected DBObjectTemplate<DBMaterializedViewLog> getTemplate() {
         return DBBrowser.objectTemplate().mViewLogTemplate()
                 .setType(DialectType.OB_ORACLE.getDBBrowserDialectTypeName()).create();
+    }
+
+    @Override
+    protected DBMViewLogEditor getMViewLogEditor(Connection connection) {
+        return DBAccessorUtil.getMViewLogEditor(connection);
     }
 
 }

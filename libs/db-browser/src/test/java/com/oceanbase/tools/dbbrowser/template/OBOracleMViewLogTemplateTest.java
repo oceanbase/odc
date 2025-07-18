@@ -15,13 +15,16 @@
  */
 package com.oceanbase.tools.dbbrowser.template;
 
+import static com.oceanbase.tools.dbbrowser.template.OBMySQLMViewLogTemplateTest.generateDbMaterializedViewLog;
 import static com.oceanbase.tools.dbbrowser.template.OBMySQLMViewLogTemplateTest.prepareColumns;
 import static com.oceanbase.tools.dbbrowser.template.OBMySQLMViewLogTemplateTest.prepareStartAtPurgeSchedule;
 import static com.oceanbase.tools.dbbrowser.template.OBMySQLMViewLogTemplateTest.prepareStartNowPurgeSchedule;
 
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.oceanbase.tools.dbbrowser.model.DBMViewLogPurgeSchedule;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewLog;
 import com.oceanbase.tools.dbbrowser.template.oracle.OBOracleMViewLogTemplate;
 
@@ -33,12 +36,87 @@ import com.oceanbase.tools.dbbrowser.template.oracle.OBOracleMViewLogTemplate;
  */
 public class OBOracleMViewLogTemplateTest {
 
+    private static OBOracleMViewLogTemplate template;
+
+    @BeforeClass
+    public static void setUp() {
+        template = new OBOracleMViewLogTemplate();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void generateCreateObjectTemplate_TimeUnitIsWeek_ThrowIllegalArgumentException() {
+        DBMaterializedViewLog mViewLog = generateDbMaterializedViewLog();
+        DBMViewLogPurgeSchedule purgeSchedule = new DBMViewLogPurgeSchedule();
+        purgeSchedule.setUnit(DBMViewLogPurgeSchedule.TimeUnit.WEEK);
+        mViewLog.setPurgeSchedule(purgeSchedule);
+        template.generateCreateObjectTemplate(mViewLog);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void generateCreateObjectTemplate_StartStrategyIsNull_TrowNullPointerException() {
+        DBMaterializedViewLog mViewLog = generateDbMaterializedViewLog();
+        mViewLog.setPurgeSchedule(new DBMViewLogPurgeSchedule());
+        template.generateCreateObjectTemplate(mViewLog);
+    }
+
     @Test
-    public void generateCreateObjectTemplate_StartNowSchedule_Success() {
-        OBOracleMViewLogTemplate template = new OBOracleMViewLogTemplate();
-        DBMaterializedViewLog mViewLog = new DBMaterializedViewLog();
-        mViewLog.setBaseTableName("base_table_name");
-        mViewLog.setSchemaName("schema_name");
+    public void generateCreateObjectTemplate_Simple_Success() {
+        DBMaterializedViewLog mViewLog = generateDbMaterializedViewLog();
+        String expect = """
+            CREATE MATERIALIZED VIEW LOG ON "schema_name"."base_table_name\"""";
+        String actual = template.generateCreateObjectTemplate(mViewLog);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generateCreateObjectTemplate_WithColumns_Success() {
+        DBMaterializedViewLog mViewLog = generateDbMaterializedViewLog();
+        mViewLog.setColumns(prepareColumns(3));
+        String expect = """
+            CREATE MATERIALIZED VIEW LOG ON "schema_name"."base_table_name"
+            WITH ("col2","col3","col4")""";
+        String actual = template.generateCreateObjectTemplate(mViewLog);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generateCreateObjectTemplate_WithParallelismDegree_Success() {
+        DBMaterializedViewLog mViewLog = generateDbMaterializedViewLog();
+        mViewLog.setPurgeParallelismDegree(5L);
+        String expect = """
+            CREATE MATERIALIZED VIEW LOG ON "schema_name"."base_table_name"
+            PARALLEL 5""";
+        String actual = template.generateCreateObjectTemplate(mViewLog);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generateCreateObjectTemplate_WithStartNowSchedule_Success() {
+        DBMaterializedViewLog mViewLog = generateDbMaterializedViewLog();
+        prepareStartNowPurgeSchedule(mViewLog);
+        String expect = """
+            CREATE MATERIALIZED VIEW LOG ON "schema_name"."base_table_name"
+            PURGE START WITH CURRENT_DATE
+            NEXT CURRENT_DATE + INTERVAL '1' DAY""";
+        String actual = template.generateCreateObjectTemplate(mViewLog);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generateCreateObjectTemplate_WithStartAtSchedule_Success() {
+        DBMaterializedViewLog mViewLog = generateDbMaterializedViewLog();
+        prepareStartAtPurgeSchedule(mViewLog);
+        String expect = """
+            CREATE MATERIALIZED VIEW LOG ON "schema_name"."base_table_name"
+            PURGE START WITH TO_DATE('2025-07-11 18:00:00', 'YYYY-MM-DD HH24:MI:SS')
+            NEXT TO_DATE('2025-07-11 18:00:00', 'YYYY-MM-DD HH24:MI:SS') + INTERVAL '1' MINUTE""";
+        String actual = template.generateCreateObjectTemplate(mViewLog);
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void generateCreateObjectTemplate_CompleteWithStartNowSchedule_Success() {
+        DBMaterializedViewLog mViewLog = generateDbMaterializedViewLog();
         mViewLog.setPurgeParallelismDegree(5L);
         mViewLog.setColumns(prepareColumns(3));
         prepareStartNowPurgeSchedule(mViewLog);
@@ -54,11 +132,8 @@ public class OBOracleMViewLogTemplateTest {
     }
 
     @Test
-    public void generateCreateObjectTemplate_StartAtSchedule_Success() {
-        OBOracleMViewLogTemplate template = new OBOracleMViewLogTemplate();
-        DBMaterializedViewLog mViewLog = new DBMaterializedViewLog();
-        mViewLog.setBaseTableName("base_table_name");
-        mViewLog.setSchemaName("schema_name");
+    public void generateCreateObjectTemplate_CompleteWithStartAtSchedule_Success() {
+        DBMaterializedViewLog mViewLog = generateDbMaterializedViewLog();
         mViewLog.setPurgeParallelismDegree(2L);
         mViewLog.setColumns(prepareColumns(4));
         prepareStartAtPurgeSchedule(mViewLog);

@@ -48,6 +48,7 @@ import lombok.extern.slf4j.Slf4j;
 public class VersionDiffConfigService {
     public static final String SUPPORT_EXTERNAL_TABLE = "support_external_table";
     public static final String SUPPORT_MATERIALIZED_VIEW = "support_materialized_view";
+    public static final String SUPPORT_MATERIALIZED_VIEW_LOG = "support_materialized_view_log";
     private static final String SUPPORT_PREFIX = "support";
     private static final String MAX_SUPPORT_KILL_OB_VERSION =
             "odc.session.kill-query-or-session.max-supported-ob-version";
@@ -167,6 +168,10 @@ public class VersionDiffConfigService {
 
     public boolean isMViewSupported(@NonNull DialectType dialectType, @NonNull String versionNumber) {
         return isFeatureSupported(dialectType, SUPPORT_MATERIALIZED_VIEW, versionNumber);
+    }
+
+    public boolean isMViewLogSupported(@NonNull DialectType dialectType, @NonNull String versionNumber) {
+        return isFeatureSupported(dialectType, SUPPORT_MATERIALIZED_VIEW_LOG, versionNumber);
     }
 
     private boolean isFeatureSupported(DialectType dialectType, String configKey, String versionNumber) {

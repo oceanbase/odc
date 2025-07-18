@@ -17,6 +17,7 @@ package com.oceanbase.odc.server.web.controller.v2;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -27,6 +28,7 @@ import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.db.DBMaterializedViewLogService;
+import com.oceanbase.odc.service.db.model.GenerateUpdateMViewLogDDLReq;
 import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.odc.service.state.model.StateName;
 import com.oceanbase.odc.service.state.model.StatefulRoute;
@@ -83,6 +85,17 @@ public class DBMaterializedViewLogController {
         resource.setSchemaName(databaseName);
         ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
         return Responses.success(dbMaterializedViewLogService.generateCreateTemplate(session, resource));
+    }
+
+    @ApiOperation(value = "generateUpdateDDL", notes = "obtain the sql to update the materialized view.")
+    @PostMapping(value = "/{sessionId}/databases/{databaseName}/materializedViewLogs/generateUpdateDDL")
+    @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
+    public SuccessResponse<String> generateUpdateDDL(@PathVariable String sessionId,
+            @PathVariable(required = false) String databaseName, @RequestBody GenerateUpdateMViewLogDDLReq req) {
+        req.getPrevious().setSchemaName(databaseName);
+        req.getCurrent().setSchemaName(databaseName);
+        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
+        return Responses.success(dbMaterializedViewLogService.generateUpdateDDL(session, req));
     }
 
     @ApiOperation(value = "purge", notes = "purge expired data of materialized view log")

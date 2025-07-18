@@ -16,7 +16,6 @@
 package com.oceanbase.odc.service.db.schema.syncer.object;
 
 import java.sql.Connection;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -24,12 +23,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
-import com.oceanbase.odc.core.shared.constant.ResourceType;
-import com.oceanbase.odc.metadb.iam.PermissionEntity;
-import com.oceanbase.odc.metadb.iam.PermissionRepository;
-import com.oceanbase.odc.metadb.iam.UserPermissionRepository;
 import com.oceanbase.odc.plugin.connect.api.InformationExtensionPoint;
-import com.oceanbase.odc.plugin.schema.api.MViewExtensionPoint;
+import com.oceanbase.odc.plugin.schema.api.MViewLogExtensionPoint;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.feature.VersionDiffConfigService;
 import com.oceanbase.odc.service.plugin.ConnectionPluginUtil;
@@ -42,46 +37,31 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * @description:
  * @author: zijia.cj
- * @date: 2025/3/6 14:26
- * @since: 4.3.4
+ * @date: 2025/7/18 14:22
+ * @since: 4.4.0
  */
 @Component
 @Slf4j
-public class DBMVSyncer extends AbstractDBObjectSyncer<MViewExtensionPoint> {
-
-    @Autowired
-    private PermissionRepository permissionRepository;
-
-    @Autowired
-    private UserPermissionRepository userPermissionRepository;
+public class DBMViewLogSyncer extends AbstractDBObjectSyncer<MViewLogExtensionPoint> {
 
     @Autowired
     private VersionDiffConfigService versionDiffConfigService;
 
     @Override
-    public DBObjectType getObjectType() {
-        return DBObjectType.MATERIALIZED_VIEW;
-    }
-
-    @Override
-    Set<String> getLatestObjectNames(@NonNull MViewExtensionPoint extensionPoint, @NonNull Connection connection,
+    Set<String> getLatestObjectNames(@NonNull MViewLogExtensionPoint extensionPoint, @NonNull Connection connection,
             @NonNull Database database) {
         return extensionPoint.list(connection, database.getName()).stream().map(DBObjectIdentity::getName)
                 .collect(Collectors.toSet());
     }
 
     @Override
-    Class<MViewExtensionPoint> getExtensionPointClass() {
-        return MViewExtensionPoint.class;
+    Class<MViewLogExtensionPoint> getExtensionPointClass() {
+        return MViewLogExtensionPoint.class;
     }
 
     @Override
-    protected void preDelete(@NonNull Set<Long> toBeDeletedIds) {
-        List<PermissionEntity> permissions =
-                permissionRepository.findByResourceTypeAndResourceIdIn(ResourceType.ODC_TABLE, toBeDeletedIds);
-        Set<Long> permissionIds = permissions.stream().map(PermissionEntity::getId).collect(Collectors.toSet());
-        permissionRepository.deleteByIds(permissionIds);
-        userPermissionRepository.deleteByPermissionIds(permissionIds);
+    public DBObjectType getObjectType() {
+        return DBObjectType.MATERIALIZED_VIEW_LOG;
     }
 
     @Override
@@ -90,11 +70,12 @@ public class DBMVSyncer extends AbstractDBObjectSyncer<MViewExtensionPoint> {
             InformationExtensionPoint point =
                     ConnectionPluginUtil.getInformationExtension(dialectType);
             String databaseProductVersion = point.getDBVersion(connection);
-            return versionDiffConfigService.isMViewSupported(dialectType, databaseProductVersion)
+            return versionDiffConfigService.isMViewLogSupported(dialectType, databaseProductVersion)
                     && getExtensionPoint(dialectType) != null;
         } catch (Exception e) {
-            log.warn("check materialized view support failed", e);
+            log.warn("check materialized view log support failed", e);
             return false;
         }
     }
+
 }

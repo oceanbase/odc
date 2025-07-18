@@ -23,7 +23,6 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.ibm.icu.impl.duration.TimeUnit;
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
@@ -35,18 +34,18 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
 import com.oceanbase.tools.dbbrowser.model.DBView;
 import com.oceanbase.tools.dbbrowser.model.DBViewColumn;
-import com.oceanbase.tools.dbbrowser.template.mysql.MysqlMViewTemplate;
+import com.oceanbase.tools.dbbrowser.template.mysql.OBMySQLMViewTemplate;
 
 /**
- * @description: all tests for {@link MysqlMViewTemplate}
+ * @description: all tests for {@link OBMySQLMViewTemplate}
  * @author: zijia.cj
  * @date: 2025/3/10 23:21
  * @since: 4.3.4
  */
-public class MysqlMViewTemplateTest {
+public class OBMySQLMViewTemplateTest {
     @Test
     public void generateCreateObjectTemplate_allInputs_success() {
-        DBObjectTemplate<DBMaterializedView> mysqlMViewTemplate = new MysqlMViewTemplate();
+        DBObjectTemplate<DBMaterializedView> mysqlMViewTemplate = new OBMySQLMViewTemplate();
         DBMaterializedView mView = new DBMaterializedView();
         mView.setName("mv_0");
         mView.setSchemaName("schema_0");
@@ -89,7 +88,7 @@ public class MysqlMViewTemplateTest {
 
     @Test
     public void generateCreateObjectTemplate_startAtSchedule_success() {
-        DBObjectTemplate<DBMaterializedView> mysqlMViewTemplate = new MysqlMViewTemplate();
+        DBObjectTemplate<DBMaterializedView> mysqlMViewTemplate = new OBMySQLMViewTemplate();
         DBMaterializedView mView = new DBMaterializedView();
         mView.setName("mv_0");
         mView.setSchemaName("schema_0");
