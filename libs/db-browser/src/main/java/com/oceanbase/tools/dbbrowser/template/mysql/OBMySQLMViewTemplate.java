@@ -32,9 +32,9 @@ import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
  * @date: 2025/3/10 16:45
  * @since: 4.3.4
  */
-public class MysqlMViewTemplate extends BaseMViewTemplate {
+public class OBMySQLMViewTemplate extends BaseMViewTemplate {
 
-    public MysqlMViewTemplate() {
+    public OBMySQLMViewTemplate() {
         super(new MySQLViewTemplate(), new MySQLConstraintEditor(), new OBMySQLDBTablePartitionEditor());
     }
 

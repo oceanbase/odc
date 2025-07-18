@@ -24,12 +24,14 @@ import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.plugin.schema.api.MViewLogExtensionPoint;
+import com.oceanbase.odc.service.db.model.GenerateUpdateMViewLogDDLReq;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.tools.dbbrowser.model.DBMViewLogPurgeParameter;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewLog;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -74,6 +76,14 @@ public class DBMaterializedViewLogService {
                 ConnectionSessionConstants.BACKEND_DS_KEY)
                 .execute((ConnectionCallback<String>) con -> getDBMViewLogExtensionPoint(connectionSession)
                         .generateCreateTemplate(resource));
+    }
+
+    public String generateUpdateDDL(@NotNull ConnectionSession session,
+            @NotNull GenerateUpdateMViewLogDDLReq req) {
+        return session.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<String>) con -> getDBMViewLogExtensionPoint(session).generateUpdateDDL(con,
+                        req.getPrevious(), req.getCurrent()));
     }
 
     private MViewLogExtensionPoint getDBMViewLogExtensionPoint(@NonNull ConnectionSession session) {

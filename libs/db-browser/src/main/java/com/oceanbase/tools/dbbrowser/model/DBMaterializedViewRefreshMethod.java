@@ -16,7 +16,7 @@
 package com.oceanbase.tools.dbbrowser.model;
 
 import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLSchemaAccessor;
-import com.oceanbase.tools.dbbrowser.template.mysql.MysqlMViewTemplate;
+import com.oceanbase.tools.dbbrowser.template.mysql.OBMySQLMViewTemplate;
 
 import lombok.Getter;
 
@@ -36,7 +36,7 @@ public enum DBMaterializedViewRefreshMethod {
     OTHERS("UNKNOWN", "UNKNOWN", "UNKNOWN");
 
     /**
-     * used in {@link MysqlMViewTemplate#generateCreateObjectTemplate(DBMaterializedView)}
+     * used in {@link OBMySQLMViewTemplate#generateCreateObjectTemplate(DBMaterializedView)}
      */
     private String createName;
     /**

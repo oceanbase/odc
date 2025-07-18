@@ -43,4 +43,7 @@ public interface MViewLogExtensionPoint extends ExtensionPoint {
 
     String generateCreateTemplate(DBMaterializedViewLog mViewLog);
 
+    String generateUpdateDDL(Connection connection, DBMaterializedViewLog oldMViewLog,
+            DBMaterializedViewLog newMViewLog);
+
 }

@@ -32,9 +32,9 @@ import com.oceanbase.tools.dbbrowser.util.SqlBuilder;
  * @date: 2025/3/11 20:50
  * @since: 4.3.4
  */
-public class OracleMViewTemplate extends BaseMViewTemplate {
+public class OBOracleMViewTemplate extends BaseMViewTemplate {
 
-    public OracleMViewTemplate() {
+    public OBOracleMViewTemplate() {
         super(new OracleViewTemplate(), new OracleConstraintEditor(), new OracleDBTablePartitionEditor());
     }
 

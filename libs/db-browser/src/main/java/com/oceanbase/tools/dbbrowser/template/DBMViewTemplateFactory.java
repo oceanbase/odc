@@ -17,8 +17,8 @@ package com.oceanbase.tools.dbbrowser.template;
 
 import com.oceanbase.tools.dbbrowser.AbstractDBBrowserFactory;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
-import com.oceanbase.tools.dbbrowser.template.mysql.MysqlMViewTemplate;
-import com.oceanbase.tools.dbbrowser.template.oracle.OracleMViewTemplate;
+import com.oceanbase.tools.dbbrowser.template.mysql.OBMySQLMViewTemplate;
+import com.oceanbase.tools.dbbrowser.template.oracle.OBOracleMViewTemplate;
 
 /**
  * @description:
@@ -40,12 +40,12 @@ public class DBMViewTemplateFactory extends AbstractDBBrowserFactory<DBObjectTem
 
     @Override
     public DBObjectTemplate<DBMaterializedView> buildForOBMySQL() {
-        return new MysqlMViewTemplate();
+        return new OBMySQLMViewTemplate();
     }
 
     @Override
     public DBObjectTemplate<DBMaterializedView> buildForOBOracle() {
-        return new OracleMViewTemplate();
+        return new OBOracleMViewTemplate();
     }
 
     @Override

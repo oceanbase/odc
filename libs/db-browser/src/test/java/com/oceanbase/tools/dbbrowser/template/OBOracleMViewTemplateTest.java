@@ -24,35 +24,35 @@ import org.junit.Test;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedView;
 import com.oceanbase.tools.dbbrowser.model.DBMaterializedViewRefreshMethod;
 import com.oceanbase.tools.dbbrowser.model.DBView;
-import com.oceanbase.tools.dbbrowser.template.oracle.OracleMViewTemplate;
+import com.oceanbase.tools.dbbrowser.template.oracle.OBOracleMViewTemplate;
 
 /**
- * @description: all tests for {@link OracleMViewTemplate}
+ * @description: all tests for {@link OBOracleMViewTemplate}
  * @author: zijia.cj
  * @date: 2025/3/24 13:30
  * @since: 4.3.4
  */
-public class OracleMViewTemplateTest {
+public class OBOracleMViewTemplateTest {
 
     @Test
     public void generateCreateObjectTemplate_allInputs_success() {
-        DBObjectTemplate<DBMaterializedView> oracleMViewTemplate = new OracleMViewTemplate();
+        DBObjectTemplate<DBMaterializedView> oracleMViewTemplate = new OBOracleMViewTemplate();
         DBMaterializedView mView = new DBMaterializedView();
         mView.setName("mv_0");
         mView.setSchemaName("schema_0");
-        MysqlMViewTemplateTest.prepareMViewPrimary(mView);
+        OBMySQLMViewTemplateTest.prepareMViewPrimary(mView);
         mView.setParallelismDegree(8L);
-        MysqlMViewTemplateTest.prepareMViewPartition(mView);
-        MysqlMViewTemplateTest.prepareMViewColumnGroups(mView);
+        OBMySQLMViewTemplateTest.prepareMViewPartition(mView);
+        OBMySQLMViewTemplateTest.prepareMViewColumnGroups(mView);
         mView.setRefreshMethod(DBMaterializedViewRefreshMethod.REFRESH_COMPLETE);
-        MysqlMViewTemplateTest.prepareMViewStartNowSchedule(mView);
+        OBMySQLMViewTemplateTest.prepareMViewStartNowSchedule(mView);
         mView.setEnableQueryRewrite(false);
         mView.setEnableQueryComputation(false);
 
-        List<DBView.DBViewUnit> viewUnits = MysqlMViewTemplateTest.prepareViewUnit(2);
+        List<DBView.DBViewUnit> viewUnits = OBMySQLMViewTemplateTest.prepareViewUnit(2);
         mView.setViewUnits(viewUnits);
         mView.setOperations(Collections.singletonList("left join"));
-        mView.setCreateColumns(MysqlMViewTemplateTest.prepareQueryColumns(2));
+        mView.setCreateColumns(OBMySQLMViewTemplateTest.prepareQueryColumns(2));
 
         String expect = "CREATE MATERIALIZED VIEW \"schema_0\".\"mv_0\"(PRIMARY KEY (\"alias_c0\"))\n" +
                 "PARALLEL 8\n" +
@@ -79,16 +79,16 @@ public class OracleMViewTemplateTest {
 
     @Test
     public void generateCreateObjectTemplate_startAtSchedule_success() {
-        DBObjectTemplate<DBMaterializedView> oracleMViewTemplate = new OracleMViewTemplate();
+        DBObjectTemplate<DBMaterializedView> oracleMViewTemplate = new OBOracleMViewTemplate();
         DBMaterializedView mView = new DBMaterializedView();
         mView.setName("mv_0");
         mView.setSchemaName("schema_0");
-        MysqlMViewTemplateTest.prepareMViewStartAtSchedule(mView);
+        OBMySQLMViewTemplateTest.prepareMViewStartAtSchedule(mView);
 
-        List<DBView.DBViewUnit> viewUnits = MysqlMViewTemplateTest.prepareViewUnit(2);
+        List<DBView.DBViewUnit> viewUnits = OBMySQLMViewTemplateTest.prepareViewUnit(2);
         mView.setViewUnits(viewUnits);
         mView.setOperations(Collections.singletonList("left join"));
-        mView.setCreateColumns(MysqlMViewTemplateTest.prepareQueryColumns(2));
+        mView.setCreateColumns(OBMySQLMViewTemplateTest.prepareQueryColumns(2));
 
         String expect = "CREATE MATERIALIZED VIEW \"schema_0\".\"mv_0\"\n" +
                 "REFRESH FORCE\n" +
