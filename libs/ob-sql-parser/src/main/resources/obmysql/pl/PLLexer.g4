@@ -754,7 +754,7 @@ In_c_comment
     ;
 
 ANTLR_SKIP
-    : '--'[ \t]* .*? '\n'   -> channel(1)
+    : (('--' [ \t]+.*? | '#') ~[\r\n]* ('\r'? '\n' | EOF) | '--' ('\r'? '\n' | EOF)) -> channel(1)
     ;
 
 Blank

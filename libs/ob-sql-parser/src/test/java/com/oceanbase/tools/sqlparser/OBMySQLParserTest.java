@@ -64,6 +64,68 @@ import com.oceanbase.tools.sqlparser.statement.update.UpdateAssign;
 public class OBMySQLParserTest {
 
     @Test
+    public void parse_selectSqlWithLineComment_parseSucceed() {
+        String sql = "#comment \nselect col.* abc from dual;#line-comment";
+        SQLParser parser = new OBMySQLParser();
+        Statement actual = parser.parse(new StringReader(sql));
+        ColumnReference r = new ColumnReference(null, "col", "*");
+        Projection p = new Projection(r, "abc");
+        NameReference from = new NameReference(null, "dual", null);
+        Select expect = new Select(new SelectBody(Collections.singletonList(p), Collections.singletonList(from)));
+        Assert.assertEquals(expect, actual);
+    }
+
+    @Test
+    public void parse_selectSqlWithLineComment_parseFailed() {
+        try {
+            String sql = "--comment \nselect 1 from dual";
+            new OBMySQLParser().parse(new StringReader(sql));
+            Assert.fail();
+        } catch (SyntaxErrorException e) {
+            Assert.assertTrue(true);
+        }
+    }
+
+    @Test
+    public void parse_selectSqlWithNonWordComment_parseSuccess() {
+        try {
+            String sql = """
+                #
+                --
+                -- 
+                # 
+                
+                select 1 from dual;""";
+            new OBMySQLParser().parse(new StringReader(sql));
+            Assert.assertTrue(true);
+        } catch (SyntaxErrorException e) {
+            Assert.fail();
+        }
+    }
+
+    @Test
+    public void parse_createSqlWithManyLineComments_parseSucceed() {
+        String sql = "-- comment \n" +
+                "#comment\n" +
+                "# comment\n" +
+                "--\n" +
+                "CREATE TABLE `any_schema.test_#tabl--e` (\n" +
+                "  `col--1` INT(11),-- comment\n" +
+                "  `col#2` DECIMAL(10,2),#comment\n" +
+                "  `col# 11` VARCHAR(10) DEFAULT '#comment--comment'\n" +
+                ");";
+        SQLParser parser = new OBMySQLParser();
+        Statement actual = parser.parse(new StringReader(sql));
+
+        String expect = "CREATE TABLE `any_schema.test_#tabl--e` (\n" +
+                "    `col--1` INT(11),\n" +
+                "    `col#2` DECIMAL(10,2),\n" +
+                "    `col# 11` VARCHAR(10) DEFAULT '#comment--comment'\n" +
+                ")";
+        Assert.assertEquals(expect.replaceAll("\\s", ""), actual.toString().replaceAll("\\s", ""));
+    }
+
+    @Test
     public void parse_createMViewStatement_parseSucceed() {
         SQLParser parser = new OBMySQLParser();
         Statement actual = parser.parse(
