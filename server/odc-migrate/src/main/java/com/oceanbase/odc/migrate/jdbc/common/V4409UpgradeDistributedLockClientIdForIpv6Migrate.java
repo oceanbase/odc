@@ -28,8 +28,8 @@ import com.oceanbase.odc.core.migrate.Migratable;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Migratable(version = "4.4.0.6", description = "upgrade distributed lock client id for ipv6 support")
-public class V4406UpgradeDistributedLockClientIdForIpv6Migrate implements JdbcMigratable {
+@Migratable(version = "4.4.0.9", description = "upgrade distributed lock client id for ipv6 support")
+public class V4409UpgradeDistributedLockClientIdForIpv6Migrate implements JdbcMigratable {
 
     private static final String TABLE_NAME = "DISTRIBUTED_LOCK";
     private static final String COLUMN_NAME = "CLIENT_ID";
