@@ -68,11 +68,12 @@ public class DLMTerminateProcessor extends DLMProcessorMatcher implements Termin
         dlmService.createOrUpdateDlmTableUnits(dlmTableUnits);
         return dlmService.getFinalTaskStatus(scheduleTask,
                 ScheduleTaskType.valueOf(scheduleTask.getJobGroup()));
-        TaskStatus correctStatus =
-                currentStatus == TaskStatus.EXEC_TIMEOUT || currentStatus == TaskStatus.CANCELED ? TaskStatus.CANCELED
-                        : dlmService.getFinalTaskStatus(dlmTableUnits);
-        log.info("Correct status to {},scheduleTaskId={}", correctStatus, scheduleTask.getId());
-        return correctStatus;
+        // TaskStatus correctStatus =
+        // currentStatus == TaskStatus.EXEC_TIMEOUT || currentStatus == TaskStatus.CANCELED ?
+        // TaskStatus.CANCELED
+        // : dlmService.getFinalTaskStatus(scheduleTask);
+        // log.info("Correct status to {},scheduleTaskId={}", correctStatus, scheduleTask.getId());
+        // return correctStatus;
     }
 
     @Override
