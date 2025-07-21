@@ -35,4 +35,6 @@ public class SensitiveColumnScanningReq {
     @NotNull
     private Boolean allSensitiveRules;
     private List<Long> sensitiveRuleIds;
+    @NotNull
+    private ScanningModeType scanningMode = ScanningModeType.JOINT_RECOGNITION;
 }

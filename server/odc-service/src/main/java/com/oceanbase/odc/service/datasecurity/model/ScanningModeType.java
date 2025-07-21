@@ -16,27 +16,16 @@
 package com.oceanbase.odc.service.datasecurity.model;
 
 /**
- * @author gaoda.xy
- * @date 2023/5/9 13:58
+ * @author fenyf
+ * @date 2025/7/18 17:52
  */
-public enum SensitiveRuleType {
-    /**
-     * Regular expression fuzzy match
-     */
-    REGEX,
+public enum ScanningModeType {
 
-    /**
-     * Groovy expression
-     */
-    GROOVY,
+    RULES_ONLY,
 
-    /**
-     * Path expression fuzzy match
-     */
-    PATH,
+    RULES_AND_AI,
 
-    /**
-     * AI-based sensitive data detection
-     */
-    AI
+    JOINT_RECOGNITION,
+
+
 }

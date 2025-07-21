@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2025 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,30 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.oceanbase.odc.service.datasecurity.model;
 
-/**
- * @author gaoda.xy
- * @date 2023/5/9 13:58
- */
-public enum SensitiveRuleType {
-    /**
-     * Regular expression fuzzy match
-     */
-    REGEX,
+import com.oceanbase.odc.service.datasecurity.model.SensitiveRuleType;
+import lombok.Builder;
+import lombok.Data;
 
-    /**
-     * Groovy expression
-     */
-    GROOVY,
+@Data
+@Builder
+public class RecognitionResult {
+    // 基础信息
+    private boolean matched;
+    private Long matchedRuleId;
+    private SensitiveLevel level;
+    private SensitiveRuleType sourceRuleType;
 
-    /**
-     * Path expression fuzzy match
-     */
-    PATH,
-
-    /**
-     * AI-based sensitive data detection
-     */
-    AI
+    // AI 规则
+    private String sensitiveType; // AI 判断出的具体敏感类型
+    private Integer confidence; // AI 的置信度
 }

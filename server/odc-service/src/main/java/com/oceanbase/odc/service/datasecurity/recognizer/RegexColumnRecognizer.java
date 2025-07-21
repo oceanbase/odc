@@ -15,9 +15,13 @@
  */
 package com.oceanbase.odc.service.datasecurity.recognizer;
 
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.service.datasecurity.model.RecognitionResult;
+import com.oceanbase.odc.service.datasecurity.model.SensitiveRule;
+import com.oceanbase.odc.service.datasecurity.model.SensitiveRuleType;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 
 import lombok.NonNull;
@@ -28,6 +32,8 @@ import lombok.NonNull;
  */
 public class RegexColumnRecognizer implements ColumnRecognizer {
 
+    // 【修改】直接保存整个规则对象，以便获取 ID 和 Level
+    private final SensitiveRule rule;
     private final Pattern databasePattern;
     private final Pattern tablePattern;
     private final Pattern columnPattern;
@@ -35,35 +41,44 @@ public class RegexColumnRecognizer implements ColumnRecognizer {
 
     private static final long MATCH_TIMEOUT_MILLIS = 100L;
 
-    public RegexColumnRecognizer(String databaseRegex, String tableRegex, String columnRegex, String commentRegex) {
-        databasePattern = StringUtils.isNotBlank(databaseRegex) ? Pattern.compile(databaseRegex) : null;
-        tablePattern = StringUtils.isNotBlank(tableRegex) ? Pattern.compile(tableRegex) : null;
-        columnPattern = StringUtils.isNotBlank(columnRegex) ? Pattern.compile(columnRegex) : null;
-        columnCommentPattern = StringUtils.isNotBlank(commentRegex) ? Pattern.compile(commentRegex) : null;
+    // 【修改】构造函数接收 SensitiveRule 对象
+    public RegexColumnRecognizer(SensitiveRule rule) {
+        this.rule = rule;
+        databasePattern = StringUtils.isNotBlank(rule.getDatabaseRegexExpression()) ? Pattern.compile(rule.getDatabaseRegexExpression()) : null;
+        tablePattern = StringUtils.isNotBlank(rule.getTableRegexExpression()) ? Pattern.compile(rule.getTableRegexExpression()) : null;
+        columnPattern = StringUtils.isNotBlank(rule.getColumnRegexExpression()) ? Pattern.compile(rule.getColumnRegexExpression()) : null;
+        columnCommentPattern = StringUtils.isNotBlank(rule.getColumnCommentRegexExpression()) ? Pattern.compile(rule.getColumnCommentRegexExpression()) : null;
     }
 
     @Override
-    public boolean recognize(DBTableColumn column) {
+    public Optional<RecognitionResult> recognize(DBTableColumn column) {
         try {
             if (databasePattern != null && !databasePattern
                     .matcher(new TimeoutCharSequence(column.getSchemaName(), getTimeoutMillis())).matches()) {
-                return false;
+                return Optional.empty();
             }
             if (tablePattern != null && !tablePattern
                     .matcher(new TimeoutCharSequence(column.getTableName(), getTimeoutMillis())).matches()) {
-                return false;
+                return Optional.empty();
             }
             if (columnPattern != null && !columnPattern
                     .matcher(new TimeoutCharSequence(column.getName(), getTimeoutMillis())).matches()) {
-                return false;
+                return Optional.empty();
             }
             if (columnCommentPattern != null && !columnCommentPattern
                     .matcher(new TimeoutCharSequence(column.getComment(), getTimeoutMillis())).matches()) {
-                return false;
+                return Optional.empty();
             }
-            return true;
+            // 【修改】如果所有条件都通过，说明匹配成功，构建并返回 RecognitionResult
+            RecognitionResult result = RecognitionResult.builder()
+                    .matched(true)
+                    .matchedRuleId(this.rule.getId())
+                    .level(this.rule.getLevel())
+                    .sourceRuleType(SensitiveRuleType.REGEX)
+                    .build();
+            return Optional.of(result);
         } catch (Exception e) {
-            return false;
+            return Optional.empty();
         }
     }
 
