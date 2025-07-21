@@ -399,7 +399,7 @@ public class SensitiveColumnService {
         PreConditions.notEmpty(rules, "sensitiveRules");
         ConnectionConfig connectionConfig = databaseService.findDataSourceForConnectById(databases.get(0).getId());
         Map<Long, List<SensitiveColumnMeta>> databaseId2SensitiveColumns = listExistSensitiveColumns(databaseIds);
-        return scanningTaskManager.start(databases, rules, connectionConfig, databaseId2SensitiveColumns);
+        return scanningTaskManager.start(databases, rules, req.getScanningMode(), connectionConfig, databaseId2SensitiveColumns);
     }
 
     @Transactional(rollbackFor = Exception.class)

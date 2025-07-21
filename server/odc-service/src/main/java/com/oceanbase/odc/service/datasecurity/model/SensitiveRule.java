@@ -70,6 +70,12 @@ public class SensitiveRule implements SecurityResource, SingleOrganizationResour
 
     private List<String> pathExcludes = new ArrayList<>();
 
+    private List<String> aiSensitiveTypes = new ArrayList<>();
+
+    private Integer aiConfidenceThreshold;
+
+    private String aiCustomPrompt;
+
     @NotNull
     private Long maskingAlgorithmId;
 
