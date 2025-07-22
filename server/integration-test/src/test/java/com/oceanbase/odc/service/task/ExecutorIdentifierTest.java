@@ -81,4 +81,12 @@ public class ExecutorIdentifierTest {
         Assert.assertEquals(DefaultExecutorIdentifier.DEFAULT_PORT.intValue(), identifier.getPort());
     }
 
+    @Test
+    public void test_normal_url() {
+        String url = "http://odc:8080/default/obc%3Aaliyun%3Aiaas%3Acn-hangzhou%3Aoceanbase%3Apod%3Ap-vD93iErY1a0001";
+        ExecutorIdentifier executorIdentifier = ExecutorIdentifierParser.parser(url);
+        Assert.assertEquals("obc:aliyun:iaas:cn-hangzhou:oceanbase:pod:p-vD93iErY1a0001",
+                executorIdentifier.getExecutorName());
+    }
+
 }

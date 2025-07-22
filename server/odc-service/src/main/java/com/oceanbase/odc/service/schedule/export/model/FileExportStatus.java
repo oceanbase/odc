@@ -13,23 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.git.model;
+package com.oceanbase.odc.service.schedule.export.model;
 
-import java.util.List;
-
-import lombok.Data;
-
-/**
- * @author: liuyizhuo.lyz
- * @date: 2024/7/30
- */
-@Data
-public class GitStatus {
-
-    private String branch;
-
-    private int commitsBehindRemote;
-
-    private List<GitDiff> changes;
-
+public enum FileExportStatus {
+    SUCCESS,
+    FAILED,
+    EXPORTING
 }

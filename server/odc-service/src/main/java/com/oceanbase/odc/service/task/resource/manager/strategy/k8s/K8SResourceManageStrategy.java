@@ -39,7 +39,6 @@ import com.oceanbase.odc.service.resource.ResourceLocation;
 import com.oceanbase.odc.service.resource.ResourceManager;
 import com.oceanbase.odc.service.resource.ResourceWithID;
 import com.oceanbase.odc.service.task.config.K8sProperties;
-import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.resource.Constants;
 import com.oceanbase.odc.service.task.resource.K8sPodResource;
 import com.oceanbase.odc.service.task.resource.K8sResourceContext;
@@ -98,7 +97,7 @@ public class K8SResourceManageStrategy implements ResourceManageStrategy {
                     k8sResourceContext);
         } catch (Throwable e) {
             alarmResourceFailed(resourceAllocateInfoEntity, e);
-            throw new JobException("create resource failed for " + resourceAllocateInfoEntity, e);
+            return null;
         }
         log.info("create k8s pod = {} for allocate entity = {}", k8sPodResource, resourceAllocateInfoEntity);
         // save to db failed, try release resource

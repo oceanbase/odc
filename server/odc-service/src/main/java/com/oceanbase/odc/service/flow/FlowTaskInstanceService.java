@@ -113,6 +113,7 @@ import com.oceanbase.odc.service.task.config.TaskFrameworkEnabledProperties;
 import com.oceanbase.odc.service.task.model.ExecutorInfo;
 import com.oceanbase.odc.service.task.model.OdcTaskLogLevel;
 
+import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -535,7 +536,7 @@ public class FlowTaskInstanceService {
 
     public List<SqlExecuteResult> getExecuteResult(Long flowInstanceId) throws IOException {
         Optional<TaskEntity> taskEntityOptional = getCompleteTaskEntity(flowInstanceId,
-                flowPermissionHelper.withProjectMemberCheck());
+                flowPermissionHelper.withExecutableCheck());
         if (!taskEntityOptional.isPresent()) {
             return Collections.emptyList();
         }
@@ -782,7 +783,10 @@ public class FlowTaskInstanceService {
             return;
         }
         for (FlowTaskResult result : results) {
-            TaskDownloadUrls urls = databaseChangeOssUrlCache.get(taskId);
+            TaskDownloadUrls urls = getTaskDownloadUrls(taskId);
+            if (urls == null) {
+                return;
+            }
             if (result instanceof AbstractFlowTaskResult) {
                 ((AbstractFlowTaskResult) result)
                         .setFullLogDownloadUrl(urls.getLogDownloadUrl());
@@ -794,6 +798,16 @@ public class FlowTaskInstanceService {
                             .setResultFileDownloadUrl(urls.getRollBackPlanResultFileDownloadUrl());
                 }
             }
+        }
+    }
+
+    @Nullable
+    private TaskDownloadUrls getTaskDownloadUrls(Long taskId) {
+        try {
+            return databaseChangeOssUrlCache.get(taskId);
+        } catch (NotFoundException e) {
+            log.warn("Failed to retrieve task download urls from cloud object storage, taskId={}", taskId, e);
+            return null;
         }
     }
 

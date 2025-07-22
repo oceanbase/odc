@@ -23,6 +23,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
+import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 import com.oceanbase.odc.service.common.ConditionOnServer;
 import com.oceanbase.odc.service.connection.database.DatabaseSyncManager;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
@@ -44,9 +45,10 @@ public class DatabaseSyncSchedules {
     @Autowired
     private ConnectionService connectionService;
 
-    @Scheduled(fixedDelayString = "${odc.connect.database.sync.interval-millis:180000}")
+    @Scheduled(fixedDelayString = "${odc.connect.database.sync.interval-millis:14400000}")
     public void syncDatabases() {
-        List<ConnectionConfig> orgDataSources = connectionService.listSyncableDataSources();
+        List<ConnectionConfig> orgDataSources =
+                connectionService.listByVisibleScope(ConnectionVisibleScope.ORGANIZATION);
         if (CollectionUtils.isEmpty(orgDataSources)) {
             return;
         }

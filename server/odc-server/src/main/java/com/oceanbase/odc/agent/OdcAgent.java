@@ -33,6 +33,7 @@ public class OdcAgent {
         log.info("ODC start as task executor mode");
         try {
             Modules.load();
+            log.info("env is {}", System.getenv());
             new TaskApplication().run(args);
         } catch (Throwable e) {
             log.error("Task existed abnormal", e);

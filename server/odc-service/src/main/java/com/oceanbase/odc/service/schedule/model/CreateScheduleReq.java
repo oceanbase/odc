@@ -62,5 +62,7 @@ public class CreateScheduleReq {
 
     private String description;
 
+    private boolean allowConcurrent = false;
+
 }
 

@@ -13,27 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.git.model;
+package com.oceanbase.odc.service.flow.model;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
-import org.springframework.context.annotation.Configuration;
-
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
-/**
- * @author: liuyizhuo.lyz
- * @date: 2024/8/9
- */
-@Configuration
-@RefreshScope
 @Data
-public class GitIntegrationProperties {
+@NoArgsConstructor
+@AllArgsConstructor
+public class BatchTerminateFlowResult {
+    private Boolean terminateSucceed;
+    private Long flowInstanceId;
+    private String failReason;
 
-    @Value("${odc.integration.git.repository-retention-minutes:1440}")
-    private Long gitRepositoryPreserveMinutes = 1440L;
+    public static BatchTerminateFlowResult success(Long id) {
+        return new BatchTerminateFlowResult(true, id, null);
+    }
 
-    @Value("${odc.integration.git.repository-max-cached-size:1000}")
-    private Long gitRepositoryMaxCachedSize = 1000L;
+    public static BatchTerminateFlowResult failed(Long id, String failReason) {
+        return new BatchTerminateFlowResult(false, id, failReason);
+
+    }
 
 }

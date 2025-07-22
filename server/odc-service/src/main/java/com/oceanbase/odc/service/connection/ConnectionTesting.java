@@ -211,7 +211,7 @@ public class ConnectionTesting {
 
     private JdbcUrlProperty getJdbcUrlProperties(ConnectionConfig config, String schema) {
         return new JdbcUrlProperty(config.getHost(), config.getPort(), schema,
-                OBConsoleDataSourceFactory.getJdbcParams(config), config.getSid(),
+                OBConsoleDataSourceFactory.getJdbcParams(config, false), config.getSid(),
                 config.getServiceName(), config.getCatalogName());
     }
 

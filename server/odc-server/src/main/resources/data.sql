@@ -883,3 +883,25 @@ ON DUPLICATE KEY UPDATE `id` = `id`;
 INSERT INTO config_system_configuration(`key`, application, profile, label, description, value) VALUES('odc.task-framework.task-restart-support-type',
 'odc', 'default', 'master', 'pause support config in json', '[\"DATA_ARCHIVE\", \"DATA_DELETE\"]')
 ON DUPLICATE KEY UPDATE `id` = `id`;
+
+-- 调整后台数据库元数据同步的时间间隔为 4h 一次
+update config_system_configuration set `value`='14400000' where `key`='odc.connect.database.sync.interval-millis';
+
+--
+-- v4.3.4
+--
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES('odc.pldebug.ob-query-timeout-seconds',
+'600','The query timeout of the two connections, debuggee and debugger. The unit is seconds. The default value is 600 seconds')
+  ON DUPLICATE KEY UPDATE `id` = `id`;
+INSERT INTO config_system_configuration ( `key`, `value`, `description` ) VALUES('odc.pldebug.debug-timeout-seconds',
+'120','The debug timeout of the debuggee. The unit is seconds. The default value is 120 seconds')
+  ON DUPLICATE KEY UPDATE `id` = `id`;
+
+--
+-- v4.3.4bp3
+--
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.features.workbench.enabled', 'true',
+'Whether to enable the workbench feature, default is true, indicating enabled.') ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.column-sync-enabled', 'true',
+'Whether to enable the column metadata sync, default is true, indicating enabled.') ON DUPLICATE KEY UPDATE `id`=`id`;
+

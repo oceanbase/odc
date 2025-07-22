@@ -13,18 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.git.vcs;
+package com.oceanbase.odc.service.pldebug.model;
 
-import java.util.List;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.context.annotation.Configuration;
 
-import com.oceanbase.odc.service.git.model.GitRepository;
+import lombok.Data;
 
 /**
- * @author: liuyizhuo.lyz
- * @date: 2024/7/29
+ * @description:
+ * @author: zijia.cj
+ * @date: 2025/6/3 10:27
+ * @since: 4.3.4
  */
-public interface VcsFacade {
+@Data
+@RefreshScope
+@Configuration
+@ConfigurationProperties(prefix = "odc.pldebug")
+public class PLDebugProperties {
 
-    List<GitRepository> listRepositories(String token);
+    private int obQueryTimeoutSeconds;
+    private int debugTimeoutSeconds;
 
 }

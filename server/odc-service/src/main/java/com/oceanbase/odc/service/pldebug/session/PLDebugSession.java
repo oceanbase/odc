@@ -35,6 +35,7 @@ import com.oceanbase.odc.service.pldebug.model.DBPLError;
 import com.oceanbase.odc.service.pldebug.model.PLDebugBreakpoint;
 import com.oceanbase.odc.service.pldebug.model.PLDebugContextResp;
 import com.oceanbase.odc.service.pldebug.model.PLDebugPrintBacktrace;
+import com.oceanbase.odc.service.pldebug.model.PLDebugProperties;
 import com.oceanbase.odc.service.pldebug.model.PLDebugResult;
 import com.oceanbase.odc.service.pldebug.model.PLDebugVariable;
 import com.oceanbase.odc.service.pldebug.model.StartPLDebugReq;
@@ -60,6 +61,7 @@ public class PLDebugSession {
      * 发起调试的用户
      */
     private final long userId;
+    private final PLDebugProperties plDebugProperties;
     private volatile boolean debugOn;
     private DebuggeeSession debuggeeSession;
     private DebuggerSession debuggerSession;
@@ -69,9 +71,10 @@ public class PLDebugSession {
     @Setter
     private Integer dbmsoutputMaxRows = null;
 
-    public PLDebugSession(long userId, IdGenerator idGenerator) {
+    public PLDebugSession(long userId, PLDebugProperties plDebugProperties, IdGenerator idGenerator) {
         this.sessionId = idGenerator.generate();
         this.userId = userId;
+        this.plDebugProperties = plDebugProperties;
         ThreadFactory threadFactory = new ThreadFactoryBuilder()
                 .setNameFormat("PLDebug-schedule-ping-%d")
                 .build();
@@ -102,9 +105,9 @@ public class PLDebugSession {
     public void start(ConnectionSession connectionSession, ThreadPoolExecutor debugThreadPoolExecutor,
             StartPLDebugReq req, long timeoutSeconds, boolean syncEnabled) throws Exception {
         try {
-            debuggeeSession = new DebuggeeSession(connectionSession, debugThreadPoolExecutor, req);
+            debuggeeSession = new DebuggeeSession(connectionSession, debugThreadPoolExecutor, req, plDebugProperties);
             debuggeeSession.setDbmsoutputMaxRows(dbmsoutputMaxRows);
-            debuggerSession = new DebuggerSession(debuggeeSession, req, syncEnabled);
+            debuggerSession = new DebuggerSession(debuggeeSession, req, syncEnabled, plDebugProperties);
             if (!debuggerSession.detectSessionAlive() && !debuggeeSession.detectSessionAlive()) {
                 PLDebugResult debugResult = debuggeeSession.getResult();
                 throw OBException.executeFailed(ErrorCodes.DebugStartFailed,

@@ -135,6 +135,7 @@ public class PreCheckRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Void> {
     @Autowired
     private TablePermissionService tablePermissionService;
 
+
     private static final String CHECK_RESULT_FILE_NAME = "sql-check-result.json";
 
     @Override

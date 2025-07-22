@@ -27,6 +27,7 @@ public class ScheduleRowPreviewDto {
     private String rowId;
     private String originId;
     private String originProjectName;
+    private String description;
     private ScheduleType type;
 
     private ExportedDatabase database;

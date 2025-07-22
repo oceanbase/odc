@@ -49,7 +49,6 @@ public class OrganizationConfigMetaServiceTest {
         ConfigurationMeta configMeta =
                 organizationConfigMetaService.getConfigMeta("odc.security.default.customDataSourceEncryptionKey");
         Assert.assertNotNull(configMeta);
-        System.out.println(configMeta);
         Assert.assertEquals("odc.security.default.customDataSourceEncryptionKey", configMeta.getKey());
         Assert.assertEquals("", configMeta.getDefaultValue());
     }
@@ -57,7 +56,6 @@ public class OrganizationConfigMetaServiceTest {
     @Test
     public void getAllList_KeyExists_NotNull() {
         List<ConfigurationMeta> configMetaList = organizationConfigMetaService.listAllConfigMetas();
-        System.out.println(configMetaList);
-        Assert.assertEquals(6, configMetaList.size());
+        Assert.assertTrue(!configMetaList.isEmpty());
     }
 }

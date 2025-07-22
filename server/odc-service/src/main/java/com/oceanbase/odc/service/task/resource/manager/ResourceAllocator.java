@@ -119,7 +119,7 @@ public class ResourceAllocator {
                 log.info("endpoint prepare for job id = {}, wait  resource = {} ready",
                         allocateInfoEntity.getTaskId(), endpoint);
             } else {
-                log.debug("not endpoint available for job id = {}, ignore current schedule",
+                log.info("not endpoint available for job id = {}, ignore current schedule",
                         allocateInfoEntity.getTaskId());
             }
         }

@@ -69,7 +69,6 @@ import com.oceanbase.odc.service.task.config.TaskFrameworkProperties;
 import com.oceanbase.odc.service.task.constants.JobAttributeEntityColumn;
 import com.oceanbase.odc.service.task.constants.JobEntityColumn;
 import com.oceanbase.odc.service.task.enums.JobStatus;
-import com.oceanbase.odc.service.task.enums.TaskMonitorMode;
 import com.oceanbase.odc.service.task.enums.TaskRunMode;
 import com.oceanbase.odc.service.task.exception.JobException;
 import com.oceanbase.odc.service.task.executor.HeartbeatRequest;
@@ -367,26 +366,22 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
             jobProperties.put(ResourceIDUtil.RESOURCE_NAMESPACE_PROP_NAME, resourceID.getNamespace());
         }
         jobEntity.setExecutorIdentifier(executorIdentifier);
-        TaskMonitorMode monitorMode = JobPropertiesUtils.getMonitorMode(jobContext.getJobProperties());
         jobEntity.setJobProperties(jobProperties);
-        if (monitorMode == TaskMonitorMode.PUSH) {
-            return jobRepository.updateJobExecutorIdentifierById(jobEntity);
-        } else {
-            // that's pull mode, update executor endpoint as well
-            ExecutorIdentifier identifier = ExecutorIdentifierParser.parser(executorIdentifier);
-            String host = identifier.getHost();
-            if (!StringUtils.startsWith(host, "http")) {
-                host = "http://" + SystemUtils.addBracketsToIpv6AddressIfNeed(host);
-            }
-            String port = String.valueOf(executorListenPort);
-            return jobRepository.updateExecutorEndpointAndExecutorIdentifierById(jobEntity.getId(), host + ":" + port,
-                    executorIdentifier);
-        }
+        return jobRepository.updateJobExecutorIdentifierById(jobEntity);
     }
 
     @Override
     public int startSuccess(Long id, int executorListenPort, String executorIdentifier, JobContext jobContext) {
-        return startSuccess(id, null, executorListenPort, executorIdentifier, jobContext);
+        startSuccess(id, null, executorListenPort, executorIdentifier, jobContext);
+        // for task supervisor agent, executor endpoint has confirmed, update it as well
+        ExecutorIdentifier identifier = ExecutorIdentifierParser.parser(executorIdentifier);
+        String host = identifier.getHost();
+        if (!StringUtils.startsWith(host, "http")) {
+            host = "http://" + host;
+        }
+        String port = String.valueOf(executorListenPort);
+        return jobRepository.updateExecutorEndpointAndExecutorIdentifierById(id, host + ":" + port,
+                executorIdentifier);
     }
 
     @Override
@@ -516,7 +511,7 @@ public class StdTaskFrameworkService implements TaskFrameworkService {
 
         if (publisher != null && result.getStatus() != null && result.getStatus().isTerminated()) {
             taskResultPublisherExecutor.execute(() -> publisher
-                    .publishEvent(new JobTerminateEvent(result.getJobIdentity(), expectedJobStatus)));
+                    .publishEvent(new JobTerminateEvent(result.getJobIdentity(), expectedJobStatus, result)));
 
             // TODO maybe we can destroy the pod there.
             if (result.getStatus() == TaskStatus.FAILED) {

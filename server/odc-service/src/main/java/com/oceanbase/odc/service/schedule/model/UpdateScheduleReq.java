@@ -51,5 +51,7 @@ public class UpdateScheduleReq {
 
     private String description;
 
+    private boolean allowConcurrent = false;
+
 }
 

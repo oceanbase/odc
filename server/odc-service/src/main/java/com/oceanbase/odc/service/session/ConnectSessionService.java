@@ -315,7 +315,7 @@ public class ConnectSessionService {
                 new SqlExecuteTaskManagerFactory(this.monitorTaskManager, "console", maxConcurrentTaskCount);
         // TODO: query from use config service
         DefaultConnectSessionFactory sessionFactory = new DefaultConnectSessionFactory(
-                connection, getAutoCommit(connection), factory);
+                connection, getAutoCommit(connection), factory, sessionProperties.isClientStreamReadEnabled());
         sessionFactory.setIdGenerator(getIdGenerator(req));
         sessionFactory.setSessionTimeoutMillis(getDefaultSessionTimeoutMillis());
         return startConnectionSession(sessionFactory, connection.getDialectType(), connection.getEnvironmentId());

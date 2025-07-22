@@ -13,26 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.git.model;
+package com.oceanbase.odc.service.schedule.export.model;
 
-import java.util.Date;
+import java.util.List;
+
+import com.oceanbase.odc.service.schedule.model.ScheduleType;
 
 import lombok.Data;
 
-/**
- * @author: liuyizhuo.lyz
- * @date: 2024/7/29
- */
 @Data
-public class GitRepository extends GitProvider {
-    private Long id;
-    private Date createTime;
-    private Date updateTime;
-    private Long creatorId;
-    private Long organizationId;
-    private Long projectId;
-    private String name;
-    private String description;
-    private String sshAddress;
-    private String cloneAddress;
+public class ScheduleTerminateCmd {
+    private ScheduleType scheduleType;
+    private List<Long> ids;
 }

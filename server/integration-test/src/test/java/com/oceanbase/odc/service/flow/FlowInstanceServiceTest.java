@@ -58,6 +58,7 @@ import com.oceanbase.odc.core.authority.SecurityManager;
 import com.oceanbase.odc.core.shared.constant.ConnectType;
 import com.oceanbase.odc.core.shared.constant.ConnectionVisibleScope;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
+import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
 import com.oceanbase.odc.core.shared.constant.TaskType;
@@ -128,9 +129,10 @@ import lombok.NonNull;
 public class FlowInstanceServiceTest extends ServiceTestEnv {
 
     private final AtomicLong counter = new AtomicLong(1L);
+    private static final Long USER_ID = 1L;
     @Autowired
     private FlowInstanceService flowInstanceService;
-    @Autowired
+    @MockBean
     private AuthenticationFacade authenticationFacade;
     @MockBean
     private ConnectionService connectionService;
@@ -215,6 +217,8 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
         when(userService.getCurrentUserJoinedProjectIds()).thenReturn(Collections.singleton(1L));
         when(databaseService.listDatabasesByIds(Mockito.anyCollection()))
                 .thenReturn(Collections.singletonList(getDatabase()));
+        Mockito.when(authenticationFacade.currentUserId()).thenReturn(1L);
+        Mockito.when(authenticationFacade.currentUser()).thenReturn(getUser());
     }
 
     @Test
@@ -498,6 +502,166 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
         Assert.assertEquals(byParentInstanceIdIn.size(), 1);
     }
 
+    @Test
+    public void testList_UserNotJoinAnyProject_OnlyShowOwnApplyProjectPermissionTickets() {
+        // Prepare: Create flow instances with different creators and task types
+        FlowInstance flowInstance1 = createFlowInstance("test1");
+        buildFlowInstanceWithTaskType(flowInstance1, TaskType.APPLY_PROJECT_PERMISSION);
+
+        FlowInstance flowInstance2 = createFlowInstance("test2");
+        buildFlowInstanceWithTaskType(flowInstance2, TaskType.ASYNC);
+
+        FlowInstance flowInstance3 = createFlowInstance("test3");
+        buildFlowInstanceWithTaskType(flowInstance3, TaskType.APPLY_PROJECT_PERMISSION);
+
+        // Mock user not joining any projects
+        when(userService.getCurrentUserJoinedProjectIds()).thenReturn(Collections.emptySet());
+
+        // Mock current user ID
+        Long currentUserId = authenticationFacade.currentUserId();
+
+        // Update flow instance creators to test different scenarios
+        // flowInstance1: created by current user, APPLY_PROJECT_PERMISSION - should be visible
+        FlowInstanceEntity entity1 =
+                flowInstanceRepository.findById(flowInstance1.getId()).orElseThrow(IllegalStateException::new);
+        entity1.setCreatorId(currentUserId);
+        flowInstanceRepository.save(entity1);
+
+        // flowInstance2: created by current user, ASYNC - should NOT be visible (not
+        // APPLY_PROJECT_PERMISSION)
+        FlowInstanceEntity entity2 =
+                flowInstanceRepository.findById(flowInstance2.getId()).orElseThrow(IllegalStateException::new);
+        entity2.setCreatorId(currentUserId);
+        flowInstanceRepository.save(entity2);
+
+        // flowInstance3: created by different user, APPLY_PROJECT_PERMISSION - should NOT be visible (not
+        // created by current user)
+        FlowInstanceEntity entity3 =
+                flowInstanceRepository.findById(flowInstance3.getId()).orElseThrow(IllegalStateException::new);
+        entity3.setCreatorId(currentUserId + 1); // Different user
+        flowInstanceRepository.save(entity3);
+
+        // Execute: Query flow instances
+        QueryFlowInstanceParams params = QueryFlowInstanceParams.builder()
+                .approveByCurrentUser(false)
+                .createdByCurrentUser(false) // Don't filter by creator to test the logic
+                .containsAll(true)
+                .startTime(new Date(System.currentTimeMillis() - 10000))
+                .endTime(new Date(System.currentTimeMillis() + 10000))
+                .build(); // Don't specify task type to test all types
+
+        Page<FlowInstanceDetailResp> page = flowInstanceService.list(Pageable.unpaged(), params);
+
+        // Verify: Only flowInstance1 should be returned (current user's APPLY_PROJECT_PERMISSION)
+        Assert.assertEquals(1, page.getTotalElements());
+        Assert.assertEquals(flowInstance1.getId(), page.getContent().get(0).getId());
+    }
+
+    @Test
+    public void testList_UserJoinProjects_ShowJoinedProjectTicketsAndOwnApplyProjectPermissionTickets() {
+        // Prepare: Create flow instances
+        FlowInstance flowInstance1 = createFlowInstance("test1");
+        buildFlowInstanceWithTaskType(flowInstance1, TaskType.APPLY_PROJECT_PERMISSION);
+
+        FlowInstance flowInstance2 = createFlowInstance("test2");
+        buildFlowInstanceWithTaskType(flowInstance2, TaskType.ASYNC);
+
+        FlowInstance flowInstance3 = createFlowInstance("test3");
+        buildFlowInstanceWithTaskType(flowInstance3, TaskType.APPLY_PROJECT_PERMISSION);
+
+        // Mock user joining project with ID 1
+        when(userService.getCurrentUserJoinedProjectIds()).thenReturn(Collections.singleton(1L));
+
+        // Mock current user ID
+        Long currentUserId = authenticationFacade.currentUserId();
+
+        // Update flow instance creators and project IDs
+        // flowInstance1: created by current user, APPLY_PROJECT_PERMISSION, project 1 - should be visible
+        FlowInstanceEntity entity1 =
+                flowInstanceRepository.findById(flowInstance1.getId()).orElseThrow(IllegalStateException::new);
+        entity1.setCreatorId(currentUserId);
+        entity1.setProjectId(1L);
+        flowInstanceRepository.save(entity1);
+
+        // flowInstance2: created by different user, ASYNC, project 1 - should be visible (joined project)
+        FlowInstanceEntity entity2 =
+                flowInstanceRepository.findById(flowInstance2.getId()).orElseThrow(IllegalStateException::new);
+        entity2.setCreatorId(currentUserId + 1);
+        entity2.setProjectId(1L);
+        flowInstanceRepository.save(entity2);
+
+        // flowInstance3: created by current user, APPLY_PROJECT_PERMISSION, project 2 - should be visible
+        // (own APPLY_PROJECT_PERMISSION)
+        FlowInstanceEntity entity3 =
+                flowInstanceRepository.findById(flowInstance3.getId()).orElseThrow(IllegalStateException::new);
+        entity3.setCreatorId(currentUserId);
+        entity3.setProjectId(2L);
+        flowInstanceRepository.save(entity3);
+
+        // Execute: Query flow instances
+        QueryFlowInstanceParams params = QueryFlowInstanceParams.builder()
+                .approveByCurrentUser(false)
+                .createdByCurrentUser(false)
+                .containsAll(false)
+                .startTime(new Date(System.currentTimeMillis() - 10000))
+                .endTime(new Date(System.currentTimeMillis() + 10000))
+                .build();
+
+        Page<FlowInstanceDetailResp> page = flowInstanceService.list(Pageable.unpaged(), params);
+
+        // Verify: All three flow instances should be returned
+        Assert.assertEquals(3, page.getTotalElements());
+        Set<Long> returnedIds = page.getContent().stream()
+                .map(FlowInstanceDetailResp::getId)
+                .collect(Collectors.toSet());
+        Assert.assertTrue(returnedIds.contains(flowInstance1.getId()));
+        Assert.assertTrue(returnedIds.contains(flowInstance2.getId()));
+        Assert.assertTrue(returnedIds.contains(flowInstance3.getId()));
+    }
+
+    @Test
+    public void testList_UserNotJoinAnyProject_NoApplyProjectPermissionInTaskTypes_ReturnEmpty() {
+        // Prepare: Create flow instances with non-APPLY_PROJECT_PERMISSION types
+        FlowInstance flowInstance1 = createFlowInstance("test1");
+        buildFlowInstanceWithTaskType(flowInstance1, TaskType.ASYNC);
+
+        FlowInstance flowInstance2 = createFlowInstance("test2");
+        buildFlowInstanceWithTaskType(flowInstance2, TaskType.EXPORT);
+
+        // Mock user not joining any projects
+        when(userService.getCurrentUserJoinedProjectIds()).thenReturn(Collections.emptySet());
+
+        // Mock current user ID
+        Long currentUserId = authenticationFacade.currentUserId();
+
+        // Update flow instance creators
+        FlowInstanceEntity entity1 =
+                flowInstanceRepository.findById(flowInstance1.getId()).orElseThrow(IllegalStateException::new);
+        entity1.setCreatorId(currentUserId);
+        flowInstanceRepository.save(entity1);
+
+        FlowInstanceEntity entity2 =
+                flowInstanceRepository.findById(flowInstance2.getId()).orElseThrow(IllegalStateException::new);
+        entity2.setCreatorId(currentUserId);
+        flowInstanceRepository.save(entity2);
+
+        // Execute: Query flow instances with specific task types (excluding APPLY_PROJECT_PERMISSION)
+        QueryFlowInstanceParams params = QueryFlowInstanceParams.builder()
+                .approveByCurrentUser(false)
+                .createdByCurrentUser(false)
+                .containsAll(false)
+                .startTime(new Date(System.currentTimeMillis() - 10000))
+                .endTime(new Date(System.currentTimeMillis() + 10000))
+                .type(TaskType.ASYNC) // Only query ASYNC type
+                .build();
+
+        Page<FlowInstanceDetailResp> page = flowInstanceService.list(Pageable.unpaged(), params);
+
+        // Verify: Should return empty because user has no joined projects and task type is not
+        // APPLY_PROJECT_PERMISSION
+        Assert.assertEquals(0, page.getTotalElements());
+    }
+
     private void buildFlowInstance(FlowInstance flowInstance) {
         buildFlowInstanceWithTaskType(flowInstance, TaskType.ASYNC);
     }
@@ -582,6 +746,7 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
         asyncParam.setSqlContent("select 1 from dual");
         asyncParam.setRollbackSqlContent("select 1 from dual");
         req.setParameters(asyncParam);
+        req.setInnerCreated(false);
         return req;
     }
 
@@ -664,6 +829,12 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
         nodes.add(last);
 
         return nodes;
+    }
+
+    private User getUser() {
+        User user = User.of(USER_ID);
+        user.setOrganizationType(OrganizationType.TEAM);
+        return user;
     }
 
 }
