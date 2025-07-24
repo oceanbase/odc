@@ -20,7 +20,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
 
 import com.oceanbase.odc.service.connection.model.GenerateConnectionStringReq;
 import com.oceanbase.odc.service.encryption.SensitivePropertyHandler;
@@ -29,9 +28,6 @@ public class ConnectionHelperTest {
 
     @InjectMocks
     private ConnectionHelper helper;
-
-    @Spy
-    private SensitivePropertyHandler sensitivePropertyHandler = new EmptySensitivePropertyHandler();
 
     @Before
     public void setUp() throws Exception {
