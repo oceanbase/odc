@@ -1049,6 +1049,14 @@
                         <groupId>javax.validation</groupId>
                         <artifactId>validation-api</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <artifactId>logback-classic</artifactId>
+                        <groupId>ch.qos.logback</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>logback-core</artifactId>
+                        <groupId>ch.qos.logback</groupId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <dependency>
