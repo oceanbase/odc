@@ -1,0 +1,343 @@
+configurate_methods:
+  - customizable-model
+description:
+  en_US: Volcengine Ark models.
+  zh_Hans: 火山方舟提供的模型，例如 Doubao-pro-4k、Doubao-pro-32k 和 Doubao-pro-128k。
+icon_large:
+  en_US: icon_l_en.svg
+  zh_Hans: icon_l_zh.svg
+icon_small:
+  en_US: icon_s_en.svg
+label:
+  en_US: Doubao
+help:
+  title:
+    en_US: Get your Api Key from Volcengine Console
+    zh_Hans: 从火山引擎控制台获取您的 Api Key
+  url:
+    en_US: https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D
+    zh_Hans: https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey?apikey=%7B%7D
+model_credential_schema:
+  credential_form_schemas:
+    - default: api_key
+      label:
+        en_US: Authentication Method
+        zh_Hans: 鉴权方式
+      options:
+        - label:
+            en_US: API Key
+          value: api_key
+        - label:
+            en_US: Access Key / Secret Access Key
+          value: aksk
+      placeholder:
+        en_US: Enter your Authentication Method
+        zh_Hans: 选择鉴权方式
+      required: true
+      type: select
+      variable: auth_method
+    - label:
+        en_US: Access Key
+        zh_Hans: Access Key
+      placeholder:
+        en_US: Enter your Access Key
+        zh_Hans: 输入您的 Access Key
+      required: true
+      show_on:
+        - value: aksk
+          variable: auth_method
+      type: secret-input
+      variable: volc_access_key_id
+    - label:
+        en_US: Secret Access Key
+        zh_Hans: Secret Access Key
+      placeholder:
+        en_US: Enter your Secret Access Key
+        zh_Hans: 输入您的 Secret Access Key
+      required: true
+      show_on:
+        - value: aksk
+          variable: auth_method
+      type: secret-input
+      variable: volc_secret_access_key
+    - label:
+        en_US: API Key
+      placeholder:
+        en_US: Enter your API Key
+        zh_Hans: 输入您的 API Key
+      required: true
+      show_on:
+        - value: api_key
+          variable: auth_method
+      type: secret-input
+      variable: volc_api_key
+    - default: https://ark.cn-beijing.volces.com/api/v3
+      label:
+        en_US: API Endpoint Host
+        zh_Hans: API Endpoint Host
+      placeholder:
+        en_US: Enter your API Endpoint Host
+        zh_Hans: 输入 API Endpoint Host
+      required: true
+      type: text-input
+      variable: api_endpoint_host
+    - label:
+        en_US: Endpoint ID
+        zh_Hans: Endpoint ID
+      placeholder:
+        en_US: Enter your Endpoint ID
+        zh_Hans: 输入您的 Endpoint ID
+      required: true
+      type: text-input
+      variable: endpoint_id
+    - label:
+        en_US: Base Model
+        zh_Hans: 基础模型
+      options:
+        - label:
+            en_US: Doubao-Seed-1.6
+          value: Doubao-Seed-1.6
+          show_on:
+            - variable: __model_type
+              value: CHAT
+        - label:
+            en_US: Doubao-Seed-1.6-flash
+          value: Doubao-Seed-1.6-flash
+          show_on:
+            - variable: __model_type
+              value: CHAT
+        - label:
+            en_US: Doubao-Seed-1.6-thinking
+          value: Doubao-Seed-1.6-thinking
+          show_on:
+            - variable: __model_type
+              value: CHAT
+        - label:
+            en_US: Doubao-1.5-thinking-vision-pro
+          value: Doubao-1.5-thinking-vision-pro
+          show_on:
+            - variable: __model_type
+              value: CHAT
+        - label:
+            en_US: Doubao-1.5-UI-TARS
+          value: Doubao-1.5-UI-TARS
+          show_on:
+            - variable: __model_type
+              value: CHAT
+        - label:
+            en_US: Doubao-1.5-vision-lite
+          value: Doubao-1.5-vision-lite
+          show_on:
+            - variable: __model_type
+              value: CHAT
+        - label:
+            en_US: Doubao-1.5-vision-pro
+          value: Doubao-1.5-vision-pro
+          show_on:
+            - variable: __model_type
+              value: CHAT
+        - label:
+            en_US: Doubao-1.5-thinking-pro
+          value: Doubao-1.5-thinking-pro
+          show_on:
+            - variable: __model_type
+              value: CHAT
+        - label:
+            en_US: DeepSeek-R1-Distill-Qwen-32B
+          value: DeepSeek-R1-Distill-Qwen-32B
+          show_on:
+            - variable: __model_type
+              value: CHAT
+        - label:
+            en_US: DeepSeek-R1-Distill-Qwen-7B
+          value: DeepSeek-R1-Distill-Qwen-7B
+          show_on:
+            - variable: __model_type
+              value: CHAT
+        - label:
+            en_US: DeepSeek-R1
+          value: DeepSeek-R1
+          show_on:
+            - variable: __model_type
+              value: CHAT
+        - label:
+            en_US: DeepSeek-V3
+          value: DeepSeek-V3
+          show_on:
+            - variable: __model_type
+              value: CHAT
+        - label:
+            en_US: Doubao-1.5-vision-pro-32k
+          value: Doubao-1.5-vision-pro-32k
+          show_on:
+            - variable: __model_type
+              value: CHAT
+        - label:
+            en_US: Doubao-1.5-pro-32k
+          value: Doubao-1.5-pro-32k
+          show_on:
+            - variable: __model_type
+              value: CHAT
+        - label:
+            en_US: Doubao-1.5-lite-32k
+          value: Doubao-1.5-lite-32k
+          show_on:
+            - variable: __model_type
+              value: CHAT
+        - label:
+            en_US: Doubao-1.5-pro-256k
+          value: Doubao-1.5-pro-256k
+          show_on:
+            - variable: __model_type
+              value: CHAT
+        - label:
+            en_US: Doubao-vision-pro-32k
+          value: Doubao-vision-pro-32k
+          show_on:
+            - variable: __model_type
+              value: CHAT
+        - label:
+            en_US: Doubao-vision-lite-32k
+          value: Doubao-vision-lite-32k
+          show_on:
+            - variable: __model_type
+              value: CHAT
+        - label:
+            en_US: Doubao-pro-4k
+          show_on:
+            - value: CHAT
+              variable: __model_type
+          value: Doubao-pro-4k
+        - label:
+            en_US: Doubao-lite-4k
+          show_on:
+            - value: CHAT
+              variable: __model_type
+          value: Doubao-lite-4k
+        - label:
+            en_US: Doubao-pro-32k
+          show_on:
+            - value: CHAT
+              variable: __model_type
+          value: Doubao-pro-32k
+        - label:
+            en_US: Doubao-lite-32k
+          show_on:
+            - value: CHAT
+              variable: __model_type
+          value: Doubao-lite-32k
+        - label:
+            en_US: Doubao-pro-128k
+          show_on:
+            - value: CHAT
+              variable: __model_type
+          value: Doubao-pro-128k
+        - label:
+            en_US: Doubao-lite-128k
+          show_on:
+            - value: CHAT
+              variable: __model_type
+          value: Doubao-lite-128k
+        - label:
+            en_US: Doubao-pro-256k
+          value: Doubao-pro-256k
+          show_on:
+            - variable: __model_type
+              value: CHAT
+        - label:
+            en_US: Llama3-8B
+          show_on:
+            - value: CHAT
+              variable: __model_type
+          value: Llama3-8B
+        - label:
+            en_US: Llama3-70B
+          show_on:
+            - value: CHAT
+              variable: __model_type
+          value: Llama3-70B
+        - label:
+            en_US: Moonshot-v1-8k
+          show_on:
+            - value: CHAT
+              variable: __model_type
+          value: Moonshot-v1-8k
+        - label:
+            en_US: Moonshot-v1-32k
+          show_on:
+            - value: CHAT
+              variable: __model_type
+          value: Moonshot-v1-32k
+        - label:
+            en_US: Moonshot-v1-128k
+          show_on:
+            - value: CHAT
+              variable: __model_type
+          value: Moonshot-v1-128k
+        - label:
+            en_US: GLM3-130B
+          show_on:
+            - value: CHAT
+              variable: __model_type
+          value: GLM3-130B
+        - label:
+            en_US: GLM3-130B-Fin
+          show_on:
+            - value: CHAT
+              variable: __model_type
+          value: GLM3-130B-Fin
+        - label:
+            en_US: Mistral-7B
+          show_on:
+            - value: CHAT
+              variable: __model_type
+          value: Mistral-7B
+        - label:
+            en_US: Doubao-embedding
+          show_on:
+            - value: EMBEDDING
+              variable: __model_type
+          value: Doubao-embedding
+        - label:
+            en_US: Doubao-embedding-large
+          value: Doubao-embedding-large
+          show_on:
+            - variable: __model_type
+              value: EMBEDDING
+      required: false
+      type: select
+      variable: base_model_name
+    - default: '4096'
+      label:
+        en_US: Model Context Size
+        zh_Hans: 模型上下文长度
+      placeholder:
+        en_US: Enter your Model Context Size
+        zh_Hans: 输入您的模型上下文长度
+      required: true
+      type: text-input
+      variable: context_size
+    - default: '4096'
+      label:
+        en_US: Upper Bound for Max Tokens
+        zh_Hans: 最大 token 上限
+      placeholder:
+        en_US: Enter your model Upper Bound for Max Tokens
+        zh_Hans: 输入您的模型最大 token 上限
+      required: true
+      show_on:
+        - value: CHAT
+          variable: __model_type
+      type: text-input
+      variable: max_tokens
+  model:
+    label:
+      en_US: Model Name
+      zh_Hans: 模型名称
+    placeholder:
+      en_US: Enter your Model Name
+      zh_Hans: 输入模型名称
+provider: DOUBAO
+supported_model_types:
+  - CHAT
+  - EMBEDDING

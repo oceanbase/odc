@@ -168,6 +168,7 @@
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
         <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
         <versions-maven-plugin.version>2.7</versions-maven-plugin.version>
+        <langchain4j.version>1.1.0</langchain4j.version>
     </properties>
 
     <dependencyManagement>
@@ -493,6 +494,18 @@
                 <groupId>org.springframework.security</groupId>
                 <artifactId>spring-security-oauth2-client</artifactId>
                 <version>${spring-security.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j</artifactId>
+                <version>${langchain4j.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-open-ai</artifactId>
+                <version>${langchain4j.version}</version>
             </dependency>
 
             <dependency>

@@ -84,10 +84,10 @@ public class OrganizationConfigService {
     private IntegrationService integrationService;
 
     private List<Configuration> defaultConfigurations;
-    private Map<String, ConfigurationMeta> configKeyToConfigMeta;
     private final LoadingCache<Long, Map<String, Configuration>> orgIdToConfigurationsCache = Caffeine.newBuilder()
             .maximumSize(300).expireAfterWrite(60, TimeUnit.SECONDS)
             .build(this::internalQuery);
+    private Map<String, ConfigurationMeta> configKeyToConfigMeta;
 
     @PostConstruct
     @SkipAuthorize("odc internal usage")

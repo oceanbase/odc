@@ -108,6 +108,9 @@ public enum ResourceType implements Translatable {
     ODC_DASHBOARD,
     ODC_WORKFLOW,
 
+    ODC_LLM_MODEL,
+    ODC_LLM_PROVIDER,
+
     /**
      * OB Resources, with 'OB_' prefix
      */
