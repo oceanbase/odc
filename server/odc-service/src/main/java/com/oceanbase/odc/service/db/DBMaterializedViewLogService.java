@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.db;
 
 import java.util.List;
 
+import org.apache.commons.lang3.Validate;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.stereotype.Service;
 
@@ -54,20 +55,32 @@ public class DBMaterializedViewLogService {
     }
 
     public DBMaterializedViewLog detail(@NonNull ConnectionSession connectionSession, @NotEmpty String schemaName,
-            @NotEmpty String dbName) {
+            @NotEmpty String mViewLogName) {
+        Validate.isTrue(
+                connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
+                        .execute((ConnectionCallback<List<DBObjectIdentity>>) con -> getDBMViewLogExtensionPoint(
+                                connectionSession).list(con, schemaName))
+                        .stream().anyMatch(dbObjectIdentity -> mViewLogName.equals(dbObjectIdentity.getName())),
+                "Materialized view log " + mViewLogName + " not existed in schema " + schemaName);
         return connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.BACKEND_DS_KEY)
                 .execute((ConnectionCallback<DBMaterializedViewLog>) con -> getDBMViewLogExtensionPoint(
                         connectionSession)
-                                .getDetail(con, schemaName, dbName));
+                                .getDetail(con, schemaName, mViewLogName));
     }
 
     public Boolean purge(@NonNull ConnectionSession connectionSession, @NotEmpty String schemaName,
-            @NotEmpty String dbName) {
+            @NotEmpty String mViewLogName) {
+        Validate.isTrue(
+                connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
+                        .execute((ConnectionCallback<List<DBObjectIdentity>>) con -> getDBMViewLogExtensionPoint(
+                                connectionSession).list(con, schemaName))
+                        .stream().anyMatch(dbObjectIdentity -> mViewLogName.equals(dbObjectIdentity.getName())),
+                "Materialized view log " + mViewLogName + " not existed in schema " + schemaName);
         return connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.BACKEND_DS_KEY)
                 .execute((ConnectionCallback<Boolean>) con -> getDBMViewLogExtensionPoint(connectionSession)
-                        .purge(con, new DBMViewLogPurgeParameter(schemaName, dbName)));
+                        .purge(con, new DBMViewLogPurgeParameter(schemaName, mViewLogName)));
     }
 
     public String generateCreateTemplate(@NonNull ConnectionSession connectionSession,
