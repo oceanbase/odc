@@ -315,6 +315,7 @@ public class FlowInstanceService {
     private TransactionTemplate transactionTemplate;
     @Value("${odc.log.directory:./log}")
     private String logPath;
+    @Autowired
     private LogicalDatabaseService logicalDatabaseService;
 
     private static final long MAX_EXPORT_OBJECT_COUNT = 10000;
