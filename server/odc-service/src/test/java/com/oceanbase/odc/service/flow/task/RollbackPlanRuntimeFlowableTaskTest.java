@@ -37,7 +37,7 @@ public class RollbackPlanRuntimeFlowableTaskTest {
         Mockito.when(flowInstanceService.getStatus(ArgumentMatchers.any())).thenReturn(Collections.singletonMap(1024L,
                 FlowStatus.EXECUTING));
         RollbackPlanRuntimeFlowableTask.FlowCanceledWatcher flowCanceledWatcher =
-                new FlowCanceledWatcher(flowInstanceService, 1024L, 500L);
+                new FlowCanceledWatcher(flowInstanceService, 1024L, 200L);
         long invokeEndTime = System.currentTimeMillis() + 1000;
         int executeCount = 0;
         while (System.currentTimeMillis() < invokeEndTime) {
@@ -46,6 +46,6 @@ public class RollbackPlanRuntimeFlowableTaskTest {
             Thread.sleep(10);
         }
         Assert.assertTrue(executeCount > 50);
-        Mockito.verify(flowInstanceService, Mockito.atMost(4));
+        Assert.assertTrue(flowCanceledWatcher.getQueryStatusTimes() < executeCount);
     }
 }

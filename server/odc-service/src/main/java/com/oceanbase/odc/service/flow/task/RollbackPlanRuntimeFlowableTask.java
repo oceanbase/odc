@@ -304,6 +304,7 @@ public class RollbackPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Rol
         private final Long flowInstanceId;
         private final long statusUpdateIntervalMs;
         private long lastStatusQueryTimeMs;
+        private long queryStatusTimes;
         private FlowStatus status;
 
         public FlowCanceledWatcher(FlowInstanceService flowInstanceService, Long flowInstanceId,
@@ -313,6 +314,11 @@ public class RollbackPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Rol
             this.lastStatusQueryTimeMs = System.currentTimeMillis();
             this.statusUpdateIntervalMs = statusUpdateIntervalMs;
             this.status = null;
+        }
+
+        // visiable for test
+        public long getQueryStatusTimes() {
+            return queryStatusTimes;
         }
 
         public synchronized boolean isCanceled() {
@@ -328,6 +334,7 @@ public class RollbackPlanRuntimeFlowableTask extends BaseODCFlowTaskDelegate<Rol
             log.info("try query flow status for id = {}", flowInstanceId);
             try {
                 Map<Long, FlowStatus> entity = flowInstanceService.getStatus(Collections.singleton(flowInstanceId));
+                queryStatusTimes++;
                 FlowStatus tmp = entity.get(flowInstanceId);
                 if (null == tmp) {
                     throw new RuntimeException(
