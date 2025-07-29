@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.service.schedule;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -69,6 +70,20 @@ public class ScheduleChangeLogService {
             return changeLog;
         }
         return changeLog;
+    }
+
+    // select a.id as id , a.schedule_id as schedule_id, a.flow_instance_id as flow_instance_id,
+    // a.status as status, a.create_time as create_time from schedule_changelog as a inner join (select
+    // schedule_id, max(create_time) as latest_time from schedule_changelog where schedule_id in
+    // (:scheduleIds) group by schedule_id) as b on a.create_time = b.latest_time and a.schedule_id =
+    // b.schedule_id
+    public List<ScheduleChangeLogRepository.ScheduleChangeLogSummary> getLatestChangeLogs(Collection<Long> scheduleId) {
+        return scheduleChangeLogRepository.findLatestScheduleChangeByScheduleIDs(scheduleId);
+    }
+
+    public List<ScheduleChangeLogRepository.ScheduleChangeLogSummary> getChangeLogsByScheduleChangeLogIds(
+            Collection<Long> scheduleChangeLogIds) {
+        return scheduleChangeLogRepository.findScheduleChangeByScheduleChangeLogIDs(scheduleChangeLogIds);
     }
 
     public ScheduleChangeLog getByFlowInstanceId(Long flowInstanceId) {

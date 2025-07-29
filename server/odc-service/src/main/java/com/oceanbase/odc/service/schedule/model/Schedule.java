@@ -66,6 +66,8 @@ public class Schedule implements SingleOrganizationResource {
 
     private Date updateTime;
 
+    private Long latestScheduleChangelogId;
+
     @Override
     public String resourceType() {
         return ResourceType.ODC_SCHEDULE.name();

@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -41,7 +42,11 @@ import com.oceanbase.odc.metadb.iam.UserEntity;
 import com.oceanbase.odc.metadb.iam.UserRepository;
 import com.oceanbase.odc.metadb.schedule.LatestTaskMappingEntity;
 import com.oceanbase.odc.metadb.schedule.LatestTaskMappingRepository;
+import com.oceanbase.odc.metadb.schedule.ScheduleChangeLogRepository;
+import com.oceanbase.odc.metadb.schedule.ScheduleChangeLogRepository.ScheduleChangeLogSummary;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
+import com.oceanbase.odc.metadb.schedule.ScheduleRelationsEntity;
+import com.oceanbase.odc.metadb.schedule.ScheduleRelationsRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
@@ -60,10 +65,15 @@ import com.oceanbase.odc.service.dlm.model.DataArchiveTableConfig;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.flow.ApprovalPermissionService;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
+import com.oceanbase.odc.service.partitionplan.PartitionPlanService;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanAttribute;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
+import com.oceanbase.odc.service.schedule.ScheduleChangeLogService;
 import com.oceanbase.odc.service.schedule.model.DataArchiveAttributes;
 import com.oceanbase.odc.service.schedule.model.DataDeleteAttributes;
 import com.oceanbase.odc.service.schedule.model.Schedule;
+import com.oceanbase.odc.service.schedule.model.ScheduleChangeStatus;
 import com.oceanbase.odc.service.schedule.model.ScheduleDetailResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleDetailRespHist;
 import com.oceanbase.odc.service.schedule.model.ScheduleOverview;
@@ -74,9 +84,9 @@ import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskType;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
+import com.oceanbase.odc.service.sqlplan.model.SqlExecuteTaskResult;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanAttributes;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
-import com.oceanbase.odc.service.sqlplan.model.SqlPlanTaskResult;
 
 import lombok.NonNull;
 
@@ -116,7 +126,12 @@ public class ScheduleResponseMapperFactory {
     private JobRepository jobRepository;
     @Autowired
     private ProjectService projectService;
-
+    @Autowired
+    private PartitionPlanService partitionPlanService;
+    @Autowired
+    private ScheduleChangeLogService scheduleChangeLogService;
+    @Autowired
+    private ScheduleRelationsRepository scheduleRelationsRepository;
 
 
     public ScheduleDetailResp generateScheduleDetailResp(@NonNull Schedule schedule) {
@@ -146,6 +161,14 @@ public class ScheduleResponseMapperFactory {
         scheduleDetailResp.setType(schedule.getType());
         scheduleDetailResp.setParameters(detailParameters(schedule));
 
+        Map<Long, ScheduleChangeLogRepository.ScheduleChangeLogSummary> scheduleChangeLogMap =
+                generateScheduleChangeLogMapper(Collections.singleton(schedule.getLatestScheduleChangelogId()));
+        ScheduleChangeLogRepository.ScheduleChangeLogSummary scheduleChangeLog =
+                scheduleChangeLogMap.get(schedule.id());
+        if (null != scheduleChangeLog) {
+            scheduleDetailResp.setApprovable(scheduleChangeLog.getStatus() == ScheduleChangeStatus.APPROVING);
+            scheduleDetailResp.setApproveInstanceId(scheduleChangeLog.getFlowInstanceId());
+        }
         return scheduleDetailResp;
     }
 
@@ -157,6 +180,11 @@ public class ScheduleResponseMapperFactory {
         }
 
         Set<Long> scheduleIds = schedules.stream().map(ScheduleEntity::getId).collect(Collectors.toSet());
+        // get sub schedule latest task
+        Set<Long> childIds = scheduleRelationsRepository.findByParentIdIn(scheduleIds).stream().map(
+                ScheduleRelationsEntity::getChildId)
+                .collect(Collectors.toSet());
+        scheduleIds.addAll(childIds);
 
         Map<Long, Long> scheduleId2ScheduleTaskId =
                 latestTaskMappingRepository.findByScheduleIdIn(scheduleIds).stream().collect(
@@ -179,6 +207,23 @@ public class ScheduleResponseMapperFactory {
         Map<Long, List<UserEntity>> users = userRepository.findByIdIn(creatorIds).stream().collect(
                 Collectors.groupingBy(UserEntity::getId));
 
+        Map<Long, ScheduleChangeLogRepository.ScheduleChangeLogSummary> scheduleChangeLogMap =
+                generateScheduleChangeLogMapper(schedules.stream().map(ScheduleEntity::getLatestScheduleChangelogId)
+                        .collect(Collectors.toList()));
+
+        Map<Long, Project> id2Project = projectService
+                .listByIds(schedules.stream().map(ScheduleEntity::getProjectId).collect(Collectors.toSet())).stream()
+                .collect(Collectors.toMap(Project::getId, o -> o, (o1, o2) -> o2));
+
+        /**
+         * list candidates
+         */
+        Set<Long> flowInstanceIds = scheduleChangeLogMap.values().stream()
+                .filter(s -> s.getStatus() == ScheduleChangeStatus.APPROVING && s.getFlowInstanceId() != null)
+                .map(ScheduleChangeLogSummary::getFlowInstanceId).collect(Collectors.toSet());
+        Map<Long, Set<UserEntity>> candidatesByFlowInstanceIds =
+                approvalPermissionService.getCandidatesByFlowInstanceIds(flowInstanceIds);
+
         return schedules.stream().map(o -> {
             ScheduleOverview overview = new ScheduleOverview();
             overview.setScheduleId(o.getId());
@@ -188,13 +233,50 @@ public class ScheduleResponseMapperFactory {
             overview.setStatus(o.getStatus());
             overview.setTriggerConfig(JsonUtils.fromJson(o.getTriggerConfigJson(), TriggerConfig.class));
             overview.setAttributes(JSON.parseObject(JSON.toJSONString(id2Attributes.get(o.getId()))));
+            overview.setCreateTime(o.getCreateTime());
+            overview.setLatestChangedLogId(o.getLatestScheduleChangelogId());
             if (scheduleId2ScheduleTaskId.containsKey(o.getId())) {
                 ScheduleTaskEntity scheduleTask = scheduleId2ScheduleTask.get(o.getId());
                 overview.setLatestFireTime(scheduleTask.getFireTime());
                 overview.setLatestExecutionStatus(scheduleTask.getStatus());
             }
+            // set approval info
+            setApproveInformation(overview, scheduleChangeLogMap.get(o.getId()), candidatesByFlowInstanceIds);
+            overview.setProject(id2Project.get(o.getProjectId()));
             return overview;
         }).collect(Collectors.toMap(ScheduleOverview::getScheduleId, o -> o));
+    }
+
+    private void setApproveInformation(ScheduleOverview overview,
+            ScheduleChangeLogRepository.ScheduleChangeLogSummary changeLogSummary,
+            Map<Long, Set<UserEntity>> flowInstanceToUserEntityMap) {
+        if (null == changeLogSummary) {
+            return;
+        }
+        overview.setApproveInstanceId(changeLogSummary.getFlowInstanceId());
+        boolean approvalAble = false;
+        if (changeLogSummary.getStatus() == ScheduleChangeStatus.APPROVING
+                && null != changeLogSummary.getFlowInstanceId()) {
+            Set<UserEntity> userEntities = flowInstanceToUserEntityMap
+                    .getOrDefault(changeLogSummary.getFlowInstanceId(), Collections.emptySet());
+            overview.setCandidateApprovers(userEntities.stream().map(InnerUser::new).collect(Collectors.toSet()));
+            approvalAble = !userEntities.isEmpty();
+        }
+        overview.setApprovable(approvalAble);
+    }
+
+    protected Map<Long, ScheduleChangeLogRepository.ScheduleChangeLogSummary> generateScheduleChangeLogMapper(
+            Collection<Long> scheduleChangeLogIDs) {
+        scheduleChangeLogIDs = scheduleChangeLogIDs.stream().filter(Objects::nonNull).collect(Collectors.toList());
+        // no arrpove info
+        if (scheduleChangeLogIDs.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        List<ScheduleChangeLogRepository.ScheduleChangeLogSummary> scheduleChangeLogs =
+                scheduleChangeLogService.getChangeLogsByScheduleChangeLogIds(scheduleChangeLogIDs);
+        return scheduleChangeLogs.stream().collect(
+                Collectors.toMap(ScheduleChangeLogRepository.ScheduleChangeLogSummary::getScheduleId,
+                        changeLog -> changeLog));
     }
 
     public Map<Long, ScheduleTaskListOverview> generateScheduleTaskOverviewListMapper(
@@ -225,6 +307,12 @@ public class ScheduleResponseMapperFactory {
 
         Map<Long, ScheduleOverviewAttributes> scheduleId2Attributes = generateAttributes(
                 id2Schedule.values());
+
+        Map<Long, Project> id2Project = projectService
+                .listByIds(id2Schedule.values().stream().map(ScheduleEntity::getProjectId).collect(Collectors.toSet()))
+                .stream()
+                .collect(Collectors.toMap(Project::getId, o -> o, (o1, o2) -> o2));
+
         return taskEntities.stream().map(task -> {
             ScheduleTaskListOverview t = new ScheduleTaskListOverview();
             ScheduleEntity schedule = id2Schedule.get(Long.parseLong(task.getJobName()));
@@ -240,12 +328,14 @@ public class ScheduleResponseMapperFactory {
             String attributesJson;
             if (t.getType() == ScheduleTaskType.SQL_PLAN) {
                 SqlPlanAttributes attributes = (SqlPlanAttributes) scheduleId2Attributes.get(schedule.getId());
-                attributes.setTaskResult(JsonUtils.fromJson(resultMap.get(task.getJobId()), SqlPlanTaskResult.class));
+                attributes
+                        .setTaskResult(JsonUtils.fromJson(resultMap.get(task.getJobId()), SqlExecuteTaskResult.class));
                 attributesJson = JsonUtils.toJson(attributes);
             } else {
                 attributesJson = JsonUtils.toJson(scheduleId2Attributes.get(schedule.getId()));
             }
             t.setAttributes(JSON.parseObject(attributesJson));
+            t.setProject(id2Project.get(schedule.getProjectId()));
             return t;
         }).collect(Collectors.toMap(ScheduleTaskListOverview::getId, o -> o));
     }
@@ -367,7 +457,6 @@ public class ScheduleResponseMapperFactory {
         }).collect(Collectors.toMap(ScheduleOverviewHist::getId, o -> o));
     }
 
-
     public Map<Long, ScheduleOverviewAttributes> generateAttributes(Collection<ScheduleEntity> schedules) {
         Map<ScheduleType, List<ScheduleEntity>> type2Entity = schedules.stream().collect(
                 Collectors.groupingBy(ScheduleEntity::getType));
@@ -434,6 +523,24 @@ public class ScheduleResponseMapperFactory {
                     });
                     break;
                 }
+                case PARTITION_PLAN: {
+                    Set<Long> databaseIds = new HashSet<>();
+                    v.forEach(o -> {
+                        PartitionPlanConfig parameters = JsonUtils.fromJson(o.getJobParametersJson(),
+                                PartitionPlanConfig.class);
+                        databaseIds.add(parameters.getDatabaseId());
+                    });
+                    Map<Long, Database> id2Database = getDatabaseByIds(databaseIds).stream().collect(
+                            Collectors.toMap(Database::getId, o -> o));
+                    v.forEach(o -> {
+                        PartitionPlanConfig parameters = JsonUtils.fromJson(o.getJobParametersJson(),
+                                PartitionPlanConfig.class);
+                        PartitionPlanAttribute attributes = new PartitionPlanAttribute();
+                        attributes.setDatabaseInfo(id2Database.get(parameters.getDatabaseId()));
+                        id2Attributes.put(o.getId(), attributes);
+                    });
+                    break;
+                }
                 default:
                     break;
             }
@@ -478,6 +585,21 @@ public class ScheduleResponseMapperFactory {
                 SqlPlanParameters parameters = (SqlPlanParameters) schedule.getParameters();
                 if (parameters.getDatabaseId() != null) {
                     parameters.setDatabaseInfo(detailDatabaseOrNull(parameters.getDatabaseId()));
+                }
+                return parameters;
+            }
+            case PARTITION_PLAN: {
+                PartitionPlanConfig parameters = (PartitionPlanConfig) schedule.getParameters();
+                Database databaseInfo = null;
+                if (parameters.getDatabaseId() != null) {
+                    databaseInfo = detailDatabaseOrNull(parameters.getDatabaseId());
+                }
+
+                parameters.setDatabaseInfo(databaseInfo);
+                PartitionPlanConfig partitionPlanConfig =
+                        partitionPlanService.getPartitionPlanByPartitionPlanId(parameters.getId());
+                if (ObjectUtils.isNotEmpty(partitionPlanConfig)) {
+                    parameters.setPartitionTableConfigs(partitionPlanConfig.getPartitionTableConfigs());
                 }
                 return parameters;
             }

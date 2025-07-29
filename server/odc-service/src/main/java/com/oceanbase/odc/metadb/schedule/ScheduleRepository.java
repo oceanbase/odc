@@ -61,6 +61,13 @@ public interface ScheduleRepository extends OdcJpaRepository<ScheduleEntity, Lon
             + "where id=:id", nativeQuery = true)
     int updateJobParametersById(@Param("id") Long id, @Param("jobParametersJson") String jobParametersJson);
 
+    @Transactional
+    @Modifying
+    @Query(value = "update schedule_schedule set latest_schedule_changelog_id = :latestScheduleChangeLogId "
+            + "where id=:id", nativeQuery = true)
+    int updateLatestScheduleChangeLogIdById(@Param("id") Long id,
+            @Param("latestScheduleChangeLogId") Long latestScheduleChangeLogId);
+
     @Query(value = "select count(1) from schedule_schedule where project_id=:projectId and status in ('ENABLED', 'CREATING', 'APPROVING', 'PAUSE')",
             nativeQuery = true)
     int getEnabledScheduleCountByProjectId(@Param("projectId") Long projectId);
@@ -86,8 +93,14 @@ public interface ScheduleRepository extends OdcJpaRepository<ScheduleEntity, Lon
                 .and(OdcJpaRepository.notEq(ScheduleEntity_.status, ScheduleStatus.DELETED))
                 .and(OdcJpaRepository.in(ScheduleEntity_.creatorId, params.getCreatorIds()))
                 .and(OdcJpaRepository.like(ScheduleEntity_.name, params.getName()))
-                .and(OdcJpaRepository.eq(ScheduleEntity_.organizationId, params.getOrganizationId()));
+                .and(OdcJpaRepository.eq(ScheduleEntity_.organizationId, params.getOrganizationId()))
+                .and(OdcJpaRepository.eq(ScheduleEntity_.isInner, Boolean.FALSE));
         return findAll(specification, pageable);
+    }
+
+    default Page<ScheduleEntity> findWithJoinScheduleChangeLog(@NotNull Pageable pageable,
+            @NotNull QueryScheduleParams params) {
+        return findAll(ScheduleSpecs.joinScheduleChangeLog(params), pageable);
     }
 
     List<ScheduleEntity> findByOrganizationIdAndIdInAndProjectIdIn(Long organizationId, Collection<Long> ids,

@@ -27,7 +27,7 @@ import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.instance.FlowApprovalInstance;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.schedule.ScheduleService;
-import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
+import com.oceanbase.odc.service.schedule.model.ScheduleChangeStatus;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -61,7 +61,7 @@ public class ApprovalTaskExpiredListener extends BaseStatusModifyListener<FlowAp
         flowInstanceRepository.updateStatusById(target.getFlowInstanceId(), FlowStatus.APPROVAL_EXPIRED);
         FlowNodeStatus status = FlowNodeStatus.EXPIRED;
         int affectRows = userTaskRepository.updateStatusById(target.getId(), status);
-        scheduleService.updateStatusByFlowInstanceId(target.getFlowInstanceId(), ScheduleStatus.APPROVAL_EXPIRED);
+        scheduleService.updateStatusByFlowInstanceId(target.getFlowInstanceId(), ScheduleChangeStatus.APPROVE_EXPIRED);
         log.info("Modify node instance status successfully, instanceId={}, instanceType={}, affectRows={}",
                 target.getId(), target.getNodeType(), affectRows);
         return status;

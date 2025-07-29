@@ -59,6 +59,10 @@ public enum FlowStatus {
      */
     EXECUTION_SUCCEEDED,
     /**
+     * {@code FlowInstance} is succeed, but with skipped errors
+     */
+    EXECUTION_SUCCEEDED_WITH_ERRORS,
+    /**
      * {@code FlowInstance} is failed
      */
     EXECUTION_ABNORMAL,

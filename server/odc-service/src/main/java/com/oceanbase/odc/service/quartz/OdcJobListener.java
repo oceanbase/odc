@@ -112,11 +112,6 @@ public class OdcJobListener implements JobListener {
         userEntity.setOrganizationId(scheduleEntity.getOrganizationId());
         User taskCreator = new User(userEntity);
         SecurityContextUtils.setCurrentUser(taskCreator);
-        if (scheduleEntity.getType() == ScheduleType.PARTITION_PLAN
-                || (!authType.contains("obcloud") && scheduleEntity.getType() == ScheduleType.SQL_PLAN)) {
-            log.info("Skip preparing tasks for partition plan or sql plan,and create flow task later.");
-            return;
-        }
         // Create or load task.
         Long targetTaskId = ScheduleTaskUtils.getTargetTaskId(context);
         if (targetTaskId == null && autoRecoveryTimeoutJob) {

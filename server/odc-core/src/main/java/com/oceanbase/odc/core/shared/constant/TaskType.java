@@ -16,9 +16,11 @@
 package com.oceanbase.odc.core.shared.constant;
 
 import java.util.Locale;
+import java.util.Set;
 
 import org.springframework.context.i18n.LocaleContextHolder;
 
+import com.google.common.collect.Sets;
 import com.oceanbase.odc.common.i18n.Translatable;
 
 /**
@@ -100,6 +102,10 @@ public enum TaskType implements Translatable {
      */
     APPLY_TABLE_PERMISSION,
     /**
+     * Logical database change
+     */
+    LOGICAL_DATABASE_CHANGE,
+    /**
      * Structure comparison
      */
     STRUCTURE_COMPARISON;
@@ -116,7 +122,7 @@ public enum TaskType implements Translatable {
 
     public boolean needsPreCheck() {
         return this == ASYNC || this == ONLINE_SCHEMA_CHANGE || this == ALTER_SCHEDULE || this == EXPORT_RESULT_SET
-                || this == MULTIPLE_ASYNC;
+                || this == MULTIPLE_ASYNC || this == LOGICAL_DATABASE_CHANGE;
     }
 
     public boolean needForExecutionStrategy() {
@@ -127,4 +133,21 @@ public enum TaskType implements Translatable {
         return !(this == PRE_CHECK || this == SQL_CHECK || this == GENERATE_ROLLBACK);
     }
 
+    public static Set<TaskType> visibleTaskTypes() {
+        return Sets.newHashSet(
+                TaskType.MULTIPLE_ASYNC,
+                TaskType.EXPORT,
+                TaskType.IMPORT,
+                TaskType.MOCKDATA,
+                TaskType.ASYNC,
+                TaskType.SHADOWTABLE_SYNC,
+                TaskType.PARTITION_PLAN,
+                TaskType.ONLINE_SCHEMA_CHANGE,
+                TaskType.EXPORT_RESULT_SET,
+                TaskType.LOGICAL_DATABASE_CHANGE,
+                TaskType.APPLY_PROJECT_PERMISSION,
+                TaskType.APPLY_DATABASE_PERMISSION,
+                TaskType.STRUCTURE_COMPARISON,
+                TaskType.APPLY_TABLE_PERMISSION);
+    }
 }

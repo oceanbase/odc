@@ -51,7 +51,7 @@ import com.oceanbase.odc.service.connection.logicaldatabase.core.rewrite.Rewrite
 import com.oceanbase.odc.service.connection.logicaldatabase.core.rewrite.SqlRewriter;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalDatabaseResp;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalTableResp;
-import com.oceanbase.odc.service.schedule.model.PublishLogicalDatabaseChangeReq;
+import com.oceanbase.odc.service.flow.task.model.LogicalDatabaseChangePublishReq;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.task.base.TaskBase;
 import com.oceanbase.odc.service.task.caller.JobContext;
@@ -72,17 +72,17 @@ import lombok.extern.slf4j.Slf4j;
 public class LogicalDatabaseChangeTask extends TaskBase<Map<String, ExecutionResult<SqlExecutionResultWrapper>>> {
     private SqlRewriter sqlRewriter;
     private ExecutionGroupContext<SqlExecuteReq, SqlExecutionResultWrapper> executionGroupContext;
-    private PublishLogicalDatabaseChangeReq taskParameters;
+    private LogicalDatabaseChangePublishReq taskParameters;
     private List<ExecutionGroup<SqlExecuteReq, SqlExecutionResultWrapper>> executionGroups;
     private GroupExecutionEngine executorEngine;
 
     public LogicalDatabaseChangeTask() {}
 
     @Override
-    protected void doInit(JobContext context) {
+    public void doInit(JobContext context) {
         Map<String, String> jobParameters = context.getJobParameters();
         taskParameters = JsonUtils.fromJson(jobParameters.get(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY),
-                PublishLogicalDatabaseChangeReq.class);
+                LogicalDatabaseChangePublishReq.class);
         sqlRewriter = new RelationFactorRewriter();
         executionGroups = new ArrayList<>();
         initExecutorContext();

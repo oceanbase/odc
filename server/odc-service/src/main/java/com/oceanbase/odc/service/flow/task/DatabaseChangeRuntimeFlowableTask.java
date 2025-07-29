@@ -171,7 +171,11 @@ public class DatabaseChangeRuntimeFlowableTask extends BaseODCFlowTaskDelegate<D
     protected void onSuccessful(Long taskId, TaskService taskService) {
         log.info("Async task succeed, taskId={}", taskId);
         super.onSuccessful(taskId, taskService);
-        updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
+        if (asyncTaskThread.getResult().getFailCount() > 0) {
+            updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED_WITH_ERRORS);
+        } else {
+            updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
+        }
     }
 
     @Override

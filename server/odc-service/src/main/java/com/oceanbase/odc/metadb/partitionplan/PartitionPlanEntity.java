@@ -57,8 +57,8 @@ public class PartitionPlanEntity {
     @Column(name = "update_time", insertable = false, updatable = false,
             columnDefinition = "datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
     private Date updateTime;
-    @Column(name = "flow_instance_id", nullable = false)
-    private long flowInstanceId;
+    @Column(name = "flow_instance_id")
+    private Long flowInstanceId;
     /**
      * Enabled or not
      */

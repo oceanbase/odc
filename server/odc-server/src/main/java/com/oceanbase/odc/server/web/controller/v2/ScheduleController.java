@@ -16,9 +16,11 @@
 package com.oceanbase.odc.server.web.controller.v2;
 
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Pageable;
@@ -50,6 +52,7 @@ import com.oceanbase.odc.service.schedule.model.QueryScheduleParams;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleStatParams;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleTaskParams;
 import com.oceanbase.odc.service.schedule.model.Schedule;
+import com.oceanbase.odc.service.schedule.model.ScheduleApproveFilterStatus;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeLog;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleDetailResp;
@@ -194,12 +197,12 @@ public class ScheduleController {
             @RequestParam(required = false, name = "scheduleId") String scheduleId,
             @RequestParam(required = false, name = "scheduleName") String scheduleName,
             @RequestParam(required = false, name = "status") List<TaskStatus> status,
-            @RequestParam(required = true, name = "scheduleType") ScheduleType scheduleType,
+            @RequestParam(required = false, name = "scheduleType") ScheduleType scheduleType,
             @RequestParam(required = false, name = "startTime") Date startTime,
             @RequestParam(required = false, name = "endTime") Date endTime,
             @RequestParam(required = false, name = "creator") String creator,
-            @RequestParam(required = false, name = "projectId") Long projectId) {
-
+            @RequestParam(required = false, name = "projectId") Long projectId,
+            @RequestParam(required = false, name = "projectIds") Set<Long> projectIds) {
         QueryScheduleTaskParams req = QueryScheduleTaskParams.builder()
                 .id(id)
                 .scheduleId(scheduleId)
@@ -214,6 +217,7 @@ public class ScheduleController {
                 .endTime(endTime)
                 .creator(creator)
                 .projectId(projectId)
+                .projectIds(projectIds)
                 .build();
 
         return Responses.paginated(scheduleService.listScheduleTaskListOverview(pageable, req));
@@ -268,13 +272,22 @@ public class ScheduleController {
             @RequestParam(required = false, name = "id") String id,
             @RequestParam(required = false, name = "name") String name,
             @RequestParam(required = false, name = "status") List<ScheduleStatus> status,
+            @RequestParam(required = false, name = "approveStatus") List<ScheduleApproveFilterStatus> approveStatus,
             @RequestParam(required = false, name = "type") ScheduleType type,
             @RequestParam(required = false, name = "startTime") Date startTime,
             @RequestParam(required = false, name = "endTime") Date endTime,
             @RequestParam(required = false, name = "creator") String creator,
             @RequestParam(required = false, name = "projectUniqueIdentifier") String projectUniqueIdentifier,
             @RequestParam(required = false, name = "projectId") Long projectId,
+            @RequestParam(required = false, name = "projectIds") Set<Long> projectIds,
             @RequestParam(required = false, name = "triggerStrategy") String triggerStrategy) {
+        Set<Long> joinedProjectIds = new HashSet<>();
+        if (null != projectId) {
+            joinedProjectIds.add(projectId);
+        }
+        if (CollectionUtils.isNotEmpty(projectIds)) {
+            joinedProjectIds.addAll(projectIds);
+        }
         QueryScheduleParams req = QueryScheduleParams.builder()
                 .id(id)
                 .name(name)
@@ -289,12 +302,13 @@ public class ScheduleController {
                 .endTime(endTime)
                 .creator(creator)
                 .projectId(projectId)
+                .projectIds(projectIds)
                 .projectUniqueIdentifier(projectUniqueIdentifier)
                 .triggerStrategy(triggerStrategy)
+                .latestScheduleChangeStatuses(ScheduleApproveFilterStatus.getApproveFilterStatuses(approveStatus))
                 .build();
 
         return Responses.paginated(scheduleService.listScheduleOverview(pageable, req));
-
     }
 
     @RequestMapping(value = "/schedules/{id:[\\d]+}", method = RequestMethod.GET)

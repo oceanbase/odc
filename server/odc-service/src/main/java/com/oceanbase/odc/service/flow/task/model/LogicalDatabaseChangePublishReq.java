@@ -13,33 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.job;
+package com.oceanbase.odc.service.flow.task.model;
 
-import java.util.List;
+import java.io.Serializable;
+import java.util.Map;
 
-import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
+import com.oceanbase.odc.core.flow.model.TaskParameters;
+import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalDatabaseResp;
+import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 
 import lombok.Data;
 
+/**
+ * @author Yizhuo
+ * @date 2025/06/09 15:11:08
+ */
 @Data
-public class PublishSqlPlanJobReq {
-
+public class LogicalDatabaseChangePublishReq implements Serializable, TaskParameters {
+    private static final long serialVersionUID = 1L;
+    private Long creatorId;
+    private Long scheduleTaskId;
     private String sqlContent;
-
-    private List<String> sqlObjectIds;
-
     private String delimiter;
-
-    private Integer retryTimes;
-
-    private Long retryIntervalMillis = 10000L;
-
-    private Integer queryLimit;
-
     private Long timeoutMillis;
-
-    private TaskErrorStrategy errorStrategy;
-
-    private String sessionTimeZone;
-
+    private DetailLogicalDatabaseResp logicalDatabaseResp;
+    private Map<String, ConnectionConfig> schemaName2ConnectionConfig;
 }

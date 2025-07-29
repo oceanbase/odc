@@ -112,6 +112,7 @@ public enum DatabasePermissionType implements Translatable {
             case ALTER_SCHEDULE:
             case STRUCTURE_COMPARISON:
             case MULTIPLE_ASYNC:
+            case LOGICAL_DATABASE_CHANGE:
                 types.add(CHANGE);
                 break;
             default:

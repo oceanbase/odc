@@ -26,6 +26,9 @@ public enum ScheduleChangeStatus {
     APPROVING,
     CHANGING,
     SUCCESS,
+    APPROVE_REJECTED,
+    APPROVE_CANCELED,
+    APPROVE_EXPIRED,
     FAILED
 
 }

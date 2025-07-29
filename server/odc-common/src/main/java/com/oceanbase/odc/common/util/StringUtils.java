@@ -514,4 +514,11 @@ public abstract class StringUtils extends org.apache.commons.lang3.StringUtils {
         }
         return false;
     }
+
+    public static String truncateString(String str, int maxLength) {
+        if (str == null) {
+            return null;
+        }
+        return str.length() > maxLength ? str.substring(0, maxLength) : str;
+    }
 }

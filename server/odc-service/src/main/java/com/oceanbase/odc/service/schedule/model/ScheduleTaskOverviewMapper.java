@@ -29,6 +29,7 @@ public class ScheduleTaskOverviewMapper {
         t.setType(ScheduleTaskType.valueOf(scheduleTask.getJobGroup()));
         t.setCreateTime(scheduleTask.getCreateTime());
         t.setUpdateTime(scheduleTask.getUpdateTime());
+        t.setJobName(scheduleTask.getJobName());
         return t;
     }
 

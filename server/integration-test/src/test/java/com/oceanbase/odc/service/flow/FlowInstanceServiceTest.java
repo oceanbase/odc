@@ -251,7 +251,7 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
                 .containsAll(true)
                 .startTime(new Date(System.currentTimeMillis() - 10000))
                 .endTime(new Date(System.currentTimeMillis() + 10000))
-                .type(TaskType.ASYNC).build();
+                .types(List.of(TaskType.ASYNC)).build();
         Page<FlowInstanceDetailResp> page = flowInstanceService.list(Pageable.unpaged(), params);
         Assert.assertEquals(2, page.getTotalElements());
     }
@@ -276,7 +276,7 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
                 .containsAll(true)
                 .startTime(new Date(System.currentTimeMillis() - 10000))
                 .endTime(new Date(System.currentTimeMillis() + 10000))
-                .type(TaskType.ASYNC).build();
+                .types(List.of(TaskType.ASYNC)).build();
         Page<FlowInstanceDetailResp> page = flowInstanceService.list(Pageable.unpaged(), params);
         Assert.assertEquals(2, page.getTotalElements());
     }
@@ -301,7 +301,7 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
                 .containsAll(false)
                 .startTime(new Date(System.currentTimeMillis() - 10000))
                 .endTime(new Date(System.currentTimeMillis() + 10000))
-                .type(TaskType.ASYNC).build();
+                .types(List.of(TaskType.ASYNC)).build();
         Page<FlowInstanceDetailResp> page = flowInstanceService.list(Pageable.unpaged(), params);
         Assert.assertEquals(2, page.getTotalElements());
     }
@@ -326,7 +326,7 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
                 .containsAll(false)
                 .startTime(new Date(System.currentTimeMillis() - 10000))
                 .endTime(new Date(System.currentTimeMillis() + 10000))
-                .type(TaskType.ASYNC).build();
+                .types(List.of(TaskType.ASYNC)).build();
         Page<FlowInstanceDetailResp> page = flowInstanceService.list(PageRequest.of(1, 2), params);
         Assert.assertEquals(5, page.getTotalElements());
         Assert.assertEquals(3, page.getTotalPages());
@@ -344,7 +344,7 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
                 .thenReturn(Collections.singletonList(getDatabase()));
 
         QueryFlowInstanceParams params = QueryFlowInstanceParams.builder()
-                .type(TaskType.ASYNC)
+                .types(List.of(TaskType.ASYNC))
                 .parentInstanceId(233L)
                 .build();
         Page<FlowInstanceDetailResp> page = flowInstanceService.list(Pageable.unpaged(), params);
@@ -370,7 +370,7 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
                 .containsAll(false)
                 .startTime(new Date(System.currentTimeMillis() - 10000))
                 .endTime(new Date(System.currentTimeMillis() + 10000))
-                .type(TaskType.IMPORT).build();
+                .types(List.of(TaskType.IMPORT)).build();
         Page<FlowInstanceDetailResp> page = flowInstanceService.list(Pageable.unpaged(), params);
         Assert.assertEquals(1, page.getTotalElements());
     }
@@ -652,7 +652,7 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
                 .containsAll(false)
                 .startTime(new Date(System.currentTimeMillis() - 10000))
                 .endTime(new Date(System.currentTimeMillis() + 10000))
-                .type(TaskType.ASYNC) // Only query ASYNC type
+                .types(Arrays.asList(TaskType.ASYNC)) // Only query ASYNC type
                 .build();
 
         Page<FlowInstanceDetailResp> page = flowInstanceService.list(Pageable.unpaged(), params);
@@ -702,11 +702,11 @@ public class FlowInstanceServiceTest extends ServiceTestEnv {
     }
 
     private FlowInstance createFlowInstance(String name) {
-        return flowFactory.generateFlowInstance(name, null, 1L, null);
+        return flowFactory.generateFlowInstance(name, null, 1L, null, null);
     }
 
     private FlowInstance createChildFlowInstance(String name, Long parentFloweInstanceId) {
-        return flowFactory.generateFlowInstance(name, parentFloweInstanceId, 1L, null);
+        return flowFactory.generateFlowInstance(name, parentFloweInstanceId, 1L, null, null);
     }
 
     private FlowTaskInstance createTaskInstance(Long flowInstanceId, TaskEntity taskEntity,

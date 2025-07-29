@@ -69,6 +69,7 @@ import com.oceanbase.odc.common.task.RouteLogCallable;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.core.alarm.AlarmUtils;
+import com.oceanbase.odc.core.authority.exception.AuthenticationException;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.Verify;
@@ -89,6 +90,8 @@ import com.oceanbase.odc.metadb.schedule.LatestTaskMappingEntity;
 import com.oceanbase.odc.metadb.schedule.LatestTaskMappingRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleEntity_;
+import com.oceanbase.odc.metadb.schedule.ScheduleRelationsEntity;
+import com.oceanbase.odc.metadb.schedule.ScheduleRelationsRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleRepository.ScheduleTypeCount;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
@@ -108,8 +111,6 @@ import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.dlm.model.RateLimitConfiguration;
 import com.oceanbase.odc.service.flow.FlowInstanceService;
 import com.oceanbase.odc.service.flow.FlowInstanceService.FlowInstanceState;
-import com.oceanbase.odc.service.flow.model.CreateFlowInstanceReq;
-import com.oceanbase.odc.service.flow.model.FlowInstanceDetailResp;
 import com.oceanbase.odc.service.flow.model.InnerQueryFlowInstanceParams;
 import com.oceanbase.odc.service.iam.OrganizationService;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
@@ -120,6 +121,10 @@ import com.oceanbase.odc.service.iam.model.User;
 import com.oceanbase.odc.service.iam.util.SecurityContextUtils;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageFacade;
 import com.oceanbase.odc.service.partitionplan.PartitionPlanScheduleService;
+import com.oceanbase.odc.service.partitionplan.PartitionPlanService;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanStrategy;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanTableConfig;
 import com.oceanbase.odc.service.quartz.QuartzJobServiceProxy;
 import com.oceanbase.odc.service.quartz.model.MisfireStrategy;
 import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
@@ -127,12 +132,10 @@ import com.oceanbase.odc.service.regulation.approval.ApprovalFlowConfigSelector;
 import com.oceanbase.odc.service.schedule.export.model.ScheduleTerminateCmd;
 import com.oceanbase.odc.service.schedule.export.model.ScheduleTerminateResult;
 import com.oceanbase.odc.service.schedule.factory.ScheduleResponseMapperFactory;
-import com.oceanbase.odc.service.schedule.flowtask.AlterScheduleParameters;
 import com.oceanbase.odc.service.schedule.flowtask.ApprovalFlowClient;
 import com.oceanbase.odc.service.schedule.model.ChangeQuartJobParam;
 import com.oceanbase.odc.service.schedule.model.ChangeScheduleResp;
 import com.oceanbase.odc.service.schedule.model.CreateQuartzJobParam;
-import com.oceanbase.odc.service.schedule.model.CreateScheduleReq;
 import com.oceanbase.odc.service.schedule.model.OperationType;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleParams;
@@ -159,11 +162,9 @@ import com.oceanbase.odc.service.schedule.model.ScheduleTaskType;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
 import com.oceanbase.odc.service.schedule.model.TriggerStrategy;
-import com.oceanbase.odc.service.schedule.model.UpdateScheduleReq;
 import com.oceanbase.odc.service.schedule.processor.ScheduleChangePreprocessor;
 import com.oceanbase.odc.service.schedule.util.BatchSchedulePermissionValidator;
 import com.oceanbase.odc.service.schedule.util.ScheduleDescriptionGenerator;
-import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
 import com.oceanbase.odc.service.state.StatefulUuidStateIdGenerator;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.exception.JobException;
@@ -268,49 +269,11 @@ public class ScheduleService {
     @Lazy
     private FlowInstanceService flowInstanceService;
 
-    @Transactional(rollbackFor = Exception.class)
-    public List<FlowInstanceDetailResp> dispatchCreateSchedule(CreateFlowInstanceReq createReq) {
-        AlterScheduleParameters parameters = (AlterScheduleParameters) createReq.getParameters();
-        // adapt history parameters
-        if ((parameters.getOperationType() == OperationType.CREATE
-                || parameters.getOperationType() == OperationType.UPDATE)
-                && parameters.getType() == ScheduleType.SQL_PLAN) {
-            SqlPlanParameters sqlPlanParameters = (SqlPlanParameters) parameters.getScheduleTaskParameters();
-            sqlPlanParameters.setDatabaseId(createReq.getDatabaseId());
-        }
-        ScheduleChangeParams scheduleChangeParams;
-        switch (parameters.getOperationType()) {
-            case CREATE: {
-                validateTriggerConfig(parameters.getTriggerConfig());
-                CreateScheduleReq createScheduleReq = new CreateScheduleReq();
-                createScheduleReq.setParameters(parameters.getScheduleTaskParameters());
-                createScheduleReq.setTriggerConfig(parameters.getTriggerConfig());
-                createScheduleReq.setType(parameters.getType());
-                createScheduleReq.setDescription(createReq.getDescription());
-                createScheduleReq.setAllowConcurrent(parameters.getAllowConcurrent());
-                scheduleChangeParams = ScheduleChangeParams.with(createScheduleReq);
-                break;
-            }
-            case UPDATE: {
-                UpdateScheduleReq updateScheduleReq = new UpdateScheduleReq();
-                updateScheduleReq.setParameters(parameters.getScheduleTaskParameters());
-                updateScheduleReq.setTriggerConfig(parameters.getTriggerConfig());
-                updateScheduleReq.setType(parameters.getType());
-                updateScheduleReq.setDescription(createReq.getDescription());
-                updateScheduleReq.setAllowConcurrent(parameters.getAllowConcurrent());
-                scheduleChangeParams = ScheduleChangeParams.with(parameters.getTaskId(), updateScheduleReq);
-                break;
-            }
-            default: {
-                scheduleChangeParams =
-                        ScheduleChangeParams.with(parameters.getTaskId(), parameters.getOperationType());
-            }
-        }
-        changeSchedule(scheduleChangeParams);
-        return Collections.singletonList(FlowInstanceDetailResp.withIdAndType(-1L, TaskType.ALTER_SCHEDULE));
-    }
+    @Autowired
+    private PartitionPlanService partitionPlanService;
 
-
+    @Autowired
+    private ScheduleRelationsRepository scheduleRelationsRepository;
 
     @Transactional(rollbackFor = Exception.class)
     public ChangeScheduleResp changeSchedule(ScheduleChangeParams req) {
@@ -342,6 +305,7 @@ public class ScheduleService {
             entity.setDatabaseId(req.getDatabaseId());
             entity.setDatabaseName(req.getDatabaseName());
             entity.setDataSourceId(req.getConnectionId());
+            entity.setIsInner(false);
 
             targetSchedule = scheduleMapper.entityToModel(scheduleRepository.save(entity));
             req.setScheduleId(targetSchedule.getId());
@@ -359,6 +323,14 @@ public class ScheduleService {
                     parameters.getRateLimit().setOrderId(req.getScheduleId());
                     dlmLimiterService.create(parameters.getRateLimit());
                 }
+            }
+            if (req.getCreateScheduleReq().getType() == ScheduleType.PARTITION_PLAN) {
+                PartitionPlanConfig parameters = (PartitionPlanConfig) req.getCreateScheduleReq().getParameters();
+                // create partition plan entity
+                Long partitionPlanId = partitionPlanService.create(parameters);
+                parameters.setId(partitionPlanId);
+                entity.setJobParametersJson(JsonUtils.toJson(parameters));
+                scheduleRepository.save(entity);
             }
         } else {
             targetSchedule = nullSafeGetByIdWithCheckPermission(req.getScheduleId(), true);
@@ -380,6 +352,14 @@ public class ScheduleService {
             }
         }
 
+        try {
+            changeSubSchedule(req, targetSchedule.getId());
+        } catch (Exception e) {
+            log.error("changeSubSchedule failed, parent schedule id={}", targetSchedule.getId(), e);
+            throw new RuntimeException(e);
+        }
+
+
         ScheduleChangeLog scheduleChangelog;
         try {
             scheduleChangelog = createScheduleChangelog(req, targetSchedule);
@@ -392,11 +372,96 @@ public class ScheduleService {
             log.info("No need to create approval flow,changelogId={}", scheduleChangelog.getId());
             executeChangeSchedule(req);
         }
+        // each schedule changelog id will be tracked, in case we can't track auth from approve to
+        // disapprove case
+        log.debug("Relate latest scheduleChangeLogID,changelogId={}, scheduleID={}", scheduleChangelog.getId(),
+                targetSchedule.getId());
+        scheduleRepository.updateLatestScheduleChangeLogIdById(targetSchedule.id(), scheduleChangelog.getId());
 
         ChangeScheduleResp returnVal = new ChangeScheduleResp();
         BeanUtils.copyProperties(targetSchedule, returnVal);
         returnVal.setChangeLog(scheduleChangelog);
         return returnVal;
+    }
+
+
+    private void changeSubSchedule(ScheduleChangeParams req, Long parentScheduleId) {
+        if (req.getOperationType() == OperationType.CREATE) {
+            if (req.getCreateScheduleReq().getType() == ScheduleType.PARTITION_PLAN) {
+                PartitionPlanConfig parameters = (PartitionPlanConfig) req.getCreateScheduleReq().getParameters();
+                // distinct create and drop partition plan table configs
+                Map<PartitionPlanStrategy, List<PartitionPlanTableConfig>> strategyListMap =
+                        partitionPlanService.groupPartitionPlanTableConfigsByStrategy(
+                                parameters.getPartitionTableConfigs());
+                if (parameters.getDroppingTrigger() == null || strategyListMap.size() == 1) {
+                    log.info("partition plan no need create sub schedule.");
+                    partitionPlanService.savePartitionPlanTableConfigs(parameters.getId(), parentScheduleId,
+                            parameters.getPartitionTableConfigs(), false);
+                    return;
+                }
+                // update parent schedule
+                ScheduleEntity parentEntity = scheduleRepository.findById(parentScheduleId).get();
+                partitionPlanService.savePartitionPlanTableConfigs(parameters.getId(), parentScheduleId,
+                        strategyListMap.get(PartitionPlanStrategy.CREATE), false);
+                // create new sub schedule and save partition plan table configs
+                ScheduleEntity subEntity = new ScheduleEntity();
+                BeanUtils.copyProperties(parentEntity, subEntity);
+                subEntity.setId(null);
+                subEntity.setIsInner(true);
+                subEntity.setTriggerConfigJson(JsonUtils.toJson(parameters.getDroppingTrigger()));
+                scheduleRepository.save(subEntity);
+                partitionPlanService.savePartitionPlanTableConfigs(parameters.getId(), subEntity.getId(),
+                        strategyListMap.get(PartitionPlanStrategy.DROP), false);
+                // save schedule relations
+                scheduleRelationsRepository.insertRelation(parentScheduleId, subEntity.getId(),
+                        ScheduleType.PARTITION_PLAN);
+            }
+        }
+        if (req.getOperationType() == OperationType.UPDATE) {
+            if (req.getUpdateScheduleReq().getType() == ScheduleType.PARTITION_PLAN) {
+                PartitionPlanConfig parameters = (PartitionPlanConfig) req.getUpdateScheduleReq().getParameters();
+                // distinct create and drop partition plan table configs
+                Map<PartitionPlanStrategy, List<PartitionPlanTableConfig>> strategyListMap =
+                        partitionPlanService.groupPartitionPlanTableConfigsByStrategy(
+                                parameters.getPartitionTableConfigs());
+                Optional<ScheduleRelationsEntity> optional = scheduleRelationsRepository.findByParentId(
+                        parentScheduleId);
+                if ((!optional.isPresent() && parameters.getDroppingTrigger() == null) || strategyListMap.size() == 1) {
+                    partitionPlanService.savePartitionPlanTableConfigs(parameters.getId(), parentScheduleId,
+                            parameters.getPartitionTableConfigs(), true);
+                    return;
+                }
+                partitionPlanService.savePartitionPlanTableConfigs(parameters.getId(), parentScheduleId,
+                        strategyListMap.get(PartitionPlanStrategy.CREATE), true);
+                if (optional.isPresent()) {
+                    ScheduleRelationsEntity relations = optional.get();
+                    ScheduleEntity entity = nullSafeGetById(relations.getChildId());
+                    PartitionPlanConfig partitionPlanConfig =
+                            JsonUtils.fromJson(entity.getJobParametersJson(), PartitionPlanConfig.class);
+                    TriggerConfig subTrigger = parameters.getDroppingTrigger() != null ? parameters.getDroppingTrigger()
+                            : parameters.getCreationTrigger();
+                    entity.setTriggerConfigJson(JsonUtils.toJson(subTrigger));
+                    partitionPlanService.savePartitionPlanTableConfigs(partitionPlanConfig.getId(),
+                            entity.getId(),
+                            strategyListMap.get(PartitionPlanStrategy.DROP), false);
+                    return;
+                }
+                // if no sub schedule, create new sub schedule and save partition plan table configs
+                ScheduleEntity parentEntity = nullSafeGetById(parentScheduleId);
+                ScheduleEntity subEntity = new ScheduleEntity();
+                BeanUtils.copyProperties(parentEntity, subEntity);
+                subEntity.setId(null);
+                subEntity.setIsInner(true);
+                subEntity.setTriggerConfigJson(JsonUtils.toJson(parameters.getDroppingTrigger()));
+                // create sub entity
+                scheduleRepository.save(subEntity);
+                partitionPlanService.savePartitionPlanTableConfigs(parameters.getId(), subEntity.getId(),
+                        strategyListMap.get(PartitionPlanStrategy.DROP), false);
+                // save schedule relations
+                scheduleRelationsRepository.insertRelation(parentScheduleId, subEntity.getId(),
+                        ScheduleType.PARTITION_PLAN);
+            }
+        }
     }
 
     private ScheduleChangeLog createScheduleChangelog(ScheduleChangeParams req, Schedule targetSchedule)
@@ -447,10 +512,6 @@ public class ScheduleService {
             if (approvalFlowInstanceId != null) {
                 changeLog.setFlowInstanceId(approvalFlowInstanceId);
                 scheduleChangeLogService.updateFlowInstanceIdById(changeLog.getId(), approvalFlowInstanceId);
-                // only update status to approving when create schedule
-                if (req.getOperationType() == OperationType.CREATE) {
-                    scheduleRepository.updateStatusById(targetSchedule.getId(), ScheduleStatus.APPROVING);
-                }
                 log.info("Create approval flow success,changelogId={},flowInstanceId", approvalFlowInstanceId);
             }
             return changeLog;
@@ -540,12 +601,63 @@ public class ScheduleService {
             }
         }));
 
+        executeChangeSubSchedule(req);
+
         scheduleChangeLogService.updateStatusById(req.getScheduleChangeLogId(),
                 isSuccess ? ScheduleChangeStatus.SUCCESS : ScheduleChangeStatus.FAILED);
         log.info("Change schedule completed,scheduleId={},operationType={},changelogId={},status={}",
                 req.getScheduleId(),
                 req.getOperationType(), req.getScheduleChangeLogId(), isSuccess ? "SUCCESS" : "FAILED");
 
+    }
+
+    private void executeChangeSubSchedule(ScheduleChangeParams req) {
+        Optional<ScheduleRelationsEntity> optional = scheduleRelationsRepository.findByParentId(req.getScheduleId());
+        if (!optional.isPresent()) {
+            return;
+        }
+        ScheduleRelationsEntity relationsEntity = optional.get();
+        ScheduleEntity subScheduleEntity = nullSafeGetById(relationsEntity.getChildId());
+        txTemplate.execute(status -> {
+            try {
+                switch (req.getOperationType()) {
+                    case CREATE:
+                    case RESUME:
+                    case UPDATE: {
+                        scheduleRepository.updateStatusById(subScheduleEntity.getId(), ScheduleStatus.ENABLED);
+                        break;
+                    }
+                    case PAUSE: {
+                        scheduleRepository.updateStatusById(subScheduleEntity.getId(), ScheduleStatus.PAUSE);
+                        break;
+                    }
+                    case TERMINATE: {
+                        scheduleRepository.updateStatusById(subScheduleEntity.getId(), ScheduleStatus.TERMINATED);
+                        break;
+                    }
+                    case DELETE: {
+                        scheduleRepository.updateStatusById(subScheduleEntity.getId(), ScheduleStatus.DELETED);
+                        break;
+                    }
+                    default:
+                        throw new UnsupportedException();
+                }
+
+                // start change quartzJob
+                Schedule schedule = nullSafeGetModelById(subScheduleEntity.getId());
+                ChangeQuartJobParam quartzJobReq = new ChangeQuartJobParam();
+                quartzJobReq.setOperationType(req.getOperationType());
+                quartzJobReq.setJobName(subScheduleEntity.getId().toString());
+                quartzJobReq.setJobGroup(schedule.getType().name());
+                quartzJobReq.setTriggerConfig(schedule.getTriggerConfig());
+                quartzJobService.changeJob(quartzJobReq);
+            } catch (Exception e) {
+                log.warn("Change sub schedule failed,sub scheduleId={},operationType={}", subScheduleEntity.getId(),
+                        req.getOperationType(), e);
+                status.setRollbackOnly();
+            }
+            return true;
+        });
     }
 
     public ScheduleEntity create(ScheduleEntity scheduleConfig) {
@@ -1011,21 +1123,28 @@ public class ScheduleService {
                 scheduleId);
     }
 
-    public void updateStatusByFlowInstanceId(Long id, ScheduleStatus status) {
-        Long scheduleId = flowInstanceRepository.findScheduleIdByFlowInstanceId(id);
-        if (scheduleId != null) {
-            Schedule schedule = nullSafeGetModelById(scheduleId);
-            if (schedule.getStatus() == ScheduleStatus.APPROVING) {
-                updateStatusById(scheduleId, status);
-            }
-        }
+    public void updateStatusByFlowInstanceId(Long flowInstanceId, ScheduleChangeStatus status) {
+        ScheduleChangeLog changeLog = null;
         try {
-            ScheduleChangeLog changeLog = scheduleChangeLogService.getByFlowInstanceId(id);
+            changeLog = scheduleChangeLogService.getByFlowInstanceId(flowInstanceId);
             if (changeLog.getStatus() == ScheduleChangeStatus.APPROVING) {
-                scheduleChangeLogService.updateStatusById(changeLog.getId(), ScheduleChangeStatus.SUCCESS);
+                scheduleChangeLogService.updateStatusById(changeLog.getId(), status);
             }
         } catch (NotFoundException e) {
-            log.warn("Change log not found,flowInstanceId={}", id);
+            log.error("Change log not found,flowInstanceId={}", flowInstanceId);
+            // for old schedule config compatible
+            return;
+        }
+        Long scheduleId = changeLog.getScheduleId();
+        boolean approveFailed = (status == ScheduleChangeStatus.APPROVE_REJECTED
+                || status == ScheduleChangeStatus.APPROVE_EXPIRED || status == ScheduleChangeStatus.APPROVE_CANCELED);
+        if (scheduleId != null) {
+            Schedule schedule = nullSafeGetModelById(scheduleId);
+            if (schedule.getStatus() == ScheduleStatus.CREATING && approveFailed) {
+                log.info("scheduleID={} create approve failed, canceled it", schedule.id());
+                // update to terminated status
+                updateStatusById(scheduleId, ScheduleStatus.TERMINATED);
+            }
         }
     }
 
@@ -1036,14 +1155,14 @@ public class ScheduleService {
 
     public ScheduleTaskDetailResp detailScheduleTask(Long scheduleId, Long scheduleTaskId) {
         Schedule schedule = nullSafeGetByIdWithCheckPermission(scheduleId);
-        return scheduleTaskService.getScheduleTaskDetailResp(scheduleTaskId, schedule.getId());
+        return scheduleTaskService.getScheduleTaskDetailResp(scheduleTaskId, schedule);
     }
 
     @Deprecated
     public ScheduleTaskDetailRespHist detailScheduleTaskHist(Long scheduleId, Long scheduleTaskId) {
         Schedule schedule = nullSafeGetByIdWithCheckPermission(scheduleId);
         ScheduleTaskDetailResp detailResp = scheduleTaskService.getScheduleTaskDetailResp(scheduleTaskId,
-                schedule.getId());
+                schedule);
         ScheduleTaskDetailRespHist returnValue = new ScheduleTaskDetailRespHist();
         returnValue.setId(detailResp.getId());
         returnValue.setCreateTime(detailResp.getCreateTime());
@@ -1139,9 +1258,7 @@ public class ScheduleService {
         }
 
         if (authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM) {
-            Set<Long> projectIds = params.getProjectId() == null
-                    ? projectService.getMemberProjectIds(authenticationFacade.currentUserId())
-                    : Collections.singleton(params.getProjectId());
+            Set<Long> projectIds = authProjectIDParameters(params.getProjectId(), params.getProjectIds());
             if (projectIds.isEmpty()) {
                 return Page.empty();
             }
@@ -1149,7 +1266,12 @@ public class ScheduleService {
         }
 
         params.setOrganizationId(authenticationFacade.currentOrganizationId());
-        Page<ScheduleEntity> returnValue = scheduleRepository.find(pageable, params);
+        Page<ScheduleEntity> returnValue = null;
+        if (CollectionUtils.isNotEmpty(params.getLatestScheduleChangeStatuses())) {
+            returnValue = scheduleRepository.findWithJoinScheduleChangeLog(pageable, params);
+        } else {
+            returnValue = scheduleRepository.find(pageable, params);
+        }
         List<ScheduleEntity> schedules = returnValue.getContent();
 
         Map<Long, ScheduleOverview> id2Overview =
@@ -1176,9 +1298,7 @@ public class ScheduleService {
             return Page.empty();
         }
         if (authenticationFacade.currentOrganization().getType() == OrganizationType.TEAM) {
-            Set<Long> projectIds = params.getProjectId() == null
-                    ? projectService.getMemberProjectIds(authenticationFacade.currentUserId())
-                    : Collections.singleton(params.getProjectId());
+            Set<Long> projectIds = authProjectIDParameters(params.getProjectId(), params.getProjectIds());
             if (projectIds.isEmpty()) {
                 return Page.empty();
             }
@@ -1199,11 +1319,35 @@ public class ScheduleService {
         if (scheduleIds.isEmpty()) {
             return Page.empty();
         }
+        // load child schedule ids
+        Set<Long> childIds = scheduleRelationsRepository.findByParentIdIn(scheduleIds).stream().map(
+                ScheduleRelationsEntity::getChildId).collect(Collectors.toSet());
+        scheduleIds.addAll(childIds);
         params.setScheduleIds(scheduleIds);
         Page<ScheduleTaskEntity> returnValue = scheduleTaskRepository.find(pageable, params);
         Map<Long, ScheduleTaskListOverview> taskId2Overview =
                 scheduleResponseMapperFactory.generateScheduleTaskOverviewListMapper(returnValue.getContent());
         return returnValue.map(o -> taskId2Overview.get(o.getId()));
+    }
+
+    protected Set<Long> authProjectIDParameters(Long projectID, Set<Long> projectIDs) {
+        Set<Long> currentUserProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
+        Set<Long> ret = new HashSet<>();
+        if (null != projectID) {
+            ret.add(projectID);
+        }
+        if (CollectionUtils.isNotEmpty(projectIDs)) {
+            ret.addAll(projectIDs);
+        }
+        // no project id provided, return all current user project ids
+        if (CollectionUtils.isEmpty(ret)) {
+            return currentUserProjectIds;
+        }
+        if (!currentUserProjectIds.containsAll(ret)) {
+            log.warn("expect projectID={} has not permission to access", ret);
+            throw new AuthenticationException("expect projectID= " + ret + " has not permission to access");
+        }
+        return ret;
     }
 
     public List<String> getAsyncDownloadUrl(Long id, List<String> objectIds) {

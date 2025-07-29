@@ -47,4 +47,6 @@ public class JobParametersKeyConstants {
 
     public static final String LOGICAL_DATABASE_CHANGE_SKIP_UNIT = "logicalDatabaseChangeUnitSkip";
 
+    public static final String DEFAULT_MAX_QUERY_LIMIT = "defaultMaxQueryLimit";
+
 }

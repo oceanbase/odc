@@ -29,7 +29,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -42,6 +41,7 @@ import com.oceanbase.odc.core.shared.PreConditions;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.core.shared.constant.SearchType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.PaginatedResponse;
@@ -59,8 +59,6 @@ import com.oceanbase.odc.service.flow.model.FlowMetaInfo;
 import com.oceanbase.odc.service.flow.model.QueryFlowInstanceParams;
 import com.oceanbase.odc.service.flow.util.TaskLogFilenameGenerator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
-import com.oceanbase.odc.service.partitionplan.PartitionPlanScheduleService;
-import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.schedule.ScheduleService;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
 import com.oceanbase.odc.service.state.model.StateName;
@@ -88,16 +86,11 @@ public class FlowInstanceController {
     @Autowired
     private AuthenticationFacade authenticationFacade;
     @Autowired
-    private PartitionPlanScheduleService partitionPlanScheduleService;
-    @Autowired
     private ScheduleService scheduleService;
 
     @ApiOperation(value = "createFlowInstance", notes = "创建流程实例，返回流程实例")
     @RequestMapping(value = "/", method = RequestMethod.POST)
     public ListResponse<FlowInstanceDetailResp> createFlowInstance(@RequestBody CreateFlowInstanceReq flowInstanceReq) {
-        if (flowInstanceReq.getTaskType() == TaskType.ALTER_SCHEDULE) {
-            return Responses.list(scheduleService.dispatchCreateSchedule(flowInstanceReq));
-        }
         flowInstanceReq.validate();
         if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.INDIVIDUAL) {
             return Responses.list(flowInstanceService.createIndividualFlowInstance(flowInstanceReq));
@@ -110,12 +103,10 @@ public class FlowInstanceController {
     @RequestMapping(value = "/", method = RequestMethod.GET)
     public PaginatedResponse<FlowInstanceDetailResp> listFlowInstances(
             @PageableDefault(size = Integer.MAX_VALUE, sort = {"id"}, direction = Direction.DESC) Pageable pageable,
-            @RequestParam(required = false, name = "connectionId") List<Long> connectionIds,
-            @RequestParam(required = false, name = "schema") String schema,
-            @RequestParam(required = false, name = "creator") String creator,
             @RequestParam(required = false, name = "fuzzySearchKeyword") String fuzzySearchKeyword,
+            @RequestParam(required = false, name = "searchType") SearchType searchType,
             @RequestParam(required = false, name = "status") List<FlowStatus> status,
-            @RequestParam(required = false, name = "taskType") TaskType type,
+            @RequestParam(required = false, name = "taskTypes") List<TaskType> types,
             @RequestParam(required = false, name = "startTime") Date startTime,
             @RequestParam(required = false, name = "endTime") Date endTime,
             @RequestParam(name = "createdByCurrentUser") Boolean createdByCurrentUser,
@@ -124,12 +115,10 @@ public class FlowInstanceController {
             @RequestParam(required = false, name = "parentInstanceId") Long parentInstanceId,
             @RequestParam(required = false, name = "projectId") Set<Long> projectIds) {
         QueryFlowInstanceParams params = QueryFlowInstanceParams.builder()
-                .connectionIds(connectionIds)
-                .id(fuzzySearchKeyword)
+                .fuzzySearchKeyword(fuzzySearchKeyword)
+                .searchType(searchType)
                 .statuses(status)
-                .databaseName(schema)
-                .creator(creator)
-                .type(type)
+                .types(types)
                 .startTime(startTime)
                 .endTime(endTime)
                 .createdByCurrentUser(createdByCurrentUser)
@@ -248,11 +237,6 @@ public class FlowInstanceController {
     public ListResponse<String> getDownloadUrl(@PathVariable Long id, @RequestBody List<String> objectId,
             @PathVariable String bucket) {
         return Responses.list(flowTaskInstanceService.getAsyncDownloadUrl(id, objectId, bucket));
-    }
-
-    @GetMapping(value = "/{id:[\\d]+}/tasks/partitionPlans/getDetail")
-    public SuccessResponse<PartitionPlanConfig> getPartitionPlan(@PathVariable Long id) {
-        return Responses.ok(this.partitionPlanScheduleService.getPartitionPlanByFlowInstanceId(id));
     }
 
     @ApiOperation(value = "cancelFlowInstance", notes = "批量终止流程")

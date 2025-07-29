@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.loaddata.model.LoadDataParameters;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.sqlplan.model.SqlPlanParameters;
 
 import jakarta.validation.constraints.NotBlank;
@@ -47,8 +48,8 @@ public class CreateScheduleReq {
             @JsonSubTypes.Type(value = DataDeleteParameters.class, name = "DATA_DELETE"),
             @JsonSubTypes.Type(value = SqlPlanParameters.class, name = "SQL_PLAN"),
             @JsonSubTypes.Type(value = LogicalDatabaseChangeParameters.class, name = "LOGICAL_DATABASE_CHANGE"),
-            @JsonSubTypes.Type(value = LoadDataParameters.class, name = "LOAD_DATA")
-
+            @JsonSubTypes.Type(value = LoadDataParameters.class, name = "LOAD_DATA"),
+            @JsonSubTypes.Type(value = PartitionPlanConfig.class, name = "PARTITION_PLAN")
     })
     @NotNull
     private ScheduleTaskParameters parameters;

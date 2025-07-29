@@ -62,7 +62,7 @@ public abstract class BaseFlowableConfiguration {
     @Bean
     public SpringProcessEngineConfiguration springProcessEngineConfiguration(
             @Autowired @Qualifier("metadbTransactionManager") PlatformTransactionManager platformTransactionManager,
-            @Value("${flowable.database-schema-update:false}") boolean schemaUpdate,
+            @Value("${flowable.database-schema-update:true}") boolean schemaUpdate,
             DataSource dataSource) {
         SpringProcessEngineConfiguration processEngineCfg =
                 new OdcProcessEngineConfiguration(flowInstanceRepository, serviceRepository,

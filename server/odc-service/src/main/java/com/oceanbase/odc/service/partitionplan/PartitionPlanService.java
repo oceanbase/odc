@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -37,6 +38,8 @@ import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
@@ -46,7 +49,10 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.HttpException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.metadb.partitionplan.PartitionPlanEntity;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanRepository;
+import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTableEntity;
+import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTablePartitionKeyEntity;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTablePartitionKeyRepository;
 import com.oceanbase.odc.metadb.partitionplan.PartitionPlanTableRepository;
 import com.oceanbase.odc.plugin.schema.api.TableExtensionPoint;
@@ -59,6 +65,7 @@ import com.oceanbase.odc.plugin.task.api.partitionplan.model.PartitionPlanVariab
 import com.oceanbase.odc.plugin.task.api.partitionplan.util.ParameterUtil;
 import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanDBTable;
 import com.oceanbase.odc.service.partitionplan.model.PartitionPlanKeyConfig;
@@ -78,6 +85,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTablePartitionOption;
 import com.oceanbase.tools.dbbrowser.model.DBTablePartitionType;
 import com.oceanbase.tools.dbbrowser.model.datatype.DataType;
 
+import jakarta.transaction.Transactional;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -106,7 +114,12 @@ public class PartitionPlanService {
     @Autowired
     private PartitionPlanTablePartitionKeyRepository partitionPlanTablePartitionKeyRepository;
     @Autowired
-    private PartitionPlanScheduleService partitionPlanScheduleService;
+    private AuthenticationFacade authenticationFacade;
+
+    public Long create(PartitionPlanConfig partitionPlanConfig) {
+        PartitionPlanEntity entity = this.partitionPlanRepository.save(modelToEntity(partitionPlanConfig));
+        return entity.getId();
+    }
 
     public List<DataType> getPartitionKeyDataTypes(@NonNull String sessionId,
             @NonNull Long databaseId, @NonNull String tableName) {
@@ -161,8 +174,7 @@ public class PartitionPlanService {
         if (extensionPoint == null) {
             throw new UnsupportedOperationException("Unsupported dialect " + dialectType);
         }
-        PartitionPlanConfig partitionPlanConfig = this.partitionPlanScheduleService
-                .getPartitionPlanByDatabaseId(databaseId);
+        PartitionPlanConfig partitionPlanConfig = getPartitionPlanByDatabaseId(databaseId);
         final Map<String, PartitionPlanTableConfig> tblName2PartiConfig;
         if (partitionPlanConfig != null) {
             tblName2PartiConfig = partitionPlanConfig.getPartitionTableConfigs().stream().collect(
@@ -572,5 +584,168 @@ public class PartitionPlanService {
         partitionKeyInvokerParameters.computeIfAbsent(PartitionExprGenerator.GENERATOR_PARTITION_KEY,
                 s -> config.getPartitionKey());
     }
+
+    @Transactional(rollbackOn = Exception.class)
+    public void savePartitionPlanTableConfigs(Long partitionPlanId, Long scheduleId,
+            List<PartitionPlanTableConfig> tableConfigs, Boolean needUpdate) {
+        if (needUpdate) {
+            // disable old partition plan table configs
+            List<Long> partitionPlanTableIds = this.partitionPlanTableRepository.findByPartitionPlanIdIn(
+                    Collections.singletonList(partitionPlanId)).stream().map(PartitionPlanTableEntity::getId).collect(
+                            Collectors.toList());
+            this.partitionPlanTableRepository.updateEnabledByIdIn(partitionPlanTableIds, false);
+        }
+        // save the new partition plan table
+        List<PartitionPlanTableEntity> ppts = tableConfigs.stream()
+                .map(t -> modelToEntity(t, partitionPlanId, scheduleId))
+                .collect(Collectors.toList());
+        Map<String, Long> tblName2Id = this.partitionPlanTableRepository.batchCreate(ppts).stream()
+                .collect(Collectors.toMap(PartitionPlanTableEntity::getTableName, PartitionPlanTableEntity::getId));
+        // save partition plan key configs
+        List<PartitionPlanTablePartitionKeyEntity> pptks = tableConfigs.stream()
+                .flatMap(t -> t.getPartitionKeyConfigs().stream()
+                        .map(i -> modelToEntity(i, tblName2Id.get(t.getTableName()))))
+                .collect(Collectors.toList());
+        this.partitionPlanTablePartitionKeyRepository.batchCreate(pptks);
+    }
+
+    public Map<PartitionPlanStrategy, List<PartitionPlanTableConfig>> groupPartitionPlanTableConfigsByStrategy(
+            List<PartitionPlanTableConfig> tableConfigs) {
+        return tableConfigs.stream().flatMap(tableConfig -> {
+            Map<PartitionPlanStrategy, List<PartitionPlanKeyConfig>> strategy2Cfgs =
+                    tableConfig.getPartitionKeyConfigs().stream()
+                            .collect(Collectors.groupingBy(PartitionPlanKeyConfig::getStrategy));
+            return strategy2Cfgs.values().stream().map(cfgs -> {
+                PartitionPlanTableConfig cfg = new PartitionPlanTableConfig();
+                cfg.setPartitionKeyConfigs(cfgs);
+                cfg.setTableName(tableConfig.getTableName());
+                cfg.setEnabled(tableConfig.isEnabled());
+                cfg.setPartitionNameInvoker(tableConfig.getPartitionNameInvoker());
+                cfg.setPartitionNameInvokerParameters(tableConfig.getPartitionNameInvokerParameters());
+                return cfg;
+            });
+        }).collect(Collectors.groupingBy(cfg -> cfg.getPartitionKeyConfigs().get(0).getStrategy()));
+    }
+
+    public List<PartitionPlanTableConfig> getTableConfigsByScheduleId(Long scheduleId) {
+        List<PartitionPlanTableConfig> tableConfigs =
+                partitionPlanTableRepository.findByScheduleIdAndEnabled(scheduleId, true).stream().map(
+                        this::entityToModel).collect(Collectors.toList());
+        Map<Long, List<PartitionPlanTablePartitionKeyEntity>> pptId2KeyEntities =
+                this.partitionPlanTablePartitionKeyRepository.findByPartitionplanTableIdIn(tableConfigs.stream()
+                        .map(PartitionPlanTableConfig::getId).collect(Collectors.toList())).stream()
+                        .collect(Collectors.groupingBy(PartitionPlanTablePartitionKeyEntity::getPartitionplanTableId));
+        tableConfigs.forEach(tableConfig -> {
+            List<PartitionPlanTablePartitionKeyEntity> pptks = pptId2KeyEntities.get(tableConfig.getId());
+            if (CollectionUtils.isEmpty(pptks)) {
+                return;
+            }
+            tableConfig.setPartitionKeyConfigs(pptks.stream().map(this::entityToModel).collect(Collectors.toList()));
+        });
+        return tableConfigs;
+    }
+
+    public PartitionPlanConfig getPartitionPlanByPartitionPlanId(@NonNull Long partitionPlanId) {
+        Optional<PartitionPlanEntity> optional = this.partitionPlanRepository.findById(partitionPlanId);
+        return optional.map(this::getPartitionPlan).orElse(null);
+    }
+
+    public PartitionPlanConfig getPartitionPlanByDatabaseId(@NonNull Long databaseId) {
+        Database database = this.databaseService.detail(databaseId);
+        List<PartitionPlanEntity> planEntities = this.partitionPlanRepository
+                .findByDatabaseIdAndEnabled(database.getId(), true);
+        if (CollectionUtils.isEmpty(planEntities)) {
+            return null;
+        }
+        return getPartitionPlan(planEntities.get(0));
+    }
+
+    private PartitionPlanEntity modelToEntity(PartitionPlanConfig model) {
+        PartitionPlanEntity entity = new PartitionPlanEntity();
+        entity.setDatabaseId(model.getDatabaseId());
+        entity.setEnabled(model.isEnabled());
+        entity.setFlowInstanceId(model.getFlowInstanceId());
+        entity.setLastModifierId(null);
+        entity.setCreatorId(this.authenticationFacade.currentUserId());
+        return entity;
+    }
+
+    private PartitionPlanTableEntity modelToEntity(PartitionPlanTableConfig model,
+            @NonNull Long partitionPlanId, @NonNull Long scheduleId) {
+        PartitionPlanTableEntity entity = new PartitionPlanTableEntity();
+        entity.setTableName(model.getTableName());
+        entity.setPartitionPlanId(partitionPlanId);
+        entity.setEnabled(true);
+        entity.setPartitionNameInvoker(model.getPartitionNameInvoker());
+        entity.setPartitionNameInvokerParameters(JsonUtils.toJson(model.getPartitionNameInvokerParameters()));
+        entity.setScheduleId(scheduleId);
+        return entity;
+    }
+
+    private PartitionPlanConfig entityToModel(PartitionPlanEntity entity) {
+        PartitionPlanConfig target = new PartitionPlanConfig();
+        target.setId(entity.getId());
+        target.setEnabled(entity.getEnabled());
+        target.setDatabaseId(entity.getDatabaseId());
+        target.setFlowInstanceId(entity.getFlowInstanceId());
+        return target;
+    }
+
+    private PartitionPlanTableConfig entityToModel(PartitionPlanTableEntity entity) {
+        PartitionPlanTableConfig target = new PartitionPlanTableConfig();
+        target.setId(entity.getId());
+        target.setEnabled(entity.getEnabled());
+        target.setTableName(entity.getTableName());
+        target.setPartitionNameInvoker(entity.getPartitionNameInvoker());
+        target.setPartitionNameInvokerParameters(JsonUtils.fromJson(
+                entity.getPartitionNameInvokerParameters(), new TypeReference<Map<String, Object>>() {}));
+        return target;
+    }
+
+    private PartitionPlanKeyConfig entityToModel(PartitionPlanTablePartitionKeyEntity entity) {
+        PartitionPlanKeyConfig target = new PartitionPlanKeyConfig();
+        target.setId(entity.getId());
+        target.setPartitionKey(entity.getPartitionKey());
+        target.setStrategy(entity.getStrategy());
+        target.setPartitionKeyInvoker(entity.getPartitionKeyInvoker());
+        target.setPartitionKeyInvokerParameters(JsonUtils.fromJson(
+                entity.getPartitionKeyInvokerParameters(), new TypeReference<Map<String, Object>>() {}));
+        return target;
+    }
+
+    private PartitionPlanTablePartitionKeyEntity modelToEntity(PartitionPlanKeyConfig model,
+            @NonNull Long partitionPlanTableId) {
+        PartitionPlanTablePartitionKeyEntity entity = new PartitionPlanTablePartitionKeyEntity();
+        entity.setPartitionplanTableId(partitionPlanTableId);
+        entity.setPartitionKey(model.getPartitionKey());
+        entity.setPartitionKeyInvoker(model.getPartitionKeyInvoker());
+        entity.setPartitionKeyInvokerParameters(JsonUtils.toJson(model.getPartitionKeyInvokerParameters()));
+        entity.setStrategy(model.getStrategy());
+        return entity;
+    }
+
+    private PartitionPlanConfig getPartitionPlan(@NonNull PartitionPlanEntity partitionPlan) {
+        PartitionPlanConfig target = entityToModel(partitionPlan);
+        List<PartitionPlanTableConfig> tableConfigs = this.partitionPlanTableRepository
+                .findByPartitionPlanIdInAndEnabled(Collections.singletonList(partitionPlan.getId()), true).stream()
+                .map(this::entityToModel).collect(Collectors.toList());
+        target.setPartitionTableConfigs(tableConfigs);
+        if (CollectionUtils.isEmpty(tableConfigs)) {
+            return target;
+        }
+        Map<Long, List<PartitionPlanTablePartitionKeyEntity>> pptId2KeyEntities =
+                this.partitionPlanTablePartitionKeyRepository.findByPartitionplanTableIdIn(tableConfigs.stream()
+                        .map(PartitionPlanTableConfig::getId).collect(Collectors.toList())).stream()
+                        .collect(Collectors.groupingBy(PartitionPlanTablePartitionKeyEntity::getPartitionplanTableId));
+        target.getPartitionTableConfigs().forEach(tableConfig -> {
+            List<PartitionPlanTablePartitionKeyEntity> pptks = pptId2KeyEntities.get(tableConfig.getId());
+            if (CollectionUtils.isEmpty(pptks)) {
+                return;
+            }
+            tableConfig.setPartitionKeyConfigs(pptks.stream().map(this::entityToModel).collect(Collectors.toList()));
+        });
+        return target;
+    }
+
 
 }

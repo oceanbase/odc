@@ -105,6 +105,18 @@ public class FlowInstanceEntity {
     @Column(name = "update_time", insertable = false, updatable = false)
     private Date updateTime;
 
+    @Column(name = "database_names")
+    private String databaseNames;
+
+    @Column(name = "datasource_names")
+    private String datasourceNames;
+
+    @Column(name = "cluster_names")
+    private String clusterNames;
+
+    @Column(name = "tenant_names")
+    private String tenantNames;
+
     public static FlowInstanceEntity from(FlowInstanceViewEntity entity) {
         FlowInstanceEntity flowInstance = new FlowInstanceEntity();
         flowInstance.setId(entity.getId());

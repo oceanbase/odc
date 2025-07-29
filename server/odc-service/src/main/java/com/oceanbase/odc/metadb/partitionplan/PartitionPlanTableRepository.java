@@ -44,6 +44,8 @@ public interface PartitionPlanTableRepository extends OdcJpaRepository<Partition
 
     List<PartitionPlanTableEntity> findByPartitionPlanIdInAndEnabled(List<Long> partitionPlanIds, Boolean enabled);
 
+    List<PartitionPlanTableEntity> findByScheduleIdAndEnabled(Long scheduleId, Boolean enabled);
+
     @Transactional
     @Lock(value = LockModeType.PESSIMISTIC_WRITE)
     List<PartitionPlanTableEntity> findByIdIn(List<Long> ids);

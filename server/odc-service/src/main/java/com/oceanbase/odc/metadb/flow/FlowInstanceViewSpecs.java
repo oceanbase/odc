@@ -49,6 +49,12 @@ public class FlowInstanceViewSpecs {
     private static final String FLOW_INSTANCE_VIEW_CREATE_TIME_NAME = "createTime";
     private static final String FLOW_INSTANCE_VIEW_PROJECT_ID = "projectId";
     private static final String FLOW_INSTANCE_VIEW_TASK_TYPE = "taskType";
+    private static final String FLOW_INSTANCE_VIEW_DESCRIPTION = "description";
+    private static final String FLOW_INSTANCE_VIEW_DATABASE_NAMES = "databaseNames";
+    private static final String FLOW_INSTANCE_VIEW_DATASOURCE_NAMES = "datasourceNames";
+    private static final String FLOW_INSTANCE_VIEW_CLUSTER_NAMES = "clusterNames";
+    private static final String FLOW_INSTANCE_VIEW_TENANT_NAMES = "tenantNames";
+
     private static final String FLOW_INSTANCE_VIEW_2_FLOW_INSTANCE_APPROVAL_VIEW = "approvals";
     private static final String FLOW_INSTANCE_APPROVAL_VIEW_ROLE_IDENTIFIER = "resourceRoleIdentifier";
     private static final String FLOW_INSTANCE_APPROVAL_VIEW_STATUS = "status";
@@ -90,13 +96,32 @@ public class FlowInstanceViewSpecs {
         return SpecificationUtil.columnIn(FLOW_INSTANCE_VIEW_PROJECT_ID, projectIds);
     }
 
-
     public static Specification<FlowInstanceViewEntity> taskTypeEquals(TaskType taskType) {
         return SpecificationUtil.columnEqual(FLOW_INSTANCE_VIEW_TASK_TYPE, taskType);
     }
 
     public static Specification<FlowInstanceViewEntity> taskTypeIn(Collection<TaskType> taskTypes) {
         return SpecificationUtil.columnIn(FLOW_INSTANCE_VIEW_TASK_TYPE, taskTypes);
+    }
+
+    public static Specification<FlowInstanceViewEntity> descriptionLike(String description) {
+        return SpecificationUtil.columnLike(FLOW_INSTANCE_VIEW_DESCRIPTION, description);
+    }
+
+    public static Specification<FlowInstanceViewEntity> databaseNameLike(String keyword) {
+        return SpecificationUtil.columnLike(FLOW_INSTANCE_VIEW_DATABASE_NAMES, keyword);
+    }
+
+    public static Specification<FlowInstanceViewEntity> datasourceNameLike(String keyword) {
+        return SpecificationUtil.columnLike(FLOW_INSTANCE_VIEW_DATASOURCE_NAMES, keyword);
+    }
+
+    public static Specification<FlowInstanceViewEntity> clusterNameLike(String keyword) {
+        return SpecificationUtil.columnLike(FLOW_INSTANCE_VIEW_CLUSTER_NAMES, keyword);
+    }
+
+    public static Specification<FlowInstanceViewEntity> tenantNameLike(String keyword) {
+        return SpecificationUtil.columnLike(FLOW_INSTANCE_VIEW_TENANT_NAMES, keyword);
     }
 
     public static Specification<FlowInstanceViewEntity> groupByIdAndTaskType() {

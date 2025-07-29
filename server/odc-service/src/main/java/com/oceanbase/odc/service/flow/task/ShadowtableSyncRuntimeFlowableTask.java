@@ -23,9 +23,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskParameter;
 import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskResult;
+import com.oceanbase.odc.service.flow.task.model.ShadowTableSyncTaskResult.TableSyncExecuting;
 import com.oceanbase.odc.service.flow.util.FlowTaskUtil;
 import com.oceanbase.odc.service.shadowtable.ShadowTableSyncService;
 import com.oceanbase.odc.service.shadowtable.ShadowTableSyncTaskContext;
+import com.oceanbase.odc.service.shadowtable.model.TableSyncExecuteStatus;
 import com.oceanbase.odc.service.task.TaskService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -88,9 +90,15 @@ public class ShadowtableSyncRuntimeFlowableTask extends BaseODCFlowTaskDelegate<
     protected void onSuccessful(Long taskId, TaskService taskService) {
         log.info("Shadowtable sync task succeed, taskId={}", taskId);
         try {
-            taskService.succeed(taskId, context.getResult());
+            ShadowTableSyncTaskResult taskResult = context.getResult();
+            taskService.succeed(taskId, taskResult);
             super.onSuccessful(taskId, taskService);
-            updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
+            if (taskResult.getTables().stream().map(TableSyncExecuting::getStatus)
+                    .anyMatch(status -> status == TableSyncExecuteStatus.FAILED)) {
+                updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED_WITH_ERRORS);
+            } else {
+                updateFlowInstanceStatus(FlowStatus.EXECUTION_SUCCEEDED);
+            }
         } catch (Exception e) {
             log.warn("Failed to get result", e);
         }

@@ -27,20 +27,23 @@ import java.util.List;
 public enum ScheduleStatus {
 
     CREATING,
-    APPROVING,
-
-    APPROVAL_EXPIRED,
-
-    REJECTED,
     PAUSE,
     ENABLED,
-    TERMINATION,
     TERMINATED,
-
     COMPLETED,
-    EXECUTION_FAILED,
+    DELETED,
 
-    DELETED;
+    // abandoned status, left to compatible with db storage
+    @Deprecated
+    EXECUTION_FAILED,
+    @Deprecated
+    TERMINATION,
+    @Deprecated
+    APPROVING,
+    @Deprecated
+    APPROVAL_EXPIRED,
+    @Deprecated
+    REJECTED;
 
     public static List<ScheduleStatus> listUnfinishedStatus() {
         return Collections.unmodifiableList(Arrays.asList(CREATING, APPROVING, ENABLED));

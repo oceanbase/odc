@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
+import com.oceanbase.odc.core.shared.constant.SearchType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 
 import lombok.Builder;
@@ -33,16 +34,10 @@ import lombok.Data;
 @Data
 @Builder
 public class QueryFlowInstanceParams {
-
-    private List<Long> connectionIds;
-    private String creator;
-    private String databaseName;
-    /**
-     * 目前搜索框中仅支持搜索id，该值指代搜索框中用户填入的
-     */
-    private String id;
+    private String fuzzySearchKeyword;
+    private SearchType searchType;
     private List<FlowStatus> statuses;
-    private TaskType type;
+    private List<TaskType> types;
     private Date startTime;
     private Date endTime;
     private Boolean createdByCurrentUser;

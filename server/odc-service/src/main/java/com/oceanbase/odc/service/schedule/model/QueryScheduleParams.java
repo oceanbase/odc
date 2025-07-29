@@ -50,5 +50,6 @@ public class QueryScheduleParams {
     private String tenantId;
     private String clusterId;
     private String triggerStrategy;
+    private Set<ScheduleChangeStatus> latestScheduleChangeStatuses;
 
 }

@@ -53,6 +53,7 @@ import com.oceanbase.odc.metadb.flow.UserTaskInstanceCandidateRepository;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceEntity;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceRepository;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceSpecs;
+import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.event.TaskInstanceCreatedEvent;
 import com.oceanbase.odc.service.flow.instance.BaseFlowNodeInstance;
@@ -117,8 +118,9 @@ public class FlowFactory {
     }
 
     public FlowInstance generateFlowInstance(@NonNull String name,
-            Long parentFlowInstanceId, Long projectId, String description) {
-        return new OdcFlowInstance(name, description, parentFlowInstanceId, projectId,
+            Long parentFlowInstanceId, Long projectId, String description,
+            List<Database> databases) {
+        return new OdcFlowInstance(name, description, parentFlowInstanceId, projectId, databases,
                 flowableAdaptor, authenticationFacade, flowInstanceRepository, nodeRepository,
                 sequenceRepository, gatewayInstanceRepository, serviceTaskRepository, userTaskInstanceRepository,
                 userTaskInstanceCandidateRepository, runtimeService, repositoryService);

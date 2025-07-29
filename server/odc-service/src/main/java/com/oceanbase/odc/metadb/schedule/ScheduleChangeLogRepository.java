@@ -15,11 +15,14 @@
  */
 package com.oceanbase.odc.metadb.schedule;
 
+import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.service.schedule.model.ScheduleChangeStatus;
@@ -50,4 +53,27 @@ public interface ScheduleChangeLogRepository extends OdcJpaRepository<ScheduleCh
     @Query("update ScheduleChangeLogEntity e set e.flowInstanceId = ?2 where e.id = ?1")
     int updateFlowInstanceIdById(Long id, Long flowInstanceId);
 
+    // query latest schedule change log by schedule ids for list schedules operation
+    @Query(value = "select a.id as id , a.schedule_id as schedule_id, a.flow_instance_id as flow_instance_id, a.status as status, a.create_time as create_time from schedule_changelog as a inner join  (select schedule_id, max(create_time) as latest_time from schedule_changelog where schedule_id in (:scheduleIds) group by schedule_id) as b on a.create_time = b.latest_time  and a.schedule_id = b.schedule_id",
+            nativeQuery = true)
+    List<ScheduleChangeLogSummary> findLatestScheduleChangeByScheduleIDs(
+            @Param("scheduleIds") Collection<Long> scheduleIds);
+
+    // query latest schedule change log by schedule changelog ids for list schedules operation
+    @Query(value = "select  id,  schedule_id, flow_instance_id, status, create_time from schedule_changelog where id in (:scheduleChangeLogIds)",
+            nativeQuery = true)
+    List<ScheduleChangeLogSummary> findScheduleChangeByScheduleChangeLogIDs(
+            @Param("scheduleChangeLogIds") Collection<Long> scheduleChangeLogIds);
+
+    interface ScheduleChangeLogSummary {
+        Long getId();
+
+        Long getScheduleId();
+
+        Long getFlowInstanceId();
+
+        ScheduleChangeStatus getStatus();
+
+        Date getCreateTime();
+    }
 }

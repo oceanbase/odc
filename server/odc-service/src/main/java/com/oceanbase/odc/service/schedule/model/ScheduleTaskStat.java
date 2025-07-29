@@ -124,7 +124,7 @@ public class ScheduleTaskStat {
                 this.increaseFailedExecutionCount();
                 break;
             case COMPLETED:
-            case EXECUTION_SUCCEEDED:
+            case EXECUTION_SUCCEEDED, EXECUTION_SUCCEEDED_WITH_ERRORS:
                 this.increaseSuccessExecutionCount();
                 break;
             case CREATED:

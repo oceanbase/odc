@@ -116,6 +116,18 @@ public class FlowInstanceViewEntity {
     @Column(name = "task_type", updatable = false, nullable = false)
     private TaskType taskType;
 
+    @Column(name = "database_names")
+    private String databaseNames;
+
+    @Column(name = "datasource_names")
+    private String datasourceNames;
+
+    @Column(name = "cluster_names")
+    private String clusterNames;
+
+    @Column(name = "tenant_names")
+    private String tenantNames;
+
     @OneToMany
     @JoinColumn(name = "flow_instance_id")
     private List<FlowInstanceApprovalViewEntity> approvals;

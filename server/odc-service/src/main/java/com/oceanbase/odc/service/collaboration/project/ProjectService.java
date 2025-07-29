@@ -250,7 +250,7 @@ public class ProjectService {
     public Project innerDetailForTask(@NotNull Long id) {
         ProjectEntity entity = repository.findByIdAndOrganizationId(id, currentOrganizationId())
                 .orElseThrow(() -> new NotFoundException(ResourceType.ODC_PROJECT, "id", id));
-        return entityToModel(entity);
+        return entityToModel(entity, getProjectId2ResourceRoleNames());
     }
 
     @SkipAuthorize("odc internal usage")
@@ -301,7 +301,7 @@ public class ProjectService {
     @Transactional(rollbackFor = Exception.class)
     public Project setArchived(Long id, @NotNull SetArchivedReq req) throws InterruptedException {
         ProjectEntity saved = setArchived(id, currentOrganizationId(), req);
-        return entityToModel(saved);
+        return entityToModel(saved, getProjectId2ResourceRoleNames());
     }
 
     @SkipAuthorize("odc internal usage")
@@ -342,14 +342,19 @@ public class ProjectService {
         return projectEntities.map(project -> {
             List<UserResourceRole> members =
                     resourceRoleService.listByResourceTypeAndResourceId(ResourceType.ODC_PROJECT, project.getId());
-            return entityToModel(project, members);
+            Map<Long, Set<ResourceRoleName>> projectId2ResourceRoleNames = getProjectId2ResourceRoleNames();
+            return entityToModel(project, members, projectId2ResourceRoleNames);
         });
     }
 
     @SkipAuthorize("odc internal usage")
     public List<Project> listByIds(@NotEmpty Set<Long> ids) {
+        Map<Long, Set<ResourceRoleName>> projectId2ResourceRoleNamesMap = getProjectId2ResourceRoleNames();
         List<Project> projects =
-                repository.findAllById(ids).stream().map(projectMapper::entityToModel).collect(Collectors.toList());
+                repository.findAllById(ids).stream()
+                        .map(projectEntity -> entityToModel(projectEntity, projectId2ResourceRoleNamesMap))
+                        .collect(Collectors.toList());
+        // TODO(): union this query in one ll
         userService.assignInnerUserByCreatorId(projects, c -> c.getCreator().getId(), Project::setCreator);
         userService.assignInnerUserByCreatorId(projects, c -> c.getLastModifier().getId(), Project::setCreator);
         return projects;
@@ -608,11 +613,25 @@ public class ProjectService {
     }
 
     private Project entityToModel(ProjectEntity entity, List<UserResourceRole> userResourceRoles) {
+        return entityToModel(entity, userResourceRoles, getProjectId2ResourceRoleNames());
+    }
+
+    private Project entityToModel(ProjectEntity entity, List<UserResourceRole> userResourceRoles,
+            Map<Long, Set<ResourceRoleName>> projectId2ResourceRoleNames) {
         Project project = entityToModelWithoutCurrentUser(entity, userResourceRoles);
         project.setCreator(currentInnerUser());
         project.setLastModifier(currentInnerUser());
         project.setCurrentUserResourceRoles(
-                getProjectId2ResourceRoleNames().getOrDefault(project.getId(), Collections.EMPTY_SET));
+                projectId2ResourceRoleNames.getOrDefault(project.getId(), Collections.EMPTY_SET));
+        return project;
+    }
+
+    private Project entityToModel(ProjectEntity entity, Map<Long, Set<ResourceRoleName>> projectId2ResourceRoleNames) {
+        Project project = projectMapper.entityToModel(entity);
+        project.setCreator(currentInnerUser());
+        project.setLastModifier(currentInnerUser());
+        project.setCurrentUserResourceRoles(
+                projectId2ResourceRoleNames.getOrDefault(project.getId(), Collections.EMPTY_SET));
         return project;
     }
 
@@ -620,15 +639,6 @@ public class ProjectService {
         Project project = projectMapper.entityToModel(entity);
         project.setMembers(userResourceRoles.stream().map(this::fromUserResourceRole).filter(Objects::nonNull)
                 .collect(Collectors.toList()));
-        return project;
-    }
-
-    private Project entityToModel(ProjectEntity entity) {
-        Project project = projectMapper.entityToModel(entity);
-        project.setCreator(currentInnerUser());
-        project.setLastModifier(currentInnerUser());
-        project.setCurrentUserResourceRoles(
-                getProjectId2ResourceRoleNames().getOrDefault(project.getId(), Collections.EMPTY_SET));
         return project;
     }
 

@@ -82,6 +82,7 @@ import com.oceanbase.odc.core.shared.constant.LimitMetric;
 import com.oceanbase.odc.core.shared.constant.OrganizationType;
 import com.oceanbase.odc.core.shared.constant.ResourceRoleName;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.core.shared.constant.SearchType;
 import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -119,6 +120,7 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.DBResource;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.UnauthorizedDBResource;
+import com.oceanbase.odc.service.connection.logicaldatabase.LogicalDatabaseService;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.connection.model.OBTenant;
 import com.oceanbase.odc.service.databasechange.model.DatabaseChangeDatabase;
@@ -151,6 +153,7 @@ import com.oceanbase.odc.service.flow.task.BaseRuntimeFlowableDelegate;
 import com.oceanbase.odc.service.flow.task.model.DBStructureComparisonParameter;
 import com.oceanbase.odc.service.flow.task.model.DatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.FlowTaskProperties;
+import com.oceanbase.odc.service.flow.task.model.LogicalDatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.MultipleDatabaseChangeTaskResult;
 import com.oceanbase.odc.service.flow.task.model.RuntimeTaskConstants;
@@ -191,7 +194,7 @@ import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevel;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriber;
 import com.oceanbase.odc.service.regulation.risklevel.model.RiskLevelDescriberIdentifier;
 import com.oceanbase.odc.service.schedule.ScheduleService;
-import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
+import com.oceanbase.odc.service.schedule.model.ScheduleChangeStatus;
 import com.oceanbase.odc.service.state.StatefulUuidStateIdGenerator;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.base.precheck.PreCheckRiskLevel;
@@ -312,6 +315,8 @@ public class FlowInstanceService {
     private TransactionTemplate transactionTemplate;
     @Value("${odc.log.directory:./log}")
     private String logPath;
+    private LogicalDatabaseService logicalDatabaseService;
+
     private static final long MAX_EXPORT_OBJECT_COUNT = 10000;
     private static final String ODC_SITE_URL = "odc.site.url";
     private static final int MAX_APPLY_DATABASE_SIZE = 10;
@@ -586,6 +591,7 @@ public class FlowInstanceService {
             return Page.empty();
         }
         FlowInstanceMapper mapper = mapperFactory.generateMapperByEntities(returnValue.getContent(), false);
+
         return returnValue.map(mapper::map);
     }
 
@@ -621,10 +627,10 @@ public class FlowInstanceService {
             if (flowInstanceIds.isEmpty()) {
                 return Page.empty();
             }
-            if (params.getType() != null) {
+            if (!CollectionUtils.isEmpty(params.getTypes())) {
                 List<ServiceTaskInstanceEntity> serviceTaskInstances = serviceTaskRepository.findByFlowInstanceIdIn(
                         flowInstanceIds);
-                flowInstanceIds = serviceTaskInstances.stream().filter(o -> o.getTaskType() == params.getType())
+                flowInstanceIds = serviceTaskInstances.stream().filter(o -> params.getTypes().contains(o.getTaskType()))
                         .map(ServiceTaskInstanceEntity::getFlowInstanceId).collect(
                                 Collectors.toSet());
             }
@@ -640,48 +646,64 @@ public class FlowInstanceService {
             return flowInstanceRepository.findAll(specification, pageable);
         }
 
-        List<Long> creatorIds = new LinkedList<>();
-        if (StringUtils.isNotBlank(params.getCreator())) {
-            creatorIds = userService.getUsersByFuzzyNameWithoutPermissionCheck(
-                    params.getCreator()).stream().map(User::getId).collect(Collectors.toList());
-        }
-        Long targetId = null;
-        if (StringUtils.isNumeric(params.getId())) {
-            try {
-                targetId = Long.valueOf(params.getId());
-            } catch (Exception e) {
-                log.warn("Failed to convert string id to number, params={}", params, e);
-            }
-        }
-
         Specification<FlowInstanceViewEntity> specification = Specification
-                .where(FlowInstanceViewSpecs.creatorIdIn(creatorIds))
-                .and(FlowInstanceViewSpecs.organizationIdEquals(authenticationFacade.currentOrganizationId()))
+                .where(FlowInstanceViewSpecs.organizationIdEquals(authenticationFacade.currentOrganizationId()))
                 .and(FlowInstanceViewSpecs.statusIn(params.getStatuses()))
                 .and(FlowInstanceViewSpecs.createTimeLate(params.getStartTime()))
                 .and(FlowInstanceViewSpecs.createTimeBefore(params.getEndTime()))
-                .and(FlowInstanceViewSpecs.idEquals(targetId))
                 .and(FlowInstanceViewSpecs.groupByIdAndTaskType());
+        if (!StringUtils.isEmpty(params.getFuzzySearchKeyword()) && params.getSearchType() != null) {
+            SearchType searchType = params.getSearchType();
+            String fuzzySearchKeyword = params.getFuzzySearchKeyword();
+            switch (searchType) {
+                case ID:
+                    Long id = null;
+                    if (StringUtils.isNumeric(fuzzySearchKeyword)) {
+                        try {
+                            id = Long.valueOf(fuzzySearchKeyword);
+                        } catch (Exception e) {
+                            log.warn("Failed to convert string id to number, params={}", params, e);
+                        }
+                    }
+                    specification = specification.and(FlowInstanceViewSpecs.idEquals(id));
+                    break;
+                case DESCRIPTION:
+                    specification = specification.and(FlowInstanceViewSpecs.descriptionLike(fuzzySearchKeyword));
+                    break;
+                case CREATOR_NAME:
+                    if (StringUtils.isNotBlank(fuzzySearchKeyword)) {
+                        List<Long> searchCreatorIds = new LinkedList<>();
+                        searchCreatorIds = userService.getUsersByFuzzyNameWithoutPermissionCheck(fuzzySearchKeyword)
+                                .stream().map(User::getId).toList();
+                        if (CollectionUtils.isEmpty(searchCreatorIds)) {
+                            return Page.empty();
+                        }
+                        specification = specification.and(FlowInstanceViewSpecs.creatorIdIn(searchCreatorIds));
+                    }
+                    break;
+                case DATABASE_NAME:
+                    specification = specification.and(FlowInstanceViewSpecs.databaseNameLike(fuzzySearchKeyword));
+                    break;
+                case DATASOURCE_NAME:
+                    specification = specification.and(FlowInstanceViewSpecs.datasourceNameLike(fuzzySearchKeyword));
+                    break;
+                case CLUSTER_NAME:
+                    specification = specification.and(FlowInstanceViewSpecs.clusterNameLike(fuzzySearchKeyword));
+                    break;
+                case TENANT_NAME:
+                    specification = specification.and(FlowInstanceViewSpecs.tenantNameLike(fuzzySearchKeyword));
+                    break;
+                default:
+                    break;
+            }
+        }
         Set<TaskType> taskTypes;
-        if (params.getType() != null) {
-            taskTypes = Sets.newHashSet(params.getType());
-            specification = specification.and(FlowInstanceViewSpecs.taskTypeEquals(params.getType()));
+        if (!CollectionUtils.isEmpty(params.getTypes())) {
+            taskTypes = Sets.newHashSet(params.getTypes());
+            specification = specification.and(FlowInstanceViewSpecs.taskTypeIn(params.getTypes()));
         } else {
             // Task type which will be filtered independently
-            taskTypes = Sets.newHashSet(
-                    TaskType.MULTIPLE_ASYNC,
-                    TaskType.EXPORT,
-                    TaskType.IMPORT,
-                    TaskType.MOCKDATA,
-                    TaskType.ASYNC,
-                    TaskType.SHADOWTABLE_SYNC,
-                    TaskType.PARTITION_PLAN,
-                    TaskType.ONLINE_SCHEMA_CHANGE,
-                    TaskType.EXPORT_RESULT_SET,
-                    TaskType.APPLY_PROJECT_PERMISSION,
-                    TaskType.APPLY_DATABASE_PERMISSION,
-                    TaskType.STRUCTURE_COMPARISON,
-                    TaskType.APPLY_TABLE_PERMISSION);
+            taskTypes = TaskType.visibleTaskTypes();
             specification = specification.and(FlowInstanceViewSpecs.taskTypeIn(taskTypes));
         }
 
@@ -837,6 +859,7 @@ public class FlowInstanceService {
             cancelAllRelatedExternalInstance(flowInstance);
             deleteFlowProcessInstance(flowInstance.getProcessInstanceId(), flowInstance.getId());
             flowInstanceRepository.updateStatusById(flowInstance.getId(), FlowStatus.CANCELLED);
+            tryCompleteScheduleChangeStatus(id, taskTypeHolder.getValue(), ScheduleChangeStatus.APPROVE_CANCELED);
             return FlowInstanceDetailResp.withIdAndType(id, taskTypeHolder.getValue());
         }
 
@@ -908,6 +931,7 @@ public class FlowInstanceService {
             throw new UnsupportedException(ErrorCodes.FinishedTaskNotTerminable, null,
                     "The current task has been completed and cannot be terminated");
         }
+        tryCompleteScheduleChangeStatus(id, taskTypeHolder.getValue(), ScheduleChangeStatus.APPROVE_CANCELED);
         return FlowInstanceDetailResp.withIdAndType(id, taskTypeHolder.getValue());
     }
 
@@ -972,8 +996,17 @@ public class FlowInstanceService {
         FlowInstance flowInstance =
                 optional.orElseThrow(() -> new NotFoundException(ResourceType.ODC_FLOW_INSTANCE, "id", id));
         cancelAllRelatedExternalInstance(flowInstance);
-        SpringContextUtil.getBean(ScheduleService.class).updateStatusByFlowInstanceId(id, ScheduleStatus.REJECTED);
-        return FlowInstanceDetailResp.withIdAndType(id, getTaskByFlowInstanceId(id).getTaskType());
+        TaskType taskType = getTaskByFlowInstanceId(id).getTaskType();
+        tryCompleteScheduleChangeStatus(id, taskType, ScheduleChangeStatus.APPROVE_REJECTED);
+        return FlowInstanceDetailResp.withIdAndType(id, taskType);
+    }
+
+    private void tryCompleteScheduleChangeStatus(Long flowInstanceID, TaskType taskType, ScheduleChangeStatus status) {
+        // only alter schedule task need do this notify
+        if (taskType == TaskType.ALTER_SCHEDULE) {
+            SpringContextUtil.getBean(ScheduleService.class).updateStatusByFlowInstanceId(flowInstanceID,
+                    status);
+        }
     }
 
     public <T> T mapFlowInstance(@NonNull Long flowInstanceId, Function<FlowInstance, T> mapper,
@@ -1087,6 +1120,11 @@ public class FlowInstanceService {
             MultipleDatabaseChangeParameters parameters = (MultipleDatabaseChangeParameters) req.getParameters();
             databaseIds =
                     parameters.getOrderedDatabaseIds().stream().flatMap(Collection::stream).collect(Collectors.toSet());
+        } else if (taskType == TaskType.LOGICAL_DATABASE_CHANGE) {
+            LogicalDatabaseChangeParameters parameters = (LogicalDatabaseChangeParameters) req.getParameters();
+            databaseIds =
+                    logicalDatabaseService.listPhysicalDatabases(parameters.getDatabaseId())
+                            .stream().map(Database::getId).collect(Collectors.toSet());
         }
         permissionHelper.checkDBPermissions(databaseIds, DatabasePermissionType.from(req.getTaskType()));
     }
@@ -1102,9 +1140,13 @@ public class FlowInstanceService {
         TaskEntity taskEntity = taskService.create(flowInstanceReq, (int) TimeUnit.SECONDS
                 .convert(flowTaskProperties.getDefaultExecutionExpirationIntervalHours(), TimeUnit.HOURS));
         Verify.notNull(taskEntity.getId(), "TaskId can not be null");
+
+        List<Long> databaseIds = extractDatabaseIds(flowInstanceReq);
+        List<Database> databases = databaseService.listDatabasesDetailsByIds(databaseIds);
         FlowInstance flowInstance = flowFactory.generateFlowInstance(generateFlowInstanceName(flowInstanceReq),
                 flowInstanceReq.getParentFlowInstanceId(),
-                flowInstanceReq.getProjectId(), flowInstanceReq.getDescription());
+                flowInstanceReq.getProjectId(), flowInstanceReq.getDescription(),
+                databases);
         Verify.notNull(flowInstance.getId(), "FlowInstance id can not be null");
         ExecutionStrategyConfig strategyConfig = ExecutionStrategyConfig.from(flowInstanceReq,
                 ExecutionStrategyConfig.INVALID_EXPIRE_INTERVAL_SECOND);
@@ -1171,9 +1213,13 @@ public class FlowInstanceService {
         TaskEntity taskEntity = taskService.create(flowInstanceReq, (int) TimeUnit.SECONDS
                 .convert(flowTaskProperties.getDefaultExecutionExpirationIntervalHours(), TimeUnit.HOURS));
         Verify.notNull(taskEntity.getId(), "TaskId can not be null");
+
+        List<Long> databaseIds = extractDatabaseIds(flowInstanceReq);
+        List<Database> databases = databaseService.listDatabasesDetailsByIds(databaseIds);
         FlowInstance flowInstance = flowFactory.generateFlowInstance(generateFlowInstanceName(flowInstanceReq),
                 flowInstanceReq.getParentFlowInstanceId(),
-                flowInstanceReq.getProjectId(), flowInstanceReq.getDescription());
+                flowInstanceReq.getProjectId(), flowInstanceReq.getDescription(),
+                databases);
         Verify.notNull(flowInstance.getId(), "FlowInstance id can not be null");
 
         try {
@@ -1227,6 +1273,33 @@ public class FlowInstanceService {
                 Tag.of("organizationId", flowInstance.getOrganizationId().toString()));
         meterManager.incrementCounter(meterKey);
         return FlowInstanceDetailResp.withIdAndType(flowInstance.getId(), flowInstanceReq.getTaskType());
+    }
+
+    private List<Long> extractDatabaseIds(CreateFlowInstanceReq createReq) {
+        return switch (createReq.getTaskType()) {
+            case APPLY_DATABASE_PERMISSION -> {
+                ApplyDatabaseParameter parameter = (ApplyDatabaseParameter) createReq.getParameters();
+                yield parameter.getDatabases().stream().map(ApplyDatabase::getId).toList();
+            }
+            case APPLY_TABLE_PERMISSION -> {
+                ApplyTableParameter parameter = (ApplyTableParameter) createReq.getParameters();
+                yield parameter.getTables().stream().map(ApplyTable::getDatabaseId).toList();
+            }
+            case MULTIPLE_ASYNC -> {
+                MultipleDatabaseChangeParameters parameter = (MultipleDatabaseChangeParameters) createReq.getParameters();
+                yield parameter.getDatabases().stream().map(DatabaseChangeDatabase::getId).toList();
+            }
+            case STRUCTURE_COMPARISON -> {
+                DBStructureComparisonParameter parameter = (DBStructureComparisonParameter) createReq.getParameters();
+                yield List.of(parameter.getSourceDatabaseId(), parameter.getTargetDatabaseId());
+            }
+            case LOGICAL_DATABASE_CHANGE -> {
+                LogicalDatabaseChangeParameters parameter = (LogicalDatabaseChangeParameters) createReq.getParameters();
+                yield logicalDatabaseService.listPhysicalDatabases(parameter.getDatabaseId())
+                        .stream().map(Database::getId).collect(Collectors.toList());
+            }
+            default -> Collections.singletonList(createReq.getDatabaseId());
+        };
     }
 
     private void generateMultipleDatabaseResult(CreateFlowInstanceReq flowInstanceReq, TaskEntity taskEntity) {

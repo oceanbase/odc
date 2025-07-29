@@ -60,17 +60,15 @@ import com.oceanbase.odc.core.sql.split.SqlStatementIterator;
 import com.oceanbase.odc.service.common.FileManager;
 import com.oceanbase.odc.service.common.model.FileBucket;
 import com.oceanbase.odc.service.common.util.OdcFileUtil;
-import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.common.util.SqlUtils;
-import com.oceanbase.odc.service.config.OrganizationConfigUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
-import com.oceanbase.odc.service.schedule.job.PublishSqlPlanJobReq;
+import com.oceanbase.odc.service.schedule.job.PublishSqlExecuteJobReq;
 import com.oceanbase.odc.service.session.OdcStatementCallBack;
 import com.oceanbase.odc.service.session.factory.DefaultConnectSessionFactory;
 import com.oceanbase.odc.service.session.initializer.ConsoleTimeoutInitializer;
 import com.oceanbase.odc.service.session.model.SqlExecuteResult;
-import com.oceanbase.odc.service.sqlplan.model.SqlPlanTaskResult;
+import com.oceanbase.odc.service.sqlplan.model.SqlExecuteTaskResult;
 import com.oceanbase.odc.service.task.base.TaskBase;
 import com.oceanbase.odc.service.task.caller.JobContext;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
@@ -84,9 +82,9 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class SqlPlanTask extends TaskBase<SqlPlanTaskResult> {
+public class SqlExecuteTask extends TaskBase<SqlExecuteTaskResult> {
 
-    private PublishSqlPlanJobReq parameters;
+    private PublishSqlExecuteJobReq parameters;
 
     private long taskId;
 
@@ -96,7 +94,7 @@ public class SqlPlanTask extends TaskBase<SqlPlanTaskResult> {
 
     private SyncJdbcExecutor executor;
 
-    private SqlPlanTaskResult result;
+    private SqlExecuteTaskResult result;
 
     private volatile boolean canceled = false;
 
@@ -112,14 +110,14 @@ public class SqlPlanTask extends TaskBase<SqlPlanTaskResult> {
 
     private final List<CSVExecuteResult> csvFileMappers = new ArrayList<>();
 
-    public SqlPlanTask() {}
+    public SqlExecuteTask() {}
 
     @Override
     protected void doInit(JobContext context) {
-        this.result = new SqlPlanTaskResult();
+        this.result = new SqlExecuteTaskResult();
         this.parameters =
                 JobUtils.fromJson(jobContext.getJobParameters().get(JobParametersKeyConstants.META_TASK_PARAMETER_JSON),
-                        PublishSqlPlanJobReq.class);
+                        PublishSqlExecuteJobReq.class);
         JobContext jobContext = getJobContext();
         Map<String, String> jobProperties = jobContext.getJobProperties();
         this.taskId = jobContext.getJobIdentity().getId();
@@ -178,7 +176,7 @@ public class SqlPlanTask extends TaskBase<SqlPlanTaskResult> {
                         }
                     }
                 } catch (Exception e) {
-                    log.info("execute sql failed, sql={}", sql);
+                    log.error("execute sql failed, sql={}", sql, e);
                     result.incrementFailedStatements();
                     addErrorRecordsToFile(index, sql);
                     if (parameters.getErrorStrategy() == TaskErrorStrategy.ABORT) {
@@ -268,7 +266,7 @@ public class SqlPlanTask extends TaskBase<SqlPlanTaskResult> {
     }
 
     @Override
-    public SqlPlanTaskResult getTaskResult() {
+    public SqlExecuteTaskResult getTaskResult() {
         return this.result;
     }
 
@@ -356,9 +354,9 @@ public class SqlPlanTask extends TaskBase<SqlPlanTaskResult> {
 
     private OdcStatementCallBack getOdcStatementCallBack(String sql) {
         List<SqlTuple> sqlTuples = Collections.singletonList(SqlTuple.newTuple(sql));
-        OrganizationConfigUtils configUtils = SpringContextUtil.getBean(OrganizationConfigUtils.class);
-        Verify.notGreaterThan(parameters.getQueryLimit(), configUtils.getDefaultMaxQueryLimit(),
-                "query limit value");
+        Integer defaultMaxQueryLimit =
+                Integer.parseInt(jobContext.getJobParameters().get(JobParametersKeyConstants.DEFAULT_MAX_QUERY_LIMIT));
+        Verify.notGreaterThan(parameters.getQueryLimit(), defaultMaxQueryLimit, "query limit value");
         OdcStatementCallBack statementCallback =
                 new OdcStatementCallBack(sqlTuples, connectionSession, true, parameters.getQueryLimit());
         statementCallback.setMaxCachedLines(0);
@@ -491,8 +489,9 @@ public class SqlPlanTask extends TaskBase<SqlPlanTaskResult> {
                 OdcFileUtil.deleteFiles(file);
             }
             return ossAddress;
+        } else {
+            return filePath;
         }
-        return null;
     }
 
     private void addErrorRecordsToFile(int index, String sql) {

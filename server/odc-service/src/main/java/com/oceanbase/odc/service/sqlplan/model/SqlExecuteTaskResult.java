@@ -23,7 +23,7 @@ import com.oceanbase.odc.service.cloud.model.CloudProvider;
 import lombok.Data;
 
 @Data
-public class SqlPlanTaskResult {
+public class SqlExecuteTaskResult {
 
     private long totalStatements = 0;
 

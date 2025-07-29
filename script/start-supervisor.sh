@@ -17,7 +17,7 @@ default_heap_options="-Xmx1024m -Xms512m"
 default_gc_options="${gc_basic_options} ${gc_log_options}"
 default_oom_options="-XX:+ExitOnOutOfMemoryError"
 default_agent_main_class_name="com.oceanbase.odc.supervisor.SupervisorAgent"
-default_spring_boot_loader="org.springframework.boot.loader.PropertiesLauncher"
+default_spring_boot_loader="org.springframework.boot.loader.launch.PropertiesLauncher"
 main_class_caller="-Dloader.main=${default_agent_main_class_name} ${default_spring_boot_loader}"
 
 # define some helper functions

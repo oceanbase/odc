@@ -56,6 +56,8 @@ public class ExecutorProcessBuilderFactory {
             commands.add("-cp");
             // set jar package file name in commands
             commands.add(runtimeMxBean.getClassPath());
+            commands.add("-Dloader.main=" + mainClassName);
+            commands.add("org.springframework.boot.loader.launch.PropertiesLauncher");
         } else {
             commands.add("-cp");
             commands.add(runtimeMxBean.getClassPath());

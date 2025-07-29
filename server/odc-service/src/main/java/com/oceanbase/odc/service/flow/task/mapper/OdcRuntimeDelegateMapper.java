@@ -23,9 +23,9 @@ import com.oceanbase.odc.service.flow.task.BaseRuntimeFlowableDelegate;
 import com.oceanbase.odc.service.flow.task.DBStructureComparisonFlowableTask;
 import com.oceanbase.odc.service.flow.task.DataTransferRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.DatabaseChangeRuntimeFlowableTask;
+import com.oceanbase.odc.service.flow.task.LogicalDatabaseChangeFlowableTask;
 import com.oceanbase.odc.service.flow.task.MockDataRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.MultipleDatabaseChangeRuntimeFlowableTask;
-import com.oceanbase.odc.service.flow.task.PartitionPlanRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.PreCheckRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.RollbackPlanRuntimeFlowableTask;
 import com.oceanbase.odc.service.flow.task.ShadowtableSyncRuntimeFlowableTask;
@@ -61,8 +61,6 @@ public class OdcRuntimeDelegateMapper implements RuntimeDelegateMapper {
                 return DataTransferRuntimeFlowableTask.class;
             case SHADOWTABLE_SYNC:
                 return ShadowtableSyncRuntimeFlowableTask.class;
-            case PARTITION_PLAN:
-                return PartitionPlanRuntimeFlowableTask.class;
             case ALTER_SCHEDULE:
                 return AlterScheduleTask.class;
             case ONLINE_SCHEMA_CHANGE:
@@ -81,6 +79,8 @@ public class OdcRuntimeDelegateMapper implements RuntimeDelegateMapper {
                 return ApplyTableFlowableTask.class;
             case STRUCTURE_COMPARISON:
                 return DBStructureComparisonFlowableTask.class;
+            case LOGICAL_DATABASE_CHANGE:
+                return LogicalDatabaseChangeFlowableTask.class;
             default:
                 throw new UnsupportedException(ErrorCodes.Unsupported, new Object[] {ResourceType.ODC_TASK},
                         "Unsupported task type: " + taskType);

@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.schedule.model;
 import java.util.Date;
 import java.util.Map;
 
+import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.common.model.InnerUser;
 
 import lombok.Data;
@@ -38,5 +39,5 @@ public class ScheduleTaskListOverview extends ScheduleTaskOverview {
 
     private Map<String, Object> attributes;
 
-
+    private Project project;
 }

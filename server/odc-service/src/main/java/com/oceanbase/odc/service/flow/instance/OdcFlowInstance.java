@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.service.flow.instance;
 
+import java.util.List;
+
 import org.flowable.engine.RepositoryService;
 import org.flowable.engine.RuntimeService;
 
@@ -27,6 +29,7 @@ import com.oceanbase.odc.metadb.flow.SequenceInstanceRepository;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceCandidateRepository;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceRepository;
+import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 
@@ -64,6 +67,7 @@ public class OdcFlowInstance extends FlowInstance {
 
     public OdcFlowInstance(@NonNull String name, String description,
             Long parentFlowInstanceId, Long projectId,
+            List<Database> databases,
             @NonNull FlowableAdaptor flowableAdaptor,
             @NonNull AuthenticationFacade authenticationFacade,
             @NonNull FlowInstanceRepository flowInstanceRepository,
@@ -74,7 +78,8 @@ public class OdcFlowInstance extends FlowInstance {
             @NonNull UserTaskInstanceRepository userTaskInstanceRepository,
             @NonNull UserTaskInstanceCandidateRepository userTaskInstanceCandidateRepository,
             @NonNull RuntimeService runtimeService, @NonNull RepositoryService repositoryService) {
-        super(name, description, projectId, parentFlowInstanceId, flowableAdaptor, authenticationFacade,
+        super(name, description, projectId, parentFlowInstanceId, databases, flowableAdaptor,
+                authenticationFacade,
                 flowInstanceRepository, nodeInstanceRepository, sequenceRepository, gateWayInstanceRepository,
                 serviceTaskRepository, userTaskInstanceRepository, userTaskInstanceCandidateRepository,
                 runtimeService, repositoryService);

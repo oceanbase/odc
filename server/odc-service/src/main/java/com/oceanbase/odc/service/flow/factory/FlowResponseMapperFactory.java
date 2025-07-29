@@ -158,13 +158,13 @@ public class FlowResponseMapperFactory {
     public FlowInstanceMapper generateMapperByInstances(@NonNull Collection<FlowInstance> flowInstances,
             boolean skipAuth) {
         return generateMapper(getLongSet(flowInstances, FlowInstance::getId),
-                getLongSet(flowInstances, FlowInstance::getCreatorId), skipAuth);
+                getLongSet(flowInstances, FlowInstance::getCreatorId), skipAuth, false);
     }
 
     public FlowInstanceMapper generateMapperByEntities(@NonNull Collection<FlowInstanceEntity> entities,
             boolean skipAuth) {
         return generateMapper(getLongSet(entities, FlowInstanceEntity::getId),
-                getLongSet(entities, FlowInstanceEntity::getCreatorId), skipAuth);
+                getLongSet(entities, FlowInstanceEntity::getCreatorId), skipAuth, true);
     }
 
     public FlowNodeInstanceMapper generateNodeMapperByInstance(@NonNull FlowInstance flowInstance, boolean skipAuth) {
@@ -180,7 +180,7 @@ public class FlowResponseMapperFactory {
     }
 
     public FlowInstanceMapper generateMapperByInstanceIds(@NonNull Collection<Long> flowInstanceIds) {
-        return generateMapper(flowInstanceIds, Collections.emptySet(), false);
+        return generateMapper(flowInstanceIds, Collections.emptySet(), false, false);
     }
 
     private <T> Set<Long> getLongSet(@NonNull Collection<T> values, @NonNull Function<T, Long> function) {
@@ -277,7 +277,7 @@ public class FlowResponseMapperFactory {
     }
 
     private FlowInstanceMapper generateMapper(@NonNull Collection<Long> flowInstanceIds,
-            @NonNull Set<Long> creatorIds, boolean skipAuth) {
+            @NonNull Set<Long> creatorIds, boolean skipAuth, boolean isBrief) {
         if (flowInstanceIds.isEmpty()) {
             return FlowInstanceMapper.builder().build();
         }
@@ -299,6 +299,7 @@ public class FlowResponseMapperFactory {
         /**
          * Get Database associated with each TaskEntity
          */
+        Map<Long, Database> id2Database = new HashMap<>();
         Set<Long> databaseIds = taskId2TaskEntity.values().stream()
                 .map(TaskEntity::getDatabaseId)
                 .filter(Objects::nonNull).collect(Collectors.toSet());
@@ -308,9 +309,37 @@ public class FlowResponseMapperFactory {
         databaseIds.addAll(collectApplyDatabasePermissionDatabaseIds(taskId2TaskEntity));
         databaseIds.addAll(collectApplyTablePermissionDatabaseIds(taskId2TaskEntity));
         Set<Long> projectIds = new HashSet<>();
-        Map<Long, Database> id2Database = getIdDatabaseMapAndFillProjectIds(
-                databaseIds, projectIds, taskId2TaskEntity);
-        Map<Long, Project> id2Project = getIdProjectMap(projectIds, skipAuth);
+        Map<Long, Project> id2Project = new HashMap<>();
+
+        if (CollectionUtils.isNotEmpty(databaseIds)) {
+            id2Database = databaseService.listDatabasesByIds(databaseIds).stream()
+                    .collect(Collectors.toMap(Database::getId, database -> database));
+            projectIds.addAll(id2Database.values().stream().map(db -> db.getProject().getId())
+                    .filter(Objects::nonNull).collect(Collectors.toSet()));
+        }
+        projectIds.addAll(collectApplyProjectIds(taskId2TaskEntity));
+        if (CollectionUtils.isNotEmpty(projectIds)) {
+            id2Project = projectService.listByIds(projectIds).stream()
+                    .collect(Collectors.toMap(Project::getId, project -> project, (a, b) -> a));
+        }
+        /**
+         * find the ConnectionConfig associated with each Database
+         */
+        if (!isBrief) {
+            Set<Long> connectionIds = id2Database.values().stream()
+                    .filter(e -> e.getDataSource() != null && e.getDataSource().getId() != null)
+                    .map(e -> e.getDataSource().getId()).collect(Collectors.toSet());
+            Map<Long, ConnectionConfig> id2Connection =
+                    listConnectionsByConnectionIdsWithoutPermissionCheck(connectionIds)
+                            .stream()
+                            .collect(Collectors.toMap(ConnectionEntity::getId, connectionMapper::entityToModel));
+            id2Database.values().forEach(database -> {
+                if (id2Connection.containsKey(database.getDataSource().getId())) {
+                    database.setDataSource(id2Connection.get(database.getDataSource().getId()));
+                }
+            });
+        }
+
         /**
          * list candidates
          */

@@ -101,4 +101,8 @@ public class FlowInstanceSpecs {
     public static Specification<FlowInstanceEntity> projectIdIn(Collection<Long> projectIds) {
         return SpecificationUtil.columnIn(FLOW_INSTANCE_PROJECT_ID, projectIds);
     }
+
+    public static Specification<FlowInstanceEntity> creatorIdEquals(Long userId) {
+        return SpecificationUtil.columnEqual(FLOW_INSTANCE_CREATOR_ID_NAME, userId);
+    }
 }

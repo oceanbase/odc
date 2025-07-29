@@ -32,6 +32,7 @@ import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.dlm.model.DataArchiveParameters;
 import com.oceanbase.odc.service.dlm.model.DataDeleteParameters;
 import com.oceanbase.odc.service.loaddata.model.LoadDataParameters;
+import com.oceanbase.odc.service.partitionplan.model.PartitionPlanConfig;
 import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.schedule.ScheduleService;
@@ -141,9 +142,14 @@ public class ScheduleChangePreprocessor implements InitializingBean {
                 LogicalDatabaseChangeParameters parameters = (LogicalDatabaseChangeParameters) req.getParameters();
                 return parameters.getDatabaseId();
             }
-            case LOAD_DATA:
+            case LOAD_DATA: {
                 LoadDataParameters parameters = (LoadDataParameters) req.getParameters();
                 return parameters.getDatabaseId();
+            }
+            case PARTITION_PLAN: {
+                PartitionPlanConfig parameters = (PartitionPlanConfig) req.getParameters();
+                return parameters.getDatabaseId();
+            }
             default:
                 throw new UnsupportedException();
         }

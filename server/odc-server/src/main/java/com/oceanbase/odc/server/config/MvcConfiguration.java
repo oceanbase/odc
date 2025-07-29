@@ -238,6 +238,7 @@ public class MvcConfiguration implements WebMvcConfigurer {
         configurer.setUseSuffixPatternMatch(false);
         configurer.setUseRegisteredSuffixPatternMatch(true);
         configurer.setUrlPathHelper(urlPathHelper);
+        configurer.setUseTrailingSlashMatch(true);
     }
 
     @Bean

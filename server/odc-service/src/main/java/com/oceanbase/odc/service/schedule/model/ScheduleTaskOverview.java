@@ -43,6 +43,8 @@ public class ScheduleTaskOverview {
 
     private Date updateTime;
 
+    private String jobName;
+
     /**
      * Only used in version 4.3.2, it will be deleted after version 4.3.3.
      */

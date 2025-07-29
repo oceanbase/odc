@@ -15,11 +15,17 @@
  */
 package com.oceanbase.odc.service.schedule;
 
+import static com.oceanbase.odc.service.task.constants.JobParametersKeyConstants.META_TASK_PARAMETER_JSON;
+
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.quartz.JobKey;
 import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +37,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
@@ -40,10 +47,14 @@ import com.oceanbase.odc.core.shared.exception.NotFoundException;
 import com.oceanbase.odc.core.shared.exception.UnexpectedException;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.iam.UserRepository;
+import com.oceanbase.odc.metadb.schedule.ScheduleRelationsEntity;
+import com.oceanbase.odc.metadb.schedule.ScheduleRelationsRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskEntity;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskRepository;
 import com.oceanbase.odc.metadb.schedule.ScheduleTaskSpecs;
 import com.oceanbase.odc.metadb.task.JobRepository;
+import com.oceanbase.odc.service.collaboration.project.ProjectService;
+import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.connection.logicaldatabase.LogicalDatabaseChangeService;
 import com.oceanbase.odc.service.dispatch.DispatchResponse;
 import com.oceanbase.odc.service.dispatch.RequestDispatcher;
@@ -58,6 +69,7 @@ import com.oceanbase.odc.service.schedule.model.DataArchiveClearParameters;
 import com.oceanbase.odc.service.schedule.model.DataArchiveRollbackParameters;
 import com.oceanbase.odc.service.schedule.model.QuartzKeyGenerator;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleTaskParams;
+import com.oceanbase.odc.service.schedule.model.Schedule;
 import com.oceanbase.odc.service.schedule.model.ScheduleTask;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskDetailResp;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskMapper;
@@ -119,10 +131,16 @@ public class ScheduleTaskService {
     @Autowired
     private JobRepository jobRepository;
 
+    @Autowired
+    private ProjectService projectService;
+
+    @Autowired
+    private ScheduleRelationsRepository scheduleRelationsRepository;
+
     private final ScheduleTaskMapper scheduleTaskMapper = ScheduleTaskMapper.INSTANCE;
 
-    public ScheduleTaskDetailResp getScheduleTaskDetailResp(Long id, Long scheduleId) {
-        ScheduleTask scheduleTask = nullSafeGetByIdAndScheduleId(id, scheduleId);
+    public ScheduleTaskDetailResp getScheduleTaskDetailResp(Long id, Schedule schedule) {
+        ScheduleTask scheduleTask = nullSafeGetByIdAndScheduleId(id, schedule.id());
         ScheduleTaskDetailResp res = new ScheduleTaskDetailResp();
         res.setId(scheduleTask.getId());
         res.setType(ScheduleTaskType.valueOf(scheduleTask.getJobGroup()));
@@ -144,6 +162,17 @@ public class ScheduleTaskService {
                 jobRepository.findByIdNative(scheduleTask.getJobId())
                         .ifPresent(jobEntity -> res.setExecutionDetails(JobUtils.retrieveJobResultStr(jobEntity)));
                 break;
+            case PARTITION_PLAN:
+                jobRepository.findByIdNative(scheduleTask.getJobId())
+                        .ifPresent(jobEntity -> {
+                            res.setExecutionDetails(JobUtils.retrieveJobResultStr(jobEntity));
+                            Map<String, String> jobParameters = JsonUtils.fromJson(jobEntity.getJobParametersJson(),
+                                    new TypeReference<>() {});
+                            if (ObjectUtils.isNotEmpty(jobParameters)) {
+                                res.setParameters(jobParameters.get(META_TASK_PARAMETER_JSON));
+                            }
+                        });
+                break;
             case LOGICAL_DATABASE_CHANGE:
                 res.setExecutionDetails(
                         JsonUtils.toJson(logicalDatabaseChangeService.listSqlExecutionUnits(scheduleTask.getId())));
@@ -151,6 +180,10 @@ public class ScheduleTaskService {
             default:
                 break;
         }
+        Map<Long, Project> idToProject =
+                projectService.listByIds(Collections.singleton(schedule.getProjectId())).stream()
+                        .collect(Collectors.toMap(Project::getId, o -> o, (o1, o2) -> o2));
+        res.setProject(idToProject.get(schedule.getProjectId()));
         return res;
     }
 
@@ -278,8 +311,12 @@ public class ScheduleTaskService {
      * for internal usage
      */
     public Page<ScheduleTaskEntity> listEntity(Pageable pageable, Long scheduleId) {
+        Set<String> scheduleIds = new HashSet<>();
+        scheduleIds.add(scheduleId.toString());
+        Optional<ScheduleRelationsEntity> optional = scheduleRelationsRepository.findByParentId(scheduleId);
+        optional.ifPresent(scheduleRelationsEntity -> scheduleIds.add(scheduleRelationsEntity.getChildId().toString()));
         Specification<ScheduleTaskEntity> specification =
-                Specification.where(ScheduleTaskSpecs.jobNameEquals(scheduleId.toString()));
+                Specification.where(ScheduleTaskSpecs.jobNameIn(scheduleIds));
         return scheduleTaskRepository.findAll(specification, pageable);
     }
 

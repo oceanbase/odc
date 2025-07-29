@@ -26,6 +26,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.flowable.bpmn.model.BpmnModel;
 import org.flowable.bpmn.model.Process;
 import org.flowable.engine.RepositoryService;
@@ -39,6 +40,7 @@ import com.oceanbase.odc.common.graph.Graph;
 import com.oceanbase.odc.common.graph.GraphEdge;
 import com.oceanbase.odc.common.graph.GraphVertex;
 import com.oceanbase.odc.common.lang.Pair;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.model.SecurityResource;
 import com.oceanbase.odc.core.flow.BaseExecutionListener;
 import com.oceanbase.odc.core.flow.ExecutionConfigurer;
@@ -49,6 +51,7 @@ import com.oceanbase.odc.core.shared.SingleOrganizationResource;
 import com.oceanbase.odc.core.shared.Verify;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
+import com.oceanbase.odc.core.shared.constant.TaskType;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
 import com.oceanbase.odc.metadb.flow.GateWayInstanceRepository;
@@ -59,6 +62,7 @@ import com.oceanbase.odc.metadb.flow.SequenceInstanceRepository;
 import com.oceanbase.odc.metadb.flow.ServiceTaskInstanceRepository;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceCandidateRepository;
 import com.oceanbase.odc.metadb.flow.UserTaskInstanceRepository;
+import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.flow.FlowableAdaptor;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
 import com.oceanbase.odc.service.flow.model.NodeInstanceEntityKey;
@@ -81,6 +85,8 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 @Slf4j
 public class FlowInstance extends Graph implements SecurityResource, SingleOrganizationResource {
+    public static final String NAME_SEPARATOR = ",";
+    private static final int NAME_MAX_LENGTH = 1000;
 
     private Long id;
     private Date createTime;
@@ -90,6 +96,8 @@ public class FlowInstance extends Graph implements SecurityResource, SingleOrgan
 
     private Long parentFlowInstanceId;
     private Long projectId;
+    private TaskType taskType;
+    private List<Database> databases;
     @Setter
     private FlowStatus status;
     private String flowConfigSnapShotXml;
@@ -168,6 +176,7 @@ public class FlowInstance extends Graph implements SecurityResource, SingleOrgan
     }
 
     public FlowInstance(@NonNull String name, String description, Long projectId, Long parentFlowInstanceId,
+            List<Database> databases,
             @NonNull FlowableAdaptor flowableAdaptor,
             @NonNull AuthenticationFacade authenticationFacade,
             @NonNull FlowInstanceRepository flowInstanceRepository,
@@ -180,6 +189,7 @@ public class FlowInstance extends Graph implements SecurityResource, SingleOrgan
             @NonNull RuntimeService runtimeService, @NonNull RepositoryService repositoryService) {
         this(null, name, authenticationFacade.currentUserId(), authenticationFacade.currentOrganizationId(),
                 projectId, parentFlowInstanceId, null, null, FlowStatus.CREATED, null, description, null, null,
+                databases,
                 authenticationFacade, flowInstanceRepository, nodeInstanceRepository, sequenceRepository,
                 gateWayInstanceRepository, serviceTaskRepository, userTaskInstanceRepository,
                 userTaskInstanceCandidateRepository, flowableAdaptor, runtimeService, repositoryService);
@@ -205,7 +215,8 @@ public class FlowInstance extends Graph implements SecurityResource, SingleOrgan
         this(entity.getId(), entity.getName(), entity.getCreatorId(), entity.getOrganizationId(),
                 entity.getProjectId(), entity.getParentInstanceId(), entity.getProcessDefinitionId(),
                 entity.getProcessInstanceId(), entity.getStatus(), entity.getFlowConfigSnapshotXml(),
-                entity.getDescription(), entity.getCreateTime(), entity.getUpdateTime(), authenticationFacade,
+                entity.getDescription(), entity.getCreateTime(), entity.getUpdateTime(), null,
+                authenticationFacade,
                 flowInstanceRepository, nodeInstanceRepository, sequenceRepository, gateWayInstanceRepository,
                 serviceTaskRepository, userTaskInstanceRepository, userTaskInstanceCandidateRepository,
                 flowableAdaptor, runtimeService, repositoryService);
@@ -215,6 +226,7 @@ public class FlowInstance extends Graph implements SecurityResource, SingleOrgan
             Long projectId, Long parentFlowInstanceId,
             String processDefinitionId, String processInstanceId, @NonNull FlowStatus status,
             String flowConfigSnapShotXml, String description, Date createTime, Date updateTime,
+            List<Database> databases,
             @NonNull AuthenticationFacade authenticationFacade,
             @NonNull FlowInstanceRepository flowInstanceRepository,
             @NonNull NodeInstanceEntityRepository nodeInstanceRepository,
@@ -238,6 +250,7 @@ public class FlowInstance extends Graph implements SecurityResource, SingleOrgan
         this.flowConfigSnapShotXml = flowConfigSnapShotXml;
         this.createTime = createTime;
         this.updateTime = updateTime;
+        this.databases = databases;
         this.authenticationFacade = authenticationFacade;
         this.runtimeService = runtimeService;
         this.repositoryService = repositoryService;
@@ -306,6 +319,39 @@ public class FlowInstance extends Graph implements SecurityResource, SingleOrgan
         entity.setFlowConfigSnapshotXml(getFlowConfigSnapShotXml());
         entity.setDescription(getDescription());
         entity.setParentInstanceId(getParentFlowInstanceId());
+        if (CollectionUtils.isNotEmpty(databases)) {
+            String databaseNames = StringUtils.join(databases.stream().map(Database::getName)
+                    .filter(StringUtils::isNotEmpty).collect(Collectors.toSet()), NAME_SEPARATOR);
+            if (databaseNames.length() > NAME_MAX_LENGTH) {
+                log.warn("Database names length {} exceeds maximum length {}, will be truncated. Flow instance: {}",
+                        databaseNames.length(), NAME_MAX_LENGTH, getId());
+            }
+            entity.setDatabaseNames(StringUtils.truncateString(databaseNames, NAME_MAX_LENGTH));
+
+            String datasourceNames = StringUtils.join(databases.stream().map(db -> db.getDataSource().getName())
+                    .filter(StringUtils::isNotEmpty).collect(Collectors.toSet()), NAME_SEPARATOR);
+            if (datasourceNames.length() > NAME_MAX_LENGTH) {
+                log.warn("Datasource names length {} exceeds maximum length {}, will be truncated. Flow instance: {}",
+                        datasourceNames.length(), NAME_MAX_LENGTH, getId());
+            }
+            entity.setDatasourceNames(StringUtils.truncateString(datasourceNames, NAME_MAX_LENGTH));
+
+            String clusterNames = StringUtils.join(databases.stream().map(db -> db.getDataSource().getClusterName())
+                    .filter(StringUtils::isNotEmpty).collect(Collectors.toSet()), NAME_SEPARATOR);
+            if (clusterNames.length() > NAME_MAX_LENGTH) {
+                log.warn("Cluster names length {} exceeds maximum length {}, will be truncated. Flow instance: {}",
+                        clusterNames.length(), NAME_MAX_LENGTH, getId());
+            }
+            entity.setClusterNames(StringUtils.truncateString(clusterNames, NAME_MAX_LENGTH));
+
+            String tenantNames = StringUtils.join(databases.stream().map(db -> db.getDataSource().getTenantName())
+                    .filter(StringUtils::isNotEmpty).collect(Collectors.toSet()), NAME_SEPARATOR);
+            if (tenantNames.length() > NAME_MAX_LENGTH) {
+                log.warn("Tenant names length {} exceeds maximum length {}, will be truncated. Flow instance: {}",
+                        tenantNames.length(), NAME_MAX_LENGTH, getId());
+            }
+            entity.setTenantNames(StringUtils.truncateString(tenantNames, NAME_MAX_LENGTH));
+        }
         entity = flowInstanceRepository.save(entity);
         Verify.notNull(entity.getId(), "id");
         Verify.notNull(entity.getCreateTime(), "CreateTime");

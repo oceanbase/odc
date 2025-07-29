@@ -17,8 +17,10 @@ package com.oceanbase.odc.service.schedule.model;
 
 import java.util.Date;
 import java.util.Map;
+import java.util.Set;
 
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.common.model.InnerUser;
 
 import lombok.Data;
@@ -51,5 +53,21 @@ public class ScheduleOverview {
     private Date latestFireTime;
 
     private TaskStatus latestExecutionStatus;
+
+    // if this value is true, the schedule can be approved
+    private Boolean approvable = false;
+    // if approvable is true, the approveInstanceId must not be null
+    private Long approveInstanceId;
+
+    private Set<InnerUser> candidateApprovers;
+
+    // project for this schedule
+    private Project project;
+
+
+    // latest changed log id for jump to approve page action
+    private Long latestChangedLogId;
+
+    private Date createTime;
 
 }

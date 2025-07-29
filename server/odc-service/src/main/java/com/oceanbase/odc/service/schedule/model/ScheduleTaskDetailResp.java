@@ -19,6 +19,7 @@ import java.util.Date;
 
 import com.fasterxml.jackson.annotation.JsonRawValue;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
+import com.oceanbase.odc.service.collaboration.project.model.Project;
 
 import lombok.Data;
 
@@ -48,4 +49,6 @@ public class ScheduleTaskDetailResp {
     private Date createTime;
 
     private Date updateTime;
+
+    private Project project;
 }

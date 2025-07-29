@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.oceanbase.odc.core.flow.model.TaskParameters;
 import com.oceanbase.odc.core.shared.constant.TaskErrorStrategy;
+import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.quartz.util.QuartzCronExpressionUtils;
 import com.oceanbase.odc.service.schedule.model.ScheduleTaskParameters;
 import com.oceanbase.odc.service.schedule.model.TriggerConfig;
@@ -55,6 +56,9 @@ public class PartitionPlanConfig implements Serializable, TaskParameters, Schedu
     private TriggerConfig creationTrigger;
     private TriggerConfig droppingTrigger;
     private List<PartitionPlanTableConfig> partitionTableConfigs;
+
+    @JsonProperty(access = Access.READ_ONLY)
+    private Database databaseInfo;
 
     @JsonProperty(access = Access.READ_ONLY)
     public List<Date> getCreateTriggerNextFireTimes() {

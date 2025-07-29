@@ -90,8 +90,8 @@ public class TaskSupervisor {
         }
         ProcessBuilder pb = new ExecutorProcessBuilderFactory().getProcessBuilder(
                 processConfig, context.getJobIdentity().getId(), executorName, mainClassName);
-        log.info("start task with processConfig={}, env={}", JobUtils.toJson(processConfig),
-                JsonUtils.toJson(pb.environment()));
+        log.info("start task with processConfig={}, env={}, command = {}", JobUtils.toJson(processConfig),
+                JsonUtils.toJson(pb.environment()), pb.command());
         pb.redirectErrorStream(true);
         pb.redirectOutput(Redirect.appendTo(new File("process-call.log")));
         Process process;

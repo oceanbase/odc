@@ -65,4 +65,9 @@ public class ScheduleDetailResp {
 
     private Project project;
 
+    // if this value is true, the schedule can be approved
+    private Boolean approvable = false;
+    // if approvable is true, the approveInstanceId must not be null
+    private Long approveInstanceId;
+
 }
