@@ -1,0 +1,260 @@
+# 项目参与人
+# "yinuo.pyn" 乐别
+# "liuyizhuo.lyz" 文慕
+# "guowenlong.gwl" 天客
+# "luyiang.lya" 亦卬
+# "longpeng.zlp" 龙玄
+# "zijia.cj" 孜佳
+# "ziyan.fzy" 梓烟
+# "mayang.ysj" 码扬
+# "xzh495328" 祥睦
+# "zhijuan.hzj" 泛秋
+# "wujiexi.wjx" 黄忍
+# "lixiu.wlx" 敔杉
+# "guoshuhan.gsh" 彤涵
+# "xxk268858" 晓康
+
+# 评审人, 会作为合并请求的默认评审人员, 必须为合法的 gitlab 可登陆账号
+reviewers: ["yinuo.pyn", "liuyizhuo.lyz", "guowenlong.gwl", "luyiang.lya", "longpeng.zlp", "zijia.cj", "ziyan.fzy", "mayang.ysj", "xzh495328", "zhijuan.hzj", "wujiexi.wjx", "guoshuhan.gsh", "xxk268858"]
+
+# 观察者, 会接收到创建、变更的事件通知
+watchers: ["yinuo.pyn", "liuyizhuo.lyz", "guowenlong.gwl", "luyiang.lya", "longpeng.zlp", "zijia.cj", "ziyan.fzy", "mayang.ysj", "xzh495328"]
+
+# 阈值，配置的评审人中间，至少有1人通过
+threshold: 1
+
+# filter glob语法表达式。 filter的优先级为配置顺序的逆序，越往下面的优先级越高，且filter的优先级高于全局配置
+filters:
+
+  #  所有剩余的文件和目录的OWNER配置 （最低优先级）
+  "**/*":
+    reviewers: ["yinuo.pyn", "liuyizhuo.lyz", "guowenlong.gwl", "luyiang.lya", "longpeng.zlp"]
+    threshold: 2
+
+  # 未分类的基础模块剩余部分（低优先级）
+  "server/odc-common/**":
+    reviewers: ["yinuo.pyn", "longpeng.zlp"]
+    threshold: 1
+  "server/odc-core/**":
+    reviewers: ["yinuo.pyn", "longpeng.zlp"]
+    threshold: 1
+  "server/odc-migrate/**":
+    reviewers: ["yinuo.pyn", "longpeng.zlp", "luyiang.lya"]
+    threshold: 1
+  "server/odc-server/**":
+    reviewers: ["yinuo.pyn", "longpeng.zlp"]
+    threshold: 1
+  "server/odc-service/**":
+    reviewers: ["yinuo.pyn", "longpeng.zlp"]
+    threshold: 1
+  "server/odc-test/**":
+    reviewers: ["yinuo.pyn", "longpeng.zlp"]
+    threshold: 1
+  "server/plugins/**":
+    reviewers: ["liuyizhuo.lyz", "yinuo.pyn"]
+    threshold: 1
+  
+  # 告警（亦卬、龙玄）
+  "server/odc-core/**/alarm/**":
+    reviewers: ["luyiang.lya", "longpeng.zlp"]
+    threshold: 1
+  
+  # 权限框架（乐别、龙玄）
+  "server/odc-core/**/authority/**":
+    reviewers: ["yinuo.pyn", "longpeng.zlp"]
+    threshold: 1
+  "server/odc-service/**/iam/**":
+    reviewers: ["yinuo.pyn", "longpeng.zlp"]
+    threshold: 1
+  
+  # 数据脱敏（文慕、乐别）
+  "server/odc-core/**/datamasking/**":
+    reviewers: ["liuyizhuo.lyz", "yinuo.pyn"]
+    threshold: 1
+  "server/odc-service/**/datasecurity/**":
+    reviewers: ["liuyizhuo.lyz", "yinuo.pyn"]
+    threshold: 1
+
+  # 数据源（龙玄、乐别、文慕）
+  "server/odc-core/**/datasource/**":
+    reviewers: ["longpeng.zlp", "yinuo.pyn", "liuyizhuo.lyz"]
+    threshold: 1
+  "server/odc-service/**/connection/**":
+    reviewers: ["longpeng.zlp", "yinuo.pyn", "liuyizhuo.lyz"]
+    threshold: 1
+
+  # 工单（龙玄、祥睦、梓烟、天客）
+  "server/odc-core/**/flow/**":
+    reviewers: ["longpeng.zlp", "guowenlong.gwl", "xzh495328", "ziyan.fzy"]
+    threshold: 2
+
+  # 迁移框架（龙玄、亦卬、乐别）
+  "server/odc-core/**/migrate/**":
+    reviewers: ["longpeng.zlp", "luyiang.lya", "yinuo.pyn"]
+    threshold: 2
+  "server/odc-migrate/**":
+    reviewers: ["longpeng.zlp", "luyiang.lya", "yinuo.pyn"]
+    threshold: 2
+
+  # 连接会话（龙玄、文慕）
+  "server/odc-core/**/session/**":
+    reviewers: ["longpeng.zlp", "liuyizhuo.lyz"]
+    threshold: 1
+
+  # SQL 执行（文慕、乐别、码扬、龙玄）
+  "server/odc-core/**/sql/**/execute/**":
+    reviewers: ["liuyizhuo.lyz", "yinuo.pyn", "mayang.ysj", "longpeng.zlp"]
+    threshold: 2
+
+  # SQL 解析和分句（孜佳、乐别、龙玄）
+  "server/odc-core/**/parser/**":
+    reviewers: ["zijia.cj", "yinuo.pyn", "longpeng.zlp"]
+    threshold: 1
+  "server/odc-core/**/split/**":
+    reviewers: ["zijia.cj", "yinuo.pyn", "longpeng.zlp"]
+    threshold: 1
+
+  # 任务框架（龙玄、天客、亦卬）
+  "server/odc-core/**/task/**":
+    reviewers: ["longpeng.zlp", "guowenlong.gwl", "luyiang.lya"]
+    threshold: 1
+  "server/odc-server/**/agent/**":
+    reviewers: ["longpeng.zlp", "guowenlong.gwl", "luyiang.lya"]
+    threshold: 1
+  "server/odc-server/**/supervisor/**":
+    reviewers: ["longpeng.zlp", "guowenlong.gwl", "luyiang.lya"]
+    threshold: 1
+  "server/odc-service/**/task/**":
+    reviewers: ["longpeng.zlp", "guowenlong.gwl", "luyiang.lya"]
+    threshold: 1
+
+  # WEB 框架（乐别、亦卬）
+  "server/odc-server/**/server/**":
+    reviewers: ["yinuo.pyn", "luyiang.lya"]
+    threshold: 1
+  "server/odc-service/**/config/**":
+    reviewers: ["yinuo.pyn", "luyiang.lya"]
+    threshold: 1
+
+  # 操作审计（乐别、亦卬）
+  "server/odc-service/**/audit/**":
+    reviewers: ["yinuo.pyn", "luyiang.lya"]
+    threshold: 1
+  
+  # 自动授权（文慕、亦卬）
+  "server/odc-service/**/automation/**":
+    reviewers: ["liuyizhuo.lyz", "luyiang.lya"]
+    threshold: 1
+
+  # 管控协同（项目、环境、审批、风险等级、SQL 规则等）(乐别、码扬、孜佳)
+  "server/odc-service/**/collaboration/**":
+    reviewers: ["yinuo.pyn", "mayang.ysj", "zijia.cj"]
+    threshold: 1
+  "server/odc-service/**/regulation/**":
+    reviewers: ["yinuo.pyn", "mayang.ysj", "zijia.cj"]
+    threshold: 1
+
+  # 配置模块（系统配置、空间配置、个人配置等）(乐别、亦卬)
+  "server/odc-service/**/config/**":
+    reviewers: ["yinuo.pyn", "luyiang.lya"]
+    threshold: 1
+
+  # 数据库对象管理（孜佳、乐别、码扬）
+  "server/odc-service/**/dbobject/**":
+    reviewers: ["zijia.cj", "yinuo.pyn", "mayang.ysj"]
+    threshold: 1
+
+  # 数据生命周期管理（数据归档、清理）（天客、龙玄）
+  "server/odc-service/**/dlm/**":
+    reviewers: ["longpeng.zlp", "guowenlong.gwl"]
+    threshold: 1
+
+  # 任务导入导出（亦卬、文慕）
+  "server/odc-service/**/export/**":
+    reviewers: ["luyiang.lya", "liuyizhuo.lyz"]
+    threshold: 1
+  "server/odc-service/**/exporter/**":
+    reviewers: ["luyiang.lya", "liuyizhuo.lyz"]
+    threshold: 1
+
+  # 外部集成（亦卬、乐别）
+  "server/odc-service/**/integration/**":
+    reviewers: ["luyiang.lya", "yinuo.pyn"]
+    threshold: 1
+
+  # 消息通知（文慕、乐别、亦卬）
+  "server/odc-service/**/notification/**":
+    reviewers: ["liuyizhuo.lyz", "yinuo.pyn", "luyiang.lya"]
+    threshold: 1
+
+  # 分区计划（天客、梓烟）
+  "server/odc-service/**/partitionplan/**":
+    reviewers: ["guowenlong.gwl", "ziyan.fzy"]
+    threshold: 1
+
+  # schedule 计划模块（龙玄、天客、梓烟）
+  "server/odc-service/**/schedule/**":
+    reviewers: ["longpeng.zlp", "guowenlong.gwl", "ziyan.fzy"]
+    threshold: 1
+  "server/odc-service/**/quartz/**":
+    reviewers: ["longpeng.zlp", "guowenlong.gwl", "ziyan.fzy"]
+    threshold: 1
+
+  # 结构比对（影子表同步、结构比对等）（乐别、码扬） 
+  "server/odc-service/**/shadowtable/**":
+    reviewers: ["yinuo.pyn", "mayang.ysj"]
+    threshold: 1
+  "server/odc-service/**/structurecompare/**":
+    reviewers: ["yinuo.pyn", "mayang.ysj"]
+    threshold: 1
+
+  # 无锁结构变更（龙玄、亦卬）
+  "server/odc-service/**/onlineschemachange/**":
+    reviewers: ["longpeng.zlp", "luyiang.lya"]
+    threshold: 1
+
+  # PL 调试（孜佳、乐别）
+  "server/odc-service/**/pldebug/**":
+    reviewers: ["zijia.cj", "yinuo.pyn"]
+    threshold: 1
+
+  # 数据导入导出（导入、导出、结果集导出任务）（文慕、梓烟）
+  "server/odc-service/**/resultset/**":
+    reviewers: ["liuyizhuo.lyz", "ziyan.fzy"]
+    threshold: 1
+  
+  # ob-sql-parser（孜佳、乐别、龙玄）
+  "libs/ob-sql-parser/**":
+    reviewers: ["zijia.cj", "yinuo.pyn", "longpeng.zlp"]
+    threshold: 1
+
+  # db-browser（孜佳、乐别、码扬）
+  "libs/db-browser/**":
+    reviewers: ["zijia.cj", "yinuo.pyn", "mayang.ysj"]
+    threshold: 1
+
+  # 插件框架管理（乐别、龙玄）
+  "server/plugins/**":
+    reviewers: ["yinuo.pyn", "longpeng.zlp"]
+    threshold: 1
+
+  # 构建、打包、发布、CI/CD 等（乐别、龙玄、亦卬）
+  "conf/**":
+    reviewers: ["yinuo.pyn", "longpeng.zlp", "luyiang.lya"]
+    threshold: 1
+  "distribution/**":
+    reviewers: ["yinuo.pyn", "longpeng.zlp", "luyiang.lya"]
+    threshold: 1
+
+  # i18n 资源、文档（泛秋、黄忍、敔杉）
+  "server/odc-core/**/i18n/**":
+    reviewers: ["zhijuan.hzj", "wujiexi.wjx", "lixiu.wlx"]
+    threshold: 1
+  "docs/**":
+    reviewers: ["zhijuan.hzj", "wujiexi.wjx", "lixiu.wlx"]
+    threshold: 1
+
+  # 前端 submodule（晓康、彤涵、乐别）
+  "client/**":
+    reviewers: ["xxk268858", "guoshuhan.gsh", "yinuo.pyn"]
+    threshold: 1
