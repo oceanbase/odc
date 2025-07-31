@@ -41,9 +41,10 @@ public class SensitiveColumnScanningTaskInfo {
     private Date completeTime;
     private ErrorCode errorCode;
     private String errorMsg;
+    private volatile boolean cancelled = false;
 
     public SensitiveColumnScanningTaskInfo(@NonNull String taskId, @NonNull Long projectId,
-            @NonNull Integer allTableCount) {
+        @NonNull Integer allTableCount) {
         this.taskId = taskId;
         this.projectId = projectId;
         this.status = ScanningTaskStatus.CREATED;
@@ -81,14 +82,23 @@ public class SensitiveColumnScanningTaskInfo {
         this.errorMsg = msg;
     }
 
+    public synchronized void setCancelled(boolean cancelled) {
+        this.cancelled = cancelled;
+    }
+
+    public boolean isCancelled() {
+        return this.cancelled;
+    }
+
     public enum ScanningTaskStatus {
         CREATED,
         RUNNING,
         SUCCESS,
-        FAILED;
+        FAILED,
+        CANCELLED;
 
         public boolean isCompleted() {
-            return this == SUCCESS || this == FAILED;
+            return this == SUCCESS || this == FAILED || this == CANCELLED;
         }
     }
 

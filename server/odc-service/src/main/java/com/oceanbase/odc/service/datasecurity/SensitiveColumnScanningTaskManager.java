@@ -134,4 +134,17 @@ public class SensitiveColumnScanningTaskManager {
         return taskInfo;
     }
 
+    public boolean stop(String taskId) {
+        SensitiveColumnScanningTaskInfo taskInfo = cache.get(taskId);
+        if (taskInfo != null && taskInfo.getStatus() == ScanningTaskStatus.RUNNING) {
+            taskInfo.setCancelled(true);
+            taskInfo.setStatus(ScanningTaskStatus.CANCELLED);
+            taskInfo.setCompleteTime(new Date());
+            log.info("Sensitive column scanning task stopped, taskId: {}", taskId);
+            return true;
+        }
+        return false;
+    }
+
 }
+

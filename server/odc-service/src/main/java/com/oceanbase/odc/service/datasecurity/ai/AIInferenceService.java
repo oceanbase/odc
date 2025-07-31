@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2025 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,28 +29,36 @@ import com.openai.models.chat.completions.ChatCompletionCreateParams;
 @Service
 public class AIInferenceService {
 
-    private final AIConfig aiConfig;
+    private final AIConfig     aiConfig;
     private final OpenAIClient openAIClient;
 
-    public AIInferenceService(AIConfig aiConfig) {
+    // 直接注入 AIConfig 和 OpenAIClient 两个Bean
+    public AIInferenceService(AIConfig aiConfig, OpenAIClient openAIClient) {
         this.aiConfig = aiConfig;
-        // 根据AIConfig创建OpenAIClient
-        this.openAIClient = aiConfig.openAIClient();
+        this.openAIClient = openAIClient;
     }
 
-    public ChatCompletion chat(String prompt) {
-        //Map<String, JsonValue> bodyParams = new HashMap<>();
-        //bodyParams.put("enable_thinking", JsonBoolean.from(false));
-        String model = aiConfig.getModel();
+    /**
+     * 使用系统提示词和用户提示词分别调用AI服务
+     *
+     * @param systemPrompt 系统提示词
+     * @param userPrompt   用户提示词
+     * @return AI响应
+     */
+    public ChatCompletion chat(String systemPrompt, String userPrompt) {
+
         try {
             ChatCompletionCreateParams params = ChatCompletionCreateParams.builder()
-                    .addUserMessage(prompt)
-                    .model(model)
-                    //.additionalBodyProperties(bodyParams)
-                    .build();
+                .addSystemMessage(systemPrompt)
+                .addUserMessage(userPrompt)
+                .model(aiConfig.getModel())
+                .temperature(aiConfig.getTemperature())
+                .topP(aiConfig.getTopP())
+                .additionalBodyProperties(aiConfig.loadAdditionalParams())
+                .build();
             return openAIClient.chat().completions().create(params);
         } catch (Exception e) {
-            throw new RuntimeException("调用阿里云AI服务失败: " + e.getMessage(), e);
+            throw new RuntimeException("调用AI服务失败: " + e.getMessage(), e);
         }
     }
 }

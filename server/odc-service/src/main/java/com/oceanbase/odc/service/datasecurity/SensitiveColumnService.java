@@ -416,6 +416,21 @@ public class SensitiveColumnService {
         return taskInfo;
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"},
+        actions = {"OWNER", "DBA", "SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
+        indexOfIdParam = 0)
+    @StatefulRoute(stateName = StateName.UUID_STATEFUL_ID, stateIdExpression = "#taskId")
+    public Boolean stopScanning(@NotNull Long projectId, @NotBlank String taskId) {
+        SensitiveColumnScanningTaskInfo taskInfo = scanningTaskManager.get(taskId);
+        if (!Objects.equals(taskInfo.getProjectId(), projectId)) {
+            String errorMsg = String.format("Sensitive column scanning task not exists, taskId=%s", taskId);
+            throw new NotFoundException(ErrorCodes.IllegalArgument, new Object[] {"taskId", errorMsg}, null);
+        }
+        return scanningTaskManager.stop(taskId);
+    }
+
+
     @SkipAuthorize("odc internal usages")
     public SensitiveColumnEntity nullSafeGet(@NotNull Long id) {
         return repository.findById(id)
