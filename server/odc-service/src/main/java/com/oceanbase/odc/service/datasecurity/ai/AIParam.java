@@ -13,15 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.datasecurity.model;
+package com.oceanbase.odc.service.datasecurity.ai;
 
-/**
- * @author fenyf
- * @date 2025/7/18 17:52
- */
-public enum ScanningModeType {
+public class AIParam {
 
-    RULES_ONLY,
+    /**
+     * Default values for AI configuration
+     */
+    public static final Boolean DEFAULT_ENABLE_THINKING = false;
+    public static final Double DEFAULT_TEMPERATURE = 0.1;
+    public static final Double DEFAULT_TOP_P = 1.0;
+    public static final Integer DEFAULT_TOP_K = 0;
+    public static final Integer DEFAULT_MIN_P = 0;
 
-    JOINT_RECOGNITION,
+    public static final Integer DEFAULT_BATCH_SIZE_IN_TABLE = 30;
 }

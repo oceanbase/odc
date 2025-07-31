@@ -15,11 +15,17 @@
  */
 package com.oceanbase.odc.service.datasecurity.ai;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
 import com.openai.client.OpenAIClient;
 import com.openai.client.okhttp.OpenAIOkHttpClient;
+import com.openai.core.JsonBoolean;
+import com.openai.core.JsonNumber;
+import com.openai.core.JsonValue;
 
 import lombok.Data;
 
@@ -30,36 +36,40 @@ import lombok.Data;
 @Component
 // @ConfigurationProperties(prefix = "datasecurity.ai")
 public class AIConfig {
-    /**
-     * 是否启用AI服务
-     */
-    private boolean enabled = true;;
+    private boolean enabled = true;
 
-    /**
-     * API 密钥
-     */
     //private String apiKey = "sk-c6bbbbde1b7e420b897d0662301c6d7c";
     private String apiKey = "token-abc123";
 
-    /**
-     * API 的基础URL
-     */
     //private String baseUrl = "https://dashscope.aliyuncs.com/compatible-mode/v1";
     private String baseUrl = "http://172.25.17.78:8000/v1";
 
-    /**
-     * 默认使用的模型名称
-     */
-    //private String model = "qwen2.5-3b-instruct";
+    //private String model = "qwen3-8b";
     private String model = "nlora";
+
+    private Boolean enableThinking = AIParam.DEFAULT_ENABLE_THINKING;
+
+    private Double temperature = AIParam.DEFAULT_TEMPERATURE;
+
+    private Double topP = AIParam.DEFAULT_TOP_P;
+
+    private Integer topK = AIParam.DEFAULT_TOP_K;
+
+    private Integer minP = AIParam.DEFAULT_MIN_P;
+
+    public Map<String, JsonValue> loadAdditionalParams() {
+        Map<String, JsonValue> params = new HashMap<>();
+        params.put("enable_thinking", JsonBoolean.from(this.enableThinking));
+        params.put("top_k", JsonNumber.from(this.topK));
+        params.put("min_p", JsonNumber.from(this.minP));
+        return params;
+    }
 
     @Bean
     public OpenAIClient openAIClient() {
         return OpenAIOkHttpClient.builder()
-                .apiKey(this.apiKey)
-                .baseUrl(this.baseUrl)
-                .build();
+            .apiKey(this.apiKey)
+            .baseUrl(this.baseUrl)
+            .build();
     }
-
-
 }

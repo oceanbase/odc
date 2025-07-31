@@ -117,9 +117,6 @@ public class SensitiveRuleEntity {
     @Column(name = "ai_sensitive_types")
     private List<String> aiSensitiveTypes;
 
-    @Column(name = "ai_confidence_threshold")
-    private Integer aiConfidenceThreshold;
-
     @Column(name = "ai_custom_prompt")
     private String aiCustomPrompt;
 }

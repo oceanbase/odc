@@ -53,7 +53,6 @@ public class SensitiveRule implements SecurityResource, SingleOrganizationResour
     @JsonProperty(access = Access.READ_ONLY)
     private Long projectId;
 
-    @NotNull
     private SensitiveRuleType type;
 
     private String databaseRegexExpression;
@@ -71,8 +70,6 @@ public class SensitiveRule implements SecurityResource, SingleOrganizationResour
     private List<String> pathExcludes = new ArrayList<>();
 
     private List<String> aiSensitiveTypes = new ArrayList<>();
-
-    private Integer aiConfidenceThreshold;
 
     private String aiCustomPrompt;
 

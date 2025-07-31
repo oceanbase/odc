@@ -143,4 +143,11 @@ public class SensitiveColumnController {
         return Responses.success(service.getScanningResults(projectId, taskId));
     }
 
+    @ApiOperation(value = "stopScanning", notes = "Stop a sensitive column scanning task")
+    @RequestMapping(value = "/stopScanning", method = RequestMethod.POST)
+    public SuccessResponse<Boolean> stopScanning(@PathVariable Long projectId,
+        @RequestParam String taskId) {
+        return Responses.success(service.stopScanning(projectId, taskId));
+    }
+
 }

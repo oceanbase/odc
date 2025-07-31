@@ -43,9 +43,6 @@ public class ScanResult {
             case JOINT_RECOGNITION:
                 // 对于联合识别，Scanner已经做过决策，直接返回存在的那个结果
                 return basicRuleResult.isPresent() ? basicRuleResult : aiRuleResult;
-            case RULES_AND_AI:
-                // 对于差异化展示模式，可以根据业务需求调整优先级策略
-                return basicRuleResult.isPresent() ? basicRuleResult : aiRuleResult;
             default:
                 return Optional.empty();
         }

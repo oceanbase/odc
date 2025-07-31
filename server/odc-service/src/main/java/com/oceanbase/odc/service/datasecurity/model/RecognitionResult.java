@@ -31,5 +31,4 @@ public class RecognitionResult {
 
     // AI 规则
     private String sensitiveType; // AI 判断出的具体敏感类型
-    private Integer confidence; // AI 的置信度
 }
