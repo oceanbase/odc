@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 OceanBase.
+ * Copyright (c) 2025 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,38 @@
  */
 package com.oceanbase.odc.service.datasecurity.model;
 
+import java.util.List;
+
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+
+import lombok.Data;
+
 /**
- * @author fenyf
- * @date 2025/7/18 17:52
+ * 单表敏感列扫描请求
+ *
+ * @author Assistant
+ * @date 2025/1/27
  */
-public enum ScanningModeType {
+@Data
+public class SingleTableScanReq {
 
-    RULES_ONLY,
+    /**
+     * 数据库ID
+     */
+    @NotNull
+    private Long databaseId;
 
-    JOINT_RECOGNITION,
+    /**
+     * 表名
+     */
+    @NotBlank
+    private String tableName;
 
-    AI_ONLY;
+    /**
+     * 扫描模式，默认为AI识别
+     */
+    @NotNull
+    private ScanningModeType scanningMode = ScanningModeType.JOINT_RECOGNITION;
+
 }

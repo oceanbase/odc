@@ -35,12 +35,14 @@ import com.oceanbase.odc.service.common.response.PaginatedResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
 import com.oceanbase.odc.service.datasecurity.SensitiveColumnService;
+import com.oceanbase.odc.service.datasecurity.SingleTableScanTaskManager;
 import com.oceanbase.odc.service.datasecurity.model.DatabaseWithAllColumns;
 import com.oceanbase.odc.service.datasecurity.model.QuerySensitiveColumnParams;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnScanningReq;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnScanningTaskInfo;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnStats;
+import com.oceanbase.odc.service.datasecurity.model.SingleTableScanReq;
 import com.oceanbase.odc.service.datasecurity.model.UpdateSensitiveColumnsReq;
 
 import io.swagger.annotations.ApiOperation;
@@ -150,4 +152,16 @@ public class SensitiveColumnController {
         return Responses.success(service.stopScanning(projectId, taskId));
     }
 
+    @ApiOperation(value = "getSingleTableScanResult", notes = "Get single table scan result")
+    @RequestMapping(value = "/singleTableScan/{taskId}/result", method = RequestMethod.GET)
+    public SuccessResponse<SingleTableScanTaskManager.SingleTableScanTask> getSingleTableScanResult(@PathVariable Long projectId,
+        @PathVariable String taskId) {
+        return Responses.success(service.getSingleTableScanResult(projectId, taskId));
+    }
+    @ApiOperation(value = "scanSingleTableAsync", notes = "Start an asynchronous single table scan")
+    @RequestMapping(value = "/scanSingleTableAsync", method = RequestMethod.POST)
+    public SuccessResponse<String> scanSingleTableAsync(@PathVariable Long projectId,
+        @RequestBody SingleTableScanReq req) {
+        return Responses.success(service.scanSingleTableAsync(projectId, req));
+    }
 }

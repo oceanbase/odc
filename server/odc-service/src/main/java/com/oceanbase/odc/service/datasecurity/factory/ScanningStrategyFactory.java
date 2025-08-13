@@ -24,6 +24,7 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.service.datasecurity.model.ScanResult;
 import com.oceanbase.odc.service.datasecurity.model.ScanningModeType;
+import com.oceanbase.odc.service.datasecurity.strategy.AIOnlyStrategy;
 import com.oceanbase.odc.service.datasecurity.strategy.JointRecognitionStrategy;
 import com.oceanbase.odc.service.datasecurity.strategy.RulesOnlyStrategy;
 import com.oceanbase.odc.service.datasecurity.strategy.ScanningStrategy;
@@ -45,6 +46,7 @@ public class ScanningStrategyFactory {
         // 预创建所有策略实例
         strategies.put(ScanningModeType.RULES_ONLY, new RulesOnlyStrategy());
         strategies.put(ScanningModeType.JOINT_RECOGNITION, new JointRecognitionStrategy());
+        strategies.put(ScanningModeType.AI_ONLY, new AIOnlyStrategy());
     }
 
     /**

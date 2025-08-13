@@ -46,7 +46,6 @@ import lombok.Data;
 public class AIColumnRecognizer implements ColumnRecognizer {
 
     private final SensitiveRule aiRule; // 直接保存整个规则对象
-    // @Value()
     private static final int BATCH_SIZE = AIParam.DEFAULT_BATCH_SIZE_IN_TABLE; // 单表内列数超过此值时进行分批处理
     private static final ObjectMapper objectMapper = new ObjectMapper(); // 用于解析JSON
     private static final Pattern JSON_PATTERN = Pattern

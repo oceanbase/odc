@@ -23,7 +23,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import javax.validation.Valid;
@@ -61,15 +63,22 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.datasecurity.extractor.model.DBColumn;
+import com.oceanbase.odc.service.datasecurity.factory.ScanningStrategyFactory;
 import com.oceanbase.odc.service.datasecurity.model.DatabaseWithAllColumns;
 import com.oceanbase.odc.service.datasecurity.model.MaskingAlgorithm;
 import com.oceanbase.odc.service.datasecurity.model.QuerySensitiveColumnParams;
+import com.oceanbase.odc.service.datasecurity.model.RecognitionResult;
+import com.oceanbase.odc.service.datasecurity.model.ScanResult;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnMeta;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnScanningReq;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnScanningTaskInfo;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnStats;
+import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnType;
+import com.oceanbase.odc.service.datasecurity.model.SensitiveLevel;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveRule;
+import com.oceanbase.odc.service.datasecurity.model.SensitiveRuleType;
+import com.oceanbase.odc.service.datasecurity.model.SingleTableScanReq;
 import com.oceanbase.odc.service.datasecurity.util.SensitiveColumnMapper;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.feature.VersionDiffConfigService;
@@ -115,6 +124,8 @@ public class SensitiveColumnService {
     private HorizontalDataPermissionValidator permissionValidator;
     @Autowired
     private VersionDiffConfigService versionDiffConfigService;
+    @Autowired
+    private SingleTableScanTaskManager singleTableScanTaskManager;
 
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"},
@@ -542,4 +553,162 @@ public class SensitiveColumnService {
         return filtered;
     }
 
+    /**
+     * 扫描单个表的敏感列
+     */
+    @Transactional(rollbackFor = Exception.class)
+    @PreAuthenticate(hasAnyResourceRole = { "OWNER, DBA, SECURITY_ADMINISTRATOR" }, actions = { "OWNER", "DBA",
+                                                                                                "SECURITY_ADMINISTRATOR" }, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    public String scanSingleTableAsync(@NotNull Long projectId, @NotNull @Valid SingleTableScanReq req) {
+        // 获取当前用户信息，用于在异步任务中设置认证上下文
+        final Long currentUserId = authenticationFacade.currentUserId();
+        final Long currentOrganizationId = authenticationFacade.currentOrganizationId();
+        final String currentUserAccountName = authenticationFacade.currentUserAccountName();
+
+        // 启动异步任务
+        String taskId = UUID.randomUUID().toString();
+        singleTableScanTaskManager.startTask(taskId, () -> {
+            try {
+                // 在异步任务中设置用户认证上下文
+                com.oceanbase.odc.service.iam.util.SecurityContextUtils.setCurrentUser(
+                    currentUserId, currentOrganizationId, currentUserAccountName);
+
+                List<SensitiveColumn> result = performSingleTableScan(projectId, req);
+                singleTableScanTaskManager.setTaskResult(taskId, result);
+            } catch (Exception e) {
+                log.error("Single table scan failed for taskId: {}, projectId: {}, databaseId: {}, tableName: {}",
+                    taskId, projectId, req.getDatabaseId(), req.getTableName(), e);
+                String errorMessage = e.getMessage() != null ? e.getMessage()
+                    : "扫描过程中发生未知错误: " + e.getClass().getSimpleName();
+                singleTableScanTaskManager.setTaskError(taskId, errorMessage);
+            }
+        });
+        return taskId;
+    }
+
+    /**
+     * 获取单表扫描结果
+     */
+    @PreAuthenticate(hasAnyResourceRole = { "OWNER, DBA, SECURITY_ADMINISTRATOR" }, actions = { "OWNER", "DBA",
+                                                                                                "SECURITY_ADMINISTRATOR" }, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    public SingleTableScanTaskManager.SingleTableScanTask getSingleTableScanResult(@NotNull Long projectId,
+        @NotBlank String taskId) {
+        return singleTableScanTaskManager.getTask(taskId);
+    }
+
+    /**
+     * 执行单表扫描的具体逻辑
+     */
+    private List<SensitiveColumn> performSingleTableScan(@NotNull Long projectId,
+        @NotNull @Valid SingleTableScanReq req) {
+        // 1. 获取数据库信息
+        Database database = databaseService.detail(req.getDatabaseId());
+        PreConditions.notNull(database, "database");
+        checkProjectDatabases(projectId, Collections.singletonList(req.getDatabaseId()));
+
+        // 2. 获取连接配置
+        ConnectionConfig connectionConfig = connectionService
+            .getForConnectionSkipPermissionCheck(database.getDataSource().getId());
+
+        // 3. 获取表列信息
+        List<DBTableColumn> tableColumns = getTableColumns(connectionConfig, database.getName(), req.getTableName());
+        if (CollectionUtils.isEmpty(tableColumns)) {
+            return Collections.emptyList();
+        }
+
+        // 4. 获取扫描规则（使用预置的系统规则）
+        List<SensitiveRule> rules = getScanningRules(projectId, null);
+        if (CollectionUtils.isEmpty(rules)) {
+            return Collections.emptyList();
+        }
+
+        // 5. 执行扫描 - 使用批量扫描以保持表级别上下文
+        ScanningStrategyFactory strategyFactory = new ScanningStrategyFactory();
+        SensitiveColumnScanner scanner = new SensitiveColumnScanner(rules, strategyFactory);
+
+        // 使用批量扫描而不是逐个扫描，这样AI可以看到整个表的所有列
+        Map<String, ScanResult> scanResults = scanner.scanBatch(tableColumns, req.getScanningMode());
+
+        List<SensitiveColumn> results = new ArrayList<>();
+        for (DBTableColumn column : tableColumns) {
+            String columnKey = String.format("%s.%s.%s",
+                column.getSchemaName() != null ? column.getSchemaName() : "unknown_schema",
+                column.getTableName() != null ? column.getTableName() : "unknown_table",
+                column.getName() != null ? column.getName() : "unknown_column");
+
+            ScanResult scanResult = scanResults.get(columnKey);
+            if (scanResult != null) {
+                Optional<RecognitionResult> finalResult = scanResult.getFinalResult(req.getScanningMode());
+
+                if (finalResult.isPresent()) {
+                    RecognitionResult result = finalResult.get();
+                    SensitiveColumn sensitiveColumn = new SensitiveColumn();
+                    sensitiveColumn.setDatabase(database);
+                    sensitiveColumn.setTableName(column.getTableName());
+                    sensitiveColumn.setColumnName(column.getName());
+                    sensitiveColumn.setType(SensitiveColumnType.TABLE_COLUMN);
+                    sensitiveColumn.setEnabled(true);
+                    sensitiveColumn.setSensitiveRuleId(result.getMatchedRuleId());
+                    sensitiveColumn.setLevel(result.getLevel());
+                    // 设置默认脱敏算法ID，可以从规则中获取
+                    SensitiveRule matchedRule = rules.stream()
+                        .filter(r -> r.getId().equals(result.getMatchedRuleId()))
+                        .findFirst()
+                        .orElse(null);
+                    if (matchedRule != null && matchedRule.getMaskingAlgorithmId() != null) {
+                        sensitiveColumn.setMaskingAlgorithmId(matchedRule.getMaskingAlgorithmId());
+                    } else {
+                        // 设置默认脱敏算法ID
+                        sensitiveColumn.setMaskingAlgorithmId(1L);
+                    }
+                    results.add(sensitiveColumn);
+                }
+            }
+        }
+
+        return results;
+    }
+
+    /**
+     * 获取指定表的列信息
+     */
+    private List<DBTableColumn> getTableColumns(ConnectionConfig connectionConfig, String databaseName,
+        String tableName) {
+        ConnectionSession session = new DefaultConnectSessionFactory(connectionConfig).generateSession();
+        try {
+            DBSchemaAccessor accessor = DBSchemaAccessors.create(session);
+            return accessor.listTableColumns(databaseName, tableName);
+        } finally {
+            session.expire();
+        }
+    }
+
+    /**
+     * 获取单表扫描的预置规则
+     */
+    private List<SensitiveRule> getScanningRules(Long projectId, List<Long> sensitiveRuleIds) {
+        // 单表扫描使用预置的系统规则，不依赖用户配置的规则
+        SensitiveRule defaultRule = createDefaultScanningRule();
+        return Collections.singletonList(defaultRule);
+    }
+
+    /**
+     * 创建单表扫描的默认规则
+     */
+    private SensitiveRule createDefaultScanningRule() {
+        SensitiveRule rule = new SensitiveRule();
+        rule.setId(-1L); // 使用负数ID表示系统预置规则
+        rule.setName("Single Table Scan Default Rule");
+        rule.setEnabled(true);
+        rule.setType(SensitiveRuleType.AI); // 使用AI类型
+        rule.setAiSensitiveTypes(null); // 设置为null，对应提示词中的"No specified category"
+        rule.setAiCustomPrompt(null); // 设置为null，对应提示词中的"No supplementary rule"
+        Long organizationId = authenticationFacade.currentOrganizationId();
+        Long defaultAlgorithmId = algorithmService.getDefaultAlgorithmIdByOrganizationId(organizationId);
+        rule.setMaskingAlgorithmId(defaultAlgorithmId);
+        rule.setLevel(SensitiveLevel.MEDIUM); // 设置默认敏感级别
+        rule.setBuiltin(true);
+        return rule;
+    }
 }
+
