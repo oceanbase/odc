@@ -40,28 +40,13 @@ public class ScanResult {
         switch (scanningMode) {
             case RULES_ONLY:
                 return basicRuleResult;
+            case AI_ONLY:
+                return aiRuleResult;
             case JOINT_RECOGNITION:
                 // 对于联合识别，Scanner已经做过决策，直接返回存在的那个结果
                 return basicRuleResult.isPresent() ? basicRuleResult : aiRuleResult;
             default:
                 return Optional.empty();
         }
-    }
-
-    /**
-     * 判断是否有任何识别结果
-     */
-    public boolean hasAnyResult() {
-        return basicRuleResult.isPresent() || aiRuleResult.isPresent();
-    }
-
-    /**
-     * 获取所有可用的结果（用于差异化展示场景）
-     */
-    public List<RecognitionResult> getAllResults() {
-        List<RecognitionResult> results = new ArrayList<>();
-        basicRuleResult.ifPresent(results::add);
-        aiRuleResult.ifPresent(results::add);
-        return results;
     }
 }
