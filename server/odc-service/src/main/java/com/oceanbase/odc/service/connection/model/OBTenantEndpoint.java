@@ -62,6 +62,9 @@ public class OBTenantEndpoint implements Serializable {
     private String productScenario;
 
     public boolean isFreeTrial() {
+        if (StringUtils.isEmptyOrNull(this.productScenario)) {
+            return false;
+        }
         return StringUtils.equalsIgnoreCase(this.productScenario, "freetrial");
     }
 }

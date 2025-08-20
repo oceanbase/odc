@@ -168,7 +168,7 @@
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
         <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
         <versions-maven-plugin.version>2.7</versions-maven-plugin.version>
-        <langchain4j.version>1.1.0</langchain4j.version>
+        <langchain4j.version>1.2.0</langchain4j.version>
     </properties>
 
     <dependencyManagement>

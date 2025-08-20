@@ -339,6 +339,10 @@ public enum ErrorCodes implements ErrorCode {
     ExtractFileFailed,
     InvalidSignature,
 
+    /**
+     * ai config
+     */
+    VectorDBNotConfigured,
 
     ;
 

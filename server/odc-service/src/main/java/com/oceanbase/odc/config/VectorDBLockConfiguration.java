@@ -19,9 +19,9 @@ import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
@@ -32,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Order(Ordered.HIGHEST_PRECEDENCE + 1)
 @Configuration("vectordbLockConfiguration")
-@ConditionalOnProperty(prefix = "odc.datasource.vectordb", name = {"url", "driver-class-name", "username", "password"})
+@Profile("!clientMode")
 public class VectorDBLockConfiguration extends BaseLockConfiguration {
 
     @Bean("vectordbJdbcLockRepository")

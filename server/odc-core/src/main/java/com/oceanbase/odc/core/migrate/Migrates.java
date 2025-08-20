@@ -86,7 +86,9 @@ public class Migrates {
                 version2Migratables.keySet().stream().map(Version::new).sorted().collect(Collectors.toList());
         log.info("versionCount={}", sortedVersions.size());
 
-        degradeCheck(sortedVersions.get(sortedVersions.size() - 1).getVersion());
+        if (configuration.isDegradeCheck()) {
+            degradeCheck(sortedVersions.get(sortedVersions.size() - 1).getVersion());
+        }
         for (Version version : sortedVersions) {
             log.debug("version={}", version);
             List<Migrator> migratables = version2Migratables.get(version.getVersion());

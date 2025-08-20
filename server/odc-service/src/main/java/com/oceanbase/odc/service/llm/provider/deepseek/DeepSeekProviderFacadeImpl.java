@@ -24,15 +24,16 @@ import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.service.llm.model.Constants;
 import com.oceanbase.odc.service.llm.model.ProviderType;
 import com.oceanbase.odc.service.llm.provider.AbstractProviderFacade;
 import com.oceanbase.odc.service.llm.provider.template.ProviderTemplate.Models;
+import com.oceanbase.odc.service.llm.sdk.ChatModelWrapper;
+import com.oceanbase.odc.service.llm.sdk.EmbeddingModelWrapper;
+import com.oceanbase.odc.service.llm.sdk.StreamingChatModelWrapper;
 import com.oceanbase.odc.service.llm.util.MaskUtil;
 import com.oceanbase.odc.service.llm.util.YamlUtil;
 
-import dev.langchain4j.model.chat.ChatModel;
-import dev.langchain4j.model.chat.StreamingChatModel;
-import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel.OpenAiChatModelBuilder;
 import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
@@ -132,7 +133,7 @@ public class DeepSeekProviderFacadeImpl
     }
 
     @Override
-    public ChatModel generateChatModel(String modelName, DeepSeekModelCredential credential) {
+    public ChatModelWrapper generateChatModel(String modelName, DeepSeekModelCredential credential) {
         OpenAiChatModelBuilder builder = OpenAiChatModel.builder()
                 .apiKey(credential.getApiKey())
                 .modelName(modelName)
@@ -140,11 +141,11 @@ public class DeepSeekProviderFacadeImpl
         if (credential.getMaxToken() != null) {
             builder.maxTokens(credential.getMaxToken());
         }
-        return builder.build();
+        return new ChatModelWrapper(builder.build(), credential);
     }
 
     @Override
-    public StreamingChatModel generateStreamingChatModel(String modelName, DeepSeekModelCredential credential) {
+    public StreamingChatModelWrapper generateStreamingChatModel(String modelName, DeepSeekModelCredential credential) {
         OpenAiStreamingChatModelBuilder builder = OpenAiStreamingChatModel.builder()
                 .apiKey(credential.getApiKey())
                 .modelName(modelName)
@@ -152,16 +153,18 @@ public class DeepSeekProviderFacadeImpl
         if (credential.getMaxToken() != null) {
             builder.maxTokens(credential.getMaxToken());
         }
-        return builder.build();
+        return new StreamingChatModelWrapper(builder.build(), credential);
     }
 
     @Override
-    public EmbeddingModel generateEmbeddingModel(String modelName, DeepSeekModelCredential credential) {
-        return OpenAiEmbeddingModel.builder()
+    public EmbeddingModelWrapper generateEmbeddingModel(String modelName, DeepSeekModelCredential credential) {
+        OpenAiEmbeddingModel model = OpenAiEmbeddingModel.builder()
                 .apiKey(credential.getApiKey())
                 .modelName(modelName)
+                .dimensions(Constants.DEFAULT_EMBEDDING_DIMENSION)
                 .baseUrl(credential.getEndpointUrl())
                 .build();
+        return new EmbeddingModelWrapper(model, credential);
     }
 
     @Override

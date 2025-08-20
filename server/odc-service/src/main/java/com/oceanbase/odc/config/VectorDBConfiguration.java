@@ -33,8 +33,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.orm.jpa.EntityManagerFactoryBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.env.Environment;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
@@ -45,6 +47,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import com.alibaba.druid.pool.DruidDataSource;
 import com.alibaba.druid.spring.boot.autoconfigure.DruidDataSourceBuilder;
 import com.oceanbase.odc.common.concurrent.ExecutorUtils;
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.common.util.SystemUtils;
 import com.oceanbase.odc.config.jpa.EnhancedJpaRepository;
 import com.oceanbase.odc.core.task.TaskThreadFactory;
@@ -60,11 +63,15 @@ import com.oceanbase.odc.service.session.SessionProperties;
         entityManagerFactoryRef = "vectordbEntityManagerFactory")
 @EntityScan({"com.oceanbase.odc.vectordb"})
 @EnableTransactionManagement
-@ConditionalOnProperty(prefix = "odc.datasource.vectordb", name = {"url", "driver-class-name", "username", "password"})
+@Profile({"!clientMode"})
 public class VectorDBConfiguration {
 
     @Autowired
     private SessionProperties sessionProperties;
+    @Autowired
+    private DataSource datasource;
+    @Autowired
+    private Environment environment;
     private ThreadPoolExecutor vectorDbBootstrapExecutor;
 
     @PostConstruct
@@ -81,8 +88,15 @@ public class VectorDBConfiguration {
     }
 
     @Bean(name = "vectordbDataSource")
+    @ConditionalOnProperty(prefix = "odc.datasource.vectordb", name = "url", matchIfMissing = true)
     @ConfigurationProperties("odc.datasource.vectordb")
     public DataSource vectordbDataSource() {
+        if (StringUtils.isBlank(environment.getProperty("odc.datasource.vectordb.url"))
+                || StringUtils.isBlank(environment.getProperty("odc.datasource.vectordb.username"))
+                || StringUtils.isBlank(environment.getProperty("odc.datasource.vectordb.password"))
+                || StringUtils.isBlank(environment.getProperty("odc.datasource.vectordb.driver-class-name"))) {
+            return datasource;
+        }
         DruidDataSource dataSource = DruidDataSourceBuilder.create().build();
         dataSource.getConnectProperties().setProperty("sessionVariables", "ob_query_timeout=30000000");
         dataSource.setSocketTimeout((int) (sessionProperties.getBackendQueryTimeoutMicros() / 1000));

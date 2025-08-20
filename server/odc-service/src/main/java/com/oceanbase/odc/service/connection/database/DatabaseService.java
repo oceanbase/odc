@@ -47,6 +47,7 @@ import javax.sql.DataSource;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -107,6 +108,7 @@ import com.oceanbase.odc.service.connection.database.model.CreateDatabaseReq;
 import com.oceanbase.odc.service.connection.database.model.DBAccessHistoryReq;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.database.model.DatabaseSyncStatus;
+import com.oceanbase.odc.service.connection.database.model.DatabaseTransferEvent;
 import com.oceanbase.odc.service.connection.database.model.DatabaseType;
 import com.oceanbase.odc.service.connection.database.model.DatabaseUser;
 import com.oceanbase.odc.service.connection.database.model.DeleteDatabasesReq;
@@ -119,6 +121,7 @@ import com.oceanbase.odc.service.db.DBSchemaService;
 import com.oceanbase.odc.service.db.schema.DBSchemaSyncTaskManager;
 import com.oceanbase.odc.service.db.schema.GlobalSearchProperties;
 import com.oceanbase.odc.service.db.schema.model.DBObjectSyncStatus;
+import com.oceanbase.odc.service.db.schema.model.SchemaSyncEvent;
 import com.oceanbase.odc.service.db.schema.syncer.DBSchemaSyncProperties;
 import com.oceanbase.odc.service.iam.HorizontalDataPermissionValidator;
 import com.oceanbase.odc.service.iam.OrganizationService;
@@ -243,6 +246,9 @@ public class DatabaseService {
 
     @Autowired
     private TransactionTemplate transactionTemplate;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     @Value("${odc.integration.bastion.enabled:false}")
     private boolean bastionEnabled;
@@ -554,6 +560,7 @@ public class DatabaseService {
         deleteDatabaseRelatedPermissionByIds(databaseIds);
         List<UserResourceRole> userResourceRoles = buildUserResourceRoles(databaseIds, req.getOwnerIds());
         resourceRoleService.saveAll(userResourceRoles);
+        publishDatabaseTransferEvent(entities, req);
         return true;
     }
 
@@ -631,7 +638,7 @@ public class DatabaseService {
             }
             return true;
         } catch (Exception ex) {
-            log.info("sync databases failed, dataSourceId={}, errorMessage={}", dataSourceId, ex.getMessage());
+            log.info("sync databases failed, dataSourceId={}, errorMessage={}", dataSourceId, ex.getMessage(), ex);
             return false;
         } finally {
             lock.unlock();
@@ -741,6 +748,7 @@ public class DatabaseService {
                         "update connect_database set table_count=?, collation_name=?, charset_name=?, project_id=?, last_sync_time=? where id = ?";
                 jdbcTemplate.batchUpdate(update, toUpdate);
             }
+            eventPublisher.publishEvent(new SchemaSyncEvent(connection));
         } finally {
             ExecutorUtils.gracefulShutdown(executorService, Thread.currentThread().getName(), 10);
             if (teamDataSource instanceof AutoCloseable) {
@@ -774,6 +782,18 @@ public class DatabaseService {
             projectId = database.getProjectId();
         }
         return projectId;
+    }
+
+    private void publishDatabaseTransferEvent(List<DatabaseEntity> entities, TransferDatabasesReq req) {
+        if (req.getProjectId() == null) {
+            return;
+        }
+        // 筛选出原本不属于任意 project 的 database
+        List<Long> dbIds = entities.stream()
+                .filter(e -> e.getProjectId() == null)
+                .map(DatabaseEntity::getId)
+                .toList();
+        eventPublisher.publishEvent(new DatabaseTransferEvent(dbIds));
     }
 
     private void syncIndividualDataSources(ConnectionConfig connection)
@@ -1059,6 +1079,14 @@ public class DatabaseService {
 
         int affectRows = databaseRepository.setDatabaseRemarkByIdIn(databaseIds, remark);
         return Objects.equals(affectRows, databases.size());
+    }
+
+    public List<Database> listBasicByDatasourceIdSkipPermissionCheck(Long dataSourceId) {
+        if (Objects.isNull(dataSourceId)) {
+            return Collections.emptyList();
+        }
+        List<DatabaseEntity> entities = databaseRepository.findByConnectionId(dataSourceId);
+        return entities.stream().map(databaseMapper::entityToModel).collect(Collectors.toList());
     }
 
     private void checkPermission(Long projectId, Long dataSourceId) {

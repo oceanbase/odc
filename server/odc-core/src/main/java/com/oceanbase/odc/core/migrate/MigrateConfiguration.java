@@ -60,4 +60,7 @@ public class MigrateConfiguration {
     @Builder.Default
     private List<ResourceConfig> resourceConfigs = new LinkedList<>();
 
+    @Builder.Default
+    private boolean degradeCheck = true;
+
 }

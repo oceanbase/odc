@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.llm.provider.tongyi;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.annotation.Nullable;
 
@@ -24,17 +25,19 @@ import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.service.llm.model.Constants;
 import com.oceanbase.odc.service.llm.model.ProviderType;
 import com.oceanbase.odc.service.llm.provider.AbstractProviderFacade;
 import com.oceanbase.odc.service.llm.provider.template.ProviderTemplate.Models;
+import com.oceanbase.odc.service.llm.sdk.ChatModelWrapper;
+import com.oceanbase.odc.service.llm.sdk.EmbeddingModelWrapper;
+import com.oceanbase.odc.service.llm.sdk.StreamingChatModelWrapper;
 import com.oceanbase.odc.service.llm.util.MaskUtil;
 import com.oceanbase.odc.service.llm.util.YamlUtil;
 
-import dev.langchain4j.model.chat.ChatModel;
-import dev.langchain4j.model.chat.StreamingChatModel;
-import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel.OpenAiChatModelBuilder;
+import dev.langchain4j.model.openai.OpenAiChatRequestParameters;
 import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel.OpenAiStreamingChatModelBuilder;
@@ -147,7 +150,7 @@ public class TongyiProviderFacadeImpl extends AbstractProviderFacade<TongyiModel
     }
 
     @Override
-    public ChatModel generateChatModel(String modelName, TongyiModelCredential credential) {
+    public ChatModelWrapper generateChatModel(String modelName, TongyiModelCredential credential) {
         OpenAiChatModelBuilder builder = OpenAiChatModel.builder()
                 .apiKey(credential.getApiKey())
                 .modelName(modelName)
@@ -167,14 +170,16 @@ public class TongyiProviderFacadeImpl extends AbstractProviderFacade<TongyiModel
         if (credential.getRepetitionPenalty() != null) {
             builder.frequencyPenalty(Double.valueOf(credential.getRepetitionPenalty()));
         }
-        return builder.build();
+        return new ChatModelWrapper(builder.build(), credential);
     }
 
     @Override
-    public StreamingChatModel generateStreamingChatModel(String modelName, TongyiModelCredential credential) {
+    public StreamingChatModelWrapper generateStreamingChatModel(String modelName, TongyiModelCredential credential) {
         OpenAiStreamingChatModelBuilder builder = OpenAiStreamingChatModel.builder()
                 .apiKey(credential.getApiKey())
                 .modelName(modelName)
+                .defaultRequestParameters(OpenAiChatRequestParameters.builder()
+                        .customParameters(Map.of("enable_thinking", false)).build())
                 .baseUrl(BAILIAN_API_URL);
         if (credential.getMaxToken() != null) {
             builder.maxTokens(credential.getMaxToken());
@@ -191,16 +196,18 @@ public class TongyiProviderFacadeImpl extends AbstractProviderFacade<TongyiModel
         if (credential.getRepetitionPenalty() != null) {
             builder.frequencyPenalty(Double.valueOf(credential.getRepetitionPenalty()));
         }
-        return builder.build();
+        return new StreamingChatModelWrapper(builder.build(), credential);
     }
 
     @Override
-    public EmbeddingModel generateEmbeddingModel(String model, TongyiModelCredential credential) {
-        return OpenAiEmbeddingModel.builder()
+    public EmbeddingModelWrapper generateEmbeddingModel(String model, TongyiModelCredential credential) {
+        OpenAiEmbeddingModel embeddingModel = OpenAiEmbeddingModel.builder()
                 .apiKey(credential.getApiKey())
                 .modelName(model)
+                .dimensions(Constants.DEFAULT_EMBEDDING_DIMENSION)
                 .baseUrl(BAILIAN_API_URL)
                 .build();
+        return new EmbeddingModelWrapper(embeddingModel, credential);
     }
 
 }
