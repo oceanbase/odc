@@ -42,6 +42,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.dao.DataAccessException;
@@ -128,7 +129,7 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public DBMaterializedView getExternalResource(String schemaName, String name) {
+    public DBExternalResource getExternalResource(String schemaName, String name) {
         throw new UnsupportedOperationException("not support yet");
     }
 

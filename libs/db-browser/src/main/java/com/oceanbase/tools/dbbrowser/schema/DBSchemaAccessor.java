@@ -22,6 +22,7 @@ import java.util.Map;
 
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
+import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBMViewLogPurgeParameter;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
@@ -180,7 +181,7 @@ public interface DBSchemaAccessor {
     /**
      * Get external resource details
      */
-    DBMaterializedView getExternalResource(String schemaName, String name);
+    DBExternalResource getExternalResource(String schemaName, String name);
 
     /**
      * delete external resource

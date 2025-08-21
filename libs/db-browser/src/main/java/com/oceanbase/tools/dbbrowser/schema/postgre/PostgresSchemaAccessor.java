@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
 import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.core.JdbcOperations;
 
@@ -74,7 +75,7 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public DBMaterializedView getExternalResource(String schemaName, String name) {
+    public DBExternalResource getExternalResource(String schemaName, String name) {
         throw new UnsupportedOperationException("not support yet");
     }
 
