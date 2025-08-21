@@ -39,4 +39,5 @@ public class DBExternalResource implements DBObject {
     public DBObjectType type() {
         return DBObjectType.EXTERNAL_RESOURCE;
     }
+
 }

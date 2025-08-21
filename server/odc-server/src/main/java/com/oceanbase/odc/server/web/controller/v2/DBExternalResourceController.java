@@ -30,7 +30,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.shared.exception.NotImplementedException;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
@@ -62,7 +61,6 @@ public class DBExternalResourceController {
     public ListResponse<DBObjectIdentity> list(@PathVariable String sessionId,
             @PathVariable Long databaseName)
             throws SQLException, InterruptedException {
-        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
         throw new NotImplementedException();
     }
 
@@ -72,7 +70,6 @@ public class DBExternalResourceController {
     public SuccessResponse<DBExternalResource> detail(@PathVariable String sessionId,
             @PathVariable String databaseName,
             @PathVariable String resourceName) {
-        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
         throw new NotImplementedException();
     }
 
@@ -84,7 +81,6 @@ public class DBExternalResourceController {
             @PathVariable String databaseName,
             @PathVariable String resourceName,
             @RequestParam("file") MultipartFile file) {
-        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
         throw new NotImplementedException();
     }
 
@@ -95,7 +91,6 @@ public class DBExternalResourceController {
     public ResponseEntity<InputStreamResource> downloadExternalResource(@PathVariable String sessionId,
             @PathVariable String databaseName,
             @PathVariable String resourceName) {
-        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
         throw new NotImplementedException();
     }
 
@@ -106,7 +101,6 @@ public class DBExternalResourceController {
     public SuccessResponse<Boolean> deleteExternalResource(@PathVariable String sessionId,
             @PathVariable String databaseName,
             @PathVariable String resourceName) {
-        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
         throw new NotImplementedException();
     }
 
