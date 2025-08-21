@@ -15,6 +15,8 @@
  */
 package com.oceanbase.tools.dbbrowser.schema.oracle;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -117,6 +119,31 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
         this.dataDictTableNames = dataDictTableNames;
         this.jdbcOperations = jdbcOperations;
         this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.ORACLE_11_g);
+    }
+
+    @Override
+    public List<DBObjectIdentity> listExternalResources(String schemaName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public DBMaterializedView getExternalResource(String schemaName, String name) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public Boolean deleteExternalResource(String schemaName, String name) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public Boolean uploadExternalResource(String schemaName, String name, InputStream inputStream) throws IOException {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public InputStream downloadExternalResource(String schemaName, String name) throws IOException {
+        throw new UnsupportedOperationException("not support yet");
     }
 
     @Override

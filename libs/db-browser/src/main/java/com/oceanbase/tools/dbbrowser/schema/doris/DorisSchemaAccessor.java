@@ -17,6 +17,7 @@ package com.oceanbase.tools.dbbrowser.schema.doris;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringWriter;
@@ -119,6 +120,31 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
     public DorisSchemaAccessor(@NonNull JdbcOperations jdbcOperations) {
         this.jdbcOperations = jdbcOperations;
         this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.MYSQL_5_7_x);
+    }
+
+    @Override
+    public List<DBObjectIdentity> listExternalResources(String schemaName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public DBMaterializedView getExternalResource(String schemaName, String name) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public Boolean deleteExternalResource(String schemaName, String name) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public Boolean uploadExternalResource(String schemaName, String name, InputStream inputStream) throws IOException {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public InputStream downloadExternalResource(String schemaName, String name) throws IOException {
+        throw new UnsupportedOperationException("not support yet");
     }
 
     @Override

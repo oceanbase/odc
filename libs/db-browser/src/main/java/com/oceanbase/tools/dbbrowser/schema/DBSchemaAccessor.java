@@ -15,6 +15,8 @@
  */
 package com.oceanbase.tools.dbbrowser.schema;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
@@ -169,6 +171,31 @@ public interface DBSchemaAccessor {
      * Gets all indexes in the specified materialized view
      */
     List<DBTableIndex> listMViewIndexes(String schemaName, String mViewName);
+
+    /**
+     * List all external resources in the specified schema
+     */
+    List<DBObjectIdentity> listExternalResources(String schemaName);
+
+    /**
+     * Get external resource details
+     */
+    DBMaterializedView getExternalResource(String schemaName, String name);
+
+    /**
+     * delete external resource
+     */
+    Boolean deleteExternalResource(String schemaName, String name);
+
+    /**
+     * upload external resource
+     */
+    Boolean uploadExternalResource(String schemaName, String name, InputStream inputStream) throws IOException;
+
+    /**
+     * download external resource
+     */
+    InputStream downloadExternalResource(String schemaName, String name) throws IOException;
 
     /**
      * List all materialized view logs as DBObjectIdentity in the specified schema

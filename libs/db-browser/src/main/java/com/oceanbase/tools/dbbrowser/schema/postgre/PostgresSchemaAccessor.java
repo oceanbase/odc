@@ -15,6 +15,8 @@
  */
 package com.oceanbase.tools.dbbrowser.schema.postgre;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -64,6 +66,31 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
 
     public PostgresSchemaAccessor(@NonNull JdbcOperations jdbcOperations) {
         this.jdbcOperations = jdbcOperations;
+    }
+
+    @Override
+    public List<DBObjectIdentity> listExternalResources(String schemaName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public DBMaterializedView getExternalResource(String schemaName, String name) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public Boolean deleteExternalResource(String schemaName, String name) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public Boolean uploadExternalResource(String schemaName, String name, InputStream inputStream) throws IOException {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public InputStream downloadExternalResource(String schemaName, String name) throws IOException {
+        throw new UnsupportedOperationException("not support yet");
     }
 
     @Override

@@ -17,6 +17,7 @@ package com.oceanbase.tools.dbbrowser.schema.mysql;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringWriter;
@@ -385,6 +386,31 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public List<DBTableIndex> listMViewIndexes(String schemaName, String mViewName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public List<DBObjectIdentity> listExternalResources(String schemaName) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public DBMaterializedView getExternalResource(String schemaName, String name) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public Boolean deleteExternalResource(String schemaName, String name) {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public Boolean uploadExternalResource(String schemaName, String name, InputStream inputStream) throws IOException {
+        throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public InputStream downloadExternalResource(String schemaName, String name) throws IOException {
         throw new UnsupportedOperationException("not support yet");
     }
 
