@@ -38,6 +38,7 @@ import org.springframework.jdbc.core.JdbcOperations;
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
+import com.oceanbase.tools.dbbrowser.model.DBExternalResourceStream;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceType;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceUploadParam;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
@@ -171,49 +172,23 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     }
 
     @Override
-    public DBExternalResource downloadExternalResource(String schemaName, String name, Charset charset) throws IOException {
+    public DBExternalResourceStream downloadExternalResource(String schemaName, String name, Charset charset) throws IOException {
         String sql = """
-            SELECT
-                NAME,
-                DATABASE_NAME,
-                TYPE,
-                COMMENT,
-                CONTENT,
-                OCTET_LENGTH(CONTENT) AS CONTENT_LENGTH
-            FROM OCEANBASE.DBA_OB_EXTERNAL_RESOURCES
-            WHERE DATABASE_NAME = ?
-              AND NAME = ?
-            """;
-
-        DBExternalResource dbExternalResource = new DBExternalResource();
-        dbExternalResource.setName(name);
-        dbExternalResource.setSchemaName(schemaName);
-        final IOException[] ioEx = new IOException[1];
+        SELECT        
+            TYPE,
+            CONTENT
+        FROM OCEANBASE.DBA_OB_EXTERNAL_RESOURCES
+        WHERE DATABASE_NAME = ?
+          AND NAME = ?
+        """;
+        final DBExternalResourceStream[] dbExternalResourceStream = new DBExternalResourceStream[1];
         jdbcOperations.query(sql, ps -> {
             ps.setString(1, schemaName);
             ps.setString(2, name);
         }, rs -> {
-            String typeStr = rs.getString("TYPE");
-            DBExternalResourceType type = DBExternalResourceType.valueOf(typeStr);
-            dbExternalResource.setType(type);
-            dbExternalResource.setComment(rs.getString("COMMENT"));
-            dbExternalResource.setSize(rs.getLong("CONTENT_LENGTH"));
-            if (type == DBExternalResourceType.PYTHON_PY) {
-                try (InputStream binaryStream = rs.getBinaryStream("CONTENT");
-                     InputStreamReader reader = new InputStreamReader(binaryStream, charset);) {
-                    dbExternalResource.setReader(reader);
-                } catch (IOException e) {
-                    ioEx[0] = e;
-                }
-            }else if(type == DBExternalResourceType.JAVA_JAR){
-                try(InputStream binaryStream = rs.getBinaryStream("CONTENT")){
-                    dbExternalResource.setInputStream(binaryStream);
-                }catch (IOException e){
-                    ioEx[0] = e;
-                }
-            }
+            dbExternalResourceStream[0]= new DBExternalResourceStream(rs.getBinaryStream("CONTENT"),DBExternalResourceType.valueOf(rs.getString("TYPE")));
         });
-        return dbExternalResource;
+        return dbExternalResourceStream[0];
     }
 
     @Override
