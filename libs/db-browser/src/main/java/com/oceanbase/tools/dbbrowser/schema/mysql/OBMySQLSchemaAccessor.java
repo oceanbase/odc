@@ -151,9 +151,8 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
 
     @Override
     public Boolean deleteExternalResource(String schemaName, String name) {
-        String sql = "CALL ?.DBMS_JAVA.DROPJAVA(?)";
+        String sql = "CALL DBMS_JAVA.DROPJAVA(?)";
         jdbcOperations.update(sql, ps -> {
-            ps.setString(1, schemaName);
             ps.setString(1, name);
         });
         return Boolean.TRUE;
@@ -161,13 +160,12 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
 
     @Override
     public Boolean uploadExternalResource(DBExternalResourceUploadParam param) throws IOException {
-        String sql = "call ?.dbms_java.loadjava(?, ?, ?)";
+        String sql = "call dbms_java.loadjava(?, ?, ?)";
 
         jdbcOperations.update(sql, ps -> {
-            ps.setString(1, param.getSchemaName());
-            ps.setString(2, param.getName());
-            ps.setBlob(3, param.getInputStream());
-            ps.setString(4, param.getComment());
+            ps.setString(1, param.getName());
+            ps.setBlob(2, param.getInputStream());
+            ps.setString(3, param.getComment());
         });
         return Boolean.TRUE;
     }

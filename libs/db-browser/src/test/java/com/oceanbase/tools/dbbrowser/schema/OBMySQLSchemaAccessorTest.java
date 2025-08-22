@@ -19,6 +19,9 @@ import static com.oceanbase.tools.dbbrowser.editor.DBObjectUtilsTest.loadAsStrin
 import static com.oceanbase.tools.dbbrowser.model.DBConstraintType.PRIMARY_KEY;
 import static org.junit.Assume.assumeTrue;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -37,6 +40,9 @@ import com.oceanbase.tools.dbbrowser.env.BaseTestEnv;
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
+import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
+import com.oceanbase.tools.dbbrowser.model.DBExternalResourceType;
+import com.oceanbase.tools.dbbrowser.model.DBExternalResourceUploadParam;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
 import com.oceanbase.tools.dbbrowser.model.DBMViewLogPurgeParameter;
@@ -89,6 +95,8 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
             VersionUtils.isGreaterThanOrEqualsTo(dbSchemaAccessors.getVersion(), "4.3.5.2");
     private static final boolean isSupportMaterializedViewLog =
             VersionUtils.isGreaterThanOrEqualsTo(dbSchemaAccessors.getVersion(), "4.3.5.2");
+    private static final boolean isSupportJavaAndPythonUdf =
+            VersionUtils.isGreaterThanOrEqualsTo(dbSchemaAccessors.getVersion(), "4.4.1.0");
 
     @BeforeClass
     public static void setUp() throws Exception {
@@ -106,7 +114,9 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
             dropMVLogs = loadAsString(BASE_PATH + "dropMVLog.sql");
             batchExecuteSqlIgnoreErrors(dropMVLogs);
         }
+        if (isSupportJavaAndPythonUdf) {
 
+        }
         ddl = loadAsString(BASE_PATH + "testTableColumnDDL.sql", BASE_PATH + "testTableIndexDDL.sql",
                 BASE_PATH + "testTableConstraintDDL.sql", BASE_PATH + "testPartitionDDL.sql",
                 BASE_PATH + "testViewDDL.sql");
@@ -125,6 +135,9 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
             String createMVLog = loadAsString(BASE_PATH + "testMVLogDDL.sql");
             jdbcTemplate.execute(createMVLog);
         }
+        if (isSupportJavaAndPythonUdf) {
+
+        }
 
     }
 
@@ -136,6 +149,9 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
         }
         if (isSupportMaterializedViewLog) {
             jdbcTemplate.execute(dropMVLogs);
+        }
+        if (isSupportJavaAndPythonUdf) {
+
         }
     }
 
@@ -154,6 +170,36 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
             }
         }
     }
+
+    @Test
+    public void uploadExternalResource_uploadJavaJar_Success() throws IOException {
+        assumeTrue(isSupportJavaAndPythonUdf);
+        InputStream resourceAsStream = Thread.currentThread()
+                .getContextClassLoader()
+                .getResourceAsStream("externalresource/obmysql/my_add.jar");
+        DBExternalResourceUploadParam dbExternalResourceUploadParam = new DBExternalResourceUploadParam(
+                getOBMySQLDataBaseName(), "test_java_udf1", "java jar content", resourceAsStream);
+        Assert.assertTrue(accessor.uploadExternalResource(dbExternalResourceUploadParam));
+    }
+
+    @Test
+    public void getExternalResource_uploadJavaJar_Success() throws IOException {
+        assumeTrue(isSupportJavaAndPythonUdf);
+        InputStream resourceAsStream = Thread.currentThread()
+                .getContextClassLoader()
+                .getResourceAsStream("externalresource/obmysql/my_add.jar");
+        DBExternalResourceUploadParam dbExternalResourceUploadParam = new DBExternalResourceUploadParam(
+                getOBMySQLDataBaseName(), "test_java_udf2", "java jar content", resourceAsStream);
+        accessor.uploadExternalResource(dbExternalResourceUploadParam);
+        DBExternalResource testJavaUdf2 =
+                accessor.getExternalResource(getOBMySQLDataBaseName(), "test_java_udf2", StandardCharsets.UTF_8);
+        Assert.assertEquals(DBExternalResourceType.JAVA_JAR, testJavaUdf2.getType());
+        Assert.assertEquals(getOBMySQLDataBaseName(), testJavaUdf2.getSchemaName());
+        Assert.assertEquals("test_java_udf2", testJavaUdf2.getName());
+        Assert.assertEquals("java jar content", testJavaUdf2.getComment());
+        Assert.assertNull(testJavaUdf2.getContext());
+    }
+
 
     @Test
     public void getMViewLog_testParallelIs5_Success() {

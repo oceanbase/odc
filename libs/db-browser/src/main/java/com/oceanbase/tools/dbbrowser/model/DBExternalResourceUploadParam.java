@@ -17,7 +17,9 @@ package com.oceanbase.tools.dbbrowser.model;
 
 import java.io.InputStream;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @description:
@@ -26,6 +28,8 @@ import lombok.Data;
  * @since: 4.4.0
  */
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class DBExternalResourceUploadParam {
 
     private String schemaName;
