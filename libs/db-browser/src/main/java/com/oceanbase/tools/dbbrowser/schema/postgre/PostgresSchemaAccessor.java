@@ -16,19 +16,20 @@
 package com.oceanbase.tools.dbbrowser.schema.postgre;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
 import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
+import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
+import com.oceanbase.tools.dbbrowser.model.DBExternalResourceUploadParam;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBMViewLogPurgeParameter;
 import com.oceanbase.tools.dbbrowser.model.DBMViewRefreshParameter;
@@ -75,7 +76,7 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public DBExternalResource getExternalResource(String schemaName, String name) {
+    public DBExternalResource getExternalResource(String schemaName, String name, Charset charset) throws IOException {
         throw new UnsupportedOperationException("not support yet");
     }
 
@@ -85,12 +86,13 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public Boolean uploadExternalResource(String schemaName, String name, InputStream inputStream) throws IOException {
+    public Boolean uploadExternalResource(DBExternalResourceUploadParam param) throws IOException {
         throw new UnsupportedOperationException("not support yet");
     }
 
     @Override
-    public InputStream downloadExternalResource(String schemaName, String name) throws IOException {
+    public DBExternalResource downloadExternalResource(String schemaName, String name, Charset charset)
+            throws IOException {
         throw new UnsupportedOperationException("not support yet");
     }
 

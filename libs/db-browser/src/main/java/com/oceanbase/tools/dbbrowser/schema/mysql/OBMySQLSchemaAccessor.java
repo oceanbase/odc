@@ -15,6 +15,11 @@
  */
 package com.oceanbase.tools.dbbrowser.schema.mysql;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,6 +37,9 @@ import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
+import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
+import com.oceanbase.tools.dbbrowser.model.DBExternalResourceType;
+import com.oceanbase.tools.dbbrowser.model.DBExternalResourceUploadParam;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
 import com.oceanbase.tools.dbbrowser.model.DBMViewLogPurgeParameter;
 import com.oceanbase.tools.dbbrowser.model.DBMViewLogPurgeSchedule;
@@ -65,7 +73,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * applicable to OB [4.3.5.2, ~)
+ * applicable to OB [4.4.1.0, ~)
  *
  * @author jingtian
  */
@@ -86,6 +94,129 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     public OBMySQLSchemaAccessor(JdbcOperations jdbcOperations) {
         super(jdbcOperations);
         this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.OBMYSQL_432x);
+    }
+
+    @Override
+    public List<DBObjectIdentity> listExternalResources(String schemaName) {
+        String sql = "select NAME from OCEANBASE.DBA_OB_EXTERNAL_RESOURCES where DATABASE_NAME = ?";
+        return jdbcOperations.query(sql, ps -> ps.setString(1, schemaName),
+                (rs, rowNum) -> DBObjectIdentity.of(schemaName, DBObjectType.EXTERNAL_TABLE, rs.getString(1)));
+    }
+
+    @Override
+    public DBExternalResource getExternalResource(String schemaName, String name, Charset charset) throws IOException {
+        String sql = """
+            SELECT
+                NAME,
+                DATABASE_NAME,
+                TYPE,
+                COMMENT,
+                CONTENT,
+                OCTET_LENGTH(CONTENT) AS CONTENT_LENGTH
+            FROM OCEANBASE.DBA_OB_EXTERNAL_RESOURCES
+            WHERE DATABASE_NAME = ?
+              AND NAME = ?
+            """;
+
+        DBExternalResource dbExternalResource = new DBExternalResource();
+        dbExternalResource.setName(name);
+        dbExternalResource.setSchemaName(schemaName);
+        final IOException[] ioEx = new IOException[1];
+        jdbcOperations.query(sql, ps -> {
+            ps.setString(1, schemaName);
+            ps.setString(2, name);
+        }, rs -> {
+            String typeStr = rs.getString("TYPE");
+            DBExternalResourceType type = DBExternalResourceType.valueOf(typeStr);
+            dbExternalResource.setType(type);
+            dbExternalResource.setComment(rs.getString("COMMENT"));
+            dbExternalResource.setSize(rs.getLong("CONTENT_LENGTH"));
+            if (type == DBExternalResourceType.PYTHON_PY) {
+                try (InputStream binaryStream = rs.getBinaryStream("CONTENT");
+                     InputStreamReader reader = new InputStreamReader(binaryStream, charset);
+                     BufferedReader bufferedReader = new BufferedReader(reader)) {
+                    // 1MB 的字符容量
+                    char[] buffer = new char[1024 * 1024 / 2];
+                    int charsRead = bufferedReader.read(buffer);
+                    if (charsRead != -1) {
+                        dbExternalResource.setContext(new String(buffer, 0, charsRead));
+                    }
+                } catch (IOException e) {
+                    ioEx[0] = e;
+                }
+            }
+        });
+        return dbExternalResource;
+    }
+
+    @Override
+    public Boolean deleteExternalResource(String schemaName, String name) {
+        String sql = "CALL ?.DBMS_JAVA.DROPJAVA(?)";
+        jdbcOperations.update(sql, ps -> {
+            ps.setString(1, schemaName);
+            ps.setString(1, name);
+        });
+        return Boolean.TRUE;
+    }
+
+    @Override
+    public Boolean uploadExternalResource(DBExternalResourceUploadParam param) throws IOException {
+        String sql = "call ?.dbms_java.loadjava(?, ?, ?)";
+
+        jdbcOperations.update(sql, ps -> {
+            ps.setString(1, param.getSchemaName());
+            ps.setString(2, param.getName());
+            ps.setBlob(3, param.getInputStream());
+            ps.setString(4, param.getComment());
+        });
+        return Boolean.TRUE;
+    }
+
+    @Override
+    public DBExternalResource downloadExternalResource(String schemaName, String name, Charset charset) throws IOException {
+        String sql = """
+            SELECT
+                NAME,
+                DATABASE_NAME,
+                TYPE,
+                COMMENT,
+                CONTENT,
+                OCTET_LENGTH(CONTENT) AS CONTENT_LENGTH
+            FROM OCEANBASE.DBA_OB_EXTERNAL_RESOURCES
+            WHERE DATABASE_NAME = ?
+              AND NAME = ?
+            """;
+
+        DBExternalResource dbExternalResource = new DBExternalResource();
+        dbExternalResource.setName(name);
+        dbExternalResource.setSchemaName(schemaName);
+        final IOException[] ioEx = new IOException[1];
+        jdbcOperations.query(sql, ps -> {
+            ps.setString(1, schemaName);
+            ps.setString(2, name);
+        }, rs -> {
+            String typeStr = rs.getString("TYPE");
+            DBExternalResourceType type = DBExternalResourceType.valueOf(typeStr);
+            dbExternalResource.setType(type);
+            dbExternalResource.setComment(rs.getString("COMMENT"));
+            dbExternalResource.setSize(rs.getLong("CONTENT_LENGTH"));
+            if (type == DBExternalResourceType.PYTHON_PY) {
+                try (InputStream binaryStream = rs.getBinaryStream("CONTENT");
+                     InputStreamReader reader = new InputStreamReader(binaryStream, charset);
+                     BufferedReader bufferedReader = new BufferedReader(reader)) {
+                    dbExternalResource.setReader(bufferedReader);
+                } catch (IOException e) {
+                    ioEx[0] = e;
+                }
+            }else if(type == DBExternalResourceType.JAVA_JAR){
+                try(InputStream binaryStream = rs.getBinaryStream("CONTENT")){
+                    dbExternalResource.setInputStream(binaryStream);
+                }catch (IOException e){
+                    ioEx[0] = e;
+                }
+            }
+        });
+        return dbExternalResource;
     }
 
     @Override

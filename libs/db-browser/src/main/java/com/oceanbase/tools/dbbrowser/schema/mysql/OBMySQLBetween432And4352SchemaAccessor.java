@@ -37,7 +37,7 @@ import com.oceanbase.tools.dbbrowser.model.DBTableIndex;
  * @date: 2025/3/4 19:00
  * @since: 4.3.4
  */
-public class OBMySQLBetween432And4352SchemaAccessor extends OBMySQLSchemaAccessor {
+public class OBMySQLBetween432And4352SchemaAccessor extends OBMySQLBetween4352And4410SchemaAccessor {
 
     public OBMySQLBetween432And4352SchemaAccessor(JdbcOperations jdbcOperations) {
         super(jdbcOperations);

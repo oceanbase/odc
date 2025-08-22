@@ -16,7 +16,7 @@
 package com.oceanbase.tools.dbbrowser.schema.oracle;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -32,7 +32,6 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
@@ -46,6 +45,8 @@ import com.oceanbase.tools.dbbrowser.model.DBColumnTypeDisplay;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintDeferability;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
+import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
+import com.oceanbase.tools.dbbrowser.model.DBExternalResourceUploadParam;
 import com.oceanbase.tools.dbbrowser.model.DBForeignKeyModifyRule;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
@@ -128,7 +129,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public DBExternalResource getExternalResource(String schemaName, String name) {
+    public DBExternalResource getExternalResource(String schemaName, String name, Charset charset) throws IOException {
         throw new UnsupportedOperationException("not support yet");
     }
 
@@ -138,12 +139,13 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public Boolean uploadExternalResource(String schemaName, String name, InputStream inputStream) throws IOException {
+    public Boolean uploadExternalResource(DBExternalResourceUploadParam param) throws IOException {
         throw new UnsupportedOperationException("not support yet");
     }
 
     @Override
-    public InputStream downloadExternalResource(String schemaName, String name) throws IOException {
+    public DBExternalResource downloadExternalResource(String schemaName, String name, Charset charset)
+            throws IOException {
         throw new UnsupportedOperationException("not support yet");
     }
 

@@ -15,44 +15,16 @@
  */
 package com.oceanbase.tools.dbbrowser.model;
 
-import java.io.InputStream;
-import java.io.Reader;
-
-import lombok.Data;
 
 /**
  * @description:
  * @author: zijia.cj
- * @date: 2025/8/21 10:06
- * @since: 4.4.1
+ * @date: 2025/8/21 19:43
+ * @since: 4.4.0
  */
-@Data
-public class DBExternalResource implements DBObject {
+public enum DBExternalResourceType {
 
-    private String name;
-
-    private String schemaName;
-
-    private DBExternalResourceType type;
-
-    private String context;
-
-    private String comment;
-
-    private long size;
-
-    private InputStream inputStream;
-
-    private Reader reader;
-
-    @Override
-    public String name() {
-        return this.name;
-    }
-
-    @Override
-    public DBObjectType type() {
-        return DBObjectType.EXTERNAL_RESOURCE;
-    }
+    JAVA_JAR,
+    PYTHON_PY
 
 }
