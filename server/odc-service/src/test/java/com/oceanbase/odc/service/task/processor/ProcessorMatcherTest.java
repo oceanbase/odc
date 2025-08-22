@@ -20,7 +20,6 @@ import org.junit.Test;
 
 import com.oceanbase.odc.service.task.executor.TaskDescription;
 import com.oceanbase.odc.service.task.processor.matcher.DLMProcessorMatcher;
-import com.oceanbase.odc.service.task.processor.matcher.LogicalDBChangeProcessorMatcher;
 
 /**
  * @author longpeng.zlp
@@ -30,11 +29,10 @@ public class ProcessorMatcherTest {
     @Test
     public void testProcessorMatcher() {
         TaskDescription[] taskDescriptions = new TaskDescription[] {
-                TaskDescription.DLM, TaskDescription.LOGICAL_DATABASE_CHANGE
+                TaskDescription.DLM
         };
         ProcessorMatcher[] processorMatchers = new ProcessorMatcher[] {
-                new DLMProcessorMatcher(),
-                new LogicalDBChangeProcessorMatcher()
+                new DLMProcessorMatcher()
         };
         Assert.assertEquals(taskDescriptions.length, processorMatchers.length);
         for (int i = 0; i < taskDescriptions.length; ++i) {

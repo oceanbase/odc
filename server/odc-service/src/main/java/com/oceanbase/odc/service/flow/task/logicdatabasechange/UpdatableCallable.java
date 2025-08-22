@@ -13,18 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.processor.matcher;
+package com.oceanbase.odc.service.flow.task.logicdatabasechange;
 
-import com.oceanbase.odc.service.task.executor.TaskDescription;
-import com.oceanbase.odc.service.task.processor.ProcessorMatcher;
+import java.util.Map;
+import java.util.concurrent.Callable;
 
 /**
  * @author longpeng.zlp
- * @date 2024/10/10 11:36
+ * @date 2025/8/1 09:46
  */
-public class LogicalDBChangeProcessorMatcher implements ProcessorMatcher {
-    @Override
-    public boolean interested(String type) {
-        return TaskDescription.LOGICAL_DATABASE_CHANGE.matched(type);
-    }
+public interface UpdatableCallable<V> extends Callable<V> {
+    boolean update(Map<String, String> runtimeConfig);
 }

@@ -13,27 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.task.processor.result;
+package com.oceanbase.odc.service.flow.task.logicdatabasechange;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.service.connection.logicaldatabase.LogicalDatabaseChangeService;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionResult;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.SqlExecutionResultWrapper;
 import com.oceanbase.odc.service.connection.logicaldatabase.core.model.LogicalDBChangeExecutionUnit;
-import com.oceanbase.odc.service.schedule.ScheduleTaskService;
-import com.oceanbase.odc.service.task.executor.TaskResult;
-import com.oceanbase.odc.service.task.processor.matcher.LogicalDBChangeProcessorMatcher;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -43,24 +36,15 @@ import lombok.extern.slf4j.Slf4j;
  * @Description: []
  */
 @Slf4j
-@Component
-public class LogicalDBChangeResultProcessor extends LogicalDBChangeProcessorMatcher implements ResultProcessor {
-    @Autowired
-    protected LogicalDatabaseChangeService logicalDatabaseChangeService;
+public class LogicalDBChangeResultProcessor {
 
-    @Autowired
-    protected ScheduleTaskService taskService;
-
-    @Override
-    public void process(TaskResult result) {
-        log.info("Start refresh result, result={}", result.getResultJson());
+    public TaskStatus process(Map<String, ExecutionResult<SqlExecutionResultWrapper>> executionId2Result,
+            LogicalDatabaseChangeService logicalDatabaseChangeService, Long flowInstanceId) {
+        log.info("Start refresh result, result={}", executionId2Result);
         try {
-            Map<String, ExecutionResult<SqlExecutionResultWrapper>> executionId2Result =
-                    JsonUtils.fromJson(result.getResultJson(),
-                            new TypeReference<Map<String, ExecutionResult<SqlExecutionResultWrapper>>>() {});
             if (CollectionUtils.isEmpty(executionId2Result)) {
-                log.warn("Task result is empty, jobIdentity={}", result.getJobIdentity());
-                return;
+                log.warn("Task result is empty, flowInstanceId={}", flowInstanceId);
+                return null;
             }
             List<LogicalDBChangeExecutionUnit> executionUnits = executionId2Result.entrySet().stream().map(entry -> {
                 LogicalDBChangeExecutionUnit executionUnit = new LogicalDBChangeExecutionUnit();
@@ -68,7 +52,7 @@ public class LogicalDBChangeResultProcessor extends LogicalDBChangeProcessorMatc
                 executionUnit.setStatus(entry.getValue().getStatus());
                 executionUnit.setResult(entry.getValue().getResult());
                 executionUnit.setSql(entry.getValue().getResult().getExecuteSql());
-                executionUnit.setScheduleTaskId(entry.getValue().getResult().getScheduleTaskId());
+                executionUnit.setFlowInstanceId(entry.getValue().getResult().getFlowInstanceId());
                 executionUnit.setLogicalDatabaseId(entry.getValue().getResult().getLogicalDatabaseId());
                 executionUnit.setPhysicalDatabaseId(entry.getValue().getResult().getPhysicalDatabaseId());
                 executionUnit.setOrder(entry.getValue().getOrder());
@@ -76,13 +60,14 @@ public class LogicalDBChangeResultProcessor extends LogicalDBChangeProcessorMatc
             }).collect(Collectors.toList());
             logicalDatabaseChangeService.upsert(executionUnits);
             log.info("Create or update logical database change execution units success,jobIdentity={}",
-                    result.getJobIdentity());
+                    flowInstanceId);
 
             TaskStatus taskStatus = getTaskStatus(executionId2Result.values());
-            taskService.updateStatusById(executionUnits.get(0).getScheduleTaskId(), taskStatus);
-            log.info("Update schedule task status to {} success", taskStatus);
+            log.info("current schedule task status to {} success", taskStatus);
+            return taskStatus;
         } catch (Exception e) {
             log.warn("Refresh result failed.", e);
+            return null;
         }
     }
 

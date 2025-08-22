@@ -573,7 +573,8 @@ public class FlowTaskInstanceService {
             throws IOException {
         TaskEntity task = flowInstanceService.getTaskByFlowInstanceId(id);
         if (task.getTaskType() == TaskType.ONLINE_SCHEMA_CHANGE || task.getTaskType() == TaskType.EXPORT
-                || task.getTaskType() == TaskType.MULTIPLE_ASYNC) {
+                || task.getTaskType() == TaskType.MULTIPLE_ASYNC
+                || task.getTaskType() == TaskType.LOGICAL_DATABASE_CHANGE) {
             return getTaskResultFromEntity(task, true);
         }
         Optional<TaskEntity> taskEntityOptional = getCompleteTaskEntity(id, checkAuth);

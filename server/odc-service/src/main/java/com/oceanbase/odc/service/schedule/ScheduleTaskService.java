@@ -173,10 +173,6 @@ public class ScheduleTaskService {
                             }
                         });
                 break;
-            case LOGICAL_DATABASE_CHANGE:
-                res.setExecutionDetails(
-                        JsonUtils.toJson(logicalDatabaseChangeService.listSqlExecutionUnits(scheduleTask.getId())));
-                break;
             default:
                 break;
         }

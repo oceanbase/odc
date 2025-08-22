@@ -778,6 +778,64 @@ public class FlowInstanceService {
         return cancel(flowInstance, true);
     }
 
+    @SkipAuthorize
+    public boolean updateFlowServiceTaskConfig(@NotNull Long id, @NotNull Map<String, String> parameters) {
+        FlowInstance flowInstance = mapFlowInstanceWithoutPermissionCheck(id, flowInst -> flowInst);
+        return updateFlowServiceTaskConfig(flowInstance, parameters);
+    }
+
+    private boolean updateFlowServiceTaskConfig(@NotNull FlowInstance flowInstance,
+            @NotNull Map<String, String> parameters) {
+        long id = flowInstance.getId();
+        Holder<TaskType> taskTypeHolder = new Holder<>();
+        List<BaseFlowNodeInstance> instances = flowInstance.filterInstanceNode(instance -> {
+            FlowNodeType nodeType = instance.getNodeType();
+            if (nodeType != FlowNodeType.SERVICE_TASK && nodeType != FlowNodeType.APPROVAL_TASK) {
+                return false;
+            }
+            if (instance instanceof FlowTaskInstance) {
+                taskTypeHolder.setValue(((FlowTaskInstance) instance).getTaskType());
+            }
+            return instance.getStatus() == FlowNodeStatus.EXECUTING;
+        });
+        Verify.notNull(taskTypeHolder.getValue(), "TaskType");
+
+        List<FlowTaskInstance> taskInstances = instances.stream()
+                .filter(instance -> instance.getNodeType() == FlowNodeType.SERVICE_TASK).map(instance -> {
+                    Verify.verify(instance instanceof FlowTaskInstance, "FlowTaskInstance's type is illegal");
+                    return (FlowTaskInstance) instance;
+                }).collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(taskInstances) || taskInstances.size() != 1) {
+            log.warn("flowInstance id = {} not find valid tasks, ignore update", flowInstance.getId());
+            return false;
+        }
+
+        FlowTaskInstance taskInstance = taskInstances.get(0);
+        if (taskInstance.getStatus() != FlowNodeStatus.EXECUTING) {
+            log.warn("flowInstance id = {} not in executing status, ignore update", flowInstance.getId());
+            return false;
+        }
+        Long taskId = taskInstance.getTargetTaskId();
+        TaskEntity taskEntity = taskService.detail(taskId);
+        if (!dispatchChecker.isTaskEntityOnThisMachine(taskEntity)) {
+            /**
+             * 任务不在当前机器上，需要进行 {@code RPC} 转发获取
+             */
+            ExecutorInfo executorInfo = JsonUtils.fromJson(taskEntity.getExecutor(), ExecutorInfo.class);
+            try {
+                DispatchResponse response =
+                        requestDispatcher.forward(executorInfo.getHost(), executorInfo.getPort());
+                return response.getContentByType(
+                        new TypeReference<SuccessResponse<Boolean>>() {}).getData();
+            } catch (Exception e) {
+                log.warn("Remote termination task failed, flowInstanceId={}", id, e);
+                return false;
+            }
+        } else {
+            return taskInstance.updateTaskRuntimeConfig(parameters);
+        }
+    }
+
     public String startBatchCancelFlowInstance(Collection<Long> flowInstanceIds) {
         String terminateId = statefulUuidStateIdGenerator.generateCurrentUserIdStateId("BatchFlowTerminate");
         User user = authenticationFacade.currentUser();

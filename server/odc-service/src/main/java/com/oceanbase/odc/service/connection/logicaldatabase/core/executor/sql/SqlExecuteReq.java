@@ -38,5 +38,5 @@ public class SqlExecuteReq {
     private ConnectionConfig connectionConfig;
     private Long logicalDatabaseId;
     private Long physicalDatabaseId;
-    private Long scheduleTaskId;
+    private Long flowInstanceId;
 }

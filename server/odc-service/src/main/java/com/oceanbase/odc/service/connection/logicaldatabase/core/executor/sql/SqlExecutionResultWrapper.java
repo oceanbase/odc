@@ -41,15 +41,15 @@ public class SqlExecutionResultWrapper {
     private ExecutionTimer timer;
     private Long logicalDatabaseId;
     private Long physicalDatabaseId;
-    private Long scheduleTaskId;
+    private Long flowInstanceId;
     @JsonIgnore
     private SqlExecuteResult sqlExecuteResult;
 
     public SqlExecutionResultWrapper(@NonNull Long logicalDatabaseId, @NonNull Long physicalDatabaseId,
-            @NonNull Long scheduleTaskId, SqlExecuteResult sqlExecuteResult) {
+            @NonNull Long flowInstanceId, SqlExecuteResult sqlExecuteResult) {
         this.logicalDatabaseId = logicalDatabaseId;
         this.physicalDatabaseId = physicalDatabaseId;
-        this.scheduleTaskId = scheduleTaskId;
+        this.flowInstanceId = flowInstanceId;
         this.sqlExecuteResult = sqlExecuteResult;
         if (sqlExecuteResult != null) {
             this.executeSql = sqlExecuteResult.getExecuteSql();

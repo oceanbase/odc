@@ -1498,27 +1498,6 @@ public class ScheduleService {
         return rateLimitConfiguration;
     }
 
-    public void syncActionsToLogicalDatabaseTask(@NonNull Long scheduleTaskId, @NonNull String action,
-            @NonNull String executionUnitId)
-            throws InterruptedException, JobException {
-        Lock lock = jdbcLockRegistry.obtain(getLogicalDatabaseChangeActionLockKey(executionUnitId));
-        if (!lock.tryLock(5, TimeUnit.SECONDS)) {
-            throw new ConflictException(ErrorCodes.ResourceModifying, "Can not acquire jdbc lock");
-        }
-        try {
-            Optional<ScheduleTask> taskOpt = scheduleTaskService.findById(scheduleTaskId);
-            if (taskOpt.isPresent() && taskOpt.get().getStatus() == TaskStatus.RUNNING
-                    && taskOpt.get().getJobId() != null) {
-                ScheduleTask task = taskOpt.get();
-                Map<String, String> map = new HashMap<>();
-                map.put(action, executionUnitId);
-                SpringContextUtil.getBean(JobScheduler.class).modifyJobParameters(task.getJobId(), map);
-                log.info("Sync actions to executor success:{}", map);
-            }
-        } finally {
-            lock.unlock();
-        }
-    }
 
     private void syncRateLimitToRunningTask(Long scheduleId, RateLimitConfiguration rateLimit) {
         Optional<ScheduleTask> latestTask = getLatestTask(scheduleId);
@@ -1533,10 +1512,6 @@ public class ScheduleService {
                 log.warn("Sync limit config failed,jobId={}", latestTask.get().getJobId(), e);
             }
         }
-    }
-
-    private String getLogicalDatabaseChangeActionLockKey(@NonNull String executionId) {
-        return "logical-database-change-action-execution-" + executionId;
     }
 
     private String getScheduleChangeLockKey(@NonNull Long scheduleId) {

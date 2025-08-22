@@ -32,7 +32,7 @@ import lombok.Data;
 public class LogicalDatabaseChangePublishReq implements Serializable, TaskParameters {
     private static final long serialVersionUID = 1L;
     private Long creatorId;
-    private Long scheduleTaskId;
+    private Long flowInstanceId;
     private String sqlContent;
     private String delimiter;
     private Long timeoutMillis;

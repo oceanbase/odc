@@ -25,7 +25,6 @@ import com.oceanbase.odc.service.cloud.model.CloudProvider;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.task.Task;
 import com.oceanbase.odc.service.task.base.dataarchive.DataArchiveTask;
-import com.oceanbase.odc.service.task.base.logicdatabasechange.LogicalDatabaseChangeTask;
 import com.oceanbase.odc.service.task.constants.JobParametersKeyConstants;
 import com.oceanbase.odc.service.task.executor.TaskDescription;
 import com.oceanbase.odc.service.task.schedule.DefaultJobDefinition;
@@ -74,8 +73,6 @@ public class DefaultJobSubmitter implements JobSubmitter {
         switch (taskDescription) {
             case DLM:
                 return DataArchiveTask.class;
-            case LOGICAL_DATABASE_CHANGE:
-                return LogicalDatabaseChangeTask.class;
             default:
                 log.warn("Task type {} is not supported.", type);
                 throw new UnExpectedException("Task type is not supported.");

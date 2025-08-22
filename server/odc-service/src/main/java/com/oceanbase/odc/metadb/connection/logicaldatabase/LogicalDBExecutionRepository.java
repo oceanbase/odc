@@ -23,8 +23,8 @@ import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 public interface LogicalDBExecutionRepository extends OdcJpaRepository<LogicalDBChangeExecutionUnitEntity, Long> {
     Optional<LogicalDBChangeExecutionUnitEntity> findByExecutionId(String executionId);
 
-    List<LogicalDBChangeExecutionUnitEntity> findByScheduleTaskIdOrderByExecutionOrderAsc(Long scheduleTaskId);
+    List<LogicalDBChangeExecutionUnitEntity> findByFlowInstanceIdOrderByExecutionOrderAsc(Long flowInstanceId);
 
-    List<LogicalDBChangeExecutionUnitEntity> findByScheduleTaskIdAndPhysicalDatabaseIdOrderByExecutionOrderAsc(
-            Long scheduleTaskId, Long physicalDatabaseId);
+    List<LogicalDBChangeExecutionUnitEntity> findByFlowInstanceIdAndPhysicalDatabaseIdOrderByExecutionOrderAsc(
+            Long flowInstanceId, Long physicalDatabaseId);
 }
