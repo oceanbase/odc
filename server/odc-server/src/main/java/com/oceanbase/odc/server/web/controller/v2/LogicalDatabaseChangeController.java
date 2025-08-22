@@ -38,26 +38,26 @@ public class LogicalDatabaseChangeController {
     @Autowired
     private LogicalDatabaseChangeService logicalDatabaseChangeService;
 
-    @RequestMapping(value = "/scheduleTasks/{scheduleTaskId:[\\d]+}/physicalDatabases/{physicalDatabaseId:[\\d]+}",
+    @RequestMapping(value = "/flowTasks/{flowInstanceID:[\\d]+}/physicalDatabases/{physicalDatabaseId:[\\d]+}",
             method = RequestMethod.GET)
-    public SuccessResponse<SqlExecutionUnitResp> detailPhysicalDatabaseChangeTask(@PathVariable Long scheduleTaskId,
+    public SuccessResponse<SqlExecutionUnitResp> detailPhysicalDatabaseChangeTask(@PathVariable Long flowInstanceID,
             @PathVariable Long physicalDatabaseId) {
-        return Responses.success(logicalDatabaseChangeService.detail(scheduleTaskId, physicalDatabaseId));
+        return Responses.success(logicalDatabaseChangeService.detail(flowInstanceID, physicalDatabaseId));
     }
 
     @RequestMapping(
-            value = "/scheduleTasks/{scheduleTaskId:[\\d]+}/physicalDatabases/{physicalDatabaseId:[\\d]+}/skipCurrentStatement",
+            value = "/flowTasks/{flowInstanceID:[\\d]+}/physicalDatabases/{physicalDatabaseId:[\\d]+}/skipCurrentStatement",
             method = RequestMethod.POST)
-    public SuccessResponse<Boolean> skipCurrentStatement(@PathVariable Long scheduleTaskId,
+    public SuccessResponse<Boolean> skipCurrentStatement(@PathVariable Long flowInstanceID,
             @PathVariable Long physicalDatabaseId) throws InterruptedException, JobException {
-        return Responses.success(logicalDatabaseChangeService.skipCurrent(scheduleTaskId, physicalDatabaseId));
+        return Responses.success(logicalDatabaseChangeService.skipCurrent(flowInstanceID, physicalDatabaseId));
     }
 
     @RequestMapping(
-            value = "/scheduleTasks/{scheduleTaskId:[\\d]+}/physicalDatabases/{physicalDatabaseId:[\\d]+}/terminateCurrentStatement",
+            value = "/flowTasks/{flowInstanceID:[\\d]+}/physicalDatabases/{physicalDatabaseId:[\\d]+}/terminateCurrentStatement",
             method = RequestMethod.POST)
-    public SuccessResponse<Boolean> terminateCurrentStatement(@PathVariable Long scheduleTaskId,
+    public SuccessResponse<Boolean> terminateCurrentStatement(@PathVariable Long flowInstanceID,
             @PathVariable Long physicalDatabaseId) throws InterruptedException, JobException {
-        return Responses.success(logicalDatabaseChangeService.terminateCurrent(scheduleTaskId, physicalDatabaseId));
+        return Responses.success(logicalDatabaseChangeService.terminateCurrent(flowInstanceID, physicalDatabaseId));
     }
 }

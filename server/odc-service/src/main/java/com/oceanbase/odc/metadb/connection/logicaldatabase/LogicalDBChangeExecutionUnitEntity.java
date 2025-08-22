@@ -52,8 +52,8 @@ public class LogicalDBChangeExecutionUnitEntity {
     @Column(name = "execution_order", nullable = false, updatable = false)
     private Long executionOrder;
 
-    @Column(name = "schedule_task_id", nullable = false)
-    private Long scheduleTaskId;
+    @Column(name = "flow_instance_id", nullable = false)
+    private Long flowInstanceId;
 
     @Column(name = "logical_database_id", nullable = false, updatable = false)
     private Long logicalDatabaseId;

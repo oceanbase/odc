@@ -51,14 +51,14 @@ import com.oceanbase.odc.service.llm.provider.LlmProviderFacades;
 import com.oceanbase.odc.service.llm.provider.ModelCredential;
 import com.oceanbase.odc.service.llm.provider.ProviderCredential;
 import com.oceanbase.odc.service.llm.provider.template.ProviderTemplate;
+import com.oceanbase.odc.service.llm.sdk.EmbeddingModelWrapper;
+import com.oceanbase.odc.service.llm.sdk.StreamingChatModelWrapper;
 import com.oceanbase.odc.service.llm.util.LlmModelMapper;
 import com.oceanbase.odc.service.llm.util.LlmProviderMapper;
 
 import dev.langchain4j.data.embedding.Embedding;
-import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
-import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.output.Response;
 import jakarta.validation.constraints.NotBlank;
 import lombok.extern.slf4j.Slf4j;
@@ -226,6 +226,22 @@ public class LlmService {
         return result;
     }
 
+    public ModelCredential getModelCredentialSkipPermissionCheck(String provider, String model, Long organizationId) {
+        Optional<LlmModelEntity> modelEntity = llmModelRepository.findByOrganizationIdAndProviderNameAndModelName(
+                organizationId, provider, model);
+        if (modelEntity.isEmpty()) {
+            return null;
+        }
+        if (!modelEntity.get().getEnabled()) {
+            log.warn("Model {} is disabled, provider: {}, currentOrganizationId: {}", model, provider, organizationId);
+            return null;
+        }
+        LlmProviderFacade<ModelCredential, ProviderCredential> facade = providerFacades.getProviderFacade(provider);
+        String propertiesJson = modelEntity.get().getPropertiesJson();
+        String decrypted = decypt(propertiesJson, modelEntity.get().getOrganizationId(), modelEntity.get().getSalt());
+        return facade.deserializeModelCredential(decrypted);
+    }
+
     @Transactional(rollbackFor = Exception.class)
     public String setModelCredential(ModelCredentialDto request) {
         LlmProviderFacade<ModelCredential, ProviderCredential> facade =
@@ -319,8 +335,8 @@ public class LlmService {
         try {
             CountDownLatch latch = new CountDownLatch(1);
             AtomicReference<Throwable> throwable = new AtomicReference<>();
-            StreamingChatModel chatModel = facade.generateStreamingChatModel(modelName, credential);
-            chatModel.chat("1+1=?", new SimpleStreamingChatResponseHandler(latch, throwable));
+            StreamingChatModelWrapper chatModel = facade.generateStreamingChatModel(modelName, credential);
+            chatModel.model().chat("1+1=?", new SimpleStreamingChatResponseHandler(latch, throwable));
             boolean invokeSucceed = latch.await(30, TimeUnit.SECONDS);
             if (throwable.get() != null) {
                 throw throwable.get();
@@ -337,8 +353,8 @@ public class LlmService {
 
     private void validateEmbedding(LlmProviderFacade facade, String modelName, ModelCredential credential) {
         try {
-            EmbeddingModel embeddingModel = facade.generateEmbeddingModel(modelName, credential);
-            Response<Embedding> resp = embeddingModel.embed("hello");
+            EmbeddingModelWrapper embeddingModel = facade.generateEmbeddingModel(modelName, credential);
+            Response<Embedding> resp = embeddingModel.model().embed("hello");
             if (log.isDebugEnabled()) {
                 log.debug("Response from validate model {}: {}", modelName, resp);
             }

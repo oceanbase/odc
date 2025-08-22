@@ -20,14 +20,15 @@ import java.util.List;
 import org.springframework.stereotype.Component;
 
 import com.oceanbase.odc.common.json.JsonUtils;
+import com.oceanbase.odc.service.llm.model.Constants;
 import com.oceanbase.odc.service.llm.model.ProviderType;
 import com.oceanbase.odc.service.llm.provider.AbstractProviderFacade;
 import com.oceanbase.odc.service.llm.provider.ProviderCredential;
+import com.oceanbase.odc.service.llm.sdk.ChatModelWrapper;
+import com.oceanbase.odc.service.llm.sdk.EmbeddingModelWrapper;
+import com.oceanbase.odc.service.llm.sdk.StreamingChatModelWrapper;
 import com.oceanbase.odc.service.llm.util.MaskUtil;
 
-import dev.langchain4j.model.chat.ChatModel;
-import dev.langchain4j.model.chat.StreamingChatModel;
-import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel.OpenAiChatModelBuilder;
 import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
@@ -104,7 +105,7 @@ public class OpenAIApiCompatibleProviderFacadeImpl
     }
 
     @Override
-    public ChatModel generateChatModel(String modelName, OpenAIApiCompatibleModelCredential credential) {
+    public ChatModelWrapper generateChatModel(String modelName, OpenAIApiCompatibleModelCredential credential) {
         String realModel = credential.getEndpointModelName() != null ? credential.getEndpointModelName() : modelName;
         OpenAiChatModelBuilder builder = OpenAiChatModel.builder()
                 .apiKey(credential.getApiKey())
@@ -113,11 +114,11 @@ public class OpenAIApiCompatibleProviderFacadeImpl
         if (credential.getMaxToken() != null) {
             builder.maxTokens(credential.getMaxToken());
         }
-        return builder.build();
+        return new ChatModelWrapper(builder.build(), credential);
     }
 
     @Override
-    public StreamingChatModel generateStreamingChatModel(String modelName,
+    public StreamingChatModelWrapper generateStreamingChatModel(String modelName,
             OpenAIApiCompatibleModelCredential credential) {
         String realModel = credential.getEndpointModelName() != null ? credential.getEndpointModelName() : modelName;
         OpenAiStreamingChatModelBuilder builder = OpenAiStreamingChatModel.builder()
@@ -127,17 +128,19 @@ public class OpenAIApiCompatibleProviderFacadeImpl
         if (credential.getMaxToken() != null) {
             builder.maxTokens(credential.getMaxToken());
         }
-        return builder.build();
+        return new StreamingChatModelWrapper(builder.build(), credential);
     }
 
     @Override
-    public EmbeddingModel generateEmbeddingModel(String modelName, OpenAIApiCompatibleModelCredential credential) {
+    public EmbeddingModelWrapper generateEmbeddingModel(String modelName,
+            OpenAIApiCompatibleModelCredential credential) {
         String realModel = credential.getEndpointModelName() != null ? credential.getEndpointModelName() : modelName;
-        return OpenAiEmbeddingModel.builder()
+        return new EmbeddingModelWrapper(OpenAiEmbeddingModel.builder()
                 .apiKey(credential.getApiKey())
                 .modelName(realModel)
+                .dimensions(Constants.DEFAULT_EMBEDDING_DIMENSION)
                 .baseUrl(credential.getEndpointUrl())
-                .build();
+                .build(), credential);
     }
 
 }

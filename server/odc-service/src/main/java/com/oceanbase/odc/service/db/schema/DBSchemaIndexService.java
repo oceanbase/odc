@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -56,6 +57,7 @@ import com.oceanbase.odc.service.db.schema.model.OdcDBColumn;
 import com.oceanbase.odc.service.db.schema.model.OdcDBObject;
 import com.oceanbase.odc.service.db.schema.model.QueryDBObjectParams;
 import com.oceanbase.odc.service.db.schema.model.QueryDBObjectResp;
+import com.oceanbase.odc.service.db.schema.model.SchemaSyncEvent;
 import com.oceanbase.odc.service.db.schema.model.SyncDBObjectReq;
 import com.oceanbase.odc.service.iam.ProjectPermissionValidator;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
@@ -91,6 +93,8 @@ public class DBSchemaIndexService {
     private DBObjectRepository dbObjectRepository;
     @Autowired
     private DBSchemaSyncTaskManager dbSchemaSyncTaskManager;
+    @Autowired
+    private ApplicationEventPublisher applicationEventPublisher;
 
     private static final int MAX_SEARCH_SIZE = 5000;
     private static final int MAX_RETURN_SIZE_PER_TYPE = 200;
@@ -206,9 +210,9 @@ public class DBSchemaIndexService {
             if (CollectionUtils.isEmpty(joinedProjectIds)) {
                 return true;
             }
-            dbSchemaSyncTaskManager
-                    .submitTaskByDatabases(
-                            databaseService.listExistAndNotPendingDatabasesByProjectIdIn(joinedProjectIds));
+            Set<Database> databases = databaseService.listExistAndNotPendingDatabasesByProjectIdIn(joinedProjectIds);
+            dbSchemaSyncTaskManager.submitTaskByDatabases(databases);
+            applicationEventPublisher.publishEvent(new SchemaSyncEvent(databases));
         } else {
             dbSchemaSyncTaskManager
                     .submitTaskByDatabases(databaseService.listExistAndNotPendingDatabasesByOrganizationId(
@@ -266,6 +270,9 @@ public class DBSchemaIndexService {
         databases.removeIf(e -> Boolean.FALSE.equals(e.getExisted())
                 || e.getObjectSyncStatus() == DBObjectSyncStatus.PENDING);
         dbSchemaSyncTaskManager.submitTaskByDatabases(databases);
+        if (authenticationFacade.currentUser().getOrganizationType() == OrganizationType.TEAM) {
+            applicationEventPublisher.publishEvent(new SchemaSyncEvent(databases));
+        }
         return true;
     }
 

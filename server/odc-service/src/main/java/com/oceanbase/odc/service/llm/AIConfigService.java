@@ -15,13 +15,24 @@
  */
 package com.oceanbase.odc.service.llm;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
+import javax.sql.DataSource;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.oceanbase.odc.common.util.StringUtils;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
@@ -31,6 +42,7 @@ import com.oceanbase.odc.metadb.llm.LlmModelEntity;
 import com.oceanbase.odc.metadb.llm.LlmModelRepository;
 import com.oceanbase.odc.service.iam.auth.AuthenticationFacade;
 import com.oceanbase.odc.service.llm.model.AIConfig;
+import com.oceanbase.odc.service.llm.model.AIConfigUpdateEvent;
 import com.oceanbase.odc.service.llm.util.AIConfigMapper;
 
 import lombok.extern.slf4j.Slf4j;
@@ -38,13 +50,19 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @Slf4j
 public class AIConfigService {
+    private static final String MINIMAL_METADB_VERSION = "4.3.3";
     private final AIConfigMapper aiConfigMapper = AIConfigMapper.INSTANCE;
+    @Autowired(required = false)
+    @Qualifier("vectordbDataSource")
+    protected DataSource vectordbDataSource;
     @Autowired
     private AIConfigRepository aiConfigRepository;
     @Autowired
     private AuthenticationFacade authenticationFacade;
     @Autowired
     private LlmModelRepository llmModelRepository;
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     public AIConfig getAIConfig() {
         return aiConfigRepository.findByOrganizationId(authenticationFacade.currentOrganizationId())
@@ -52,8 +70,26 @@ public class AIConfigService {
                 .orElse(new AIConfig());
     }
 
+    public AIConfig getAIConfigSkipPermissionCheck(Long organizationId) {
+        return aiConfigRepository.findByOrganizationId(organizationId)
+                .map(aiConfigMapper::entityToModel)
+                .orElse(new AIConfig());
+    }
+
     @Transactional(rollbackFor = Exception.class)
-    public AIConfig setAIConfig(AIConfig aiConfig) {
+    public AIConfig setAIConfig(AIConfig aiConfig) throws SQLException {
+        try (Connection conn = vectordbDataSource.getConnection();
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery("show parameters like 'ob_vector_memory_limit_percentage'")) {
+            if (!rs.next()) {
+                throw new BadRequestException(ErrorCodes.VectorDBNotConfigured, new Object[] {MINIMAL_METADB_VERSION},
+                        "please check the metadb version should be equal to or higher than " + MINIMAL_METADB_VERSION);
+            }
+            if (rs.getInt("value") <= 0) {
+                throw new BadRequestException(ErrorCodes.VectorDBNotConfigured, new Object[] {MINIMAL_METADB_VERSION},
+                        "when ob_vector_memory_limit_percentage = 0 or memstore_limit >= 85, vector index is not supported");
+            }
+        }
         Long orgId = authenticationFacade.currentOrganizationId();
         validateAIConfig(aiConfig);
         aiConfig.setOrganizationId(orgId);
@@ -69,7 +105,22 @@ public class AIConfigService {
             AIConfigEntity entity = aiConfigMapper.modelToEntity(aiConfig);
             aiConfigRepository.save(entity);
         }
+        if (Objects.equals(Boolean.TRUE, aiConfig.getChatEnabled())
+                || Objects.equals(Boolean.TRUE, aiConfig.getCopilotEnabled())
+                        && aiConfig.getDefaultEmbeddingModel() != null) {
+            eventPublisher.publishEvent(new AIConfigUpdateEvent(aiConfig));
+        }
         return getAIConfig();
+    }
+
+    public List<AIConfig> listAllOrganizationConfigForEmbedding() {
+        // 返回所有启用了 embedding 且开启了 chat 或 copilot 的配置
+        return aiConfigRepository.findAll().stream()
+                .filter(config -> (Objects.equals(Boolean.TRUE, config.getChatEnabled())
+                        || Objects.equals(Boolean.TRUE, config.getCopilotEnabled()))
+                        && config.getDefaultEmbeddingModel() != null)
+                .map(aiConfigMapper::entityToModel)
+                .toList();
     }
 
     /**

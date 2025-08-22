@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.flow.task;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
@@ -50,6 +51,7 @@ import com.oceanbase.odc.service.flow.instance.FlowTaskInstance;
 import com.oceanbase.odc.service.flow.listener.ActiveTaskStatisticsListener;
 import com.oceanbase.odc.service.flow.listener.ServiceTaskExecutingCompleteListener;
 import com.oceanbase.odc.service.flow.model.ExecutionStrategyConfig;
+import com.oceanbase.odc.service.flow.task.logicdatabasechange.UpdatableCallable;
 import com.oceanbase.odc.service.task.TaskService;
 
 import lombok.Getter;
@@ -96,6 +98,7 @@ public abstract class BaseRuntimeFlowableDelegate<T> extends BaseFlowableDelegat
     private final RetryExecutor retryExecutor;
     private final TaskInstanceCreatedListener taskInstanceCreatedlistener;
     private final ActiveTaskStatisticsListener activeTaskStatisticsListener;
+    private Callable<T> callable = null;
 
     public BaseRuntimeFlowableDelegate() {
         this.retryExecutor = RetryExecutor.builder().retryIntervalMillis(1000).retryTimes(3).build();
@@ -112,7 +115,6 @@ public abstract class BaseRuntimeFlowableDelegate<T> extends BaseFlowableDelegat
 
     @Override
     protected void run(DelegateExecution execution) throws Exception {
-        Callable<T> callable;
         try {
             this.activityId = execution.getCurrentActivityId();
             initTargetTaskInstanceId(execution);
@@ -228,6 +230,19 @@ public abstract class BaseRuntimeFlowableDelegate<T> extends BaseFlowableDelegat
             this.taskService.updateHeartbeatTime(getTargetTaskId());
         } catch (Exception e) {
             log.warn("Failed to update heartbeat time, taskId={}", getTargetTaskId(), e);
+        }
+    }
+
+    /**
+     * only status in running can be updated
+     * 
+     * @param configs
+     */
+    public boolean updateRuntimeConfig(Map<String, String> configs) {
+        if (null != callable && (callable instanceof UpdatableCallable)) {
+            return ((UpdatableCallable<T>) callable).update(configs);
+        } else {
+            return false;
         }
     }
 

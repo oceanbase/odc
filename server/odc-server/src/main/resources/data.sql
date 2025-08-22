@@ -905,3 +905,8 @@ INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('o
 INSERT INTO config_system_configuration(`key`, `value`, `description`) VALUES('odc.database.schema.sync.column-sync-enabled', 'true',
 'Whether to enable the column metadata sync, default is true, indicating enabled.') ON DUPLICATE KEY UPDATE `id`=`id`;
 
+--
+-- v4.4.1
+--
+insert into config_system_configuration (`key`, `value`) values ('odc.ai.kb.enable-build-kb', 'true') ON DUPLICATE KEY UPDATE `id`=`id`;
+

@@ -20,6 +20,7 @@ import java.util.Set;
 
 import org.springframework.context.i18n.LocaleContextHolder;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.oceanbase.odc.common.i18n.Translatable;
 
@@ -131,6 +132,11 @@ public enum TaskType implements Translatable {
 
     public boolean needsSetLogDownloadUrl() {
         return !(this == PRE_CHECK || this == SQL_CHECK || this == GENERATE_ROLLBACK);
+    }
+
+    public static Set<TaskType> supportedLandingPage() {
+        return ImmutableSet.of(ASYNC, IMPORT, EXPORT, EXPORT_RESULT_SET, MOCKDATA, MULTIPLE_ASYNC,
+                LOGICAL_DATABASE_CHANGE, SHADOWTABLE_SYNC, STRUCTURE_COMPARISON, ONLINE_SCHEMA_CHANGE);
     }
 
     public static Set<TaskType> visibleTaskTypes() {

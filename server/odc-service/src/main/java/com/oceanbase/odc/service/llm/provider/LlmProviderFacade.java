@@ -21,10 +21,9 @@ import javax.annotation.Nullable;
 
 import com.oceanbase.odc.service.llm.model.ProviderType;
 import com.oceanbase.odc.service.llm.provider.template.ProviderTemplate;
-
-import dev.langchain4j.model.chat.ChatModel;
-import dev.langchain4j.model.chat.StreamingChatModel;
-import dev.langchain4j.model.embedding.EmbeddingModel;
+import com.oceanbase.odc.service.llm.sdk.ChatModelWrapper;
+import com.oceanbase.odc.service.llm.sdk.EmbeddingModelWrapper;
+import com.oceanbase.odc.service.llm.sdk.StreamingChatModelWrapper;
 
 public interface LlmProviderFacade<ModelCredential, ProviderCredential> {
 
@@ -57,10 +56,10 @@ public interface LlmProviderFacade<ModelCredential, ProviderCredential> {
 
     List<ModelCredential> generateModelsByProviderCredential(@Nullable ProviderCredential credential);
 
-    ChatModel generateChatModel(String modelName, ModelCredential credential);
+    ChatModelWrapper generateChatModel(String modelName, ModelCredential credential);
 
-    StreamingChatModel generateStreamingChatModel(String modelName, ModelCredential credential);
+    StreamingChatModelWrapper generateStreamingChatModel(String modelName, ModelCredential credential);
 
-    EmbeddingModel generateEmbeddingModel(String modelName, ModelCredential credential);
+    EmbeddingModelWrapper generateEmbeddingModel(String modelName, ModelCredential credential);
 
 }

@@ -161,7 +161,7 @@ public class LogicalDatabaseChangeTask extends TaskBase<Map<String, ExecutionRes
                                             dialectType,
                                             dataNode.getDataSourceConfig(),
                                             taskParameters.getLogicalDatabaseResp().getId(),
-                                            dataNode.getDatabaseId(), taskParameters.getScheduleTaskId()));
+                                            dataNode.getDatabaseId(), taskParameters.getFlowInstanceId()));
                     executionUnits.add(new ExecutionSubGroupUnit<>(StringUtils.uuid(), order, callback, req));
                 }
                 order++;

@@ -29,7 +29,7 @@ import lombok.Data;
 public class LogicalDBChangeExecutionUnit {
     private Long id;
     private Long order;
-    private Long scheduleTaskId;
+    private Long flowInstanceId;
     private String executionId;
     private String sql;
     private Long logicalDatabaseId;

@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.flow.task;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -27,13 +28,23 @@ import com.google.common.util.concurrent.AtomicDouble;
 import com.oceanbase.odc.common.json.JsonUtils;
 import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
+import com.oceanbase.odc.core.shared.constant.TaskStatus;
 import com.oceanbase.odc.metadb.task.TaskEntity;
 import com.oceanbase.odc.service.connection.ConnectionService;
+import com.oceanbase.odc.service.connection.logicaldatabase.LogicalDatabaseChangeService;
 import com.oceanbase.odc.service.connection.logicaldatabase.LogicalDatabaseService;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.execution.ExecutionResult;
+import com.oceanbase.odc.service.connection.logicaldatabase.core.executor.sql.SqlExecutionResultWrapper;
 import com.oceanbase.odc.service.connection.logicaldatabase.model.DetailLogicalDatabaseResp;
+import com.oceanbase.odc.service.flow.task.logicdatabasechange.LogicalDBChangeResultProcessor;
+import com.oceanbase.odc.service.flow.task.logicdatabasechange.LogicalDBChangeTerminateProcessor;
+import com.oceanbase.odc.service.flow.task.logicdatabasechange.UpdatableCallable;
 import com.oceanbase.odc.service.flow.task.model.LogicalDatabaseChangeParameters;
 import com.oceanbase.odc.service.flow.task.model.LogicalDatabaseChangePublishReq;
 import com.oceanbase.odc.service.flow.task.model.LogicalDatabaseChangeTaskResult;
+import com.oceanbase.odc.service.objectstorage.cloud.CloudObjectStorageService;
+import com.oceanbase.odc.service.task.ExceptionListener;
+import com.oceanbase.odc.service.task.TaskContext;
 import com.oceanbase.odc.service.task.TaskService;
 import com.oceanbase.odc.service.task.base.logicdatabasechange.LogicalDatabaseChangeTask;
 import com.oceanbase.odc.service.task.caller.DefaultJobContext;
@@ -57,6 +68,8 @@ public class LogicalDatabaseChangeFlowableTask extends BaseODCFlowTaskDelegate<V
     private ConnectionService connectionService;
     @Autowired
     private LogicalDatabaseService logicalDatabaseService;
+    @Autowired
+    private LogicalDatabaseChangeService logicalDatabaseChangeService;
 
     private LogicalDatabaseChangeTask logicalDatabaseChangeTask;
 
@@ -65,14 +78,16 @@ public class LogicalDatabaseChangeFlowableTask extends BaseODCFlowTaskDelegate<V
     private AtomicReference<Throwable> exception = new AtomicReference<>(null);
     private AtomicDouble lastProgress = new AtomicDouble(-1);
     private AtomicReference<String> lastResult = new AtomicReference<>(null);
+    private LogicalDatabaseChangePublishReq logicalDatabaseChangePublishReq = null;
+    private LogicalDBChangeResultProcessor resultProcessor = new LogicalDBChangeResultProcessor();
 
     @Override
     protected Void start(Long taskId, TaskService taskService, DelegateExecution execution) throws Exception {
         try {
             LogicalDatabaseChangePublishReq req = buildLogicalDatabaseChangePublishReq(taskId);
-            JobContext jobContext = buildJobContext(req, req.getTimeoutMillis());
+            TaskContext taskContext = buildTaskContext(req, req.getTimeoutMillis());
             logicalDatabaseChangeTask = new LogicalDatabaseChangeTask();
-            logicalDatabaseChangeTask.doInit(jobContext);
+            logicalDatabaseChangeTask.init(taskContext);
             boolean result = logicalDatabaseChangeTask.start();
             isSuccessful.set(result);
             return null;
@@ -82,10 +97,33 @@ public class LogicalDatabaseChangeFlowableTask extends BaseODCFlowTaskDelegate<V
             log.info("LogicalDatabaseRuntimeFlowableTask execute failed, taskId={}", taskId, e);
             stopTask();
             throw e;
+        } finally {
+            // whatever it's success or failure or timeout or canceled, we need to update the flow instance
+            // status
+            onLogicDatabaseChangeTaskDone();
         }
     }
 
-    public JobContext buildJobContext(LogicalDatabaseChangePublishReq req, Long timeoutMillis) {
+    protected Callable<Void> initCallable(DelegateExecution execution) {
+        return new UpdatableCallable<Void>() {
+            @Override
+            public boolean update(Map<String, String> runtimeConfig) {
+                if (null != logicalDatabaseChangeTask) {
+                    logicalDatabaseChangeTask.modify(runtimeConfig);
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+
+            @Override
+            public Void call() throws Exception {
+                return start(taskId, taskService, execution);
+            }
+        };
+    }
+
+    public TaskContext buildTaskContext(LogicalDatabaseChangePublishReq req, Long timeoutMillis) {
         Map<String, String> jobData = new HashMap<>();
         jobData.put(JobParametersKeyConstants.TASK_PARAMETER_JSON_KEY,
                 JobUtils.toJson(req));
@@ -103,7 +141,22 @@ public class LogicalDatabaseChangeFlowableTask extends BaseODCFlowTaskDelegate<V
         context.setJobClass(LogicalDatabaseChangeTask.class.getName());
         context.setJobProperties(jobProperties);
         context.setJobParameters(jobData);
-        return context;
+        return new TaskContext() {
+            @Override
+            public ExceptionListener getExceptionListener() {
+                return (e) -> log.error(e.getMessage());
+            }
+
+            @Override
+            public JobContext getJobContext() {
+                return context;
+            }
+
+            @Override
+            public CloudObjectStorageService getSharedStorage() {
+                return null;
+            }
+        };
     }
 
     private LogicalDatabaseChangePublishReq buildLogicalDatabaseChangePublishReq(Long taskID) {
@@ -121,7 +174,8 @@ public class LogicalDatabaseChangeFlowableTask extends BaseODCFlowTaskDelegate<V
         req.setLogicalDatabaseResp(logicalDatabaseResp);
         req.setDelimiter(parameters.getDelimiter());
         req.setTimeoutMillis(parameters.getTimeoutMillis());
-        req.setScheduleTaskId(taskEntity.getId());
+        req.setFlowInstanceId(flowInstanceId);
+        logicalDatabaseChangePublishReq = req;
         return req;
     }
 
@@ -189,7 +243,9 @@ public class LogicalDatabaseChangeFlowableTask extends BaseODCFlowTaskDelegate<V
         double previousProgress = lastProgress.get();
         double currentProgress = logicalDatabaseChangeTask.getProgress();
         LogicalDatabaseChangeTaskResult taskResult = new LogicalDatabaseChangeTaskResult();
-        taskResult.setSqlExecutionResultMap(logicalDatabaseChangeTask.getTaskResult());
+        Map<String, ExecutionResult<SqlExecutionResultWrapper>> runningResult =
+                logicalDatabaseChangeTask.getTaskResult();
+        taskResult.setSqlExecutionResultMap(runningResult);
         String currentResult = JsonUtils.toJson(taskResult);
 
         // epsilon is used to avoid floating point precision issues
@@ -199,14 +255,21 @@ public class LogicalDatabaseChangeFlowableTask extends BaseODCFlowTaskDelegate<V
                 && StringUtils.equals(currentResult, lastResult.get())) {
             return;
         }
-
+        TaskStatus status = resultProcessor.process(runningResult, logicalDatabaseChangeService, flowInstanceId);
         // update and save progress and result
         lastProgress.set(currentProgress);
         lastResult.set(currentResult);
         TaskEntity taskEntity = taskService.detail(taskId);
         taskEntity.setProgressPercentage(currentProgress);
         taskEntity.setResultJson(JsonUtils.toJson(taskResult));
+        taskEntity.setStatus(status);
         taskService.update(taskEntity);
+    }
+
+    private void onLogicDatabaseChangeTaskDone() {
+        LogicalDBChangeTerminateProcessor dbChangeTerminateProcessor =
+                new LogicalDBChangeTerminateProcessor(logicalDatabaseService);
+        dbChangeTerminateProcessor.process(flowInstanceId, logicalDatabaseChangePublishReq);
     }
 
 }

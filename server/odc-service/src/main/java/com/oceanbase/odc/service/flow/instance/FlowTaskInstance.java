@@ -291,6 +291,14 @@ public class FlowTaskInstance extends BaseFlowNodeInstance {
                 getId(), tasks.stream().map(TaskInfo::getName).collect(Collectors.toList()), aborted);
     }
 
+    public boolean updateTaskRuntimeConfig(Map<String, String> runtimeConfig) {
+        if (null != targetTaskHandle) {
+            return targetTaskHandle.updateRuntimeConfig(runtimeConfig);
+        } else {
+            return false;
+        }
+    }
+
     private static ServiceTaskInstanceEntity mapToTaskEntity(FlowTaskInstance instance) {
         ServiceTaskInstanceEntity entity = new ServiceTaskInstanceEntity();
         entity.setOrganizationId(instance.getOrganizationId());

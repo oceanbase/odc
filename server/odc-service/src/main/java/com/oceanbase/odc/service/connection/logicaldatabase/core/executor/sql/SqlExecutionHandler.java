@@ -65,7 +65,7 @@ public class SqlExecutionHandler implements ExecutionHandler<SqlExecuteReq, SqlE
             ExecutionGroupContext<SqlExecuteReq, SqlExecutionResultWrapper> context) {
         SqlExecutionResultWrapper resultWrapper =
                 new SqlExecutionResultWrapper(req.getLogicalDatabaseId(), req.getPhysicalDatabaseId(),
-                        req.getScheduleTaskId(), null);
+                        req.getFlowInstanceId(), null);
         resultWrapper.setExecuteSql(req.getSql());
         resultWrapper.setStatus(SqlExecuteStatus.CREATED);
         return new ExecutionResult<>(resultWrapper, ExecutionStatus.PENDING, req.getOrder());
@@ -78,7 +78,7 @@ public class SqlExecutionHandler implements ExecutionHandler<SqlExecuteReq, SqlE
         if (StringUtils.isEmpty(req.getSql())) {
             return new ExecutionResult<>(
                     new SqlExecutionResultWrapper(req.getLogicalDatabaseId(), req.getPhysicalDatabaseId(),
-                            req.getScheduleTaskId(),
+                            req.getFlowInstanceId(),
                             SqlExecuteResult.emptyResult(SqlTuple.newTuple("-- No SQL needs to execute in this run"),
                                     SqlExecuteStatus.SUCCESS)),
                     ExecutionStatus.SUCCESS, req.getOrder());
@@ -98,7 +98,7 @@ public class SqlExecutionHandler implements ExecutionHandler<SqlExecuteReq, SqlE
             JdbcGeneralResult result = results.get(0);
             return new ExecutionResult<>(
                     new SqlExecutionResultWrapper(req.getLogicalDatabaseId(), req.getPhysicalDatabaseId(),
-                            req.getScheduleTaskId(), new SqlExecuteResult(result)),
+                            req.getFlowInstanceId(), new SqlExecuteResult(result)),
                     getExecutionStatus(result.getStatus()), req.getOrder());
         } finally {
             tryExpireConnectionSession(this.connectionSession);

@@ -24,9 +24,9 @@ import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
+import org.springframework.context.annotation.Profile;
 import org.springframework.integration.jdbc.lock.JdbcLockRegistry;
 
 import com.oceanbase.odc.core.migrate.MigrateConfiguration;
@@ -38,14 +38,14 @@ import com.oceanbase.odc.service.common.migrate.ResourceConstants;
 
 @Configuration
 @DependsOn({"vectordbLockConfiguration"})
-@ConditionalOnProperty(prefix = "odc.datasource.vectordb", name = {"url", "driver-class-name", "username", "password"})
 @ConditionOnServer
+@Profile("!clientMode")
 public class VectorDBMigrate extends AbstractMigrate {
 
-    @Autowired
+    @Autowired(required = false)
     @Qualifier("vectordbDataSource")
     protected DataSource vectordbDataSource;
-    @Autowired
+    @Autowired(required = false)
     @Qualifier("vectordbJdbcLockRepository")
     private JdbcLockRegistry vectordbJdbcLockRepository;
 
@@ -71,6 +71,7 @@ public class VectorDBMigrate extends AbstractMigrate {
                 .resourceLocations(Collections.singletonList("migrate/vectordb"))
                 .basePackages(Collections.singletonList("com.oceanbase.odc.migrate.jdbc.vectordb"))
                 .resourceConfigs(Collections.singletonList(resourceConfig))
+                .degradeCheck(false)
                 .build();
     }
 

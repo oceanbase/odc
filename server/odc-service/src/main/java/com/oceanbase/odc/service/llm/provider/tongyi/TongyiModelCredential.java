@@ -47,7 +47,7 @@ public class TongyiModelCredential implements ModelCredential {
     private Integer contextSize = 4096;
 
     @JsonProperty("function_calling_type")
-    private String functionCallingType = Constants.SUPPORT_FUNCTION_CALLING_TYPE;
+    private String functionCallingType;
 
     /**
      * 控制随机性和多样性的程度 范围: 0.0 - 2.0, 默认: 0.3

@@ -27,12 +27,21 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
+import com.oceanbase.odc.service.collaboration.landingpage.model.QueryScheduleStatParams;
 import com.oceanbase.odc.service.schedule.model.QueryScheduleParams;
 import com.oceanbase.odc.service.schedule.model.ScheduleStatus;
 import com.oceanbase.odc.service.schedule.model.ScheduleType;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
 import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
 
 /**
  * @Author：tinker
@@ -72,14 +81,34 @@ public interface ScheduleRepository extends OdcJpaRepository<ScheduleEntity, Lon
             nativeQuery = true)
     int getEnabledScheduleCountByProjectId(@Param("projectId") Long projectId);
 
-    @Query(value = "SELECT job_type as scheduleType, COUNT(*) as count FROM schedule_schedule " +
-            "WHERE organization_id = :organizationId " +
-            "  AND project_id IN (:projectIds) " +
-            "  AND job_type IN (:types) " +
-            "GROUP BY job_type",
-            nativeQuery = true)
-    List<ScheduleTypeCount> getScheduleCountByProjectIdInAndTypeIn(@Param("organizationId") Long organizationId,
-            @Param("projectIds") Set<Long> projectIds, @Param("types") Set<String> types);
+    default List<ScheduleTypeCount> findScheduleTypeCount(@NonNull QueryScheduleStatParams params) {
+        EntityManager entityManager = getEntityManager();
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+
+        CriteriaQuery<ScheduleTypeCount> query = cb.createQuery(ScheduleTypeCount.class);
+        Root<ScheduleEntity> root = query.from(ScheduleEntity.class);
+
+        query.where(buildWithScheduleTypeAndStatusSpec(params).toPredicate(root, query, cb));
+        query.select(cb.construct(
+                ScheduleTypeCount.class,
+                root.get(ScheduleEntity_.TYPE),
+                cb.count(root)));
+        return entityManager.createQuery(query).getResultList();
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    class ScheduleTypeCount {
+        private ScheduleType scheduleType;
+        private Long count;
+    }
+
+    default Specification<ScheduleEntity> buildWithScheduleTypeAndStatusSpec(@NonNull QueryScheduleStatParams params) {
+        return OdcJpaRepository.in(ScheduleEntity_.type, params.getScheduleTypes())
+                .and(OdcJpaRepository.in(ScheduleEntity_.status, params.getStatuses()))
+                .and(ScheduleSpecs.groupByScheduleType());
+    }
 
     default Page<ScheduleEntity> find(@NotNull Pageable pageable, @NotNull QueryScheduleParams params) {
         Specification<ScheduleEntity> specification = Specification
@@ -103,15 +132,22 @@ public interface ScheduleRepository extends OdcJpaRepository<ScheduleEntity, Lon
         return findAll(ScheduleSpecs.joinScheduleChangeLog(params), pageable);
     }
 
+    default Long countDistinctId(@NonNull Specification<ScheduleEntity> spec) {
+        EntityManager entityManager = getEntityManager();
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Long> query = cb.createQuery(Long.class);
+        Root<ScheduleEntity> root = query.from(ScheduleEntity.class);
+
+        query.select(cb.countDistinct(root.get(ScheduleEntity_.ID))).where(spec.toPredicate(root, query, cb));
+
+        return entityManager.createQuery(query).getSingleResult();
+    }
+
     List<ScheduleEntity> findByOrganizationIdAndIdInAndProjectIdIn(Long organizationId, Collection<Long> ids,
             Collection<Long> projectIds);
 
+    List<ScheduleEntity> findByIdInAndProjectIdIn(Collection<Long> ids, Collection<Long> projectIds);
+
     List<ScheduleEntity> findByOrganizationIdAndProjectIdInAndTypeIn(Long organizationId, Collection<Long> projectIds,
             Collection<ScheduleType> types);
-
-    interface ScheduleTypeCount {
-        String getScheduleType();
-
-        int getCount();
-    }
 }

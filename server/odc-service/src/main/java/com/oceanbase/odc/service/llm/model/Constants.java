@@ -19,4 +19,6 @@ public class Constants {
 
     public static final String SUPPORT_FUNCTION_CALLING_TYPE = "function_call";
 
+    public static final int DEFAULT_EMBEDDING_DIMENSION = 1024;
+
 }

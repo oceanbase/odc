@@ -13,26 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.model;
+package com.oceanbase.odc.service.ai.knowledgebase.model;
 
-import java.util.Date;
-import java.util.Set;
-
-import lombok.Builder;
-import lombok.Data;
+import com.oceanbase.odc.service.connection.database.model.Database;
+import com.oceanbase.odc.service.llm.sdk.EmbeddingModelWrapper;
 
 /**
- * @Author: ysj
- * @Date: 2025/2/25 10:06
- * @Since: 4.3.4
- * @Description:
+ * @author: liuyizhuo.lyz
+ * @date: 2025/7/31
  */
-@Data
-@Builder
-public class QueryScheduleStatParams {
-    private Set<Long> scheduleIds;
-    private Set<ScheduleType> scheduleTypes;
-    private Date startTime;
-    private Date endTime;
-    private Set<ScheduleStatus> statuses;
+public record DocumentWrapper(Document document, Database database, EmbeddingModelWrapper model) {
 }

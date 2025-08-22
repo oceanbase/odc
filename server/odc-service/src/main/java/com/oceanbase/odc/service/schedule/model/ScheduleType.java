@@ -15,6 +15,10 @@
  */
 package com.oceanbase.odc.service.schedule.model;
 
+import java.util.Set;
+
+import com.google.common.collect.ImmutableSet;
+
 /**
  * @Author：tinker
  * @Date: 2022/11/18 17:18
@@ -35,6 +39,10 @@ public enum ScheduleType {
     LOGICAL_DATABASE_CHANGE,
 
     LOAD_DATA;
+
+    public static Set<ScheduleType> supportedLandingPage() {
+        return ImmutableSet.of(SQL_PLAN, PARTITION_PLAN, DATA_ARCHIVE, DATA_DELETE);
+    }
 
 }
 

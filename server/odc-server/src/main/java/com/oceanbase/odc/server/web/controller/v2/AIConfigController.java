@@ -15,6 +15,8 @@
  */
 package com.oceanbase.odc.server.web.controller.v2;
 
+import java.sql.SQLException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,7 +41,7 @@ public class AIConfigController {
     }
 
     @PostMapping("/config")
-    public ResponseEntity<AIConfig> setAIConfig(@RequestBody AIConfig aiConfig) {
+    public ResponseEntity<AIConfig> setAIConfig(@RequestBody AIConfig aiConfig) throws SQLException {
         return ResponseEntity.ok(aiConfigService.setAIConfig(aiConfig));
     }
 

@@ -40,7 +40,6 @@ import com.oceanbase.odc.service.schedule.job.DataArchiveJob;
 import com.oceanbase.odc.service.schedule.job.DataArchiveRollbackJob;
 import com.oceanbase.odc.service.schedule.job.DataDeleteJob;
 import com.oceanbase.odc.service.schedule.job.LoadDataJob;
-import com.oceanbase.odc.service.schedule.job.LogicalDatabaseChangeJob;
 import com.oceanbase.odc.service.schedule.job.OdcJob;
 import com.oceanbase.odc.service.schedule.job.OnlineSchemaChangeCompleteJob;
 import com.oceanbase.odc.service.schedule.job.PartitionPlanJob;
@@ -131,8 +130,6 @@ public abstract class AbstractQuartzJob implements InterruptableJob {
                 return new PartitionPlanJob();
             case LOAD_DATA:
                 return new LoadDataJob();
-            case LOGICAL_DATABASE_CHANGE:
-                return new LogicalDatabaseChangeJob();
             default:
                 throw new UnsupportedException();
         }
