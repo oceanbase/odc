@@ -200,9 +200,8 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
             dbExternalResource.setSize(rs.getLong("CONTENT_LENGTH"));
             if (type == DBExternalResourceType.PYTHON_PY) {
                 try (InputStream binaryStream = rs.getBinaryStream("CONTENT");
-                     InputStreamReader reader = new InputStreamReader(binaryStream, charset);
-                     BufferedReader bufferedReader = new BufferedReader(reader)) {
-                    dbExternalResource.setReader(bufferedReader);
+                     InputStreamReader reader = new InputStreamReader(binaryStream, charset);) {
+                    dbExternalResource.setReader(reader);
                 } catch (IOException e) {
                     ioEx[0] = e;
                 }

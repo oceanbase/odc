@@ -16,7 +16,6 @@
 package com.oceanbase.tools.dbbrowser.schema;
 
 import static com.oceanbase.tools.dbbrowser.editor.DBObjectUtilsTest.loadAsString;
-import static com.oceanbase.tools.dbbrowser.model.DBConstraintType.PRIMARY_KEY;
 import static org.junit.Assume.assumeTrue;
 
 import java.io.IOException;
@@ -97,6 +96,8 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
             VersionUtils.isGreaterThanOrEqualsTo(dbSchemaAccessors.getVersion(), "4.3.5.2");
     private static final boolean isSupportJavaAndPythonUdf =
             VersionUtils.isGreaterThanOrEqualsTo(dbSchemaAccessors.getVersion(), "4.4.1.0");
+    private static final List<String> resources = Arrays.asList("test_java_udf1", "test_java_udf2", "test_java_udf3");
+    private static final String jarClassPath = "externalresource/obmysql/my_add.jar";
 
     @BeforeClass
     public static void setUp() throws Exception {
@@ -115,7 +116,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
             batchExecuteSqlIgnoreErrors(dropMVLogs);
         }
         if (isSupportJavaAndPythonUdf) {
-
+            batchDeleteExternalResources(resources);
         }
         ddl = loadAsString(BASE_PATH + "testTableColumnDDL.sql", BASE_PATH + "testTableIndexDDL.sql",
                 BASE_PATH + "testTableConstraintDDL.sql", BASE_PATH + "testPartitionDDL.sql",
@@ -136,7 +137,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
             jdbcTemplate.execute(createMVLog);
         }
         if (isSupportJavaAndPythonUdf) {
-
+            batchUploadExternalResources(resources);
         }
 
     }
@@ -151,7 +152,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
             jdbcTemplate.execute(dropMVLogs);
         }
         if (isSupportJavaAndPythonUdf) {
-
+            batchDeleteExternalResources(resources);
         }
     }
 
@@ -172,34 +173,40 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
-    public void uploadExternalResource_uploadJavaJar_Success() throws IOException {
+    public void getExternalResource_UploadJavaJar_Success() throws IOException {
         assumeTrue(isSupportJavaAndPythonUdf);
-        InputStream resourceAsStream = Thread.currentThread()
-                .getContextClassLoader()
-                .getResourceAsStream("externalresource/obmysql/my_add.jar");
-        DBExternalResourceUploadParam dbExternalResourceUploadParam = new DBExternalResourceUploadParam(
-                getOBMySQLDataBaseName(), "test_java_udf1", "java jar content", resourceAsStream);
-        Assert.assertTrue(accessor.uploadExternalResource(dbExternalResourceUploadParam));
+        DBExternalResource testJavaUdf =
+                accessor.getExternalResource(getOBMySQLDataBaseName(), resources.get(0), StandardCharsets.UTF_8);
+        Assert.assertEquals(DBExternalResourceType.JAVA_JAR, testJavaUdf.getType());
+        Assert.assertEquals(getOBMySQLDataBaseName(), testJavaUdf.getSchemaName());
+        Assert.assertEquals(resources.get(0), testJavaUdf.getName());
+        Assert.assertEquals("java jar content", testJavaUdf.getComment());
+        Assert.assertNull(testJavaUdf.getContext());
     }
 
     @Test
-    public void getExternalResource_uploadJavaJar_Success() throws IOException {
+    public void ListExternalResource_UploadJavaJar_Success() throws IOException {
         assumeTrue(isSupportJavaAndPythonUdf);
-        InputStream resourceAsStream = Thread.currentThread()
-                .getContextClassLoader()
-                .getResourceAsStream("externalresource/obmysql/my_add.jar");
-        DBExternalResourceUploadParam dbExternalResourceUploadParam = new DBExternalResourceUploadParam(
-                getOBMySQLDataBaseName(), "test_java_udf2", "java jar content", resourceAsStream);
-        accessor.uploadExternalResource(dbExternalResourceUploadParam);
-        DBExternalResource testJavaUdf2 =
-                accessor.getExternalResource(getOBMySQLDataBaseName(), "test_java_udf2", StandardCharsets.UTF_8);
-        Assert.assertEquals(DBExternalResourceType.JAVA_JAR, testJavaUdf2.getType());
-        Assert.assertEquals(getOBMySQLDataBaseName(), testJavaUdf2.getSchemaName());
-        Assert.assertEquals("test_java_udf2", testJavaUdf2.getName());
-        Assert.assertEquals("java jar content", testJavaUdf2.getComment());
-        Assert.assertNull(testJavaUdf2.getContext());
+        List<DBObjectIdentity> dbObjectIdentities = accessor.listExternalResources(getOBMySQLDataBaseName());
+        dbObjectIdentities.forEach(dbObjectIdentity -> {
+            Assert.assertEquals(getOBMySQLDataBaseName(), dbObjectIdentity.getSchemaName());
+            Assert.assertTrue(resources.contains(dbObjectIdentity.getName()));
+        });
     }
 
+    @Test
+    public void downLoadExternalResource_UploadJavaJar_Success() throws IOException {
+        assumeTrue(isSupportJavaAndPythonUdf);
+        DBExternalResource dbExternalResource =
+                accessor.downloadExternalResource(getOBMySQLDataBaseName(), resources.get(0), StandardCharsets.UTF_8);
+        Assert.assertEquals(getOBMySQLDataBaseName(), dbExternalResource.getSchemaName());
+        Assert.assertEquals(resources.get(0), dbExternalResource.getName());
+        Assert.assertEquals(DBExternalResourceType.JAVA_JAR, dbExternalResource.getType());
+        Assert.assertEquals("java jar content", dbExternalResource.getComment());
+        Assert.assertNull(dbExternalResource.getContext());
+        Assert.assertNotNull(dbExternalResource.getInputStream());
+        Assert.assertNull(dbExternalResource.getReader());
+    }
 
     @Test
     public void getMViewLog_testParallelIs5_Success() {
@@ -875,4 +882,27 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
             return columnAttributes;
         }
     }
+
+    private static void batchUploadExternalResources(List<String> resources) throws IOException {
+        for (String resource : resources) {
+            try (InputStream resourceAsStream = Thread.currentThread()
+                    .getContextClassLoader()
+                    .getResourceAsStream(jarClassPath)) {
+                DBExternalResourceUploadParam dbExternalResourceUploadParam = new DBExternalResourceUploadParam(
+                        getOBMySQLDataBaseName(), resource, "java jar content", resourceAsStream);
+                accessor.uploadExternalResource(dbExternalResourceUploadParam);
+            }
+        }
+    }
+
+    private static void batchDeleteExternalResources(List<String> resources) {
+        for (String resource : resources) {
+            try {
+                accessor.deleteExternalResource(getOBMySQLDataBaseName(), resource);
+            } catch (Exception e) {
+
+            }
+        }
+    }
+
 }
