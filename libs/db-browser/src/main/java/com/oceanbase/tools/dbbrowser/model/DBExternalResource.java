@@ -15,9 +15,6 @@
  */
 package com.oceanbase.tools.dbbrowser.model;
 
-import java.io.InputStream;
-import java.io.Reader;
-
 import lombok.Data;
 
 /**
@@ -40,10 +37,6 @@ public class DBExternalResource implements DBObject {
     private String comment;
 
     private long size;
-
-    private InputStream inputStream;
-
-    private Reader reader;
 
     @Override
     public String name() {

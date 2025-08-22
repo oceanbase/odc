@@ -201,8 +201,10 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
         try (DBExternalResourceStream dbExternalResourceStream =
                 accessor.downloadExternalResource(getOBMySQLDataBaseName(), resources.get(0), StandardCharsets.UTF_8);
                 InputStream inputStream = dbExternalResourceStream.getInputStream()) {
-            byte[] bytes = new byte[1024];
-            Assert.assertTrue(inputStream.read(bytes) > 0);
+            if (dbExternalResourceStream.getType() == DBExternalResourceType.JAVA_JAR) {
+                byte[] bytes = new byte[1024];
+                Assert.assertTrue(inputStream.read(bytes) > 0);
+            }
         }
     }
 

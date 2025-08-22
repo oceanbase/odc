@@ -136,7 +136,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
                 try (InputStream binaryStream = rs.getBinaryStream("CONTENT");
                      InputStreamReader reader = new InputStreamReader(binaryStream, charset);
                      BufferedReader bufferedReader = new BufferedReader(reader)) {
-                    // 1MB 的字符容量
+                    // Limit size to 1m
                     char[] buffer = new char[1024 * 1024 / 2];
                     int charsRead = bufferedReader.read(buffer);
                     if (charsRead != -1) {
