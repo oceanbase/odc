@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.metadb.schedule;
 
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -30,6 +31,9 @@ import com.oceanbase.odc.core.shared.constant.TaskStatus;
  * @Descripition:
  */
 public class ScheduleTaskSpecs {
+
+    private final static String SCHEDULE_TASK_JOB_GROUP_NAME = "jobGroup";
+    private final static String SCHEDULE_TASK_STATUS_NAME = "status";
 
     public static Specification<ScheduleTaskEntity> jobNameEquals(String jobName) {
         return SpecificationUtil.columnEqual("jobName", jobName);
@@ -57,6 +61,13 @@ public class ScheduleTaskSpecs {
 
     public static Specification<ScheduleTaskEntity> fireTimeLate(Date fireTime) {
         return SpecificationUtil.columnLate("fireTime", fireTime);
+    }
+
+    public static Specification<ScheduleTaskEntity> groupByJobGroupAndStatus() {
+        return (root, query, cb) -> {
+            query.groupBy(Arrays.asList(root.get(SCHEDULE_TASK_JOB_GROUP_NAME), root.get(SCHEDULE_TASK_STATUS_NAME)));
+            return cb.conjunction();
+        };
     }
 
 }

@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -27,8 +28,17 @@ import org.springframework.data.repository.query.Param;
 import com.oceanbase.odc.config.jpa.OdcJpaRepository;
 import com.oceanbase.odc.core.shared.constant.FlowStatus;
 import com.oceanbase.odc.core.shared.constant.TaskType;
+import com.oceanbase.odc.service.flow.model.InnerQueryFlowInstanceParams;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
 import jakarta.transaction.Transactional;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
 
 /**
  * Repository layer for {@link FlowInstanceEntity}
@@ -104,27 +114,56 @@ public interface FlowInstanceRepository
     Set<FlowInstanceEntity> findByScheduleIdAndStatus(@Param("scheduleIds") Set<Long> scheduleIds,
             @Param("status") FlowStatus status);
 
-    @Query(value = "select id, parent_instance_id as parentInstanceId, status from flow_instance where parent_instance_id in (:parentInstanceId)",
-            nativeQuery = true)
-    List<FlowInstanceProjection> findProjectionByParentInstanceIdIn(
-            @Param("parentInstanceId") Collection<Long> parentInstanceId);
-
-
     @Query("select e.parentInstanceId as parentInstanceId, count(1) as count from FlowInstanceEntity e where e.parentInstanceId in (?1) group by parentInstanceId")
     List<ParentInstanceIdCount> findByParentInstanceIdIn(Collection<Long> parentInstanceId);
+
+    default Long countDistinctId(@NonNull Specification<FlowInstanceViewEntity> spec) {
+        EntityManager entityManager = getEntityManager();
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Long> query = cb.createQuery(Long.class);
+        Root<FlowInstanceViewEntity> root = query.from(FlowInstanceViewEntity.class);
+
+        query.select(cb.countDistinct(root.get(FlowInstanceViewEntity_.ID))).where(spec.toPredicate(root, query, cb));
+
+        return entityManager.createQuery(query).getSingleResult();
+    }
+
+    default List<FlowInstanceTaskTypeAndStatusCount> findFlowInstanceTaskTypeAndStatusCount(
+            @NonNull InnerQueryFlowInstanceParams params) {
+        EntityManager entityManager = getEntityManager();
+        Specification<FlowInstanceViewEntity> spec = FlowInstanceViewSpecs.projectIdIn(params.getProjectIds())
+                .and(FlowInstanceViewSpecs.taskTypeIn(params.getTaskTypes()))
+                .and(FlowInstanceViewSpecs.createTimeLate(params.getStartTime()))
+                .and(FlowInstanceViewSpecs.createTimeBefore(params.getEndTime()))
+                .and(FlowInstanceViewSpecs.parentInstanceIdIsNull())
+                .and(FlowInstanceViewSpecs.groupByTaskTypeAndStatus());
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<FlowInstanceTaskTypeAndStatusCount> query =
+                cb.createQuery(FlowInstanceTaskTypeAndStatusCount.class);
+        Root<FlowInstanceViewEntity> root = query.from(FlowInstanceViewEntity.class);
+
+        query.where(spec.toPredicate(root, query, cb));
+        query.select(cb.construct(
+                FlowInstanceTaskTypeAndStatusCount.class,
+                root.get(FlowInstanceViewEntity_.TASK_TYPE),
+                root.get(FlowInstanceViewEntity_.STATUS),
+                cb.count(root)));
+        return entityManager.createQuery(query).getResultList();
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    class FlowInstanceTaskTypeAndStatusCount {
+        private TaskType taskType;
+        private FlowStatus status;
+        private Long count;
+    }
 
     interface ParentInstanceIdCount {
 
         Long getParentInstanceId();
 
         Integer getCount();
-    }
-
-    interface FlowInstanceProjection {
-        Long getId();
-
-        Long getParentInstanceId();
-
-        FlowStatus getStatus();
     }
 }

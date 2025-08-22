@@ -13,36 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.model;
+package com.oceanbase.odc.service.collaboration.landingpage.model;
 
-import java.util.Set;
-
-import com.google.common.collect.ImmutableSet;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
 /**
- * @Author：tinker
- * @Date: 2022/11/18 17:18
- * @Descripition:
+ * @Author: ysj
+ * @Date: 2025/8/12 15:31
+ * @Since: 4.4.1
+ * @Description: task todo category
  */
-public enum ScheduleType {
+@AllArgsConstructor
+@Getter
+public enum TaskTodoCategory {
 
-    SQL_PLAN,
+    FLOW_WAIT_ME_APPROVAL("FLOW"),
 
-    PARTITION_PLAN,
+    FLOW_WAIT_ME_EXECUTION("FLOW"),
 
-    DATA_ARCHIVE,
+    SCHEDULE_WAIT_ME_APPROVAL("SCHEDULE");
 
-    DATA_DELETE,
-
-    ONLINE_SCHEMA_CHANGE_COMPLETE,
-
-    LOGICAL_DATABASE_CHANGE,
-
-    LOAD_DATA;
-
-    public static Set<ScheduleType> supportedLandingPage() {
-        return ImmutableSet.of(SQL_PLAN, PARTITION_PLAN, DATA_ARCHIVE, DATA_DELETE);
-    }
+    private final String type;
 
 }
-

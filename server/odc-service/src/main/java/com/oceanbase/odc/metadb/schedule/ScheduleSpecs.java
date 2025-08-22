@@ -40,6 +40,7 @@ import jakarta.validation.constraints.NotNull;
  */
 public class ScheduleSpecs {
     private static final String SCHEDULE_CHANGE_LOG = "scheduleChangeLog";
+    private static final String SCHEDULE_TYPE_NAME = "type";
 
     /**
      * 创建查询条件： SELECT a.* FROM schedule_schedule a INNER JOIN schedule_changelog b ON
@@ -61,6 +62,13 @@ public class ScheduleSpecs {
             //
             List<Predicate> predicateList = buildPredictList(params, cb, root, join);
             return cb.and(predicateList.toArray(new Predicate[0]));
+        };
+    }
+
+    public static Specification<ScheduleEntity> groupByScheduleType() {
+        return (root, query, cb) -> {
+            query.groupBy(root.get(SCHEDULE_TYPE_NAME));
+            return cb.conjunction();
         };
     }
 

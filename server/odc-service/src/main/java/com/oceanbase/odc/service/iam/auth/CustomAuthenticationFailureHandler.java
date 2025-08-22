@@ -15,8 +15,6 @@
  */
 package com.oceanbase.odc.service.iam.auth;
 
-import static com.oceanbase.odc.core.shared.constant.OdcConstants.ODC_BACK_URL_PARAM;
-
 import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.Locale;

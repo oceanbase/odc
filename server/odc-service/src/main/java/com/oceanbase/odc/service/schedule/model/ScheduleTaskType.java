@@ -18,6 +18,7 @@ package com.oceanbase.odc.service.schedule.model;
 import java.util.Collections;
 import java.util.Set;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
 import lombok.NonNull;
@@ -65,6 +66,11 @@ public enum ScheduleTaskType {
             return ScheduleType.DATA_ARCHIVE;
         }
         return ScheduleType.valueOf(scheduleTaskType.name());
+    }
+
+    public static Set<ScheduleTaskType> supportedLandingPage() {
+        return ImmutableSet.of(DATA_ARCHIVE, DATA_ARCHIVE_DELETE, DATA_ARCHIVE_ROLLBACK, DATA_DELETE, PARTITION_PLAN,
+                SQL_PLAN);
     }
 
 }

@@ -40,5 +40,6 @@ public class InnerQueryFlowInstanceParams {
     private Date startTime;
     private Date endTime;
     private Set<FlowStatus> flowStatus;
+    private Set<Long> projectIds;
 
 }

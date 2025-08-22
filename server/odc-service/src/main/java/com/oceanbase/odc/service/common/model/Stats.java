@@ -56,6 +56,10 @@ public class Stats extends HashMap<String, Aggregation> {
         return this;
     }
 
+    public static Stats empty() {
+        return new Stats();
+    }
+
     @Data
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class Aggregation {

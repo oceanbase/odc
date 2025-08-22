@@ -54,7 +54,6 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
@@ -92,7 +91,6 @@ import com.oceanbase.odc.metadb.collaboration.EnvironmentEntity;
 import com.oceanbase.odc.metadb.collaboration.EnvironmentRepository;
 import com.oceanbase.odc.metadb.flow.FlowInstanceEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceRepository;
-import com.oceanbase.odc.metadb.flow.FlowInstanceRepository.FlowInstanceProjection;
 import com.oceanbase.odc.metadb.flow.FlowInstanceSpecs;
 import com.oceanbase.odc.metadb.flow.FlowInstanceViewEntity;
 import com.oceanbase.odc.metadb.flow.FlowInstanceViewRepository;
@@ -146,7 +144,6 @@ import com.oceanbase.odc.service.flow.model.FlowMetaInfo;
 import com.oceanbase.odc.service.flow.model.FlowNodeInstanceDetailResp.FlowNodeInstanceMapper;
 import com.oceanbase.odc.service.flow.model.FlowNodeStatus;
 import com.oceanbase.odc.service.flow.model.FlowNodeType;
-import com.oceanbase.odc.service.flow.model.InnerQueryFlowInstanceParams;
 import com.oceanbase.odc.service.flow.model.QueryFlowInstanceParams;
 import com.oceanbase.odc.service.flow.processor.EnablePreprocess;
 import com.oceanbase.odc.service.flow.task.BaseRuntimeFlowableDelegate;
@@ -741,15 +738,20 @@ public class FlowInstanceService {
                     specification.and(FlowInstanceViewSpecs.creatorIdEquals(authenticationFacade.currentUserId()));
         }
         if (params.getApproveByCurrentUser()) {
-            Set<String> resourceRoleIdentifiers = userService.getCurrentUserResourceRoleIdentifiers();
-            // does not join any project, so there does not exist any tickets to approve
-            if (CollectionUtils.isEmpty(resourceRoleIdentifiers)) {
-                return Page.empty();
-            }
-            specification = specification.and(FlowInstanceViewSpecs.leftJoinFlowInstanceApprovalView(
-                    resourceRoleIdentifiers, null, FlowNodeStatus.getExecutingStatuses()));
+            specification = specification.and(getSpecOfApprovalByCurrent());
         }
         return flowInstanceViewRepository.findAll(specification, pageable).map(FlowInstanceEntity::from);
+    }
+
+    public Specification<FlowInstanceViewEntity> getSpecOfApprovalByCurrent() {
+        Set<String> resourceRoleIdentifiers = userService.getCurrentUserResourceRoleIdentifiers();
+        // does not join any project, so there does not exist any tickets to approve
+        if (CollectionUtils.isEmpty(resourceRoleIdentifiers)) {
+            // always false
+            return (root, query, builder) -> builder.equal(builder.literal(1), 0);
+        }
+        return FlowInstanceViewSpecs.leftJoinFlowInstanceApprovalView(
+                resourceRoleIdentifiers, null, FlowNodeStatus.getExecutingStatuses());
     }
 
     public List<FlowInstanceEntity> listByIds(@NonNull Collection<Long> ids) {
@@ -1713,95 +1715,6 @@ public class FlowInstanceService {
         return flowInstanceRepository.findFlowInstanceIdByScheduleIdAndStatus(scheduleId, status);
     }
 
-    /**
-     * This is a temporary method that only uses ODC 4.3.4
-     *
-     * @param params
-     * @return
-     */
-    private List<ServiceTaskInstanceEntity> innerListDistinctServiceTaskInstances(
-            @NonNull InnerQueryFlowInstanceParams params) {
-        StringBuilder querySql = new StringBuilder();
-        HashMap<String, Object> queryParamMap = new HashMap<>();
-        queryParamMap.put("organizationId", authenticationFacade.currentOrganizationId());
-        querySql.append("SELECT flow_instance_id, task_type FROM flow_instance_node_task ");
-        querySql.append("WHERE organization_id = :organizationId ");
-        if (CollectionUtils.isNotEmpty(params.getFlowInstanceIds())) {
-            queryParamMap.put("flowInstanceIds", params.getFlowInstanceIds());
-            querySql.append("AND flow_instance_id in (:flowInstanceIds) ");
-        }
-        if (CollectionUtils.isNotEmpty(params.getTaskTypes())) {
-            queryParamMap.put("taskTypes",
-                    params.getTaskTypes().stream().map(Enum::name).collect(Collectors.toSet()));
-            querySql.append("AND task_type in (:taskTypes) ");
-        }
-        if (params.getStartTime() != null) {
-            queryParamMap.put("startTime", params.getStartTime());
-            querySql.append("AND create_time >= :startTime ");
-        }
-        if (params.getEndTime() != null) {
-            queryParamMap.put("endTime", params.getEndTime());
-            querySql.append("AND create_time <= :endTime ");
-        }
-        querySql.append("GROUP BY flow_instance_id;");
-        return namedParameterJdbcTemplate.query(
-                querySql.toString(), queryParamMap,
-                new BeanPropertyRowMapper<>(ServiceTaskInstanceEntity.class));
-    }
-
-    public int getPartitionPlanCount(@NotNull InnerQueryFlowInstanceParams params) {
-        Set<Long> joinedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
-        if (CollectionUtils.isEmpty(joinedProjectIds)) {
-            return 0;
-        }
-        Set<Long> partitionPlanFlowInstanceIds =
-                innerListDistinctServiceTaskInstances(new InnerQueryFlowInstanceParams()
-                        .setTaskTypes(Collections.singleton(TaskType.PARTITION_PLAN))
-                        .setStartTime(params.getStartTime())
-                        .setEndTime(params.getEndTime()))
-                                .stream().map(ServiceTaskInstanceEntity::getFlowInstanceId).collect(Collectors.toSet());
-        if (CollectionUtils.isNotEmpty(partitionPlanFlowInstanceIds)) {
-            Specification<FlowInstanceEntity> spec = FlowInstanceSpecs
-                    .organizationIdEquals(authenticationFacade.currentOrganizationId())
-                    .and(FlowInstanceSpecs.idIn(partitionPlanFlowInstanceIds))
-                    .and(FlowInstanceSpecs.projectIdIn(joinedProjectIds))
-                    .and(FlowInstanceSpecs.statusIn(params.getFlowStatus()));
-            return flowInstanceRepository.findAll(spec).size();
-        }
-        return 0;
-    }
-
-    /**
-     * This is a temporary method that only uses ODC 4.3.4
-     *
-     * @param params
-     * @return
-     */
-    private List<FlowInstanceState> listPartitionPlanSubTaskStates(@NonNull InnerQueryFlowInstanceParams params) {
-        Set<Long> joinedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
-        if (CollectionUtils.isEmpty(joinedProjectIds) || CollectionUtils.isEmpty(params.getTaskTypes())
-                || !params.getTaskTypes().contains(TaskType.PARTITION_PLAN)) {
-            return Collections.emptyList();
-        }
-        Set<Long> partitionPlanFlowInstanceIds =
-                innerListDistinctServiceTaskInstances(new InnerQueryFlowInstanceParams()
-                        .setTaskTypes(Collections.singleton(TaskType.PARTITION_PLAN)))
-                                .stream().map(ServiceTaskInstanceEntity::getFlowInstanceId).collect(Collectors.toSet());
-        if (CollectionUtils.isEmpty(partitionPlanFlowInstanceIds)) {
-            return Collections.emptyList();
-        }
-        Specification<FlowInstanceEntity> spec = FlowInstanceSpecs.createTimeLate(params.getStartTime())
-                .and(FlowInstanceSpecs.createTimeBefore(params.getEndTime()))
-                .and(FlowInstanceSpecs.parentInstanceIdIn(partitionPlanFlowInstanceIds))
-                .and(FlowInstanceSpecs.projectIdIn(joinedProjectIds));
-        final List<FlowInstanceState> partitionPlanFlowInstanceStates = new ArrayList<>();
-        flowInstanceRepository.findAll(spec).forEach(flowInstance -> {
-            partitionPlanFlowInstanceStates
-                    .add(new FlowInstanceState(TaskType.PARTITION_PLAN, flowInstance.getStatus()));
-        });
-        return partitionPlanFlowInstanceStates;
-    }
-
     private void deleteFlowProcessInstance(String processInstanceID, Long flowInstanceId) {
         if (null == processInstanceID) {
             log.info("processInstanceID is null for instance id {}, return", flowInstanceId);
@@ -1819,67 +1732,10 @@ public class FlowInstanceService {
         }
     }
 
-    /**
-     * This is a temporary method that only uses ODC 4.3.4
-     *
-     * @param params
-     * @return
-     */
-    private List<FlowInstanceState> listSqlPlanSubTaskStates(@NonNull InnerQueryFlowInstanceParams params) {
-        if (CollectionUtils.isEmpty(params.getParentInstanceIds()) || CollectionUtils.isEmpty(params.getTaskTypes())) {
-            return Collections.emptyList();
-        }
-        InnerQueryFlowInstanceParams copiedParams = ObjectUtil.deepCopy(params,
-                InnerQueryFlowInstanceParams.class);
-        copiedParams.getTaskTypes().retainAll(Collections.singleton(TaskType.ASYNC));
-        Map<Long, FlowStatus> flowInstanceId2Status = flowInstanceRepository.findProjectionByParentInstanceIdIn(
-                copiedParams.getParentInstanceIds()).stream()
-                .collect(Collectors.toMap(FlowInstanceProjection::getId, FlowInstanceProjection::getStatus,
-                        (exist, replace) -> exist));
-        if (CollectionUtils.isEmpty(flowInstanceId2Status.keySet())) {
-            return Collections.emptyList();
-        }
-        copiedParams.setFlowInstanceIds(flowInstanceId2Status.keySet());
-        Map<Long, TaskType> flowInstanceId2SubTaskType = innerListDistinctServiceTaskInstances(copiedParams)
-                .stream().collect(Collectors.toMap(ServiceTaskInstanceEntity::getFlowInstanceId,
-                        ServiceTaskInstanceEntity::getTaskType, (exist, replace) -> exist));
-        final List<FlowInstanceState> flowInstanceStates = new ArrayList<>();
-        flowInstanceId2Status.forEach((id, flowStatus) -> {
-            if (flowStatus != null && flowInstanceId2SubTaskType.containsKey(id)) {
-                flowInstanceStates.add(new FlowInstanceState(TaskType.ASYNC, flowStatus));
-            }
-        });
-        return flowInstanceStates;
-    }
-
-    /**
-     * This is a temporary method that only uses ODC 4.3.4
-     *
-     * @param params
-     * @return
-     */
-    public List<FlowInstanceState> listSubTaskStates(
-            @NonNull InnerQueryFlowInstanceParams params) {
-        Set<Long> joinedProjectIds = projectService.getMemberProjectIds(authenticationFacade.currentUserId());
-        if (CollectionUtils.isEmpty(joinedProjectIds)) {
-            return Collections.emptyList();
-        }
-        List<FlowInstanceState> flowInstanceStates = listSqlPlanSubTaskStates(params);
-        flowInstanceStates.addAll(listPartitionPlanSubTaskStates(params));
-        return flowInstanceStates;
-    }
-
     @Data
     public static class ShadowTableComparingUpdateEvent {
         private Long comparingTaskId;
         private Long flowInstanceId;
-    }
-
-    @Data
-    @AllArgsConstructor
-    public static class FlowInstanceState {
-        private TaskType taskType;
-        private FlowStatus status;
     }
 
     @Getter

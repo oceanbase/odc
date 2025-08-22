@@ -13,36 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.model;
+package com.oceanbase.odc.service.collaboration.landingpage.model;
 
+import java.util.Date;
 import java.util.Set;
 
-import com.google.common.collect.ImmutableSet;
+import lombok.Data;
+import lombok.experimental.SuperBuilder;
 
 /**
- * @Author：tinker
- * @Date: 2022/11/18 17:18
- * @Descripition:
+ * @Author: ysj
+ * @Date: 2025/7/30 14:19
+ * @Since: 4.4.0
+ * @Description:
  */
-public enum ScheduleType {
+@Data
+@SuperBuilder
+public class QueryStatParams {
 
-    SQL_PLAN,
+    private Set<Long> projectIds;
 
-    PARTITION_PLAN,
+    private Date startTime;
 
-    DATA_ARCHIVE,
-
-    DATA_DELETE,
-
-    ONLINE_SCHEMA_CHANGE_COMPLETE,
-
-    LOGICAL_DATABASE_CHANGE,
-
-    LOAD_DATA;
-
-    public static Set<ScheduleType> supportedLandingPage() {
-        return ImmutableSet.of(SQL_PLAN, PARTITION_PLAN, DATA_ARCHIVE, DATA_DELETE);
-    }
-
+    private Date endTime;
 }
-

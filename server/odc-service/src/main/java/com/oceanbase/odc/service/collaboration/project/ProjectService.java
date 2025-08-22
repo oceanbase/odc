@@ -17,6 +17,7 @@ package com.oceanbase.odc.service.collaboration.project;
 
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -40,6 +41,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+import com.oceanbase.odc.common.util.ObjectUtil;
 import com.oceanbase.odc.core.authority.util.Authenticated;
 import com.oceanbase.odc.core.authority.util.PreAuthenticate;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
@@ -568,6 +570,21 @@ public class ProjectService {
     public Set<Long> getMemberProjectIds(Long userId) {
         return resourceRoleService.listByUserId(userId).stream().filter(UserResourceRole::isProjectMember)
                 .map(UserResourceRole::getResourceId).collect(Collectors.toSet());
+    }
+
+    @SkipAuthorize("internal usage")
+    public Set<Long> checkAndGetJoinedProjectIds(Set<Long> projectIds) {
+        Set<Long> joinedProjectIds = getMemberProjectIds(authenticationFacade.currentUserId());
+        if (CollectionUtils.isEmpty(joinedProjectIds)) {
+            return Collections.emptySet();
+        }
+        Set<Long> checkedProjectIds = ObjectUtil.defaultIfNull(projectIds, new HashSet<Long>())
+                .stream().filter(Objects::nonNull).collect(Collectors.toSet());
+        if (CollectionUtils.isEmpty(checkedProjectIds)) {
+            return joinedProjectIds;
+        }
+        checkedProjectIds.retainAll(joinedProjectIds);
+        return checkedProjectIds;
     }
 
     @SkipAuthorize("odc internal usage")

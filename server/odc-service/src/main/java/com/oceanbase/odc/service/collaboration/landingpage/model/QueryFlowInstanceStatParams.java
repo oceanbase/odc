@@ -13,26 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.schedule.model;
+package com.oceanbase.odc.service.collaboration.landingpage.model;
 
-import java.util.Date;
 import java.util.Set;
 
-import lombok.Builder;
+import com.oceanbase.odc.core.shared.constant.TaskType;
+
+import cn.hutool.core.collection.CollUtil;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.SuperBuilder;
 
 /**
  * @Author: ysj
- * @Date: 2025/2/25 10:06
- * @Since: 4.3.4
+ * @Date: 2025/6/6 18:18
+ * @Since: 4.4.0
  * @Description:
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
-@Builder
-public class QueryScheduleStatParams {
-    private Set<Long> scheduleIds;
-    private Set<ScheduleType> scheduleTypes;
-    private Date startTime;
-    private Date endTime;
-    private Set<ScheduleStatus> statuses;
+@SuperBuilder
+public class QueryFlowInstanceStatParams extends QueryStatParams {
+    private Set<TaskType> taskTypes;
+
+    public Set<TaskType> getTaskTypes() {
+        return CollUtil.intersectionDistinct(taskTypes, TaskType.supportedLandingPage());
+    }
 }

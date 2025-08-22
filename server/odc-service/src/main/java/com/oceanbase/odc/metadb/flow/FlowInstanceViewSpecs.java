@@ -49,6 +49,7 @@ public class FlowInstanceViewSpecs {
     private static final String FLOW_INSTANCE_VIEW_CREATE_TIME_NAME = "createTime";
     private static final String FLOW_INSTANCE_VIEW_PROJECT_ID = "projectId";
     private static final String FLOW_INSTANCE_VIEW_TASK_TYPE = "taskType";
+    private static final String FLOW_INSTANCE_VIEW_PARENT_INSTANCE_ID = "parentInstanceId";
     private static final String FLOW_INSTANCE_VIEW_DESCRIPTION = "description";
     private static final String FLOW_INSTANCE_VIEW_DATABASE_NAMES = "databaseNames";
     private static final String FLOW_INSTANCE_VIEW_DATASOURCE_NAMES = "datasourceNames";
@@ -104,6 +105,10 @@ public class FlowInstanceViewSpecs {
         return SpecificationUtil.columnIn(FLOW_INSTANCE_VIEW_TASK_TYPE, taskTypes);
     }
 
+    public static Specification<FlowInstanceViewEntity> parentInstanceIdIsNull() {
+        return SpecificationUtil.columnIsNull(FLOW_INSTANCE_VIEW_PARENT_INSTANCE_ID);
+    }
+
     public static Specification<FlowInstanceViewEntity> descriptionLike(String description) {
         return SpecificationUtil.columnLike(FLOW_INSTANCE_VIEW_DESCRIPTION, description);
     }
@@ -127,6 +132,14 @@ public class FlowInstanceViewSpecs {
     public static Specification<FlowInstanceViewEntity> groupByIdAndTaskType() {
         return (root, query, cb) -> {
             query.groupBy(Arrays.asList(root.get(FLOW_INSTANCE_VIEW_ID_NAME), root.get(FLOW_INSTANCE_VIEW_TASK_TYPE)));
+            return cb.conjunction();
+        };
+    }
+
+    public static Specification<FlowInstanceViewEntity> groupByTaskTypeAndStatus() {
+        return (root, query, cb) -> {
+            query.groupBy(
+                    Arrays.asList(root.get(FLOW_INSTANCE_VIEW_TASK_TYPE), root.get(FLOW_INSTANCE_VIEW_STATUS_NAME)));
             return cb.conjunction();
         };
     }

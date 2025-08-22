@@ -69,6 +69,7 @@ public class FlowPermissionHelper {
                                 Arrays.asList(ResourceRoleName.OWNER, ResourceRoleName.DBA)));
     }
 
+
     public Consumer<FlowInstance> withApprovableCheck() {
         return flowInstance -> {
             List<UserTaskInstanceEntity> entities = approvalPermissionService.getApprovableApprovalInstances();
