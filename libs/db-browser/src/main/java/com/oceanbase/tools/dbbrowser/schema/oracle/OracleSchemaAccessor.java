@@ -16,8 +16,6 @@
 package com.oceanbase.tools.dbbrowser.schema.oracle;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -47,6 +45,8 @@ import com.oceanbase.tools.dbbrowser.model.DBConstraintDeferability;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
+import com.oceanbase.tools.dbbrowser.model.DBExternalResourceDetailParam;
+import com.oceanbase.tools.dbbrowser.model.DBExternalResourceStreamHolder;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceUploadParam;
 import com.oceanbase.tools.dbbrowser.model.DBForeignKeyModifyRule;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
@@ -130,7 +130,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public DBExternalResource getExternalResource(String schemaName, String name, Charset charset) throws IOException {
+    public DBExternalResource getExternalResource(DBExternalResourceDetailParam param) throws IOException {
         throw new UnsupportedOperationException("not support yet");
     }
 
@@ -145,8 +145,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public InputStream downloadExternalResource(String schemaName, String name)
-            throws IOException {
+    public DBExternalResourceStreamHolder downloadExternalResource(String schemaName, String name) {
         throw new UnsupportedOperationException("not support yet");
     }
 

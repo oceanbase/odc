@@ -18,7 +18,6 @@ package com.oceanbase.odc.service.db;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 
@@ -30,6 +29,7 @@ import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.oceanbase.odc.common.util.StringUtils;
 import com.oceanbase.odc.core.authority.util.SkipAuthorize;
 import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.core.session.ConnectionSessionConstants;
@@ -46,6 +46,8 @@ import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
+import com.oceanbase.tools.dbbrowser.model.DBExternalResourceDetailParam;
+import com.oceanbase.tools.dbbrowser.model.DBExternalResourceStreamHolder;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceUploadParam;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 
@@ -77,11 +79,17 @@ public class DBExternalResourceService {
 
     public Boolean upload(ConnectionSession connectionSession, DBExternalResourceUploadParam param,
             MultipartFile file) {
+        if (list(connectionSession, param.getSchemaName()).stream()
+                .anyMatch(o -> StringUtils.equals(o.getName(), param.getName()))) {
+            throw new IllegalArgumentException(String.format("Resource %s already exists", param.getName()));
+        }
         Long databaseId = getDatabaseIdByConnectionSession(connectionSession);
         permissionHelper.checkDBPermissions(Collections.singleton(databaseId),
                 Collections.singleton(DatabasePermissionType.CHANGE));
         if (file.getSize() > properties.getUploadBytesLimit()) {
-            throw new IllegalArgumentException("File size is too large");
+            throw new IllegalArgumentException(
+                    String.format("Resource is too large, the maximum size of the uploaded file cannot exceed %d bytes",
+                            properties.getUploadBytesLimit()));
         }
         return objectStorageExecutor.concurrentSafeExecute(() -> {
             try (InputStream inputStream = file.getInputStream()) {
@@ -100,25 +108,24 @@ public class DBExternalResourceService {
         });
     }
 
-    public InputStreamResource download(ConnectionSession connectionSession, String schemaName, String resourceName) {
-        return objectStorageExecutor.concurrentSafeExecute(() -> connectionSession.getSyncJdbcExecutor(
-                ConnectionSessionConstants.BACKEND_DS_KEY).execute((ConnectionCallback<InputStreamResource>) con -> {
-                    InputStream inputStream = null;
-                    try {
-                        inputStream = getExternalResourceExtensionPoint(connectionSession).download(con, schemaName,
-                                resourceName);
-                        return new InputStreamResource(inputStream);
-                    } catch (IOException e) {
-                        if (inputStream != null) {
-                            try {
-                                inputStream.close();
-                            } catch (IOException ex) {
-                                throw new UncheckedIOException(ex);
-                            }
-                        }
-                        throw new UncheckedIOException(e);
-                    }
-                }));
+    public InputStreamResource download(ConnectionSession connectionSession, String schemaName, String resourceName)
+            throws IOException {
+        if (list(connectionSession, schemaName).stream()
+                .allMatch(o -> !StringUtils.equals(o.getName(), resourceName))) {
+            throw new IllegalArgumentException(String.format("Resource %s does not exist", resourceName));
+        }
+        DBExternalResourceStreamHolder holder = connectionSession.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY).execute(
+                        (ConnectionCallback<DBExternalResourceStreamHolder>) con -> DBExternalResourceService.this
+                                .getExternalResourceExtensionPoint(connectionSession).download(
+                                        con, schemaName, resourceName));
+        if (holder.getTotalSize() > properties.getDownloadBytesLimit()) {
+            holder.close();
+            throw new IllegalStateException(String.format(
+                    "Resource is too large, the maximum size of the downloaded file cannot exceed %d bytes",
+                    properties.getUploadBytesLimit()));
+        }
+        return new InputStreamResource(holder.getInputStream());
     }
 
     public List<DBObjectIdentity> list(ConnectionSession connectionSession, String dbName) {
@@ -128,15 +135,25 @@ public class DBExternalResourceService {
                         connectionSession).list(con, dbName));
     }
 
-    public DBExternalResource detail(ConnectionSession connectionSession, String dbName, String resourceName) {
+    public DBExternalResource detail(ConnectionSession connectionSession, DBExternalResourceDetailParam param) {
+        if (list(connectionSession, param.getSchemaName()).stream()
+                .allMatch(o -> !StringUtils.equals(o.getName(), param.getName()))) {
+            throw new IllegalArgumentException(String.format("Resource %s does not exist", param.getName()));
+        }
+        if (param.getSupportViewBytes() > properties.getGetContentBytesLimit()) {
+            param.setSupportViewBytes(properties.getGetContentBytesLimit());
+        }
+        // The character set is based on the front-end input. If not available, follow the default
+        // configuration.
+        if (param.getCharset() == null) {
+            param.setCharset(properties.getCharset());
+        }
         return connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.BACKEND_DS_KEY)
                 .execute((ConnectionCallback<DBExternalResource>) con -> {
                     try {
                         return getExternalResourceExtensionPoint(connectionSession)
-                                .getDetail(con,
-                                        dbName, resourceName,
-                                        StandardCharsets.UTF_8);
+                                .getDetail(con, param);
                     } catch (IOException e) {
                         throw new UncheckedIOException(e);
                     }
@@ -144,6 +161,9 @@ public class DBExternalResourceService {
     }
 
     public Boolean drop(ConnectionSession connectionSession, String dbName, String resourceName) {
+        if (list(connectionSession, dbName).stream().allMatch(o -> !StringUtils.equals(o.getName(), resourceName))) {
+            throw new IllegalArgumentException(String.format("Resource %s does not exist", resourceName));
+        }
         Long databaseId = getDatabaseIdByConnectionSession(connectionSession);
         permissionHelper.checkDBPermissions(Collections.singleton(databaseId),
                 Collections.singleton(DatabasePermissionType.CHANGE));

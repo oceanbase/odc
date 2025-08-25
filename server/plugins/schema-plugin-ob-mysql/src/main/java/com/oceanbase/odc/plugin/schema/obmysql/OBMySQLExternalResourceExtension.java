@@ -16,8 +16,6 @@
 package com.oceanbase.odc.plugin.schema.obmysql;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.util.List;
 
@@ -26,13 +24,14 @@ import org.pf4j.Extension;
 import com.oceanbase.odc.plugin.schema.api.ExternalResourceExtensionPoint;
 import com.oceanbase.odc.plugin.schema.obmysql.utils.DBAccessorUtil;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
+import com.oceanbase.tools.dbbrowser.model.DBExternalResourceDetailParam;
+import com.oceanbase.tools.dbbrowser.model.DBExternalResourceStreamHolder;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceUploadParam;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import lombok.NonNull;
 
 /**
  * @description:
@@ -50,9 +49,8 @@ public class OBMySQLExternalResourceExtension implements ExternalResourceExtensi
     }
 
     @Override
-    public InputStream download(@NotNull Connection connection, @NotEmpty String schemaName,
-            @NotEmpty String resourceName)
-            throws IOException {
+    public DBExternalResourceStreamHolder download(@NotNull Connection connection, @NotEmpty String schemaName,
+            @NotEmpty String resourceName) {
         return getSchemaAccessor(connection).downloadExternalResource(schemaName, resourceName);
     }
 
@@ -62,10 +60,9 @@ public class OBMySQLExternalResourceExtension implements ExternalResourceExtensi
     }
 
     @Override
-    public DBExternalResource getDetail(@NotNull Connection connection, @NotEmpty String schemaName,
-            @NotEmpty String resourceName, @NonNull Charset charset)
+    public DBExternalResource getDetail(@NotNull Connection connection, @NotNull DBExternalResourceDetailParam param)
             throws IOException {
-        return getSchemaAccessor(connection).getExternalResource(schemaName, resourceName, charset);
+        return getSchemaAccessor(connection).getExternalResource(param);
     }
 
     @Override

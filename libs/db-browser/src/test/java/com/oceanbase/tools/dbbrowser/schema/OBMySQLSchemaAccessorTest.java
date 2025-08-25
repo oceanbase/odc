@@ -20,7 +20,6 @@ import static org.junit.Assume.assumeTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -40,6 +39,8 @@ import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
+import com.oceanbase.tools.dbbrowser.model.DBExternalResourceDetailParam;
+import com.oceanbase.tools.dbbrowser.model.DBExternalResourceStreamHolder;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceType;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceUploadParam;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
@@ -175,8 +176,10 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     @Test
     public void getExternalResource_UploadJavaJar_Success() throws IOException {
         assumeTrue(isSupportJavaAndPythonUdf);
-        DBExternalResource testJavaUdf =
-                accessor.getExternalResource(getOBMySQLDataBaseName(), resources.get(0), StandardCharsets.UTF_8);
+        DBExternalResourceDetailParam param = new DBExternalResourceDetailParam();
+        param.setSchemaName(getOBMySQLDataBaseName());
+        param.setName(resources.get(0));
+        DBExternalResource testJavaUdf = accessor.getExternalResource(param);
         Assert.assertEquals(DBExternalResourceType.JAVA_JAR, testJavaUdf.getType());
         Assert.assertEquals(getOBMySQLDataBaseName(), testJavaUdf.getSchemaName());
         Assert.assertEquals(resources.get(0), testJavaUdf.getName());
@@ -197,8 +200,11 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     @Test
     public void downLoadExternalResource_UploadJavaJar_Success() throws IOException {
         assumeTrue(isSupportJavaAndPythonUdf);
-        try (InputStream inputStream =
-                accessor.downloadExternalResource(getOBMySQLDataBaseName(), resources.get(0))) {
+        DBExternalResourceStreamHolder holder =
+                accessor.downloadExternalResource(getOBMySQLDataBaseName(), resources.get(0));
+        Assert.assertEquals(DBExternalResourceType.JAVA_JAR, holder.getType());
+        Assert.assertTrue(holder.getTotalSize() > 0);
+        try (InputStream inputStream = holder.getInputStream()) {
             byte[] bytes = new byte[1024];
             Assert.assertTrue(inputStream.read(bytes) > 0);
         }

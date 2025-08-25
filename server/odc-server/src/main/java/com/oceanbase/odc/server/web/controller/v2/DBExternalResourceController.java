@@ -15,7 +15,7 @@
  */
 package com.oceanbase.odc.server.web.controller.v2;
 
-import java.sql.SQLException;
+import java.io.IOException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -41,6 +42,7 @@ import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.odc.service.state.model.StateName;
 import com.oceanbase.odc.service.state.model.StatefulRoute;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
+import com.oceanbase.tools.dbbrowser.model.DBExternalResourceDetailParam;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceUploadParam;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 
@@ -67,8 +69,7 @@ public class DBExternalResourceController {
     @GetMapping(value = "/{sessionId}/databases/{databaseName}/externalResources")
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public ListResponse<DBObjectIdentity> list(@PathVariable String sessionId,
-            @PathVariable String databaseName)
-            throws SQLException, InterruptedException {
+            @PathVariable String databaseName) {
         ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
         return Responses.list(externalResourceService.list(session, databaseName));
     }
@@ -78,14 +79,17 @@ public class DBExternalResourceController {
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public SuccessResponse<DBExternalResource> detail(@PathVariable String sessionId,
             @PathVariable String databaseName,
-            @PathVariable String resourceName) {
+            @PathVariable String resourceName,
+            @RequestBody DBExternalResourceDetailParam param) {
+        param.setName(resourceName);
+        param.setSchemaName(databaseName);
         ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
-        return Responses.success(externalResourceService.detail(session, databaseName, resourceName));
+        return Responses.success(externalResourceService.detail(session, param));
     }
 
     @ApiOperation(value = "uploadExternalResource", notes = "upload External Resource to the business database.")
     @PostMapping(
-            value = "/{sessionId}/databases/{databaseName}/externalResources/{resourceName}/uploadExternalResource")
+            value = "/{sessionId}/databases/{databaseName}/externalResources/{resourceName}/upload")
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public SuccessResponse<Boolean> uploadExternalResource(@PathVariable String sessionId,
             @PathVariable String databaseName,
@@ -100,14 +104,14 @@ public class DBExternalResourceController {
 
     @ApiOperation(value = "downloadExternalResource", notes = "download ExternalResource from the business database.")
     @PostMapping(
-            value = "/{sessionId}/databases/{databaseName}/externalResources/{resourceName}/downloadExternalResource")
+            value = "/{sessionId}/databases/{databaseName}/externalResources/{resourceName}/download")
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public ResponseEntity<InputStreamResource> downloadExternalResource(@PathVariable String sessionId,
             @PathVariable String databaseName,
-            @PathVariable String resourceName) {
+            @PathVariable String resourceName) throws IOException {
         ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
         InputStreamResource download = externalResourceService.download(session, databaseName, resourceName);
-        return WebResponseUtils.getFileAttachmentResponseEntity(download, databaseName + '.' + resourceName);
+        return WebResponseUtils.getFileAttachmentResponseEntity(download, databaseName + '_' + resourceName);
     }
 
     @ApiOperation(value = "deleteExternalResource", notes = "delete External Resource in the business database.")

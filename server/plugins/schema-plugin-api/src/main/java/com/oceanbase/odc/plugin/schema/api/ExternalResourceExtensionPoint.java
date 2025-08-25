@@ -16,14 +16,14 @@
 package com.oceanbase.odc.plugin.schema.api;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.util.List;
 
 import org.pf4j.ExtensionPoint;
 
 import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
+import com.oceanbase.tools.dbbrowser.model.DBExternalResourceDetailParam;
+import com.oceanbase.tools.dbbrowser.model.DBExternalResourceStreamHolder;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceUploadParam;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 
@@ -38,11 +38,11 @@ public interface ExternalResourceExtensionPoint extends ExtensionPoint {
 
     Boolean upload(Connection connection, DBExternalResourceUploadParam param) throws IOException;
 
-    InputStream download(Connection connection, String schemaName, String resourceName) throws IOException;
+    DBExternalResourceStreamHolder download(Connection connection, String schemaName, String resourceName);
 
     List<DBObjectIdentity> list(Connection connection, String schemaName);
 
-    DBExternalResource getDetail(Connection connection, String schemaName, String resourceName, Charset charset)
+    DBExternalResource getDetail(Connection connection, DBExternalResourceDetailParam param)
             throws IOException;
 
     Boolean drop(Connection connection, String schemaName, String resourceName);

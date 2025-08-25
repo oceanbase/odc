@@ -13,34 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.db.model;
+package com.oceanbase.tools.dbbrowser.model;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.cloud.context.config.annotation.RefreshScope;
-import org.springframework.context.annotation.Configuration;
 
 import lombok.Data;
 
 /**
  * @description:
  * @author: zijia.cj
- * @date: 2025/8/25 12:15
+ * @date: 2025/8/25 14:45
  * @since: 4.4.1
  */
 @Data
-@RefreshScope
-@Configuration
-@ConfigurationProperties(prefix = "odc.external.resource")
-public class DBExternalResourceProperties {
+public class DBExternalResourceDetailParam {
 
-    private Long uploadBytesLimit = 512 * 1024 * 1024L;
-    private Long downloadBytesLimit = 512 * 1024 * 1024L;
-    private Integer getContentBytesLimit = 1 * 1024 * 1024;
+    private String schemaName;
+
+    private String name;
+
+    // Limit size to 1mb
+    private Integer supportViewBytes = 1024 * 1024;
+
     private Charset charset = StandardCharsets.UTF_8;
-    private Integer concurrencyNumberLimit = 16;
-    private Long waitLockTimeoutMillSeconds = 10 * 1000L;
 
 }

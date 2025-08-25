@@ -16,14 +16,14 @@
 package com.oceanbase.tools.dbbrowser.schema;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
 
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
+import com.oceanbase.tools.dbbrowser.model.DBExternalResourceDetailParam;
+import com.oceanbase.tools.dbbrowser.model.DBExternalResourceStreamHolder;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceUploadParam;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBMViewLogPurgeParameter;
@@ -183,7 +183,7 @@ public interface DBSchemaAccessor {
     /**
      * Get external resource details
      */
-    DBExternalResource getExternalResource(String schemaName, String name, Charset charset) throws IOException;
+    DBExternalResource getExternalResource(DBExternalResourceDetailParam param) throws IOException;
 
     /**
      * delete external resource
@@ -198,8 +198,7 @@ public interface DBSchemaAccessor {
     /**
      * download external resource
      */
-    InputStream downloadExternalResource(String schemaName, String name)
-            throws IOException;
+    DBExternalResourceStreamHolder downloadExternalResource(String schemaName, String name);
 
     /**
      * List all materialized view logs as DBObjectIdentity in the specified schema
