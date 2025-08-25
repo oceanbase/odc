@@ -21,6 +21,7 @@ import org.pf4j.ExtensionPoint;
 
 import com.oceanbase.odc.core.shared.constant.DialectType;
 import com.oceanbase.odc.plugin.schema.api.DatabaseExtensionPoint;
+import com.oceanbase.odc.plugin.schema.api.ExternalResourceExtensionPoint;
 import com.oceanbase.odc.plugin.schema.api.FunctionExtensionPoint;
 import com.oceanbase.odc.plugin.schema.api.MViewExtensionPoint;
 import com.oceanbase.odc.plugin.schema.api.MViewLogExtensionPoint;
@@ -62,6 +63,10 @@ public class SchemaPluginUtil {
 
     public static MViewLogExtensionPoint getMViewLogExtension(DialectType dialectType) {
         return getSingletonExtension(dialectType, MViewLogExtensionPoint.class);
+    }
+
+    public static ExternalResourceExtensionPoint getExternalResourceExtensionPoint(DialectType dialectType) {
+        return getSingletonExtension(dialectType, ExternalResourceExtensionPoint.class);
     }
 
     public static FunctionExtensionPoint getFunctionExtension(DialectType dialectType) {

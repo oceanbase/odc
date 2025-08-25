@@ -16,6 +16,7 @@
 package com.oceanbase.tools.dbbrowser.schema.postgre;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
@@ -29,7 +30,6 @@ import org.springframework.jdbc.core.JdbcOperations;
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
-import com.oceanbase.tools.dbbrowser.model.DBExternalResourceStream;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceUploadParam;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBMViewLogPurgeParameter;
@@ -92,7 +92,7 @@ public class PostgresSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public DBExternalResourceStream downloadExternalResource(String schemaName, String name, Charset charset)
+    public InputStream downloadExternalResource(String schemaName, String name)
             throws IOException {
         throw new UnsupportedOperationException("not support yet");
     }

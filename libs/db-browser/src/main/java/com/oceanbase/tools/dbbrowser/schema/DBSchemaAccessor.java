@@ -16,6 +16,7 @@
 package com.oceanbase.tools.dbbrowser.schema;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +24,6 @@ import java.util.Map;
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
-import com.oceanbase.tools.dbbrowser.model.DBExternalResourceStream;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceUploadParam;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBMViewLogPurgeParameter;
@@ -198,7 +198,7 @@ public interface DBSchemaAccessor {
     /**
      * download external resource
      */
-    DBExternalResourceStream downloadExternalResource(String schemaName, String name, Charset charset)
+    InputStream downloadExternalResource(String schemaName, String name)
             throws IOException;
 
     /**

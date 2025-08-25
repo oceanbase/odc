@@ -38,7 +38,6 @@ import org.springframework.jdbc.core.JdbcOperations;
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
-import com.oceanbase.tools.dbbrowser.model.DBExternalResourceStream;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceType;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceUploadParam;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
@@ -172,23 +171,23 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     }
 
     @Override
-    public DBExternalResourceStream downloadExternalResource(String schemaName, String name, Charset charset) throws IOException {
+    public InputStream downloadExternalResource(String schemaName, String name) throws IOException {
         String sql = """
-        SELECT        
-            TYPE,
+        SELECT  
             CONTENT
         FROM OCEANBASE.DBA_OB_EXTERNAL_RESOURCES
         WHERE DATABASE_NAME = ?
           AND NAME = ?
         """;
-        final DBExternalResourceStream[] dbExternalResourceStream = new DBExternalResourceStream[1];
-        jdbcOperations.query(sql, ps -> {
+        return jdbcOperations.query(sql, ps -> {
             ps.setString(1, schemaName);
             ps.setString(2, name);
         }, rs -> {
-            dbExternalResourceStream[0]= new DBExternalResourceStream(rs.getBinaryStream("CONTENT"),DBExternalResourceType.valueOf(rs.getString("TYPE")));
+            if (rs.next()) {
+                return rs.getBinaryStream("CONTENT");
+            }
+            throw new IllegalArgumentException("External resource not found: " + schemaName + "." + name);
         });
-        return dbExternalResourceStream[0];
     }
 
     @Override

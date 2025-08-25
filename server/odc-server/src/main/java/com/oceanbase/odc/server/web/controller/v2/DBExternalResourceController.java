@@ -15,6 +15,7 @@
  */
 package com.oceanbase.odc.server.web.controller.v2;
 
+import java.io.IOException;
 import java.sql.SQLException;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,18 +26,23 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.oceanbase.odc.core.shared.exception.NotImplementedException;
+import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.service.common.response.ListResponse;
+import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
+import com.oceanbase.odc.service.common.util.WebResponseUtils;
+import com.oceanbase.odc.service.db.DBExternalResourceService;
 import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.odc.service.state.model.StateName;
 import com.oceanbase.odc.service.state.model.StatefulRoute;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
+import com.oceanbase.tools.dbbrowser.model.DBExternalResourceUploadParam;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 
 import io.swagger.annotations.ApiOperation;
@@ -55,13 +61,17 @@ public class DBExternalResourceController {
     @Autowired
     private ConnectSessionService sessionService;
 
+    @Autowired
+    private DBExternalResourceService externalResourceService;
+
     @ApiOperation(value = "list", notes = "obtain a list of all external resources under the specified database.")
     @GetMapping(value = "/{sessionId}/databases/{databaseName}/externalResources")
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public ListResponse<DBObjectIdentity> list(@PathVariable String sessionId,
-            @PathVariable Long databaseName)
+            @PathVariable String databaseName)
             throws SQLException, InterruptedException {
-        throw new NotImplementedException();
+        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
+        return Responses.list(externalResourceService.list(session, databaseName));
     }
 
     @ApiOperation(value = "detail", notes = "obtain details for the specified external resource.")
@@ -69,8 +79,9 @@ public class DBExternalResourceController {
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public SuccessResponse<DBExternalResource> detail(@PathVariable String sessionId,
             @PathVariable String databaseName,
-            @PathVariable String resourceName) {
-        throw new NotImplementedException();
+            @PathVariable String resourceName) throws IOException {
+        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
+        return Responses.success(externalResourceService.detail(session, databaseName, resourceName));
     }
 
     @ApiOperation(value = "uploadExternalResource", notes = "upload External Resource to the business database.")
@@ -80,8 +91,12 @@ public class DBExternalResourceController {
     public SuccessResponse<Boolean> uploadExternalResource(@PathVariable String sessionId,
             @PathVariable String databaseName,
             @PathVariable String resourceName,
-            @RequestParam("file") MultipartFile file) {
-        throw new NotImplementedException();
+            @RequestBody DBExternalResourceUploadParam param,
+            @RequestParam("file") MultipartFile file) throws IOException {
+        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
+        param.setSchemaName(databaseName);
+        param.setName(resourceName);
+        return Responses.success(externalResourceService.upload(session, param, file));
     }
 
     @ApiOperation(value = "downloadExternalResource", notes = "download ExternalResource from the business database.")
@@ -90,18 +105,21 @@ public class DBExternalResourceController {
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public ResponseEntity<InputStreamResource> downloadExternalResource(@PathVariable String sessionId,
             @PathVariable String databaseName,
-            @PathVariable String resourceName) {
-        throw new NotImplementedException();
+            @PathVariable String resourceName) throws IOException {
+        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
+        InputStreamResource download = externalResourceService.download(session, databaseName, resourceName);
+        return WebResponseUtils.getFileAttachmentResponseEntity(download, databaseName + '.' + resourceName);
     }
 
     @ApiOperation(value = "deleteExternalResource", notes = "delete External Resource in the business database.")
     @DeleteMapping(
-            value = "/{sessionId}/databases/{databaseName}/externalResources/{resourceName}/deleteExternalResource")
+            value = "/{sessionId}/databases/{databaseName}/externalResources/{resourceName}")
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public SuccessResponse<Boolean> deleteExternalResource(@PathVariable String sessionId,
             @PathVariable String databaseName,
             @PathVariable String resourceName) {
-        throw new NotImplementedException();
+        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
+        return Responses.success(externalResourceService.drop(session, databaseName, resourceName));
     }
 
 }

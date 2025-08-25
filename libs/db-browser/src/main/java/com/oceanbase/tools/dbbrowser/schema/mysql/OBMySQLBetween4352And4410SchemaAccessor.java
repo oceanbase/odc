@@ -16,13 +16,13 @@
 package com.oceanbase.tools.dbbrowser.schema.mysql;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.List;
 
 import org.springframework.jdbc.core.JdbcOperations;
 
 import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
-import com.oceanbase.tools.dbbrowser.model.DBExternalResourceStream;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceUploadParam;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 
@@ -59,7 +59,7 @@ public class OBMySQLBetween4352And4410SchemaAccessor extends OBMySQLSchemaAccess
     }
 
     @Override
-    public DBExternalResourceStream downloadExternalResource(String schemaName, String name, Charset charset)
+    public InputStream downloadExternalResource(String schemaName, String name)
             throws IOException {
         throw new UnsupportedOperationException("not support yet");
     }

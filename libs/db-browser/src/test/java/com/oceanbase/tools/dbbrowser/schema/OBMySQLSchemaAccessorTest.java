@@ -40,7 +40,6 @@ import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
-import com.oceanbase.tools.dbbrowser.model.DBExternalResourceStream;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceType;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceUploadParam;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
@@ -186,7 +185,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
-    public void ListExternalResource_UploadJavaJar_Success() throws IOException {
+    public void ListExternalResource_UploadJavaJar_Success() {
         assumeTrue(isSupportJavaAndPythonUdf);
         List<DBObjectIdentity> dbObjectIdentities = accessor.listExternalResources(getOBMySQLDataBaseName());
         dbObjectIdentities.forEach(dbObjectIdentity -> {
@@ -198,13 +197,10 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     @Test
     public void downLoadExternalResource_UploadJavaJar_Success() throws IOException {
         assumeTrue(isSupportJavaAndPythonUdf);
-        try (DBExternalResourceStream dbExternalResourceStream =
-                accessor.downloadExternalResource(getOBMySQLDataBaseName(), resources.get(0), StandardCharsets.UTF_8);
-                InputStream inputStream = dbExternalResourceStream.getInputStream()) {
-            if (dbExternalResourceStream.getType() == DBExternalResourceType.JAVA_JAR) {
-                byte[] bytes = new byte[1024];
-                Assert.assertTrue(inputStream.read(bytes) > 0);
-            }
+        try (InputStream inputStream =
+                accessor.downloadExternalResource(getOBMySQLDataBaseName(), resources.get(0))) {
+            byte[] bytes = new byte[1024];
+            Assert.assertTrue(inputStream.read(bytes) > 0);
         }
     }
 
