@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.server.web.controller.v2;
 
-import java.io.IOException;
 import java.sql.SQLException;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,9 +25,9 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -79,7 +78,7 @@ public class DBExternalResourceController {
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public SuccessResponse<DBExternalResource> detail(@PathVariable String sessionId,
             @PathVariable String databaseName,
-            @PathVariable String resourceName) throws IOException {
+            @PathVariable String resourceName) {
         ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
         return Responses.success(externalResourceService.detail(session, databaseName, resourceName));
     }
@@ -91,8 +90,8 @@ public class DBExternalResourceController {
     public SuccessResponse<Boolean> uploadExternalResource(@PathVariable String sessionId,
             @PathVariable String databaseName,
             @PathVariable String resourceName,
-            @RequestBody DBExternalResourceUploadParam param,
-            @RequestParam("file") MultipartFile file) throws IOException {
+            @RequestPart("param") DBExternalResourceUploadParam param,
+            @RequestParam("file") MultipartFile file) {
         ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
         param.setSchemaName(databaseName);
         param.setName(resourceName);
@@ -105,7 +104,7 @@ public class DBExternalResourceController {
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public ResponseEntity<InputStreamResource> downloadExternalResource(@PathVariable String sessionId,
             @PathVariable String databaseName,
-            @PathVariable String resourceName) throws IOException {
+            @PathVariable String resourceName) {
         ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
         InputStreamResource download = externalResourceService.download(session, databaseName, resourceName);
         return WebResponseUtils.getFileAttachmentResponseEntity(download, databaseName + '.' + resourceName);

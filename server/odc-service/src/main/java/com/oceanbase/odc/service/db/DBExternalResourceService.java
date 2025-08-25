@@ -17,9 +17,12 @@ package com.oceanbase.odc.service.db;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
+
+import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
@@ -37,6 +40,8 @@ import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.plugin.schema.api.ExternalResourceExtensionPoint;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.db.model.DBExternalResourceProperties;
+import com.oceanbase.odc.service.objectstorage.ObjectStorageExecutor;
 import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
@@ -60,52 +65,60 @@ public class DBExternalResourceService {
     private DatabaseRepository databaseRepository;
     @Autowired
     private DBResourcePermissionHelper permissionHelper;
+    @Autowired
+    private DBExternalResourceProperties properties;
+    private ObjectStorageExecutor objectStorageExecutor;
 
-    public Boolean upload(ConnectionSession connectionSession, DBExternalResourceUploadParam param, MultipartFile file)
-            throws IOException {
-        IOException[] ioEx = new IOException[1];
-        try (InputStream inputStream = file.getInputStream()) {
-            param.setInputStream(inputStream);
-            Boolean execute = connectionSession.getSyncJdbcExecutor(
-                    ConnectionSessionConstants.BACKEND_DS_KEY)
-                    .execute((ConnectionCallback<Boolean>) con -> {
-                        Boolean status = null;
-                        try {
-                            status = getExternalResourceExtensionPoint(connectionSession).upload(
-                                    con, param);
-                        } catch (IOException e) {
-                            ioEx[0] = e;
-                        }
-                        return status;
-                    });
-            if (ioEx[0] != null) {
-                throw ioEx[0];
-            }
-            return execute;
-        }
+    @PostConstruct
+    public void init() {
+        objectStorageExecutor = new ObjectStorageExecutor(properties.getConcurrencyNumberLimit(),
+                properties.getWaitLockTimeoutMillSeconds());
     }
 
-    public InputStreamResource download(ConnectionSession connectionSession, String schemaName, String resourceName)
-            throws IOException {
-        IOException[] ioEx = new IOException[1];
-        InputStream resourceStream = connectionSession.getSyncJdbcExecutor(
-                ConnectionSessionConstants.BACKEND_DS_KEY).execute((ConnectionCallback<InputStream>) con -> {
-                    InputStream stream = null;
-                    try {
-                        stream = getExternalResourceExtensionPoint(connectionSession).download(con, schemaName,
-                                resourceName);
-                    } catch (IOException e) {
-                        ioEx[0] = e;
-                    }
-                    return stream;
-                });
-        if (ioEx[0] != null) {
-            if (resourceStream != null) {
-                resourceStream.close();
-            }
-            throw ioEx[0];
+    public Boolean upload(ConnectionSession connectionSession, DBExternalResourceUploadParam param,
+            MultipartFile file) {
+        Long databaseId = getDatabaseIdByConnectionSession(connectionSession);
+        permissionHelper.checkDBPermissions(Collections.singleton(databaseId),
+                Collections.singleton(DatabasePermissionType.CHANGE));
+        if (file.getSize() > properties.getUploadBytesLimit()) {
+            throw new IllegalArgumentException("File size is too large");
         }
-        return new InputStreamResource(resourceStream);
+        return objectStorageExecutor.concurrentSafeExecute(() -> {
+            try (InputStream inputStream = file.getInputStream()) {
+                param.setInputStream(inputStream);
+                return connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
+                        .execute((ConnectionCallback<Boolean>) con -> {
+                            try {
+                                return getExternalResourceExtensionPoint(connectionSession).upload(con, param);
+                            } catch (IOException e) {
+                                throw new UncheckedIOException(e);
+                            }
+                        });
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        });
+    }
+
+    public InputStreamResource download(ConnectionSession connectionSession, String schemaName, String resourceName) {
+        return objectStorageExecutor.concurrentSafeExecute(() -> connectionSession.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY).execute((ConnectionCallback<InputStreamResource>) con -> {
+                    InputStream inputStream = null;
+                    try {
+                        inputStream = getExternalResourceExtensionPoint(connectionSession).download(con, schemaName,
+                                resourceName);
+                        return new InputStreamResource(inputStream);
+                    } catch (IOException e) {
+                        if (inputStream != null) {
+                            try {
+                                inputStream.close();
+                            } catch (IOException ex) {
+                                throw new UncheckedIOException(ex);
+                            }
+                        }
+                        throw new UncheckedIOException(e);
+                    }
+                }));
     }
 
     public List<DBObjectIdentity> list(ConnectionSession connectionSession, String dbName) {
@@ -115,27 +128,19 @@ public class DBExternalResourceService {
                         connectionSession).list(con, dbName));
     }
 
-    public DBExternalResource detail(ConnectionSession connectionSession, String dbName, String resourceName)
-            throws IOException {
-        IOException[] ioEx = new IOException[1];
-        DBExternalResource detail = connectionSession.getSyncJdbcExecutor(
+    public DBExternalResource detail(ConnectionSession connectionSession, String dbName, String resourceName) {
+        return connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.BACKEND_DS_KEY)
                 .execute((ConnectionCallback<DBExternalResource>) con -> {
-                    DBExternalResource resource = null;
                     try {
-                        resource = getExternalResourceExtensionPoint(connectionSession)
+                        return getExternalResourceExtensionPoint(connectionSession)
                                 .getDetail(con,
                                         dbName, resourceName,
                                         StandardCharsets.UTF_8);
                     } catch (IOException e) {
-                        ioEx[0] = e;
+                        throw new UncheckedIOException(e);
                     }
-                    return resource;
                 });
-        if (ioEx[0] != null) {
-            throw ioEx[0];
-        }
-        return detail;
     }
 
     public Boolean drop(ConnectionSession connectionSession, String dbName, String resourceName) {
