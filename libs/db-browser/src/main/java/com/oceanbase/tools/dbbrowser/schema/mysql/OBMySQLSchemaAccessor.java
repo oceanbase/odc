@@ -19,6 +19,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -105,7 +106,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     }
 
     @Override
-    public DBExternalResource getExternalResource(DBExternalResourceDetailParam param) throws IOException {
+    public DBExternalResource getExternalResource(DBExternalResourceDetailParam param) {
         String sql = """
             SELECT
                 NAME,
@@ -122,7 +123,6 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
         DBExternalResource dbExternalResource = new DBExternalResource();
         dbExternalResource.setName(param.getName());
         dbExternalResource.setSchemaName(param.getSchemaName());
-        final IOException[] ioEx = new IOException[1];
         jdbcOperations.query(sql, ps -> {
             ps.setString(1, param.getSchemaName());
             ps.setString(2, param.getName());
@@ -142,7 +142,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
                         dbExternalResource.setContext(new String(buffer, 0, charsRead));
                     }
                 } catch (IOException e) {
-                    ioEx[0] = e;
+                    throw new UncheckedIOException(e);
                 }
             }
         });

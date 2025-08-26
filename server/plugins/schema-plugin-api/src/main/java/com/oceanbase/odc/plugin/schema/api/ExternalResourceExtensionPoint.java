@@ -42,8 +42,7 @@ public interface ExternalResourceExtensionPoint extends ExtensionPoint {
 
     List<DBObjectIdentity> list(Connection connection, String schemaName);
 
-    DBExternalResource getDetail(Connection connection, DBExternalResourceDetailParam param)
-            throws IOException;
+    DBExternalResource getDetail(Connection connection, DBExternalResourceDetailParam param);
 
     Boolean drop(Connection connection, String schemaName, String resourceName);
 

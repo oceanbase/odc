@@ -183,7 +183,7 @@ public interface DBSchemaAccessor {
     /**
      * Get external resource details
      */
-    DBExternalResource getExternalResource(DBExternalResourceDetailParam param) throws IOException;
+    DBExternalResource getExternalResource(DBExternalResourceDetailParam param);
 
     /**
      * delete external resource

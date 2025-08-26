@@ -131,7 +131,7 @@ public class DorisSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public DBExternalResource getExternalResource(DBExternalResourceDetailParam param) throws IOException {
+    public DBExternalResource getExternalResource(DBExternalResourceDetailParam param) {
         throw new UnsupportedOperationException("not support yet");
     }
 

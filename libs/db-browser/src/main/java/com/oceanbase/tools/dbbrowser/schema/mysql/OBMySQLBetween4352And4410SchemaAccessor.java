@@ -44,7 +44,7 @@ public class OBMySQLBetween4352And4410SchemaAccessor extends OBMySQLSchemaAccess
     }
 
     @Override
-    public DBExternalResource getExternalResource(DBExternalResourceDetailParam param) throws IOException {
+    public DBExternalResource getExternalResource(DBExternalResourceDetailParam param) {
         throw new UnsupportedOperationException("not support yet");
     }
 

@@ -60,8 +60,7 @@ public class OBMySQLExternalResourceExtension implements ExternalResourceExtensi
     }
 
     @Override
-    public DBExternalResource getDetail(@NotNull Connection connection, @NotNull DBExternalResourceDetailParam param)
-            throws IOException {
+    public DBExternalResource getDetail(@NotNull Connection connection, @NotNull DBExternalResourceDetailParam param) {
         return getSchemaAccessor(connection).getExternalResource(param);
     }
 

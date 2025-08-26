@@ -157,12 +157,8 @@ public class DBExternalResourceService {
         return connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.BACKEND_DS_KEY)
                 .execute((ConnectionCallback<DBExternalResource>) con -> {
-                    try {
-                        return getExternalResourceExtensionPoint(connectionSession)
-                                .getDetail(con, param);
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
+                    return getExternalResourceExtensionPoint(connectionSession)
+                            .getDetail(con, param);
                 });
     }
 
