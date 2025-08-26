@@ -36,5 +36,6 @@ public class DBExternalResourceUploadParam {
     private String name;
     private String comment;
     InputStream inputStream;
+    private DBExternalResourceType type;
 
 }

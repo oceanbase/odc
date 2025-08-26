@@ -55,6 +55,7 @@ import com.oceanbase.tools.dbbrowser.model.DBExternalResourceType;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceUploadParam;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 
+import jakarta.validation.constraints.NotEmpty;
 import lombok.NonNull;
 
 /**
@@ -81,7 +82,7 @@ public class DBExternalResourceService {
                 properties.getWaitLockTimeoutMillSeconds());
     }
 
-    public Boolean upload(ConnectionSession connectionSession, DBExternalResourceUploadParam param,
+    public Boolean upload(@NonNull ConnectionSession connectionSession, @NonNull DBExternalResourceUploadParam param,
             MultipartFile file) {
         if (list(connectionSession, param.getSchemaName()).stream()
                 .anyMatch(o -> StringUtils.equals(o.getName(), param.getName()))) {
@@ -112,8 +113,9 @@ public class DBExternalResourceService {
         });
     }
 
-    public ResponseEntity<InputStreamResource> download(ConnectionSession connectionSession, String schemaName,
-            String resourceName)
+    public ResponseEntity<InputStreamResource> download(@NonNull ConnectionSession connectionSession,
+            @NotEmpty String schemaName,
+            @NonNull String resourceName)
             throws IOException {
         if (list(connectionSession, schemaName).stream()
                 .allMatch(o -> !StringUtils.equals(o.getName(), resourceName))) {
@@ -134,14 +136,15 @@ public class DBExternalResourceService {
                 generateFileName(schemaName, resourceName, holder.getType()));
     }
 
-    public List<DBObjectIdentity> list(ConnectionSession connectionSession, String dbName) {
+    public List<DBObjectIdentity> list(@NonNull ConnectionSession connectionSession, @NotEmpty String dbName) {
         return connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.BACKEND_DS_KEY)
                 .execute((ConnectionCallback<List<DBObjectIdentity>>) con -> getExternalResourceExtensionPoint(
                         connectionSession).list(con, dbName));
     }
 
-    public DBExternalResource detail(ConnectionSession connectionSession, DBExternalResourceDetailParam param) {
+    public DBExternalResource detail(@NonNull ConnectionSession connectionSession,
+            @NotEmpty DBExternalResourceDetailParam param) {
         if (list(connectionSession, param.getSchemaName()).stream()
                 .allMatch(o -> !StringUtils.equals(o.getName(), param.getName()))) {
             throw new IllegalArgumentException(String.format("Resource %s does not exist", param.getName()));
@@ -162,7 +165,8 @@ public class DBExternalResourceService {
                 });
     }
 
-    public Boolean drop(ConnectionSession connectionSession, String dbName, String resourceName) {
+    public Boolean drop(@NonNull ConnectionSession connectionSession, @NotEmpty String dbName,
+            @NotEmpty String resourceName) {
         if (list(connectionSession, dbName).stream().allMatch(o -> !StringUtils.equals(o.getName(), resourceName))) {
             throw new IllegalArgumentException(String.format("Resource %s does not exist", resourceName));
         }
