@@ -891,7 +891,8 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
                     .getContextClassLoader()
                     .getResourceAsStream(jarClassPath)) {
                 DBExternalResourceUploadParam dbExternalResourceUploadParam = new DBExternalResourceUploadParam(
-                        getOBMySQLDataBaseName(), resource, "java jar content", resourceAsStream);
+                        getOBMySQLDataBaseName(), resource, "java jar content", resourceAsStream,
+                        DBExternalResourceType.JAVA_JAR);
                 accessor.uploadExternalResource(dbExternalResourceUploadParam);
             }
         }
