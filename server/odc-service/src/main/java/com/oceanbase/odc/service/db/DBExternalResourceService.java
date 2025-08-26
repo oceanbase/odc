@@ -25,6 +25,7 @@ import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -36,9 +37,11 @@ import com.oceanbase.odc.core.session.ConnectionSessionConstants;
 import com.oceanbase.odc.core.session.ConnectionSessionUtil;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.core.shared.exception.NotFoundException;
+import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.metadb.connection.DatabaseEntity;
 import com.oceanbase.odc.metadb.connection.DatabaseRepository;
 import com.oceanbase.odc.plugin.schema.api.ExternalResourceExtensionPoint;
+import com.oceanbase.odc.service.common.util.WebResponseUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.model.DBExternalResourceProperties;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageExecutor;
@@ -48,6 +51,7 @@ import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceDetailParam;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceStreamHolder;
+import com.oceanbase.tools.dbbrowser.model.DBExternalResourceType;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceUploadParam;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 
@@ -73,7 +77,7 @@ public class DBExternalResourceService {
 
     @PostConstruct
     public void init() {
-        objectStorageExecutor = new ObjectStorageExecutor(properties.getConcurrencyNumberLimit(),
+        objectStorageExecutor = new ObjectStorageExecutor(properties.getConcurrencyLimitNumbers(),
                 properties.getWaitLockTimeoutMillSeconds());
     }
 
@@ -86,10 +90,10 @@ public class DBExternalResourceService {
         Long databaseId = getDatabaseIdByConnectionSession(connectionSession);
         permissionHelper.checkDBPermissions(Collections.singleton(databaseId),
                 Collections.singleton(DatabasePermissionType.CHANGE));
-        if (file.getSize() > properties.getUploadBytesLimit()) {
+        if (file.getSize() > properties.getUploadLimitBytes()) {
             throw new IllegalArgumentException(
                     String.format("Resource is too large, the maximum size of the uploaded file cannot exceed %d bytes",
-                            properties.getUploadBytesLimit()));
+                            properties.getUploadLimitBytes()));
         }
         return objectStorageExecutor.concurrentSafeExecute(() -> {
             try (InputStream inputStream = file.getInputStream()) {
@@ -108,7 +112,8 @@ public class DBExternalResourceService {
         });
     }
 
-    public InputStreamResource download(ConnectionSession connectionSession, String schemaName, String resourceName)
+    public ResponseEntity<InputStreamResource> download(ConnectionSession connectionSession, String schemaName,
+            String resourceName)
             throws IOException {
         if (list(connectionSession, schemaName).stream()
                 .allMatch(o -> !StringUtils.equals(o.getName(), resourceName))) {
@@ -119,13 +124,14 @@ public class DBExternalResourceService {
                         (ConnectionCallback<DBExternalResourceStreamHolder>) con -> DBExternalResourceService.this
                                 .getExternalResourceExtensionPoint(connectionSession).download(
                                         con, schemaName, resourceName));
-        if (holder.getTotalSize() > properties.getDownloadBytesLimit()) {
+        if (holder.getTotalSize() > properties.getDownloadLimitBytes()) {
             holder.close();
             throw new IllegalStateException(String.format(
                     "Resource is too large, the maximum size of the downloaded file cannot exceed %d bytes",
-                    properties.getUploadBytesLimit()));
+                    properties.getUploadLimitBytes()));
         }
-        return new InputStreamResource(holder.getInputStream());
+        return WebResponseUtils.getFileAttachmentResponseEntity(new InputStreamResource(holder.getInputStream()),
+                generateFileName(schemaName, resourceName, holder.getType()));
     }
 
     public List<DBObjectIdentity> list(ConnectionSession connectionSession, String dbName) {
@@ -140,8 +146,8 @@ public class DBExternalResourceService {
                 .allMatch(o -> !StringUtils.equals(o.getName(), param.getName()))) {
             throw new IllegalArgumentException(String.format("Resource %s does not exist", param.getName()));
         }
-        if (param.getSupportViewBytes() > properties.getGetContentBytesLimit()) {
-            param.setSupportViewBytes(properties.getGetContentBytesLimit());
+        if (param.getSupportViewBytes() > properties.getGetContentLimitBytes()) {
+            param.setSupportViewBytes(properties.getGetContentLimitBytes());
         }
         // The character set is based on the front-end input. If not available, follow the default
         // configuration.
@@ -184,6 +190,16 @@ public class DBExternalResourceService {
                 databaseRepository.findByConnectionIdAndNameAndExisted(connConfig.getId(), schemaName, true)
                         .orElseThrow(() -> new NotFoundException(ResourceType.ODC_DATABASE, "name", schemaName));
         return databaseEntity.getId();
+    }
+
+    private String generateFileName(String schemaName, String resourceName, DBExternalResourceType type) {
+        if (DBExternalResourceType.JAVA_JAR == type) {
+            return schemaName + "_" + resourceName + ".jar";
+        } else if (DBExternalResourceType.PYTHON_PY == type) {
+            return schemaName + "_" + resourceName + ".py";
+        } else {
+            throw new UnsupportedException(String.format("unsupported resource type %s", type));
+        }
     }
 
 }

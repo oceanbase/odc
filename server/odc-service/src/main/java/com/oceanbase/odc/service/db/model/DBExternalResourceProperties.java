@@ -36,11 +36,11 @@ import lombok.Data;
 @ConfigurationProperties(prefix = "odc.external.resource")
 public class DBExternalResourceProperties {
 
-    private Long uploadBytesLimit = 512 * 1024 * 1024L;
-    private Long downloadBytesLimit = 512 * 1024 * 1024L;
-    private Integer getContentBytesLimit = 1 * 1024 * 1024;
+    private Long uploadLimitBytes = 512 * 1024 * 1024L;
+    private Long downloadLimitBytes = 512 * 1024 * 1024L;
+    private Integer getContentLimitBytes = 1 * 1024 * 1024;
     private Charset charset = StandardCharsets.UTF_8;
-    private Integer concurrencyNumberLimit = 16;
+    private Integer concurrencyLimitNumbers = 16;
     private Long waitLockTimeoutMillSeconds = 10 * 1000L;
 
 }

@@ -34,7 +34,7 @@ public class DBExternalResourceDetailParam {
     private String name;
 
     // Limit size to 1mb
-    private Integer supportViewBytes = 1024 * 1024;
+    private Integer supportViewBytes = 1 * 1024 * 1024;
 
     private Charset charset = StandardCharsets.UTF_8;
 

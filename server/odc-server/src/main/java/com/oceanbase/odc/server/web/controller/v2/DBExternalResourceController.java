@@ -36,7 +36,6 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
-import com.oceanbase.odc.service.common.util.WebResponseUtils;
 import com.oceanbase.odc.service.db.DBExternalResourceService;
 import com.oceanbase.odc.service.session.ConnectSessionService;
 import com.oceanbase.odc.service.state.model.StateName;
@@ -110,8 +109,7 @@ public class DBExternalResourceController {
             @PathVariable String databaseName,
             @PathVariable String resourceName) throws IOException {
         ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
-        InputStreamResource download = externalResourceService.download(session, databaseName, resourceName);
-        return WebResponseUtils.getFileAttachmentResponseEntity(download, databaseName + '_' + resourceName);
+        return externalResourceService.download(session, databaseName, resourceName);
     }
 
     @ApiOperation(value = "deleteExternalResource", notes = "delete External Resource in the business database.")
