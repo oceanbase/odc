@@ -35,7 +35,7 @@ public class DBExternalResourceUploadParam {
     private String schemaName;
     private String name;
     private String comment;
-    InputStream inputStream;
+    private InputStream inputStream;
     private DBExternalResourceType type;
 
 }
