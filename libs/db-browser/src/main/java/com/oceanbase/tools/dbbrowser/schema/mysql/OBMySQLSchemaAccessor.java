@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,13 +36,18 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcOperations;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
+import com.oceanbase.tools.dbbrowser.model.DBExternalFunctionLanguage;
+import com.oceanbase.tools.dbbrowser.model.DBExternalFunctionProperties;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceDetailParam;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceStreamHolder;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceType;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceUploadParam;
+import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
 import com.oceanbase.tools.dbbrowser.model.DBMViewLogPurgeParameter;
 import com.oceanbase.tools.dbbrowser.model.DBMViewLogPurgeSchedule;
@@ -96,6 +102,61 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     public OBMySQLSchemaAccessor(JdbcOperations jdbcOperations) {
         super(jdbcOperations);
         this.sqlMapper = DBSchemaAccessorSqlMappers.get(StatementsFiles.OBMYSQL_432x);
+    }
+
+    @Override
+    public DBFunction getFunction(String schemaName, String functionName) {
+        MySQLSqlBuilder sql1 = new MySQLSqlBuilder();
+        sql1.append(
+                "select DEFINER, CREATED, LAST_ALTERED, ROUTINE_DEFINITION ,EXTERNAL_NAME, EXTERNAL_LANGUAGE from `information_schema`.`routines` where ROUTINE_SCHEMA=")
+                .value(schemaName)
+                .append(" and ROUTINE_TYPE = 'FUNCTION' and ROUTINE_NAME=")
+                .value(functionName);
+
+        MySQLSqlBuilder queryForParameters = new MySQLSqlBuilder();
+        queryForParameters.append(
+                "select PARAMETER_MODE, PARAMETER_NAME, DTD_IDENTIFIER from `information_schema`.`parameters` where SPECIFIC_SCHEMA=")
+                .value(schemaName)
+                .append(" and SPECIFIC_NAME=")
+                .value(functionName)
+                .append(" and ROUTINE_TYPE='FUNCTION'");
+        MySQLSqlBuilder parameters = new MySQLSqlBuilder();
+        DBFunction function = new DBFunction();
+        function.setFunName(functionName);
+        jdbcOperations.query(queryForParameters.toString(), (rs) -> {
+            if ("NULL".equals(rs.getString("PARAMETER_MODE")) || Objects.isNull(rs.getString("PARAMETER_MODE"))) {
+                function.setReturnType(rs.getString("DTD_IDENTIFIER"));
+            } else {
+                parameters.identifier(rs.getString("PARAMETER_NAME")).space()
+                        .append(rs.getString("DTD_IDENTIFIER")).append(",");
+            }
+        });
+        jdbcOperations.query(sql1.toString(), (rs) -> {
+            function.setDefiner(rs.getString("DEFINER"));
+            function.setCreateTime(Timestamp.valueOf(rs.getString("CREATED")));
+            function.setModifyTime(Timestamp.valueOf(rs.getString("LAST_ALTERED")));
+            function.setDdl(String.format("create function %s (%s) returns %s %s;",
+                    StringUtils.quoteMysqlIdentifier(function.getFunName()),
+                    StringUtils.substring(parameters.toString(), 0, parameters.length() - 1),
+                    function.getReturnType(),
+                    rs.getString("ROUTINE_DEFINITION")));
+            if (rs.getString("EXTERNAL_LANGUAGE") != null && rs.getString("EXTERNAL_NAME") != null) {
+                ObjectMapper mapper = new ObjectMapper();
+                try {
+                    DBExternalFunctionProperties properties =
+                            mapper.readValue(rs.getString("EXTERNAL_NAME"), DBExternalFunctionProperties.class);
+                    properties.setLanguage(DBExternalFunctionLanguage.valueOf(rs.getString("EXTERNAL_LANGUAGE")));
+                    function.setExternalResourceProperties(properties);
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+        return parseFunctionDDL(function);
+    }
+
+    protected DBFunction getMysqlFunction(String schemaName, String functionName) {
+        return super.getFunction(schemaName, functionName);
     }
 
     @Override

@@ -20,6 +20,8 @@ import java.util.Arrays;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.oceanbase.tools.dbbrowser.model.DBExternalFunctionCreateType;
+import com.oceanbase.tools.dbbrowser.model.DBExternalFunctionProperties;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBPLParam;
 import com.oceanbase.tools.dbbrowser.model.DBPLSqlSecurity;
@@ -35,6 +37,26 @@ import com.oceanbase.tools.dbbrowser.template.mysql.MySQLFunctionTemplate;
  * @since db-browser_1.0.0-SNAPSHOT
  */
 public class MySQLFunctionTemplateTest {
+
+    @Test
+    public void generateCreateObjectTemplate_externalFunction_generateSucceed() {
+        MySQLFunctionTemplate template = new MySQLFunctionTemplate();
+        DBFunction function = DBFunction.of("external_fun", "int");
+        DBExternalFunctionProperties properties = new DBExternalFunctionProperties();
+        properties.setSymbol("org.example.MyAdd");
+        properties.setCreateType(DBExternalFunctionCreateType.ODPSJAR);
+        properties.setFile("my_add_jar");
+        function.setExternalResourceProperties(properties);
+        String expect = """
+            create function `external_fun`()
+            returns int
+            PROPERTIES (
+            	symbol = 'org.example.MyAdd',
+            	type = 'ODPSJAR',
+            	file = 'my_add_jar'
+            )""";
+        Assert.assertEquals(expect, template.generateCreateObjectTemplate(function));
+    }
 
     @Test
     public void generateCreateObjectTemplate_functionWithParams_generateSucceed() {

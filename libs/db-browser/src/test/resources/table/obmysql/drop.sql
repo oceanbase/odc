@@ -13,3 +13,4 @@ drop table if exists test_view_table;
 drop function if exists function_test;
 drop procedure if exists procedure_test;
 drop procedure if exists procedure_detail_test;
+drop function  if exists external_jar_func;

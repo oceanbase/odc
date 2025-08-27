@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.Validate;
 
+import com.oceanbase.tools.dbbrowser.model.DBExternalFunctionProperties;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBPLParam;
 import com.oceanbase.tools.dbbrowser.model.DBRoutineDataNature;
@@ -54,6 +55,16 @@ public class MySQLFunctionTemplate extends BaseMySQLPLTemplate<DBFunction> {
         }
         sqlBuilder.append(")")
                 .append("\nreturns ").append(dbObject.getReturnType()).line();
+
+        if (dbObject.getExternalResourceProperties() != null) {
+            DBExternalFunctionProperties properties = dbObject.getExternalResourceProperties();
+            sqlBuilder.append("PROPERTIES (").line();
+            sqlBuilder.append("\t").append("symbol = ").value(properties.getSymbol()).append(",").line();
+            sqlBuilder.append("\t").append("type = ").value(properties.getCreateType().name()).append(",").line();
+            sqlBuilder.append("\t").append("file = ").value(properties.getFile()).line();
+            sqlBuilder.append(")");
+            return sqlBuilder.toString();
+        }
 
         if (Objects.nonNull(dbObject.getCharacteristic())) {
             if (Objects.nonNull(dbObject.getCharacteristic().getComment())) {

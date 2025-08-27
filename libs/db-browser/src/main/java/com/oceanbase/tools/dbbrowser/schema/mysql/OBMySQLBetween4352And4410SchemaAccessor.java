@@ -24,6 +24,7 @@ import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceDetailParam;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceStreamHolder;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceUploadParam;
+import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 
 /**
@@ -61,6 +62,11 @@ public class OBMySQLBetween4352And4410SchemaAccessor extends OBMySQLSchemaAccess
     @Override
     public DBExternalResourceStreamHolder downloadExternalResource(String schemaName, String name) {
         throw new UnsupportedOperationException("not support yet");
+    }
+
+    @Override
+    public DBFunction getFunction(String schemaName, String functionName) {
+        return getMysqlFunction(schemaName, functionName);
     }
 
 }

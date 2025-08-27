@@ -38,6 +38,9 @@ import com.oceanbase.tools.dbbrowser.env.BaseTestEnv;
 import com.oceanbase.tools.dbbrowser.model.DBColumnGroupElement;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
+import com.oceanbase.tools.dbbrowser.model.DBExternalFunctionDisplayType;
+import com.oceanbase.tools.dbbrowser.model.DBExternalFunctionLanguage;
+import com.oceanbase.tools.dbbrowser.model.DBExternalFunctionProperties;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceDetailParam;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceStreamHolder;
@@ -139,6 +142,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
         }
         if (isSupportJavaAndPythonUdf) {
             batchUploadExternalResources(resources);
+            jdbcTemplate.execute(loadAsString(BASE_PATH + "testExternalFunctionDDL.sql"));
         }
 
     }
@@ -696,6 +700,17 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
         Assert.assertTrue(function != null
                 && function.getParams().size() == 2
                 && function.getReturnType() != null);
+    }
+
+    @Test
+    public void getFunction_ExternalResourceIsJar_Success() {
+        DBFunction function = accessor.getFunction(getOBMySQLDataBaseName(), "external_jar_func");
+        DBExternalFunctionProperties properties = new DBExternalFunctionProperties();
+        properties.setLanguage(DBExternalFunctionLanguage.JAVA);
+        properties.setSymbol("org.example.MyAdd");
+        properties.setFile(resources.get(0));
+        properties.setDisplayType(DBExternalFunctionDisplayType.JAVA_UDF);
+        Assert.assertEquals(properties, function.getExternalResourceProperties());
     }
 
     @Test

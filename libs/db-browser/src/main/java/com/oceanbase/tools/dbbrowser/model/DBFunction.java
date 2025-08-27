@@ -39,6 +39,7 @@ public class DBFunction extends DBBasicPLObject implements DBObject {
     private String errorMessage;
     private boolean returnExtendedType;
     private DBRoutineCharacteristic characteristic;
+    private DBExternalFunctionProperties externalResourceProperties;
 
     public static DBFunction of(@NonNull String funName,
             @NonNull String returnType) {
