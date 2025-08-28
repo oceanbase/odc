@@ -43,7 +43,6 @@ import com.oceanbase.tools.dbbrowser.model.DBExternalFunctionLanguage;
 import com.oceanbase.tools.dbbrowser.model.DBExternalFunctionProperties;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceDetailParam;
-import com.oceanbase.tools.dbbrowser.model.DBExternalResourceStreamHolder;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceType;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceUploadParam;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
@@ -178,21 +177,23 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
-    public void getExternalResource_UploadJavaJar_Success() throws IOException {
+    public void getExternalResource_JarJar_Success() throws IOException {
         assumeTrue(isSupportJavaAndPythonUdf);
         DBExternalResourceDetailParam param = new DBExternalResourceDetailParam();
         param.setSchemaName(getOBMySQLDataBaseName());
         param.setName(resources.get(0));
-        DBExternalResource testJavaUdf = accessor.getExternalResource(param);
+        DBExternalResource testJavaUdf = accessor.getExternalResource(getOBMySQLDataBaseName(), resources.get(0));
         Assert.assertEquals(DBExternalResourceType.JAVA_JAR, testJavaUdf.getType());
         Assert.assertEquals(getOBMySQLDataBaseName(), testJavaUdf.getSchemaName());
         Assert.assertEquals(resources.get(0), testJavaUdf.getName());
         Assert.assertEquals("java jar content", testJavaUdf.getComment());
+        Assert.assertTrue(testJavaUdf.getSize() > 0);
+        Assert.assertNotNull(testJavaUdf.getInputStream());
         Assert.assertNull(testJavaUdf.getContext());
     }
 
     @Test
-    public void ListExternalResource_UploadJavaJar_Success() {
+    public void ListExternalResource_Success() {
         assumeTrue(isSupportJavaAndPythonUdf);
         List<DBObjectIdentity> dbObjectIdentities = accessor.listExternalResources(getOBMySQLDataBaseName());
         dbObjectIdentities.forEach(dbObjectIdentity -> {
@@ -202,16 +203,18 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     }
 
     @Test
-    public void downLoadExternalResource_UploadJavaJar_Success() throws IOException {
+    public void dropExternalResource_Python_Success() throws IOException {
         assumeTrue(isSupportJavaAndPythonUdf);
-        DBExternalResourceStreamHolder holder =
-                accessor.downloadExternalResource(getOBMySQLDataBaseName(), resources.get(0));
-        Assert.assertEquals(DBExternalResourceType.JAVA_JAR, holder.getType());
-        Assert.assertTrue(holder.getTotalSize() > 0);
-        try (InputStream inputStream = holder.getInputStream()) {
-            byte[] bytes = new byte[1024];
-            Assert.assertTrue(inputStream.read(bytes) > 0);
+        try (InputStream resourceAsStream = Thread.currentThread()
+                .getContextClassLoader()
+                .getResourceAsStream(jarClassPath)) {
+            DBExternalResourceUploadParam dbExternalResourceUploadParam = new DBExternalResourceUploadParam(
+                    getOBMySQLDataBaseName(), "test_java_udf4", "java jar content", resourceAsStream,
+                    DBExternalResourceType.JAVA_JAR);
+            accessor.uploadExternalResource(dbExternalResourceUploadParam);
         }
+        Boolean result = accessor.deleteExternalResource(getOBMySQLDataBaseName(), "test_java_udf4");
+        Assert.assertTrue(result);
     }
 
     @Test
@@ -691,7 +694,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     @Test
     public void listFunctions_Success() {
         List<DBPLObjectIdentity> functions = accessor.listFunctions(getOBMySQLDataBaseName());
-        Assert.assertTrue(functions != null && functions.size() == 1);
+        Assert.assertTrue(functions != null && functions.size() == 2);
     }
 
     @Test

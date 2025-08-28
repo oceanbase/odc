@@ -108,10 +108,16 @@
         <caffeine.version>2.8.0</caffeine.version>
         <postgres.jdbc.version>42.7.3</postgres.jdbc.version>
         <jakarta.validation-api.version>3.0.2</jakarta.validation-api.version>
+        <commons-io.version>2.11.0</commons-io.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${commons-io.version}</version>
+            </dependency>
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
@@ -236,6 +242,10 @@
     </dependencyManagement>
 
     <dependencies>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+        </dependency>
         <dependency>
           <groupId>junit</groupId>
           <artifactId>junit</artifactId>

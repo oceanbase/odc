@@ -22,8 +22,6 @@ import java.util.List;
 import org.pf4j.ExtensionPoint;
 
 import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
-import com.oceanbase.tools.dbbrowser.model.DBExternalResourceDetailParam;
-import com.oceanbase.tools.dbbrowser.model.DBExternalResourceStreamHolder;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceUploadParam;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 
@@ -38,11 +36,9 @@ public interface ExternalResourceExtensionPoint extends ExtensionPoint {
 
     Boolean upload(Connection connection, DBExternalResourceUploadParam param) throws IOException;
 
-    DBExternalResourceStreamHolder download(Connection connection, String schemaName, String resourceName);
-
     List<DBObjectIdentity> list(Connection connection, String schemaName);
 
-    DBExternalResource getDetail(Connection connection, DBExternalResourceDetailParam param);
+    DBExternalResource getDetail(Connection connection, String schemaName, String name);
 
     Boolean drop(Connection connection, String schemaName, String resourceName);
 

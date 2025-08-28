@@ -24,14 +24,11 @@ import org.pf4j.Extension;
 import com.oceanbase.odc.plugin.schema.api.ExternalResourceExtensionPoint;
 import com.oceanbase.odc.plugin.schema.obmysql.utils.DBAccessorUtil;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
-import com.oceanbase.tools.dbbrowser.model.DBExternalResourceDetailParam;
-import com.oceanbase.tools.dbbrowser.model.DBExternalResourceStreamHolder;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceUploadParam;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 import com.oceanbase.tools.dbbrowser.schema.DBSchemaAccessor;
 
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
+import lombok.NonNull;
 
 /**
  * @description:
@@ -43,29 +40,24 @@ import jakarta.validation.constraints.NotNull;
 public class OBMySQLExternalResourceExtension implements ExternalResourceExtensionPoint {
 
     @Override
-    public Boolean upload(@NotNull Connection connection, @NotNull DBExternalResourceUploadParam param)
+    public Boolean upload(@NonNull Connection connection, @NonNull DBExternalResourceUploadParam param)
             throws IOException {
         return getSchemaAccessor(connection).uploadExternalResource(param);
     }
 
     @Override
-    public DBExternalResourceStreamHolder download(@NotNull Connection connection, @NotEmpty String schemaName,
-            @NotEmpty String resourceName) {
-        return getSchemaAccessor(connection).downloadExternalResource(schemaName, resourceName);
-    }
-
-    @Override
-    public List<DBObjectIdentity> list(@NotNull Connection connection, @NotEmpty String schemaName) {
+    public List<DBObjectIdentity> list(@NonNull Connection connection, @NonNull String schemaName) {
         return getSchemaAccessor(connection).listExternalResources(schemaName);
     }
 
     @Override
-    public DBExternalResource getDetail(@NotNull Connection connection, @NotNull DBExternalResourceDetailParam param) {
-        return getSchemaAccessor(connection).getExternalResource(param);
+    public DBExternalResource getDetail(@NonNull Connection connection, @NonNull String schemaName,
+            @NonNull String name) {
+        return getSchemaAccessor(connection).getExternalResource(schemaName, name);
     }
 
     @Override
-    public Boolean drop(@NotNull Connection connection, @NotEmpty String schemaName, @NotEmpty String resourceName) {
+    public Boolean drop(@NonNull Connection connection, @NonNull String schemaName, @NonNull String resourceName) {
         return getSchemaAccessor(connection).deleteExternalResource(schemaName, resourceName);
     }
 

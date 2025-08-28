@@ -15,11 +15,7 @@
  */
 package com.oceanbase.tools.dbbrowser.schema.mysql;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UncheckedIOException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -43,8 +39,6 @@ import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBExternalFunctionLanguage;
 import com.oceanbase.tools.dbbrowser.model.DBExternalFunctionProperties;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
-import com.oceanbase.tools.dbbrowser.model.DBExternalResourceDetailParam;
-import com.oceanbase.tools.dbbrowser.model.DBExternalResourceStreamHolder;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceType;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceUploadParam;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
@@ -167,7 +161,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
     }
 
     @Override
-    public DBExternalResource getExternalResource(DBExternalResourceDetailParam param) {
+    public DBExternalResource getExternalResource(String schemaName, String name) {
         String sql = """
             SELECT
                 NAME,
@@ -182,30 +176,18 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
             """;
 
         DBExternalResource dbExternalResource = new DBExternalResource();
-        dbExternalResource.setName(param.getName());
-        dbExternalResource.setSchemaName(param.getSchemaName());
+        dbExternalResource.setName(name);
+        dbExternalResource.setSchemaName(schemaName);
         jdbcOperations.query(sql, ps -> {
-            ps.setString(1, param.getSchemaName());
-            ps.setString(2, param.getName());
+            ps.setString(1, schemaName);
+            ps.setString(2, name);
         }, rs -> {
             String typeStr = rs.getString("TYPE");
             DBExternalResourceType type = DBExternalResourceType.valueOf(typeStr);
             dbExternalResource.setType(type);
             dbExternalResource.setComment(rs.getString("COMMENT"));
             dbExternalResource.setSize(rs.getLong("CONTENT_LENGTH"));
-            if (type == DBExternalResourceType.PYTHON_PY) {
-                try (InputStream binaryStream = rs.getBinaryStream("CONTENT");
-                     InputStreamReader reader = new InputStreamReader(binaryStream, param.getCharset());
-                     BufferedReader bufferedReader = new BufferedReader(reader)) {
-                    char[] buffer = new char[param.getSupportViewBytes()/2];
-                    int charsRead = bufferedReader.read(buffer);
-                    if (charsRead != -1) {
-                        dbExternalResource.setContext(new String(buffer, 0, charsRead));
-                    }
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            }
+            dbExternalResource.setInputStream(rs.getBinaryStream("CONTENT"));
         });
         return dbExternalResource;
     }
@@ -229,29 +211,6 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
             ps.setString(3, param.getComment());
         });
         return Boolean.TRUE;
-    }
-
-    @Override
-    public DBExternalResourceStreamHolder downloadExternalResource(String schemaName, String name) {
-        String sql = """
-        SELECT  
-            CONTENT,
-            TYPE,
-            OCTET_LENGTH(CONTENT) AS CONTENT_LENGTH
-        FROM OCEANBASE.DBA_OB_EXTERNAL_RESOURCES
-        WHERE DATABASE_NAME = ?
-          AND NAME = ?
-        """;
-        return jdbcOperations.query(sql, ps -> {
-            ps.setString(1, schemaName);
-            ps.setString(2, name);
-        }, rs -> {
-                if (rs.next()) {
-                    return new DBExternalResourceStreamHolder(rs.getBinaryStream("CONTENT"), rs.getLong("CONTENT_LENGTH"), DBExternalResourceType.valueOf(rs.getString("TYPE")));
-                }
-                throw new IllegalStateException("Failed to download external resource");
-            }
-        );
     }
 
     @Override

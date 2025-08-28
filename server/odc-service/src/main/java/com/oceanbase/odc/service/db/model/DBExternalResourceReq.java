@@ -13,34 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.tools.dbbrowser.model;
+package com.oceanbase.odc.service.db.model;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
-import lombok.AllArgsConstructor;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 /**
  * @description:
  * @author: zijia.cj
- * @date: 2025/8/25 14:23
+ * @date: 2025/8/27 20:32
  * @since: 4.4.1
  */
 @Data
-@AllArgsConstructor
-public class DBExternalResourceStreamHolder implements Closeable {
+public class DBExternalResourceReq {
 
-    private final InputStream inputStream;
-    private final Long totalSize;
-    private final DBExternalResourceType type;
+    @NotBlank(message = "schemaName cannot be blank")
+    private String schemaName;
 
-    @Override
-    public void close() throws IOException {
-        if (inputStream != null) {
-            inputStream.close();
-        }
-    }
+    @NotBlank(message = "name cannot be blank")
+    private String name;
+
+    @Max(value = Integer.MAX_VALUE, message = "supportViewBytes is too large, max is " + Integer.MAX_VALUE + " bytes")
+    private Integer supportViewBytes = 1 * 1024 * 1024;
+
+    private Charset charset = StandardCharsets.UTF_8;
 
 }

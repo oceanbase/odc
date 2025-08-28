@@ -56,8 +56,6 @@ import com.oceanbase.tools.dbbrowser.model.DBColumnTypeDisplay;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
-import com.oceanbase.tools.dbbrowser.model.DBExternalResourceDetailParam;
-import com.oceanbase.tools.dbbrowser.model.DBExternalResourceStreamHolder;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceUploadParam;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
 import com.oceanbase.tools.dbbrowser.model.DBIndexAlgorithm;
@@ -398,7 +396,7 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public DBExternalResource getExternalResource(DBExternalResourceDetailParam param) {
+    public DBExternalResource getExternalResource(String schemaName, String name) {
         throw new UnsupportedOperationException("not support yet");
     }
 
@@ -409,11 +407,6 @@ public class MySQLNoLessThan5700SchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public Boolean uploadExternalResource(DBExternalResourceUploadParam param) throws IOException {
-        throw new UnsupportedOperationException("not support yet");
-    }
-
-    @Override
-    public DBExternalResourceStreamHolder downloadExternalResource(String schemaName, String name) {
         throw new UnsupportedOperationException("not support yet");
     }
 

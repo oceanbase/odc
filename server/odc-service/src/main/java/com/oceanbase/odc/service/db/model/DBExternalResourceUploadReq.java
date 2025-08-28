@@ -13,46 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.tools.dbbrowser.model;
+package com.oceanbase.odc.service.db.model;
 
-import java.io.InputStream;
+import com.oceanbase.tools.dbbrowser.model.DBExternalResourceType;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 /**
  * @description:
  * @author: zijia.cj
- * @date: 2025/8/21 10:06
+ * @date: 2025/8/28 10:33
  * @since: 4.4.1
  */
 @Data
-public class DBExternalResource implements DBObject {
+public class DBExternalResourceUploadReq {
 
-    private String name;
-
+    @NotBlank(message = "schemaName cannot be blank")
     private String schemaName;
 
-    private DBExternalResourceType type;
+    @NotBlank(message = "name cannot be blank")
+    private String name;
 
-    private String context;
-
+    @NotBlank(message = "comment cannot be blank")
     private String comment;
 
-    private long size;
-
-    @JsonIgnore
-    private InputStream inputStream;
-
-    @Override
-    public String name() {
-        return this.name;
-    }
-
-    @Override
-    public DBObjectType type() {
-        return DBObjectType.EXTERNAL_RESOURCE;
-    }
+    @NotNull(message = "type cannot be null")
+    private DBExternalResourceType type;
 
 }

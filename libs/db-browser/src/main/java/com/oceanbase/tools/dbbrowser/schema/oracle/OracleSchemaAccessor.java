@@ -45,8 +45,6 @@ import com.oceanbase.tools.dbbrowser.model.DBConstraintDeferability;
 import com.oceanbase.tools.dbbrowser.model.DBConstraintType;
 import com.oceanbase.tools.dbbrowser.model.DBDatabase;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
-import com.oceanbase.tools.dbbrowser.model.DBExternalResourceDetailParam;
-import com.oceanbase.tools.dbbrowser.model.DBExternalResourceStreamHolder;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceUploadParam;
 import com.oceanbase.tools.dbbrowser.model.DBForeignKeyModifyRule;
 import com.oceanbase.tools.dbbrowser.model.DBFunction;
@@ -130,7 +128,7 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
     }
 
     @Override
-    public DBExternalResource getExternalResource(DBExternalResourceDetailParam param) {
+    public DBExternalResource getExternalResource(String schemaName, String name) {
         throw new UnsupportedOperationException("not support yet");
     }
 
@@ -141,11 +139,6 @@ public class OracleSchemaAccessor implements DBSchemaAccessor {
 
     @Override
     public Boolean uploadExternalResource(DBExternalResourceUploadParam param) throws IOException {
-        throw new UnsupportedOperationException("not support yet");
-    }
-
-    @Override
-    public DBExternalResourceStreamHolder downloadExternalResource(String schemaName, String name) {
         throw new UnsupportedOperationException("not support yet");
     }
 

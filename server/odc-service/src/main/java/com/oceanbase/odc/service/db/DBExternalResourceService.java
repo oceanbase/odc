@@ -17,17 +17,22 @@ package com.oceanbase.odc.service.db;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.io.UncheckedIOException;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
 
+import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.stereotype.Service;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.oceanbase.odc.common.util.StringUtils;
@@ -44,19 +49,20 @@ import com.oceanbase.odc.plugin.schema.api.ExternalResourceExtensionPoint;
 import com.oceanbase.odc.service.common.util.WebResponseUtils;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.db.model.DBExternalResourceProperties;
+import com.oceanbase.odc.service.db.model.DBExternalResourceReq;
+import com.oceanbase.odc.service.db.model.DBExternalResourceUploadReq;
 import com.oceanbase.odc.service.objectstorage.ObjectStorageExecutor;
 import com.oceanbase.odc.service.permission.DBResourcePermissionHelper;
 import com.oceanbase.odc.service.permission.database.model.DatabasePermissionType;
 import com.oceanbase.odc.service.plugin.SchemaPluginUtil;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResource;
-import com.oceanbase.tools.dbbrowser.model.DBExternalResourceDetailParam;
-import com.oceanbase.tools.dbbrowser.model.DBExternalResourceStreamHolder;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceType;
 import com.oceanbase.tools.dbbrowser.model.DBExternalResourceUploadParam;
 import com.oceanbase.tools.dbbrowser.model.DBObjectIdentity;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
-import lombok.NonNull;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * @description:
@@ -66,6 +72,7 @@ import lombok.NonNull;
  */
 @Service
 @SkipAuthorize("inside connect session")
+@Validated
 public class DBExternalResourceService {
 
     @Autowired
@@ -82,22 +89,27 @@ public class DBExternalResourceService {
                 properties.getWaitLockTimeoutMillSeconds());
     }
 
-    public Boolean upload(@NonNull ConnectionSession connectionSession, @NonNull DBExternalResourceUploadParam param,
-            MultipartFile file) {
-        if (list(connectionSession, param.getSchemaName()).stream()
-                .anyMatch(o -> StringUtils.equals(o.getName(), param.getName()))) {
-            throw new IllegalArgumentException(String.format("Resource %s already exists", param.getName()));
-        }
-        Long databaseId = getDatabaseIdByConnectionSession(connectionSession);
-        permissionHelper.checkDBPermissions(Collections.singleton(databaseId),
-                Collections.singleton(DatabasePermissionType.CHANGE));
+    public Boolean upload(@NotNull ConnectionSession connectionSession,
+            @NotNull @Valid DBExternalResourceUploadReq req, @NotNull MultipartFile file) {
         if (file.getSize() > properties.getUploadLimitBytes()) {
             throw new IllegalArgumentException(
                     String.format("Resource is too large, the maximum size of the uploaded file cannot exceed %d bytes",
                             properties.getUploadLimitBytes()));
         }
+        if (list(connectionSession, req.getSchemaName()).stream()
+                .anyMatch(o -> StringUtils.equals(o.getName(), req.getName()))) {
+            throw new IllegalArgumentException(String.format("Resource %s already exists", req.getName()));
+        }
+        Long databaseId = getDatabaseIdByConnectionSession(connectionSession);
+        permissionHelper.checkDBPermissions(Collections.singleton(databaseId),
+                Collections.singleton(DatabasePermissionType.CHANGE));
         return objectStorageExecutor.concurrentSafeExecute(() -> {
             try (InputStream inputStream = file.getInputStream()) {
+                DBExternalResourceUploadParam param = new DBExternalResourceUploadParam();
+                param.setSchemaName(req.getSchemaName());
+                param.setName(req.getName());
+                param.setComment(req.getComment());
+                param.setType(req.getType());
                 param.setInputStream(inputStream);
                 return connectionSession.getSyncJdbcExecutor(ConnectionSessionConstants.BACKEND_DS_KEY)
                         .execute((ConnectionCallback<Boolean>) con -> {
@@ -113,59 +125,62 @@ public class DBExternalResourceService {
         });
     }
 
-    public ResponseEntity<InputStreamResource> download(@NonNull ConnectionSession connectionSession,
+    public ResponseEntity<InputStreamResource> download(@NotNull ConnectionSession connectionSession,
             @NotEmpty String schemaName,
-            @NonNull String resourceName)
+            @NotEmpty String resourceName)
             throws IOException {
         if (list(connectionSession, schemaName).stream()
                 .allMatch(o -> !StringUtils.equals(o.getName(), resourceName))) {
             throw new IllegalArgumentException(String.format("Resource %s does not exist", resourceName));
         }
-        DBExternalResourceStreamHolder holder = connectionSession.getSyncJdbcExecutor(
-                ConnectionSessionConstants.BACKEND_DS_KEY).execute(
-                        (ConnectionCallback<DBExternalResourceStreamHolder>) con -> DBExternalResourceService.this
-                                .getExternalResourceExtensionPoint(connectionSession).download(
-                                        con, schemaName, resourceName));
-        if (holder.getTotalSize() > properties.getDownloadLimitBytes()) {
-            holder.close();
+        DBExternalResource resource = connectionSession.getSyncJdbcExecutor(
+                ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute((ConnectionCallback<DBExternalResource>) con -> getExternalResourceExtensionPoint(
+                        connectionSession)
+                                .getDetail(con, schemaName, resourceName));
+        if (resource.getSize() > properties.getDownloadLimitBytes()) {
+            resource.getInputStream().close();
             throw new IllegalStateException(String.format(
                     "Resource is too large, the maximum size of the downloaded file cannot exceed %d bytes",
                     properties.getUploadLimitBytes()));
         }
-        return WebResponseUtils.getFileAttachmentResponseEntity(new InputStreamResource(holder.getInputStream()),
-                generateFileName(schemaName, resourceName, holder.getType()));
+        return WebResponseUtils.getFileAttachmentResponseEntity(new InputStreamResource(resource.getInputStream()),
+                generateFileName(schemaName, resourceName, resource.getType()));
     }
 
-    public List<DBObjectIdentity> list(@NonNull ConnectionSession connectionSession, @NotEmpty String dbName) {
+    public List<DBObjectIdentity> list(@NotNull ConnectionSession connectionSession, @NotEmpty String dbName) {
         return connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.BACKEND_DS_KEY)
                 .execute((ConnectionCallback<List<DBObjectIdentity>>) con -> getExternalResourceExtensionPoint(
                         connectionSession).list(con, dbName));
     }
 
-    public DBExternalResource detail(@NonNull ConnectionSession connectionSession,
-            @NotEmpty DBExternalResourceDetailParam param) {
-        if (list(connectionSession, param.getSchemaName()).stream()
-                .allMatch(o -> !StringUtils.equals(o.getName(), param.getName()))) {
-            throw new IllegalArgumentException(String.format("Resource %s does not exist", param.getName()));
+    public DBExternalResource detail(@NotNull ConnectionSession connectionSession,
+            @NotNull @Valid DBExternalResourceReq req) throws IOException {
+        if (list(connectionSession, req.getSchemaName()).stream()
+                .allMatch(o -> !StringUtils.equals(o.getName(), req.getName()))) {
+            throw new IllegalArgumentException(String.format("Resource %s does not exist", req.getName()));
         }
-        if (param.getSupportViewBytes() > properties.getGetContentLimitBytes()) {
-            param.setSupportViewBytes(properties.getGetContentLimitBytes());
-        }
-        // The character set is based on the front-end input. If not available, follow the default
-        // configuration.
-        if (param.getCharset() == null) {
-            param.setCharset(properties.getCharset());
-        }
-        return connectionSession.getSyncJdbcExecutor(
+        Integer supportViewBytes = Math.min(req.getSupportViewBytes(), properties.getGetContentLimitBytes());
+        Charset charset = req.getCharset() != null ? req.getCharset() : properties.getCharset();
+        DBExternalResource resource = connectionSession.getSyncJdbcExecutor(
                 ConnectionSessionConstants.BACKEND_DS_KEY)
-                .execute((ConnectionCallback<DBExternalResource>) con -> {
-                    return getExternalResourceExtensionPoint(connectionSession)
-                            .getDetail(con, param);
-                });
+                .execute((ConnectionCallback<DBExternalResource>) con -> getExternalResourceExtensionPoint(
+                        connectionSession)
+                                .getDetail(con, req.getSchemaName(), req.getName()));
+        try (InputStream inputStream = resource.getInputStream();
+                Reader reader = new InputStreamReader(inputStream, charset)) {
+            if (resource.getType() == DBExternalResourceType.PYTHON_PY) {
+                char[] buffer = new char[supportViewBytes / 2];
+                IOUtils.read(reader, buffer);
+                resource.setComment(new String(buffer));
+            }
+        }
+        return resource;
+
     }
 
-    public Boolean drop(@NonNull ConnectionSession connectionSession, @NotEmpty String dbName,
+    public Boolean drop(@NotNull ConnectionSession connectionSession, @NotEmpty String dbName,
             @NotEmpty String resourceName) {
         if (list(connectionSession, dbName).stream().allMatch(o -> !StringUtils.equals(o.getName(), resourceName))) {
             throw new IllegalArgumentException(String.format("Resource %s does not exist", resourceName));
@@ -179,11 +194,11 @@ public class DBExternalResourceService {
                         .drop(con, dbName, resourceName));
     }
 
-    private ExternalResourceExtensionPoint getExternalResourceExtensionPoint(@NonNull ConnectionSession session) {
+    private ExternalResourceExtensionPoint getExternalResourceExtensionPoint(@NotNull ConnectionSession session) {
         return SchemaPluginUtil.getExternalResourceExtensionPoint(session.getDialectType());
     }
 
-    private Long getDatabaseIdByConnectionSession(@NonNull ConnectionSession session) {
+    private Long getDatabaseIdByConnectionSession(@NotNull ConnectionSession session) {
         ConnectionConfig connConfig = (ConnectionConfig) ConnectionSessionUtil.getConnectionConfig(session);
         String schemaName = ConnectionSessionUtil.getCurrentSchema(session);
         DatabaseEntity databaseEntity =
