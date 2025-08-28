@@ -700,6 +700,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     @Test
     public void getFunction_Success() {
         DBFunction function = accessor.getFunction(getOBMySQLDataBaseName(), "function_test");
+        Assert.assertNull(function.getExternalResourceProperties());
         Assert.assertTrue(function != null
                 && function.getParams().size() == 2
                 && function.getReturnType() != null);
