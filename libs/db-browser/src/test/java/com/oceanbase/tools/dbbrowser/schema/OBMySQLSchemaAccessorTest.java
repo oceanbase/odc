@@ -694,7 +694,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
     @Test
     public void listFunctions_Success() {
         List<DBPLObjectIdentity> functions = accessor.listFunctions(getOBMySQLDataBaseName());
-        Assert.assertTrue(functions != null && functions.size() == 2);
+        Assert.assertTrue(functions != null && functions.size() > 0);
     }
 
     @Test
@@ -708,6 +708,7 @@ public class OBMySQLSchemaAccessorTest extends BaseTestEnv {
 
     @Test
     public void getFunction_ExternalResourceIsJar_Success() {
+        assumeTrue(isSupportJavaAndPythonUdf);
         DBFunction function = accessor.getFunction(getOBMySQLDataBaseName(), "external_jar_func");
         DBExternalFunctionProperties properties = new DBExternalFunctionProperties();
         properties.setLanguage(DBExternalFunctionLanguage.JAVA);

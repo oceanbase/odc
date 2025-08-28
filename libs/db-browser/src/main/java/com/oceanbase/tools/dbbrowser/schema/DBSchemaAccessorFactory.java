@@ -32,6 +32,7 @@ import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLBetween2260And2276Schem
 import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLBetween2277And3XSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLBetween400And432SchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLBetween432And4352SchemaAccessor;
+import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLBetween4352And4410SchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLNoGreaterThan1479SchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.OBMySQLSchemaAccessor;
 import com.oceanbase.tools.dbbrowser.schema.mysql.ODPOBMySQLSchemaAccessor;
@@ -81,7 +82,7 @@ public class DBSchemaAccessorFactory extends AbstractDBBrowserFactory<DBSchemaAc
             return new OBMySQLSchemaAccessor(getJdbcOperations());
         } else if (VersionUtils.isGreaterThanOrEqualsTo(this.dbVersion, "4.3.5.2")) {
             // OB version between [4.3.5.2, 4.4.1.0)
-            return new OBMySQLBetween432And4352SchemaAccessor(getJdbcOperations());
+            return new OBMySQLBetween4352And4410SchemaAccessor(getJdbcOperations());
         } else if (VersionUtils.isGreaterThanOrEqualsTo(this.dbVersion, "4.3.2")) {
             // OB version between [4.3.2, 4.3.5.2)
             return new OBMySQLBetween432And4352SchemaAccessor(getJdbcOperations());
