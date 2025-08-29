@@ -274,5 +274,5 @@ insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min
 insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_materialized_view_log', 'OB_MYSQL', 'true', '4.3.5.2', CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
 insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_materialized_view_log', 'OB_ORACLE', 'true', '4.3.5.2', CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;
 
--- supports ob java udf
+-- supports ob external resource
 insert into `odc_version_diff_config`(`config_key`,`db_mode`,`config_value`,`min_version`,`gmt_create`) values('support_external_resource', 'OB_MYSQL', 'true', '4.4.1.0', CURRENT_TIMESTAMP) ON DUPLICATE KEY update `config_key`=`config_key`;

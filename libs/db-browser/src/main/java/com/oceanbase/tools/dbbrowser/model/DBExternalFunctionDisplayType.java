@@ -16,6 +16,7 @@
 package com.oceanbase.tools.dbbrowser.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
  * @description:
@@ -31,9 +32,9 @@ public enum DBExternalFunctionDisplayType {
     PYTHON_UDF("PYTHON UDF"),
     PYTHON_UDAF("PYTHON UDAF"),
     PYTHON_UDTF("PYTHON UDTF"),
-    NULL("NULL"),
     OTHERS("OTHERS");
 
+    @JsonValue
     private final String name;
 
     DBExternalFunctionDisplayType(String name) {
