@@ -100,8 +100,8 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
 
     @Override
     public DBFunction getFunction(String schemaName, String functionName) {
-        MySQLSqlBuilder sql1 = new MySQLSqlBuilder();
-        sql1.append(
+        MySQLSqlBuilder sql = new MySQLSqlBuilder();
+        sql.append(
                 "select DEFINER, CREATED, LAST_ALTERED, ROUTINE_DEFINITION ,EXTERNAL_NAME, EXTERNAL_LANGUAGE from `information_schema`.`routines` where ROUTINE_SCHEMA=")
                 .value(schemaName)
                 .append(" and ROUTINE_TYPE = 'FUNCTION' and ROUTINE_NAME=")
@@ -125,7 +125,7 @@ public class OBMySQLSchemaAccessor extends MySQLNoLessThan5700SchemaAccessor {
                         .append(rs.getString("DTD_IDENTIFIER")).append(",");
             }
         });
-        jdbcOperations.query(sql1.toString(), (rs) -> {
+        jdbcOperations.query(sql.toString(), (rs) -> {
             function.setDefiner(rs.getString("DEFINER"));
             function.setCreateTime(Timestamp.valueOf(rs.getString("CREATED")));
             function.setModifyTime(Timestamp.valueOf(rs.getString("LAST_ALTERED")));
