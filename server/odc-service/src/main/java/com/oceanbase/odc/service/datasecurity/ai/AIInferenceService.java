@@ -15,27 +15,40 @@
  */
 package com.oceanbase.odc.service.datasecurity.ai;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
 import com.openai.client.OpenAIClient;
-import com.openai.core.JsonBoolean;
-import com.openai.core.JsonValue;
 import com.openai.models.chat.completions.ChatCompletion;
 import com.openai.models.chat.completions.ChatCompletionCreateParams;
 
 @Service
 public class AIInferenceService {
 
-    private final AIConfig     aiConfig;
-    private final OpenAIClient openAIClient;
+    private final AIConfig aiConfig;
+    private final Optional<OpenAIClient> openAIClient;
 
-    // 直接注入 AIConfig 和 OpenAIClient 两个Bean
-    public AIInferenceService(AIConfig aiConfig, OpenAIClient openAIClient) {
+    // 注入 AIConfig 和可选的 OpenAIClient Bean
+    public AIInferenceService(AIConfig aiConfig, Optional<OpenAIClient> openAIClient) {
         this.aiConfig = aiConfig;
         this.openAIClient = openAIClient;
+    }
+
+    /**
+     * 检查AI功能是否可用
+     * @throws IllegalStateException 如果AI功能不可用
+     */
+    private void checkAIAvailability() {
+        if (!aiConfig.isEnabled()) {
+            throw new IllegalStateException("AI功能未启用。请联系管理员启用AI功能。");
+        }
+        if (!aiConfig.isAIAvailable()) {
+            throw new IllegalStateException("AI功能配置不完整。请联系管理员配置AI相关参数。");
+        }
+        if (!openAIClient.isPresent()) {
+            throw new IllegalStateException("AI客户端未初始化。请检查AI配置并重启服务。");
+        }
     }
 
     /**
@@ -44,8 +57,11 @@ public class AIInferenceService {
      * @param systemPrompt 系统提示词
      * @param userPrompt   用户提示词
      * @return AI响应
+     * @throws IllegalStateException 如果AI功能不可用
      */
     public ChatCompletion chat(String systemPrompt, String userPrompt) {
+        // 检查AI功能可用性
+        checkAIAvailability();
 
         try {
             ChatCompletionCreateParams params = ChatCompletionCreateParams.builder()
@@ -56,9 +72,17 @@ public class AIInferenceService {
                 .topP(aiConfig.getTopP())
                 .additionalBodyProperties(aiConfig.loadAdditionalParams())
                 .build();
-            return openAIClient.chat().completions().create(params);
+            return openAIClient.get().chat().completions().create(params);
         } catch (Exception e) {
             throw new RuntimeException("调用AI服务失败: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * 检查AI功能是否可用（不抛出异常）
+     * @return true if AI功能可用
+     */
+    public boolean isAIAvailable() {
+        return aiConfig.isEnabled() && aiConfig.isAIAvailable() && openAIClient.isPresent();
     }
 }

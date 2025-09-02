@@ -56,7 +56,8 @@ public class CommonSecurityProperties {
             "/api/v2/internal/file/downloadImportFile",
             "/api/v2/info",
             "/api/v2/sso/state",
-            "/api/v2/encryption/publicKey"};
+            "/api/v2/encryption/publicKey",
+            "/api/v2/ai/status"};
 
     private static final String[] STATIC_RESOURCES = new String[] {
             "/",
