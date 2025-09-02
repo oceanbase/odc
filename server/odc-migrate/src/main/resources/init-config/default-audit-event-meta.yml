@@ -588,3 +588,26 @@
   in_connection: 0
   enabled: 1
   id: 104
+
+# 外部资源管理
+- type: "DATABASE_OPERATION"
+  action: "CALL"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.DBExternalResourceController.deleteExternalResource"
+  sid_extract_expression: "{#sessionId}"
+  in_connection: 1
+  enabled: 1
+  id: 105
+- type: "DATABASE_OPERATION"
+  action: "CALL"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.DBExternalResourceController.uploadExternalResource"
+  sid_extract_expression: "{#sessionId}"
+  in_connection: 1
+  enabled: 1
+  id: 106
+- type: "DATABASE_OPERATION"
+  action: "SELECT"
+  method_signature: "com.oceanbase.odc.server.web.controller.v2.DBExternalResourceController.downloadExternalResource"
+  sid_extract_expression: "{#sessionId}"
+  in_connection: 1
+  enabled: 1
+  id: 107

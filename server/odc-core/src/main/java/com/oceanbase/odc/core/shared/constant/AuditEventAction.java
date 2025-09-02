@@ -128,6 +128,8 @@ public enum AuditEventAction implements Translatable {
 
     CREATE,
 
+    CALL,
+
     OTHERS,
 
     /**

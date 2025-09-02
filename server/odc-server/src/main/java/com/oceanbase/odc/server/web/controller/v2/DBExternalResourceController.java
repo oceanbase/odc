@@ -34,6 +34,7 @@ import com.oceanbase.odc.core.session.ConnectionSession;
 import com.oceanbase.odc.service.common.response.ListResponse;
 import com.oceanbase.odc.service.common.response.Responses;
 import com.oceanbase.odc.service.common.response.SuccessResponse;
+import com.oceanbase.odc.service.common.util.SidUtils;
 import com.oceanbase.odc.service.db.DBExternalResourceService;
 import com.oceanbase.odc.service.db.model.DBExternalResourceReq;
 import com.oceanbase.odc.service.db.model.DBExternalResourceUploadReq;
@@ -66,7 +67,7 @@ public class DBExternalResourceController {
     @StatefulRoute(stateName = StateName.DB_SESSION, stateIdExpression = "#sessionId")
     public ListResponse<DBObjectIdentity> list(@PathVariable String sessionId,
             @PathVariable String databaseName) {
-        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
+        ConnectionSession session = sessionService.nullSafeGet(SidUtils.getSessionId(sessionId), true);
         return Responses.list(externalResourceService.list(session, databaseName));
     }
 
@@ -79,7 +80,7 @@ public class DBExternalResourceController {
             @RequestBody DBExternalResourceReq req) throws IOException {
         req.setName(resourceName);
         req.setSchemaName(databaseName);
-        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
+        ConnectionSession session = sessionService.nullSafeGet(SidUtils.getSessionId(sessionId), true);
         return Responses.success(externalResourceService.detail(session, req));
     }
 
@@ -92,7 +93,7 @@ public class DBExternalResourceController {
             @PathVariable String resourceName,
             @RequestPart("req") DBExternalResourceUploadReq req,
             @RequestPart("file") MultipartFile file) {
-        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
+        ConnectionSession session = sessionService.nullSafeGet(SidUtils.getSessionId(sessionId), true);
         req.setSchemaName(databaseName);
         req.setName(resourceName);
         return Responses.success(externalResourceService.upload(session, req, file));
@@ -105,7 +106,7 @@ public class DBExternalResourceController {
     public ResponseEntity<InputStreamResource> downloadExternalResource(@PathVariable String sessionId,
             @PathVariable String databaseName,
             @PathVariable String resourceName) throws IOException {
-        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
+        ConnectionSession session = sessionService.nullSafeGet(SidUtils.getSessionId(sessionId), true);
         return externalResourceService.download(session, databaseName, resourceName);
     }
 
@@ -116,7 +117,7 @@ public class DBExternalResourceController {
     public SuccessResponse<Boolean> deleteExternalResource(@PathVariable String sessionId,
             @PathVariable String databaseName,
             @PathVariable String resourceName) {
-        ConnectionSession session = sessionService.nullSafeGet(sessionId, true);
+        ConnectionSession session = sessionService.nullSafeGet(SidUtils.getSessionId(sessionId), true);
         return Responses.success(externalResourceService.drop(session, databaseName, resourceName));
     }
 

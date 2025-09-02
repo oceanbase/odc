@@ -353,9 +353,14 @@ public class AuditEventAspect {
             // 脚本上传，记录上传的文件名
             if (Objects.nonNull(apiParams.get("files"))) {
                 List<MultipartFile> files = (List<MultipartFile>) apiParams.get("files");
-                jsonStr = JsonUtils
-                        .toJson(files.stream().map(MultipartFile::getOriginalFilename).collect(Collectors.toList()));
+                apiParams.put("files",
+                        files.stream().map(MultipartFile::getOriginalFilename).collect(Collectors.toList()));
             }
+            if (Objects.nonNull(apiParams.get("file"))) {
+                MultipartFile file = (MultipartFile) apiParams.get("file");
+                apiParams.put("file", file.getOriginalFilename());
+            }
+            jsonStr = JsonUtils.toJson(apiParams);
             // audit_event 表的 detail 字段不能为空，除了脚本上传的场景，现在都是可序列化的。
             // 稳妥起见，这里返回一个指定字符串防止插入失败
             if (StringUtils.isEmpty(jsonStr)) {

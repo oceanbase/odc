@@ -133,11 +133,14 @@ public class DBExternalResourceService {
                 .allMatch(o -> !StringUtils.equals(o.getName(), resourceName))) {
             throw new IllegalArgumentException(String.format("Resource %s does not exist", resourceName));
         }
-        DBExternalResource resource = connectionSession.getSyncJdbcExecutor(
-                ConnectionSessionConstants.BACKEND_DS_KEY)
-                .execute((ConnectionCallback<DBExternalResource>) con -> getExternalResourceExtensionPoint(
-                        connectionSession)
-                                .getDetail(con, schemaName, resourceName));
+        DBExternalResource resource = objectStorageExecutor.concurrentSafeExecute(() -> connectionSession
+                .getSyncJdbcExecutor(
+                        ConnectionSessionConstants.BACKEND_DS_KEY)
+                .execute(
+                        (ConnectionCallback<DBExternalResource>) con -> DBExternalResourceService.this
+                                .getExternalResourceExtensionPoint(
+                                        connectionSession)
+                                .getDetail(con, schemaName, resourceName)));
         if (resource.getSize() > properties.getDownloadLimitBytes()) {
             resource.getInputStream().close();
             throw new IllegalStateException(String.format(
@@ -213,7 +216,7 @@ public class DBExternalResourceService {
         } else if (DBExternalResourceType.PYTHON_PY == type) {
             return schemaName + "_" + resourceName + ".py";
         } else {
-            throw new UnsupportedException(String.format("unsupported resource type %s", type));
+            throw new UnsupportedException(String.format("unsupported external resource type %s", type));
         }
     }
 

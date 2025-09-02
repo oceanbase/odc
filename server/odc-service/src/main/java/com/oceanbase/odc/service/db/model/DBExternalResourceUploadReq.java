@@ -42,4 +42,6 @@ public class DBExternalResourceUploadReq {
     @NotNull(message = "type cannot be null")
     private DBExternalResourceType type;
 
+    private String preparedStatement = "call dbms_java.loadjava(?, ?, ?)";
+
 }
