@@ -28,6 +28,8 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.datasecurity.ai.AIInferenceService;
 import com.oceanbase.odc.service.datasecurity.ai.AIParam;
@@ -39,10 +41,12 @@ import com.oceanbase.odc.service.datasecurity.model.SensitiveRuleType;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.openai.models.chat.completions.ChatCompletion;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * AI 列识别器（最终版）
  */
+@Slf4j
 public class AIColumnRecognizer implements ColumnRecognizer {
 
     private final SensitiveRule aiRule; // 直接保存整个规则对象
@@ -83,7 +87,7 @@ public class AIColumnRecognizer implements ColumnRecognizer {
                     processBatch(batch, promptTemplateLoader, aiService, finalAiResults);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("Failed to process AI column recognition batch", e);
                 return finalAiResults;
             }
         } else {
@@ -91,7 +95,7 @@ public class AIColumnRecognizer implements ColumnRecognizer {
             try {
                 processBatch(columns, promptTemplateLoader, aiService, finalAiResults);
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("Failed to process AI column recognition", e);
                 return finalAiResults;
             }
         }
@@ -116,17 +120,30 @@ public class AIColumnRecognizer implements ColumnRecognizer {
 
         // c. 使用正则表达式从AI的返回结果中安全地提取JSON数组字符串
         Matcher matcher = JSON_PATTERN.matcher(rawContent);
-        String jsonArrayResponse = "[]"; // 提供一个安全的默认值，以防匹配失败
+        String jsonArrayResponse = null;
         if (matcher.find()) {
             // group(1) 对应被 ```json [...] ``` 包裹的内容, group(2) 对应裸露的 [...]
             // 使用 Optional 来优雅地处理可能为null的捕获组
             jsonArrayResponse = Optional.ofNullable(matcher.group(1)).orElse(matcher.group(2));
         }
 
+        if (jsonArrayResponse == null) {
+            throw new BadRequestException(ErrorCodes.AIResponseFormatError,
+                new Object[]{"No valid JSON array found in AI response"},
+                "AI response does not contain valid JSON format: " + rawContent);
+        }
+
         // d. 解析提取出的、更纯净的 JSON 数组
-        List<AiResponseDto> batchResults = objectMapper.readValue(jsonArrayResponse,
-            new TypeReference<List<AiResponseDto>>() {
-            });
+        List<AiResponseDto> batchResults;
+        try {
+            batchResults = objectMapper.readValue(jsonArrayResponse,
+                new TypeReference<List<AiResponseDto>>() {
+                });
+        } catch (Exception e) {
+            throw new BadRequestException(ErrorCodes.AIResponseFormatError,
+                new Object[]{"Failed to parse JSON: " + e.getMessage()},
+                "Failed to parse AI response JSON: " + jsonArrayResponse, e);
+        }
 
 
         // d. 将这批次的结果存入最终的 map，添加边界检查防止数组越界
@@ -152,8 +169,8 @@ public class AIColumnRecognizer implements ColumnRecognizer {
 
         // 如果AI返回的结果数量与输入不匹配，记录警告信息
         if (batchResults.size() != batch.size()) {
-            System.err.println("警告: AI返回结果数量(" + batchResults.size() +
-                               ")与输入列数量(" + batch.size() + ")不匹配");
+            log.warn("AI response count ({}) does not match input column count ({})",
+                batchResults.size(), batch.size());
         }
     }
 

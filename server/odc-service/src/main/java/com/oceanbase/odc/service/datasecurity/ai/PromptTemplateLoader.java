@@ -25,6 +25,7 @@ import org.springframework.stereotype.Component;
 
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 
+import lombok.extern.slf4j.Slf4j;
 import lombok.var;
 
 /**
@@ -33,6 +34,7 @@ import lombok.var;
  * 该类负责加载结构化的 AI 提示词模板，并根据列元数据、指定的敏感类型和用户自定义提示来构建最终的提示词。
  * </p>
  */
+@Slf4j
 @Component
 public class PromptTemplateLoader {
 
@@ -56,6 +58,7 @@ public class PromptTemplateLoader {
         } catch (Exception e) {
             // 在实际项目中，这里应该使用日志系统
             e.printStackTrace();
+            log.error("Failed to load AI system prompt template: {}", e.getMessage(), e);
             throw new IllegalStateException("Failed to load AI system prompt template", e);
         }
     }

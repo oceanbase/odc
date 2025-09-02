@@ -44,10 +44,13 @@ import com.oceanbase.odc.service.datasecurity.model.DefaultSensitiveType;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.oceanbase.odc.service.common.util.SpringContextUtil;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @author gaoda.xy
  * @date 2023/5/25 14:43
  */
+@Slf4j
 public class SensitiveColumnScanningTask implements Callable<Void> {
 
     private final Database database;
@@ -165,8 +168,7 @@ public class SensitiveColumnScanningTask implements Callable<Void> {
                     }
                     taskInfo.addFinishedTableCount();
                 } catch (Exception e) {
-                    System.err.println("表 " + objectName + " 扫描失败: " + e.toString());
-                    e.printStackTrace();
+                    log.error("Failed to scan table {}: {}", objectName, e.getMessage(), e);
                     // 即使失败也要增加完成计数，避免任务卡住
                     taskInfo.addFinishedTableCount();
                 }
@@ -235,7 +237,7 @@ public class SensitiveColumnScanningTask implements Callable<Void> {
                         return algorithmIdOpt.get();
                     }
                 } catch (Exception e) {
-                    System.err.println("Failed to get algorithm ID by name: " + e.getMessage());
+                    log.error("Failed to get algorithm ID by name: {}", e.getMessage(), e);
                 }
             }
         }
@@ -253,7 +255,7 @@ public class SensitiveColumnScanningTask implements Callable<Void> {
             return algorithmService.getDefaultAlgorithmIdByOrganizationId(database.getOrganizationId());
         } catch (Exception e) {
             // 记录错误日志，但不抛出异常，避免影响整个扫描流程
-            System.err.println("Failed to get default masking algorithm ID: " + e.getMessage());
+            log.error("Failed to get default masking algorithm ID: {}", e.getMessage(), e);
             return null;
         }
     }

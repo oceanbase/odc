@@ -18,9 +18,13 @@ package com.oceanbase.odc.service.datasecurity.ai;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.openai.client.OpenAIClient;
 import com.openai.client.okhttp.OpenAIOkHttpClient;
 import com.openai.core.JsonBoolean;
@@ -30,22 +34,26 @@ import com.openai.core.JsonValue;
 import lombok.Data;
 
 /**
- * 后期需要弄成动态配置
+ * AI功能配置类，支持从系统配置中动态读取配置
  */
 @Data
 @Component
-// @ConfigurationProperties(prefix = "datasecurity.ai")
 public class AIConfig {
-    private boolean enabled = true;
+    @Value("${odc.ai.enabled:false}")
+    private boolean enabled;
 
-    //private String apiKey = "sk-c6bbbbde1b7e420b897d0662301c6d7c";
-    private String apiKey = "token-abc123";
+    @Value("${odc.ai.api-key:}")
+    private String apiKey;
 
-    //private String baseUrl = "https://dashscope.aliyuncs.com/compatible-mode/v1";
-    private String baseUrl = "http://172.25.17.78:8000/v1";
+    @Value("${odc.ai.base-url:https://api.openai.com}")
+    private String baseUrl;
 
-    //private String model = "qwen3-8b";
-    private String model = "nlora";
+    @Value("${odc.ai.model:gpt-3.5-turbo}")
+    private String model;
+
+    // 硬编码超时和重试配置
+    private static final int TIMEOUT_SECONDS = 30;
+    private static final int MAX_RETRIES = 3;
 
     private Boolean enableThinking = AIParam.DEFAULT_ENABLE_THINKING;
 
@@ -66,10 +74,22 @@ public class AIConfig {
     }
 
     @Bean
+    @ConditionalOnProperty(name = "odc.ai.enabled", havingValue = "true")
     public OpenAIClient openAIClient() {
+        if (apiKey == null || apiKey.trim().isEmpty()) {
+            throw new BadRequestException(ErrorCodes.AIConfigurationIncomplete, new Object[]{"API key is not configured"}, "AI service is enabled but API key is not configured. Please set odc.ai.api-key configuration.");
+        }
         return OpenAIOkHttpClient.builder()
             .apiKey(this.apiKey)
             .baseUrl(this.baseUrl)
             .build();
+    }
+
+    /**
+     * 检查AI功能是否可用
+     * @return true if AI功能启用且配置完整
+     */
+    public boolean isAIAvailable() {
+        return enabled && apiKey != null && !apiKey.trim().isEmpty();
     }
 }
