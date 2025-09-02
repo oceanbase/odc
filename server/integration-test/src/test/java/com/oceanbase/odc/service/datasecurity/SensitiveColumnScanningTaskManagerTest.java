@@ -47,6 +47,7 @@ import com.oceanbase.odc.core.sql.execute.SyncJdbcExecutor;
 import com.oceanbase.odc.service.collaboration.project.model.Project;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.datasecurity.model.ScanningModeType;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnScanningTaskInfo;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnScanningTaskInfo.ScanningTaskStatus;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveLevel;
@@ -107,7 +108,7 @@ public class SensitiveColumnScanningTaskManagerTest extends ServiceTestEnv {
     public void test_start_groovyRule_OBMySQL() {
         List<Database> databases = createDatabases(ConnectType.OB_MYSQL);
         List<SensitiveRule> rules = Arrays.asList(createGroovySensitiveRules());
-        SensitiveColumnScanningTaskInfo taskInfo = manager.start(databases, rules, mysqlConnectionConfig, null);
+        SensitiveColumnScanningTaskInfo taskInfo = manager.start(databases, rules, ScanningModeType.JOINT_RECOGNITION, oracleConnectionConfig, null);
         await().atMost(20, SECONDS)
                 .until(() -> manager.get(taskInfo.getTaskId()).getStatus() == ScanningTaskStatus.SUCCESS);
         Assert.assertEquals(2, manager.get(taskInfo.getTaskId()).getSensitiveColumns().size());
@@ -117,7 +118,7 @@ public class SensitiveColumnScanningTaskManagerTest extends ServiceTestEnv {
     public void test_start_groovyRule_OBOracle() {
         List<Database> databases = createDatabases(ConnectType.OB_ORACLE);
         List<SensitiveRule> rules = Arrays.asList(createGroovySensitiveRules());
-        SensitiveColumnScanningTaskInfo taskInfo = manager.start(databases, rules, oracleConnectionConfig, null);
+        SensitiveColumnScanningTaskInfo taskInfo = manager.start(databases, rules, ScanningModeType.JOINT_RECOGNITION, oracleConnectionConfig, null);
         await().atMost(20, SECONDS)
                 .until(() -> manager.get(taskInfo.getTaskId()).getStatus() == ScanningTaskStatus.SUCCESS);
         Assert.assertEquals(2, manager.get(taskInfo.getTaskId()).getSensitiveColumns().size());
@@ -127,7 +128,7 @@ public class SensitiveColumnScanningTaskManagerTest extends ServiceTestEnv {
     public void test_start_pathRule_OBMySQL() {
         List<Database> databases = createDatabases(ConnectType.OB_MYSQL);
         List<SensitiveRule> rules = Arrays.asList(createPathSensitiveRules());
-        SensitiveColumnScanningTaskInfo taskInfo = manager.start(databases, rules, mysqlConnectionConfig, null);
+        SensitiveColumnScanningTaskInfo taskInfo = manager.start(databases, rules, ScanningModeType.JOINT_RECOGNITION, oracleConnectionConfig, null);
         await().atMost(20, SECONDS)
                 .until(() -> manager.get(taskInfo.getTaskId()).getStatus() == ScanningTaskStatus.SUCCESS);
         Assert.assertEquals(20, manager.get(taskInfo.getTaskId()).getSensitiveColumns().size());
@@ -137,7 +138,7 @@ public class SensitiveColumnScanningTaskManagerTest extends ServiceTestEnv {
     public void test_start_pathRule_OBMOracle() {
         List<Database> databases = createDatabases(ConnectType.OB_ORACLE);
         List<SensitiveRule> rules = Arrays.asList(createPathSensitiveRules());
-        SensitiveColumnScanningTaskInfo taskInfo = manager.start(databases, rules, oracleConnectionConfig, null);
+        SensitiveColumnScanningTaskInfo taskInfo = manager.start(databases, rules, ScanningModeType.JOINT_RECOGNITION, oracleConnectionConfig, null);
         await().atMost(20, SECONDS)
                 .until(() -> manager.get(taskInfo.getTaskId()).getStatus() == ScanningTaskStatus.SUCCESS);
         Assert.assertEquals(20, manager.get(taskInfo.getTaskId()).getSensitiveColumns().size());
@@ -147,7 +148,7 @@ public class SensitiveColumnScanningTaskManagerTest extends ServiceTestEnv {
     public void test_start_RegexRule_OBMySQL() {
         List<Database> databases = createDatabases(ConnectType.OB_MYSQL);
         List<SensitiveRule> rules = Arrays.asList(createRegexSensitiveRules(ConnectType.OB_MYSQL));
-        SensitiveColumnScanningTaskInfo taskInfo = manager.start(databases, rules, mysqlConnectionConfig, null);
+        SensitiveColumnScanningTaskInfo taskInfo = manager.start(databases, rules, ScanningModeType.JOINT_RECOGNITION, mysqlConnectionConfig, null);
         await().atMost(20, SECONDS)
                 .until(() -> manager.get(taskInfo.getTaskId()).getStatus() == ScanningTaskStatus.SUCCESS);
         Assert.assertEquals(6, manager.get(taskInfo.getTaskId()).getSensitiveColumns().size());
@@ -157,7 +158,7 @@ public class SensitiveColumnScanningTaskManagerTest extends ServiceTestEnv {
     public void test_start_RegexRule_OBOracle() {
         List<Database> databases = createDatabases(ConnectType.OB_ORACLE);
         List<SensitiveRule> rules = Arrays.asList(createRegexSensitiveRules(ConnectType.OB_ORACLE));
-        SensitiveColumnScanningTaskInfo taskInfo = manager.start(databases, rules, oracleConnectionConfig, null);
+        SensitiveColumnScanningTaskInfo taskInfo = manager.start(databases, rules, ScanningModeType.JOINT_RECOGNITION, oracleConnectionConfig, null);
         await().atMost(20, SECONDS)
                 .until(() -> manager.get(taskInfo.getTaskId()).getStatus() == ScanningTaskStatus.SUCCESS);
         Assert.assertEquals(6, manager.get(taskInfo.getTaskId()).getSensitiveColumns().size());

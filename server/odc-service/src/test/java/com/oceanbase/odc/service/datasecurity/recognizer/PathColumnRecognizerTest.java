@@ -28,23 +28,15 @@ import com.oceanbase.odc.service.datasecurity.model.SensitiveRule;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveRuleType;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 
-/**
- * @author gaoda.xy
- * @date 2023/5/24 15:05
- */
 public class PathColumnRecognizerTest {
 
     @Test
     public void test_recognize_true() {
-        // 【修改】通过辅助方法创建规则，并用规则创建识别器
         SensitiveRule rule = createPathRule(1L, Arrays.asList("*.*b*.c"), Arrays.asList("a.b.*"));
         ColumnRecognizer recognizer = new PathColumnRecognizer(rule);
 
-        // 【修改】断言方式改为检查 Optional.isPresent()
-        // 原作者的每个测试用例都予以保留
         Optional<RecognitionResult> result1 = recognizer.recognize(createDBTableColumn("a", "b12", "c"));
         Assert.assertTrue("路径 'a.b12.c' 应匹配成功", result1.isPresent());
-        // 增加对返回内容的校验，使测试更严谨
         Assert.assertEquals(rule.getId(), result1.get().getMatchedRuleId());
 
         Optional<RecognitionResult> result2 = recognizer.recognize(createDBTableColumn("a12", "34b56", "c"));
@@ -56,12 +48,9 @@ public class PathColumnRecognizerTest {
 
     @Test
     public void test_recognize_false() {
-        // 【修改】通过辅助方法创建规则
         SensitiveRule rule = createPathRule(1L, Arrays.asList("*.*b*.c"), Arrays.asList("a.b.*"));
         ColumnRecognizer recognizer = new PathColumnRecognizer(rule);
 
-        // 【修改】断言方式改为检查 !Optional.isPresent()
-        // 原作者的每个测试用例都予以保留
         Assert.assertFalse("路径 'a.b.c' 应被排除，匹配失败",
                 recognizer.recognize(createDBTableColumn("a", "b", "c")).isPresent());
 
@@ -72,7 +61,6 @@ public class PathColumnRecognizerTest {
                 recognizer.recognize(createDBTableColumn("a12", "b34", null)).isPresent());
     }
 
-    // --- 辅助方法 ---
 
     private DBTableColumn createDBTableColumn(String schemaName, String tableName, String columnName) {
         DBTableColumn column = new DBTableColumn();
@@ -81,8 +69,6 @@ public class PathColumnRecognizerTest {
         column.setName(columnName);
         return column;
     }
-
-    // 【新增】辅助方法，用于快速创建测试用的 Path 规则
     private SensitiveRule createPathRule(Long id, List<String> includes, List<String> excludes) {
         SensitiveRule rule = new SensitiveRule();
         rule.setId(id);
