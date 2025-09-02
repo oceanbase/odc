@@ -29,27 +29,19 @@ import com.oceanbase.odc.service.datasecurity.model.SensitiveRule;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveRuleType;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 
-/**
- * @author gaoda.xy
- * @date 2023/5/23 19:35
- */
+
 public class GroovyColumnRecognizerTest {
 
-    // 原作者使用的 Junit 4 异常测试方式，我们予以保留
+
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
     @Test
     public void test_recognize_true() {
-        // 【修改】通过辅助方法创建规则和识别器
         SensitiveRule rule = createGroovyRule(1L, buildDefaultGroovyScript());
         ColumnRecognizer recognizer = new GroovyColumnRecognizer(rule);
         DBTableColumn dbTableColumn = createTestColumn();
-
-        // 【修改】调用新的 recognize 方法并检查 Optional 返回值
         Optional<RecognitionResult> resultOpt = recognizer.recognize(dbTableColumn);
-
-        // 【修改】断言结果存在，并验证内容
         Assert.assertTrue("脚本匹配成功，应返回有值的 Optional", resultOpt.isPresent());
         RecognitionResult result = resultOpt.get();
         Assert.assertEquals("匹配的规则ID应为 1", rule.getId(), result.getMatchedRuleId());
@@ -61,11 +53,8 @@ public class GroovyColumnRecognizerTest {
         SensitiveRule rule = createGroovyRule(1L, buildDefaultGroovyScript());
         ColumnRecognizer recognizer = new GroovyColumnRecognizer(rule);
         DBTableColumn dbTableColumn = createTestColumn();
-        dbTableColumn.setTableName("unmatched_table"); // 使脚本匹配失败
-
+        dbTableColumn.setTableName("unmatched_table");
         Optional<RecognitionResult> resultOpt = recognizer.recognize(dbTableColumn);
-
-        // 【修改】断言结果为空 Optional
         Assert.assertFalse("脚本匹配失败，应返回空的 Optional", resultOpt.isPresent());
     }
 
@@ -74,22 +63,16 @@ public class GroovyColumnRecognizerTest {
         SensitiveRule rule = createGroovyRule(1L, buildDefaultGroovyScript());
         ColumnRecognizer recognizer = new GroovyColumnRecognizer(rule);
         DBTableColumn dbTableColumn = createTestColumn();
-        dbTableColumn.setName(null); // 脚本内部会因为 null.equals(...) 抛异常
-
+        dbTableColumn.setName(null);
         Optional<RecognitionResult> resultOpt = recognizer.recognize(dbTableColumn);
-
-        // 【修改】断言结果为空 Optional，因为脚本执行异常被捕获
         Assert.assertFalse("脚本执行异常，应返回空的 Optional", resultOpt.isPresent());
     }
-
-    // --- 以下所有安全校验测试，保留原作者的意图和断言方式 ---
 
     @Test
     public void test_securityInterceptor_systemExit() {
         thrown.expect(Exception.class);
         thrown.expectMessage("Method call is not security");
         String script = "System.exit(-1);";
-        // 【修改】调用新的构造函数
         new GroovyColumnRecognizer(createGroovyRule(1L, script));
     }
 

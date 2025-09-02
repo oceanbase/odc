@@ -26,35 +26,26 @@ import com.oceanbase.odc.service.datasecurity.model.SensitiveRule;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveRuleType;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 
-/**
- * @author gaoda.xy
- * @date 2023/5/24 16:21
- */
+
 public class RegexColumnRecognizerTest {
 
     @Test
     public void recognize_returnTrue() {
-        // 【修改】通过辅助方法创建规则，并用规则创建识别器
         SensitiveRule rule = createTestRegexRule(1L);
         ColumnRecognizer recognizer = new RegexColumnRecognizer(rule);
         DBTableColumn column = createDBTableColumn("xxx", "xxx", "user_email", "email of user");
 
-        // 【修改】调用新的 recognize 方法并检查 Optional 返回值
         Optional<RecognitionResult> resultOpt = recognizer.recognize(column);
 
-        // 【修改】断言结果存在，并验证内容
         Assert.assertTrue("正则表达式应匹配成功", resultOpt.isPresent());
         Assert.assertEquals("匹配的规则ID应为 1", rule.getId(), resultOpt.get().getMatchedRuleId());
     }
 
     @Test
     public void recognize_returnFalse() {
-        // 【修改】通过辅助方法创建规则
         SensitiveRule rule = createTestRegexRule(1L);
         ColumnRecognizer recognizer = new RegexColumnRecognizer(rule);
 
-        // 【修改】断言方式改为检查 !Optional.isPresent()
-        // 原作者的每个测试用例都予以保留
         Assert.assertFalse("Comment 为 null 时不应匹配",
                 recognizer.recognize(createDBTableColumn("xxx", "xxx", "user_email", null)).isPresent());
 
@@ -66,16 +57,12 @@ public class RegexColumnRecognizerTest {
     }
 
 
-    // --- 辅助方法 ---
-
-    // 【修改】原 createRegexColumnRecognizer 替换为 createTestRegexRule
     private SensitiveRule createTestRegexRule(Long id) {
         SensitiveRule rule = new SensitiveRule();
         rule.setId(id);
         rule.setType(SensitiveRuleType.REGEX);
         rule.setEnabled(true);
         rule.setLevel(SensitiveLevel.HIGH);
-        // 保留原作者的正则表达式
         rule.setDatabaseRegexExpression("^\\S+$");
         rule.setTableRegexExpression("^\\S+$");
         rule.setColumnRegexExpression("^\\S*email\\S*$");
