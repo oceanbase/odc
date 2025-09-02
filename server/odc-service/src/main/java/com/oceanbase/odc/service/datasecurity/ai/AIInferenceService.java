@@ -19,6 +19,8 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
+import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.core.shared.exception.BadRequestException;
 import com.openai.client.OpenAIClient;
 import com.openai.models.chat.completions.ChatCompletion;
 import com.openai.models.chat.completions.ChatCompletionCreateParams;
@@ -41,13 +43,13 @@ public class AIInferenceService {
      */
     private void checkAIAvailability() {
         if (!aiConfig.isEnabled()) {
-            throw new IllegalStateException("AI功能未启用。请联系管理员启用AI功能。");
+            throw new BadRequestException(ErrorCodes.AIServiceNotAvailable, new Object[]{"AI service is not enabled"}, "AI service is not enabled. Please contact administrator to enable AI service.");
         }
         if (!aiConfig.isAIAvailable()) {
-            throw new IllegalStateException("AI功能配置不完整。请联系管理员配置AI相关参数。");
+            throw new BadRequestException(ErrorCodes.AIConfigurationIncomplete, new Object[]{"AI configuration is incomplete"}, "AI configuration is incomplete. Please contact administrator to configure AI parameters.");
         }
         if (!openAIClient.isPresent()) {
-            throw new IllegalStateException("AI客户端未初始化。请检查AI配置并重启服务。");
+            throw new BadRequestException(ErrorCodes.AIClientNotInitialized, new Object[]{"AI client is not initialized"}, "AI client is not initialized. Please check AI configuration and restart service.");
         }
     }
 
@@ -74,7 +76,7 @@ public class AIInferenceService {
                 .build();
             return openAIClient.get().chat().completions().create(params);
         } catch (Exception e) {
-            throw new RuntimeException("调用AI服务失败: " + e.getMessage(), e);
+            throw new BadRequestException(ErrorCodes.AIInferenceServiceError, new Object[]{e.getMessage()}, "Failed to call AI inference service: " + e.getMessage(), e);
         }
     }
 

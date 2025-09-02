@@ -334,6 +334,16 @@ public enum ErrorCodes implements ErrorCode {
     ExtractFileFailed,
     InvalidSignature,
 
+    /**
+     * AI Service
+     */
+    AIServiceNotAvailable,
+    AIConfigurationIncomplete,
+    AIClientNotInitialized,
+    AIInferenceServiceError,
+    AIResponseFormatError,
+    AIResponseCountMismatch,
+
 
     ;
 
