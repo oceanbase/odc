@@ -66,7 +66,7 @@ public class SensitiveColumnScanningTaskManager {
     private StatefulUuidStateIdGenerator statefulUuidStateIdGenerator;
 
     public SensitiveColumnScanningTaskInfo start(List<Database> databases, List<SensitiveRule> rules,
-            ScanningModeType scanningMode, // 新增参数
+            ScanningModeType scanningMode,
             ConnectionConfig connectionConfig, Map<Long, List<SensitiveColumnMeta>> databaseId2SensitiveColumns) {
         ConnectionSession session = new DefaultConnectSessionFactory(connectionConfig).generateSession();
         try {

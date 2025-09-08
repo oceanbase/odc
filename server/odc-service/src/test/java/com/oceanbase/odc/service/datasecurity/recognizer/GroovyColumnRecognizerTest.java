@@ -42,10 +42,11 @@ public class GroovyColumnRecognizerTest {
         ColumnRecognizer recognizer = new GroovyColumnRecognizer(rule);
         DBTableColumn dbTableColumn = createTestColumn();
         Optional<RecognitionResult> resultOpt = recognizer.recognize(dbTableColumn);
-        Assert.assertTrue("脚本匹配成功，应返回有值的 Optional", resultOpt.isPresent());
+        Assert.assertTrue("Script matching is successful. An Optional with a value should be returned.",
+                resultOpt.isPresent());
         RecognitionResult result = resultOpt.get();
-        Assert.assertEquals("匹配的规则ID应为 1", rule.getId(), result.getMatchedRuleId());
-        Assert.assertEquals("规则类型应为 GROOVY", SensitiveRuleType.GROOVY, result.getSourceRuleType());
+        Assert.assertEquals("The matching rule ID should be 1.", rule.getId(), result.getMatchedRuleId());
+        Assert.assertEquals("The rule type should be GROOVY", SensitiveRuleType.GROOVY, result.getSourceRuleType());
     }
 
     @Test
@@ -55,7 +56,7 @@ public class GroovyColumnRecognizerTest {
         DBTableColumn dbTableColumn = createTestColumn();
         dbTableColumn.setTableName("unmatched_table");
         Optional<RecognitionResult> resultOpt = recognizer.recognize(dbTableColumn);
-        Assert.assertFalse("脚本匹配失败，应返回空的 Optional", resultOpt.isPresent());
+        Assert.assertFalse("Script matching failed. It should return an empty Optional.", resultOpt.isPresent());
     }
 
     @Test
@@ -65,7 +66,8 @@ public class GroovyColumnRecognizerTest {
         DBTableColumn dbTableColumn = createTestColumn();
         dbTableColumn.setName(null);
         Optional<RecognitionResult> resultOpt = recognizer.recognize(dbTableColumn);
-        Assert.assertFalse("脚本执行异常，应返回空的 Optional", resultOpt.isPresent());
+        Assert.assertFalse("The script execution has failed. It should return an empty Optional.",
+                resultOpt.isPresent());
     }
 
     @Test
@@ -81,8 +83,8 @@ public class GroovyColumnRecognizerTest {
         thrown.expect(MultipleCompilationErrorsException.class);
         thrown.expectMessage("ForStatements are not allowed");
         String script = "for (int i = 0; i < 1; i++) {\n"
-                        + "    i = 0;\n"
-                        + "}";
+                + "    i = 0;\n"
+                + "}";
         new GroovyColumnRecognizer(createGroovyRule(1L, script));
     }
 
@@ -91,8 +93,8 @@ public class GroovyColumnRecognizerTest {
         thrown.expect(MultipleCompilationErrorsException.class);
         thrown.expectMessage("WhileStatements are not allowed");
         String script = "while(true) {\n"
-                        + "    int i = 0;\n"
-                        + "}";
+                + "    int i = 0;\n"
+                + "}";
         new GroovyColumnRecognizer(createGroovyRule(1L, script));
     }
 
@@ -116,17 +118,17 @@ public class GroovyColumnRecognizerTest {
 
     private String buildDefaultGroovyScript() {
         return "if (column.name.equals(\"column\")) {\n"
-               + "    if (column.table.equalsIgnoreCase(\"iam_user\")) {\n"
-               + "        if (column.schema.length() > 0) {\n"
-               + "            if (column.comment.indexOf(\"user\") > 0) {\n"
-               + "                if (column.type.toLowerCase().equals(\"varchar\")) {\n"
-               + "                    return true;\n"
-               + "                }\n"
-               + "            }\n"
-               + "        }\n"
-               + "    }\n"
-               + "}\n"
-               + "return false;";
+                + "    if (column.table.equalsIgnoreCase(\"iam_user\")) {\n"
+                + "        if (column.schema.length() > 0) {\n"
+                + "            if (column.comment.indexOf(\"user\") > 0) {\n"
+                + "                if (column.type.toLowerCase().equals(\"varchar\")) {\n"
+                + "                    return true;\n"
+                + "                }\n"
+                + "            }\n"
+                + "        }\n"
+                + "    }\n"
+                + "}\n"
+                + "return false;";
     }
 
     private DBTableColumn createTestColumn() {
@@ -139,7 +141,6 @@ public class GroovyColumnRecognizerTest {
         return dbTableColumn;
     }
 
-    // 【新增】辅助方法，用于快速创建测试用的 Groovy 规则
     private SensitiveRule createGroovyRule(Long id, String script) {
         SensitiveRule rule = new SensitiveRule();
         rule.setId(id);

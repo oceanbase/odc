@@ -16,8 +16,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 单表扫描任务管理器
- * 提供轻量级的异步任务管理功能
+ * Single-table scan task manager
  */
 @Slf4j
 @Component
@@ -29,14 +28,9 @@ public class SingleTableScanTaskManager {
     @Qualifier("scanSensitiveColumnExecutor")
     private ThreadPoolTaskExecutor executor;
 
-    /**
-     * 启动单表扫描任务
-     */
     public String startTask(String taskId, Runnable scanTask) {
         SingleTableScanTask task = new SingleTableScanTask(taskId);
         tasks.put(taskId, task);
-
-        // 使用Spring的ThreadPoolTaskExecutor，它会自动传递Spring Security上下文
         executor.submit(() -> {
             try {
                 task.setStatus(TaskStatus.RUNNING);
@@ -52,24 +46,15 @@ public class SingleTableScanTaskManager {
         return taskId;
     }
 
-    /**
-     * 启动单表扫描任务（自动生成taskId）
-     */
     public String startTask(Runnable scanTask) {
         String taskId = UUID.randomUUID().toString();
         return startTask(taskId, scanTask);
     }
 
-    /**
-     * 获取任务状态
-     */
     public SingleTableScanTask getTask(String taskId) {
         return tasks.get(taskId);
     }
 
-    /**
-     * 设置任务结果
-     */
     public void setTaskResult(String taskId, List<SensitiveColumn> result) {
         SingleTableScanTask task = tasks.get(taskId);
         if (task != null) {
@@ -77,9 +62,6 @@ public class SingleTableScanTaskManager {
         }
     }
 
-    /**
-     * 设置任务错误
-     */
     public void setTaskError(String taskId, String errorMessage) {
         SingleTableScanTask task = tasks.get(taskId);
         if (task != null) {
@@ -88,28 +70,19 @@ public class SingleTableScanTaskManager {
         }
     }
 
-    /**
-     * 清理已完成的任务（可选的清理机制）
-     */
     public void cleanupTask(String taskId) {
         tasks.remove(taskId);
     }
 
-    /**
-     * 任务状态枚举
-     */
     public enum TaskStatus {
         PENDING, RUNNING, COMPLETED, FAILED
     }
 
-    /**
-     * 单表扫描任务信息
-     */
     @Data
     public static class SingleTableScanTask {
-        private final String                taskId;
-        private       TaskStatus            status = TaskStatus.PENDING;
-        private       List<SensitiveColumn> result;
-        private       String                errorMessage;
+        private final String taskId;
+        private TaskStatus status = TaskStatus.PENDING;
+        private List<SensitiveColumn> result;
+        private String errorMessage;
     }
 }

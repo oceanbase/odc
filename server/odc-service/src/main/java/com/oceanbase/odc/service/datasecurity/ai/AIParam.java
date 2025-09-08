@@ -15,6 +15,10 @@
  */
 package com.oceanbase.odc.service.datasecurity.ai;
 
+/**
+ * @author fenyf
+ * @date 2025/8/10 12:41
+ */
 public class AIParam {
 
     /**

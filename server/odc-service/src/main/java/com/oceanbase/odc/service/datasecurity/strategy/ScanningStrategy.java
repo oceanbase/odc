@@ -24,32 +24,14 @@ import com.oceanbase.odc.service.datasecurity.recognizer.ColumnRecognizer;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 
 /**
- * 敏感列扫描策略接口
- * 
- * @author Assistant
- * @date 2025/1/27
+ * @author fenyf
+ * @date 2025/8/10 12:41
  */
 public interface ScanningStrategy {
 
-    /**
-     * 执行单个列的扫描
-     *
-     * @param column           待扫描的列
-     * @param basicRecognizers 基础规则识别器列表
-     * @param aiRecognizers    AI识别器列表
-     * @return 扫描结果
-     */
     ScanResult scan(DBTableColumn column, List<ColumnRecognizer> basicRecognizers,
             List<ColumnRecognizer> aiRecognizers);
 
-    /**
-     * 执行批量列的扫描
-     *
-     * @param columns          待扫描的列列表
-     * @param basicRecognizers 基础规则识别器列表
-     * @param aiRecognizers    AI识别器列表
-     * @return 扫描结果映射，key为列标识符，value为扫描结果
-     */
     Map<String, ScanResult> scanBatch(List<DBTableColumn> columns, List<ColumnRecognizer> basicRecognizers,
             List<ColumnRecognizer> aiRecognizers);
 }

@@ -28,12 +28,8 @@ import com.oceanbase.odc.service.datasecurity.recognizer.ColumnRecognizer;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 
 /**
- * 联合识别策略实现
- * 优先使用基础规则识别，如果基础规则没有匹配到，则使用AI识别器作为补充
- * 不一致时信任规则结果
- * 
- * @author Assistant
- * @date 2025/1/27
+ * @author fenyf
+ * @date 2025/8/10 12:41
  */
 public class JointRecognitionStrategy extends AbstractScanningStrategy {
 
@@ -41,13 +37,9 @@ public class JointRecognitionStrategy extends AbstractScanningStrategy {
     public ScanResult scan(DBTableColumn column, List<ColumnRecognizer> basicRecognizers,
             List<ColumnRecognizer> aiRecognizers) {
         Optional<RecognitionResult> basicResult = findFirstMatch(basicRecognizers, column);
-
-        // 如果基础规则已经识别出来，就以此为准，不再调用AI
         if (basicResult.isPresent()) {
             return new ScanResult(basicResult, Optional.empty());
         }
-
-        // 否则，调用AI作为补充
         Optional<RecognitionResult> aiResult = findFirstMatch(aiRecognizers, column);
         return new ScanResult(Optional.empty(), aiResult);
     }
@@ -57,7 +49,6 @@ public class JointRecognitionStrategy extends AbstractScanningStrategy {
             List<ColumnRecognizer> aiRecognizers) {
         Map<String, Optional<RecognitionResult>> basicResults = findAllFirstMatches(basicRecognizers, columns);
 
-        // 收集没有被基础规则识别的列
         List<DBTableColumn> remainingColumns = new ArrayList<>();
         for (DBTableColumn column : columns) {
             String columnKey = getColumnKey(column);
@@ -66,11 +57,8 @@ public class JointRecognitionStrategy extends AbstractScanningStrategy {
                 remainingColumns.add(column);
             }
         }
-
-        // 对剩余的列进行AI识别
         Map<String, Optional<RecognitionResult>> aiResults = findAllFirstMatches(aiRecognizers, remainingColumns);
 
-        // 合并结果
         Map<String, ScanResult> results = new HashMap<>();
         for (DBTableColumn column : columns) {
             String columnKey = getColumnKey(column);

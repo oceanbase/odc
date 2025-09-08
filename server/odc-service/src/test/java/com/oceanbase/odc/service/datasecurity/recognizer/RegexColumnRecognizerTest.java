@@ -37,8 +37,8 @@ public class RegexColumnRecognizerTest {
 
         Optional<RecognitionResult> resultOpt = recognizer.recognize(column);
 
-        Assert.assertTrue("正则表达式应匹配成功", resultOpt.isPresent());
-        Assert.assertEquals("匹配的规则ID应为 1", rule.getId(), resultOpt.get().getMatchedRuleId());
+        Assert.assertTrue("The regular expression should match successfully.", resultOpt.isPresent());
+        Assert.assertEquals("The matching rule ID should be 1.", rule.getId(), resultOpt.get().getMatchedRuleId());
     }
 
     @Test
@@ -46,13 +46,13 @@ public class RegexColumnRecognizerTest {
         SensitiveRule rule = createTestRegexRule(1L);
         ColumnRecognizer recognizer = new RegexColumnRecognizer(rule);
 
-        Assert.assertFalse("Comment 为 null 时不应匹配",
+        Assert.assertFalse("When Comment is null, it should not match.",
                 recognizer.recognize(createDBTableColumn("xxx", "xxx", "user_email", null)).isPresent());
 
-        Assert.assertFalse("SchemaName 不匹配时应失败",
+        Assert.assertFalse("It should fail when the SchemaName does not match.",
                 recognizer.recognize(createDBTableColumn("   ", "xxx", "user_email", "email of user")).isPresent());
 
-        Assert.assertFalse("ColumnName 和 Comment 都不匹配时应失败",
+        Assert.assertFalse("When both ColumnName and Comment do not match, it should fail.",
                 recognizer.recognize(createDBTableColumn("xxx", "xxx", "user", "some info")).isPresent());
     }
 

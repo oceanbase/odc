@@ -25,65 +25,57 @@ import com.openai.client.OpenAIClient;
 import com.openai.models.chat.completions.ChatCompletion;
 import com.openai.models.chat.completions.ChatCompletionCreateParams;
 
+/**
+ * @author fenyf
+ * @date 2025/8/10 12:41
+ */
 @Service
 public class AIInferenceService {
 
     private final AIConfig aiConfig;
     private final Optional<OpenAIClient> openAIClient;
 
-    // 注入 AIConfig 和可选的 OpenAIClient Bean
     public AIInferenceService(AIConfig aiConfig, Optional<OpenAIClient> openAIClient) {
         this.aiConfig = aiConfig;
         this.openAIClient = openAIClient;
     }
 
-    /**
-     * 检查AI功能是否可用
-     * @throws IllegalStateException 如果AI功能不可用
-     */
     private void checkAIAvailability() {
         if (!aiConfig.isEnabled()) {
-            throw new BadRequestException(ErrorCodes.AIServiceNotAvailable, new Object[]{"AI service is not enabled"}, "AI service is not enabled. Please contact administrator to enable AI service.");
+            throw new BadRequestException(ErrorCodes.AIServiceNotAvailable, new Object[] {"AI service is not enabled"},
+                    "AI service is not enabled. Please contact administrator to enable AI service.");
         }
         if (!aiConfig.isAIAvailable()) {
-            throw new BadRequestException(ErrorCodes.AIConfigurationIncomplete, new Object[]{"AI configuration is incomplete"}, "AI configuration is incomplete. Please contact administrator to configure AI parameters.");
+            throw new BadRequestException(ErrorCodes.AIConfigurationIncomplete,
+                    new Object[] {"AI configuration is incomplete"},
+                    "AI configuration is incomplete. Please contact administrator to configure AI parameters.");
         }
         if (!openAIClient.isPresent()) {
-            throw new BadRequestException(ErrorCodes.AIClientNotInitialized, new Object[]{"AI client is not initialized"}, "AI client is not initialized. Please check AI configuration and restart service.");
+            throw new BadRequestException(ErrorCodes.AIClientNotInitialized,
+                    new Object[] {"AI client is not initialized"},
+                    "AI client is not initialized. Please check AI configuration and restart service.");
         }
     }
 
-    /**
-     * 使用系统提示词和用户提示词分别调用AI服务
-     *
-     * @param systemPrompt 系统提示词
-     * @param userPrompt   用户提示词
-     * @return AI响应
-     * @throws IllegalStateException 如果AI功能不可用
-     */
     public ChatCompletion chat(String systemPrompt, String userPrompt) {
-        // 检查AI功能可用性
         checkAIAvailability();
 
         try {
             ChatCompletionCreateParams params = ChatCompletionCreateParams.builder()
-                .addSystemMessage(systemPrompt)
-                .addUserMessage(userPrompt)
-                .model(aiConfig.getModel())
-                .temperature(aiConfig.getTemperature())
-                .topP(aiConfig.getTopP())
-                .additionalBodyProperties(aiConfig.loadAdditionalParams())
-                .build();
+                    .addSystemMessage(systemPrompt)
+                    .addUserMessage(userPrompt)
+                    .model(aiConfig.getModel())
+                    .temperature(aiConfig.getTemperature())
+                    .topP(aiConfig.getTopP())
+                    .additionalBodyProperties(aiConfig.loadAdditionalParams())
+                    .build();
             return openAIClient.get().chat().completions().create(params);
         } catch (Exception e) {
-            throw new BadRequestException(ErrorCodes.AIInferenceServiceError, new Object[]{e.getMessage()}, "Failed to call AI inference service: " + e.getMessage(), e);
+            throw new BadRequestException(ErrorCodes.AIInferenceServiceError, new Object[] {e.getMessage()},
+                    "Failed to call AI inference service: " + e.getMessage(), e);
         }
     }
 
-    /**
-     * 检查AI功能是否可用（不抛出异常）
-     * @return true if AI功能可用
-     */
     public boolean isAIAvailable() {
         return aiConfig.isEnabled() && aiConfig.isAIAvailable() && openAIClient.isPresent();
     }

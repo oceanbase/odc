@@ -25,8 +25,8 @@ import com.oceanbase.odc.service.datasecurity.model.RecognitionResult;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 
 /**
- * @author gaoda.xy
- * @date 2023/5/30 10:32
+ * @author fenyf
+ * @date 2025/8/10 12:41
  */
 public interface ColumnRecognizer {
 
@@ -42,8 +42,7 @@ public interface ColumnRecognizer {
      * Batch recognizing the columns in database
      *
      * @param columns list of columns {@link DBTableColumn}
-     * @return map of recognizing results, key is column identifier, value is
-     *         recognizing result
+     * @return map of recognizing results, key is column identifier, value is recognizing result
      */
     default Map<String, Optional<RecognitionResult>> recognizeBatch(List<DBTableColumn> columns) {
         if (columns == null || columns.isEmpty()) {

@@ -119,21 +119,23 @@ public class ScanningStrategyFactoryTest {
     @Test
     public void test_allStrategies_implementScanningStrategy() {
         // Given
-        ScanningModeType[] allModes = {ScanningModeType.RULES_ONLY, ScanningModeType.AI_ONLY, ScanningModeType.JOINT_RECOGNITION};
+        ScanningModeType[] allModes =
+                {ScanningModeType.RULES_ONLY, ScanningModeType.AI_ONLY, ScanningModeType.JOINT_RECOGNITION};
 
         // When & Then
         for (ScanningModeType mode : allModes) {
             ScanningStrategy strategy = factory.getStrategy(mode);
             Assert.assertNotNull("Strategy should not be null for mode: " + mode, strategy);
             Assert.assertTrue("Strategy should implement ScanningStrategy for mode: " + mode,
-                strategy instanceof ScanningStrategy);
+                    strategy instanceof ScanningStrategy);
         }
     }
 
     @Test
     public void test_allStrategies_canHandleBasicOperations() {
         // Given
-        ScanningModeType[] allModes = {ScanningModeType.RULES_ONLY, ScanningModeType.AI_ONLY, ScanningModeType.JOINT_RECOGNITION};
+        ScanningModeType[] allModes =
+                {ScanningModeType.RULES_ONLY, ScanningModeType.AI_ONLY, ScanningModeType.JOINT_RECOGNITION};
         List<DBTableColumn> columns = Arrays.asList(testColumn);
 
         // When & Then
@@ -148,7 +150,7 @@ public class ScanningStrategyFactoryTest {
             Map<String, ScanResult> batchResults = strategy.scanBatch(columns, emptyRecognizers, emptyRecognizers);
             Assert.assertNotNull("Batch scan results should not be null for mode: " + mode, batchResults);
             Assert.assertEquals("Batch scan should return result for each column for mode: " + mode,
-                1, batchResults.size());
+                    1, batchResults.size());
         }
     }
 
@@ -188,7 +190,7 @@ public class ScanningStrategyFactoryTest {
         // Then
         Assert.assertEquals("Should return results for all columns", 1, results.size());
         Assert.assertTrue("Should contain key for unknown column",
-            results.containsKey("unknown_schema.unknown_table.unknown_column"));
+                results.containsKey("unknown_schema.unknown_table.unknown_column"));
     }
 
     private DBTableColumn createTestColumn(String columnName, String typeName, String comment) {

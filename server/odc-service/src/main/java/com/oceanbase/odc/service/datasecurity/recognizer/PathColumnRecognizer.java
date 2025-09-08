@@ -39,7 +39,6 @@ public class PathColumnRecognizer implements ColumnRecognizer {
     private final List<FieldPathMatcher> pathIncludeMatchers;
     private final List<FieldPathMatcher> pathExcludeMatchers;
 
-    // 【修改】构造函数接收 SensitiveRule 对象
     public PathColumnRecognizer(SensitiveRule rule) {
         this.rule = rule;
         pathIncludeMatchers = rule.getPathIncludes().stream().map(FieldPathMatcher::new).collect(Collectors.toList());
@@ -59,7 +58,6 @@ public class PathColumnRecognizer implements ColumnRecognizer {
             }
             for (FieldPathMatcher matcher : pathIncludeMatchers) {
                 if (matcher.match(schemaName, tableName, columnName)) {
-                    // 【修改】匹配成功，构建并返回 RecognitionResult
                     RecognitionResult result = RecognitionResult.builder()
                             .matched(true)
                             .matchedRuleId(this.rule.getId())

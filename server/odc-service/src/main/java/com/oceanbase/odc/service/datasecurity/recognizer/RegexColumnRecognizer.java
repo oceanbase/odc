@@ -32,7 +32,6 @@ import lombok.NonNull;
  */
 public class RegexColumnRecognizer implements ColumnRecognizer {
 
-    // 【修改】直接保存整个规则对象，以便获取 ID 和 Level
     private final SensitiveRule rule;
     private final Pattern databasePattern;
     private final Pattern tablePattern;
@@ -41,13 +40,20 @@ public class RegexColumnRecognizer implements ColumnRecognizer {
 
     private static final long MATCH_TIMEOUT_MILLIS = 100L;
 
-    // 【修改】构造函数接收 SensitiveRule 对象
     public RegexColumnRecognizer(SensitiveRule rule) {
         this.rule = rule;
-        databasePattern = StringUtils.isNotBlank(rule.getDatabaseRegexExpression()) ? Pattern.compile(rule.getDatabaseRegexExpression()) : null;
-        tablePattern = StringUtils.isNotBlank(rule.getTableRegexExpression()) ? Pattern.compile(rule.getTableRegexExpression()) : null;
-        columnPattern = StringUtils.isNotBlank(rule.getColumnRegexExpression()) ? Pattern.compile(rule.getColumnRegexExpression()) : null;
-        columnCommentPattern = StringUtils.isNotBlank(rule.getColumnCommentRegexExpression()) ? Pattern.compile(rule.getColumnCommentRegexExpression()) : null;
+        databasePattern = StringUtils.isNotBlank(rule.getDatabaseRegexExpression())
+                ? Pattern.compile(rule.getDatabaseRegexExpression())
+                : null;
+        tablePattern =
+                StringUtils.isNotBlank(rule.getTableRegexExpression()) ? Pattern.compile(rule.getTableRegexExpression())
+                        : null;
+        columnPattern = StringUtils.isNotBlank(rule.getColumnRegexExpression())
+                ? Pattern.compile(rule.getColumnRegexExpression())
+                : null;
+        columnCommentPattern = StringUtils.isNotBlank(rule.getColumnCommentRegexExpression())
+                ? Pattern.compile(rule.getColumnCommentRegexExpression())
+                : null;
     }
 
     @Override
@@ -69,7 +75,6 @@ public class RegexColumnRecognizer implements ColumnRecognizer {
                     .matcher(new TimeoutCharSequence(column.getComment(), getTimeoutMillis())).matches()) {
                 return Optional.empty();
             }
-            // 【修改】如果所有条件都通过，说明匹配成功，构建并返回 RecognitionResult
             RecognitionResult result = RecognitionResult.builder()
                     .matched(true)
                     .matchedRuleId(this.rule.getId())

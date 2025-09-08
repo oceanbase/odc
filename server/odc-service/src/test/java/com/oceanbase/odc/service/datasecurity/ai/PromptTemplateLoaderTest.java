@@ -51,9 +51,9 @@ public class PromptTemplateLoaderTest {
         // Then
         Assert.assertNotNull("Result should not be null", result);
         Assert.assertTrue("Should contain formatted sensitive types",
-            result.contains("contact_info, identity_info"));
+                result.contains("contact_info, identity_info"));
         Assert.assertTrue("Should contain custom prompt",
-            result.contains("Additional rules for identification"));
+                result.contains("Additional rules for identification"));
     }
 
     @Test
@@ -68,7 +68,7 @@ public class PromptTemplateLoaderTest {
         // Then
         Assert.assertNotNull("Result should not be null", result);
         Assert.assertTrue("Should contain default message for empty types",
-            result.contains("No specified category."));
+                result.contains("No specified category."));
         Assert.assertTrue("Should contain custom prompt", result.contains("Custom rules"));
     }
 
@@ -84,7 +84,7 @@ public class PromptTemplateLoaderTest {
         // Then
         Assert.assertNotNull("Result should not be null", result);
         Assert.assertTrue("Should contain default message for null types",
-            result.contains("No specified category."));
+                result.contains("No specified category."));
         Assert.assertTrue("Should contain custom prompt", result.contains("Custom rules"));
     }
 
@@ -100,9 +100,9 @@ public class PromptTemplateLoaderTest {
         // Then
         Assert.assertNotNull("Result should not be null", result);
         Assert.assertTrue("Should contain formatted sensitive types",
-            result.contains("email, phone"));
+                result.contains("email, phone"));
         Assert.assertTrue("Should contain default message for empty prompt",
-            result.contains("No supplementary rule."));
+                result.contains("No supplementary rule."));
     }
 
     @Test
@@ -118,7 +118,7 @@ public class PromptTemplateLoaderTest {
         Assert.assertNotNull("Result should not be null", result);
         Assert.assertTrue("Should contain formatted sensitive types", result.contains("address"));
         Assert.assertTrue("Should contain default message for null prompt",
-            result.contains("No supplementary rule."));
+                result.contains("No supplementary rule."));
     }
 
     @Test
@@ -134,7 +134,7 @@ public class PromptTemplateLoaderTest {
         Assert.assertNotNull("Result should not be null", result);
         Assert.assertTrue("Should contain formatted sensitive types", result.contains("name"));
         Assert.assertTrue("Should contain default message for whitespace prompt",
-            result.contains("No supplementary rule."));
+                result.contains("No supplementary rule."));
     }
 
     @Test
@@ -150,9 +150,9 @@ public class PromptTemplateLoaderTest {
         Assert.assertNotNull("Result should not be null", result);
         Assert.assertTrue("Should contain single sensitive type", result.contains("credit_card"));
         Assert.assertFalse("Should not contain comma for single type",
-            result.contains("credit_card,"));
+                result.contains("credit_card,"));
         Assert.assertTrue("Should contain custom prompt",
-            result.contains("Strict validation required"));
+                result.contains("Strict validation required"));
     }
 
     @Test(expected = IllegalStateException.class)
@@ -193,9 +193,9 @@ public class PromptTemplateLoaderTest {
         // Then
         Assert.assertNotNull("Result should not be null", result);
         Assert.assertTrue("Should contain all types comma-separated",
-            result.contains("email, phone, address, name"));
+                result.contains("email, phone, address, name"));
         Assert.assertTrue("Should contain custom prompt",
-            result.contains("Multiple type validation"));
+                result.contains("Multiple type validation"));
     }
 
     @Test

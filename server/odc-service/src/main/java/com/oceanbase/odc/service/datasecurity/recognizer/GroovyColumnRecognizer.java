@@ -41,7 +41,6 @@ public class GroovyColumnRecognizer implements ColumnRecognizer {
     private final Script script;
     private static final String COLUMN_KEYWORD = "column";
 
-    // 【修改】构造函数接收 SensitiveRule 对象
     public GroovyColumnRecognizer(SensitiveRule rule) {
         this.rule = rule;
         CompilerConfiguration config = new CompilerConfiguration();
@@ -58,7 +57,6 @@ public class GroovyColumnRecognizer implements ColumnRecognizer {
             binding.setVariable(COLUMN_KEYWORD, groovyColumnMeta);
             script.setBinding(binding);
 
-            // 【修改】获取脚本执行结果，并根据结果构建返回
             boolean matched = (boolean) script.run();
             if (matched) {
                 RecognitionResult result = RecognitionResult.builder()
