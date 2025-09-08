@@ -19,32 +19,18 @@ package com.oceanbase.odc.service.datasecurity.ai;
 import lombok.Data;
 
 /**
-     * AI功能状态响应
-     */
-    @Data
-    public class AIStatusResponse {
-        /**
-         * AI功能是否启用
-         */
-        private boolean enabled;
+ * @author fenyf
+ * @date 2025/8/10 12:41
+ */
+@Data
+public class AIStatusResponse {
+    private boolean enabled;
 
-        /**
-         * AI功能是否可用（启用且配置完整）
-         */
-        private boolean available;
+    private boolean available;
 
-        /**
-         * 使用的AI模型
-         */
-        private String model;
+    private String model;
 
-        /**
-         * API基础URL
-         */
-        private String baseUrl;
+    private String baseUrl;
 
-        /**
-         * API密钥是否已配置
-         */
-        private boolean apiKeyConfigured;
-    }
+    private boolean apiKeyConfigured;
+}

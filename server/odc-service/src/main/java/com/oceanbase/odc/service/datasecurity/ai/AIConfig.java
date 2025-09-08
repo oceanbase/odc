@@ -34,7 +34,8 @@ import com.openai.core.JsonValue;
 import lombok.Data;
 
 /**
- * AI功能配置类，支持从系统配置中动态读取配置
+ * @author fenyf
+ * @date 2025/8/10 12:41
  */
 @Data
 @Component
@@ -50,10 +51,6 @@ public class AIConfig {
 
     @Value("${odc.ai.model:gpt-3.5-turbo}")
     private String model;
-
-    // 硬编码超时和重试配置
-    private static final int TIMEOUT_SECONDS = 30;
-    private static final int MAX_RETRIES = 3;
 
     private Boolean enableThinking = AIParam.DEFAULT_ENABLE_THINKING;
 
@@ -77,18 +74,16 @@ public class AIConfig {
     @ConditionalOnProperty(name = "odc.ai.enabled", havingValue = "true")
     public OpenAIClient openAIClient() {
         if (apiKey == null || apiKey.trim().isEmpty()) {
-            throw new BadRequestException(ErrorCodes.AIConfigurationIncomplete, new Object[]{"API key is not configured"}, "AI service is enabled but API key is not configured. Please set odc.ai.api-key configuration.");
+            throw new BadRequestException(ErrorCodes.AIConfigurationIncomplete,
+                    new Object[] {"API key is not configured"},
+                    "AI service is enabled but API key is not configured. Please set odc.ai.api-key configuration.");
         }
         return OpenAIOkHttpClient.builder()
-            .apiKey(this.apiKey)
-            .baseUrl(this.baseUrl)
-            .build();
+                .apiKey(this.apiKey)
+                .baseUrl(this.baseUrl)
+                .build();
     }
 
-    /**
-     * 检查AI功能是否可用
-     * @return true if AI功能启用且配置完整
-     */
     public boolean isAIAvailable() {
         return enabled && apiKey != null && !apiKey.trim().isEmpty();
     }

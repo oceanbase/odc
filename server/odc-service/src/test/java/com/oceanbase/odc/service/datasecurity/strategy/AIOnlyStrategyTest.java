@@ -182,9 +182,8 @@ public class AIOnlyStrategyTest {
         // Given
         List<DBTableColumn> columns = Arrays.asList(testColumn);
         Map<String, Optional<RecognitionResult>> batchResults = Collections.singletonMap(
-            getColumnKey(testColumn),
-            Optional.of(createRecognitionResult(1L, SensitiveLevel.HIGH, SensitiveRuleType.AI))
-        );
+                getColumnKey(testColumn),
+                Optional.of(createRecognitionResult(1L, SensitiveLevel.HIGH, SensitiveRuleType.AI)));
 
         Mockito.when(mockAiRecognizer.recognizeBatch(columns)).thenReturn(batchResults);
 
@@ -213,17 +212,17 @@ public class AIOnlyStrategyTest {
 
     private RecognitionResult createRecognitionResult(Long ruleId, SensitiveLevel level, SensitiveRuleType ruleType) {
         return RecognitionResult.builder()
-            .matched(true)
-            .matchedRuleId(ruleId)
-            .level(level)
-            .sourceRuleType(ruleType)
-            .build();
+                .matched(true)
+                .matchedRuleId(ruleId)
+                .level(level)
+                .sourceRuleType(ruleType)
+                .build();
     }
 
     private String getColumnKey(DBTableColumn column) {
         return String.format("%s.%s.%s",
-            column.getSchemaName() != null ? column.getSchemaName() : "unknown_schema",
-            column.getTableName() != null ? column.getTableName() : "unknown_table",
-            column.getName() != null ? column.getName() : "unknown_column");
+                column.getSchemaName() != null ? column.getSchemaName() : "unknown_schema",
+                column.getTableName() != null ? column.getTableName() : "unknown_table",
+                column.getName() != null ? column.getName() : "unknown_column");
     }
 }

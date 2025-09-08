@@ -27,11 +27,8 @@ import com.oceanbase.odc.service.datasecurity.recognizer.ColumnRecognizer;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 
 /**
- * 仅AI扫描策略实现
- * 只使用AI识别器进行识别，忽略基础规则
- * 
- * @author Assistant
- * @date 2025/1/27
+ * @author fenyf
+ * @date 2025/8/10 12:41
  */
 public class AIOnlyStrategy extends AbstractScanningStrategy {
 

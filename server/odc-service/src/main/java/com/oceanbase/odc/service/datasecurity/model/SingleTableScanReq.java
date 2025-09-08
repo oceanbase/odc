@@ -15,7 +15,6 @@
  */
 package com.oceanbase.odc.service.datasecurity.model;
 
-import java.util.List;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -23,29 +22,20 @@ import javax.validation.constraints.NotNull;
 import lombok.Data;
 
 /**
- * 单表敏感列扫描请求
- *
- * @author Assistant
- * @date 2025/1/27
+ * Single-table sensitive column scan request
+ * 
+ * @author fenyf
+ * @date 2025/8/18 17:52
  */
 @Data
 public class SingleTableScanReq {
 
-    /**
-     * 数据库ID
-     */
     @NotNull
     private Long databaseId;
 
-    /**
-     * 表名
-     */
     @NotBlank
     private String tableName;
 
-    /**
-     * 扫描模式，默认为AI识别
-     */
     @NotNull
     private ScanningModeType scanningMode = ScanningModeType.JOINT_RECOGNITION;
 

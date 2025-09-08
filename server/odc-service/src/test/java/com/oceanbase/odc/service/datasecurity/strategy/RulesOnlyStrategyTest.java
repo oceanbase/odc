@@ -190,17 +190,17 @@ public class RulesOnlyStrategyTest {
 
     private RecognitionResult createRecognitionResult(Long ruleId, SensitiveLevel level, SensitiveRuleType ruleType) {
         return RecognitionResult.builder()
-            .matched(true)
-            .matchedRuleId(ruleId)
-            .level(level)
-            .sourceRuleType(ruleType)
-            .build();
+                .matched(true)
+                .matchedRuleId(ruleId)
+                .level(level)
+                .sourceRuleType(ruleType)
+                .build();
     }
 
     private String getColumnKey(DBTableColumn column) {
         return String.format("%s.%s.%s",
-            column.getSchemaName() != null ? column.getSchemaName() : "unknown_schema",
-            column.getTableName() != null ? column.getTableName() : "unknown_table",
-            column.getName() != null ? column.getName() : "unknown_column");
+                column.getSchemaName() != null ? column.getSchemaName() : "unknown_schema",
+                column.getTableName() != null ? column.getTableName() : "unknown_table",
+                column.getName() != null ? column.getName() : "unknown_column");
     }
 }

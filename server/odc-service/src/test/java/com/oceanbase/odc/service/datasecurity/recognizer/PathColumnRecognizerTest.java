@@ -36,14 +36,14 @@ public class PathColumnRecognizerTest {
         ColumnRecognizer recognizer = new PathColumnRecognizer(rule);
 
         Optional<RecognitionResult> result1 = recognizer.recognize(createDBTableColumn("a", "b12", "c"));
-        Assert.assertTrue("路径 'a.b12.c' 应匹配成功", result1.isPresent());
+        Assert.assertTrue("Path 'a.b12.c' should match successfully", result1.isPresent());
         Assert.assertEquals(rule.getId(), result1.get().getMatchedRuleId());
 
         Optional<RecognitionResult> result2 = recognizer.recognize(createDBTableColumn("a12", "34b56", "c"));
-        Assert.assertTrue("路径 'a12.34b56.c' 应匹配成功", result2.isPresent());
+        Assert.assertTrue("Path 'a12.34b56.c' should match successfully", result2.isPresent());
 
         Optional<RecognitionResult> result3 = recognizer.recognize(createDBTableColumn("a12", "34b", "c"));
-        Assert.assertTrue("路径 'a12.34b.c' 应匹配成功", result3.isPresent());
+        Assert.assertTrue("Path 'a12.34b.c' should match successfully", result3.isPresent());
     }
 
     @Test
@@ -51,13 +51,13 @@ public class PathColumnRecognizerTest {
         SensitiveRule rule = createPathRule(1L, Arrays.asList("*.*b*.c"), Arrays.asList("a.b.*"));
         ColumnRecognizer recognizer = new PathColumnRecognizer(rule);
 
-        Assert.assertFalse("路径 'a.b.c' 应被排除，匹配失败",
+        Assert.assertFalse("The path 'a.b.c' should be excluded as the match failed.",
                 recognizer.recognize(createDBTableColumn("a", "b", "c")).isPresent());
 
-        Assert.assertFalse("路径 'a12.b34.c56' 不应匹配，匹配失败",
+        Assert.assertFalse("Path 'a12.b34.c56' should not match; the match failed.",
                 recognizer.recognize(createDBTableColumn("a12", "b34", "c56")).isPresent());
 
-        Assert.assertFalse("路径 'a12.b34.null' 不应匹配，匹配失败",
+        Assert.assertFalse("Path 'a12.b34.null' should not match; the match failed.",
                 recognizer.recognize(createDBTableColumn("a12", "b34", null)).isPresent());
     }
 
@@ -69,6 +69,7 @@ public class PathColumnRecognizerTest {
         column.setName(columnName);
         return column;
     }
+
     private SensitiveRule createPathRule(Long id, List<String> includes, List<String> excludes) {
         SensitiveRule rule = new SensitiveRule();
         rule.setId(id);

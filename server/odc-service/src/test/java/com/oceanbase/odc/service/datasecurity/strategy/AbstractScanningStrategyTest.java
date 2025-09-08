@@ -120,7 +120,8 @@ public class AbstractScanningStrategyTest {
         // Then
         Assert.assertEquals("Should return results for all columns", 2, results.size());
         Assert.assertTrue("Should find result for column1", results.get(strategy.getColumnKey(column1)).isPresent());
-        Assert.assertFalse("Should not find result for column2", results.get(strategy.getColumnKey(column2)).isPresent());
+        Assert.assertFalse("Should not find result for column2",
+                results.get(strategy.getColumnKey(column2)).isPresent());
     }
 
     @Test
@@ -172,7 +173,8 @@ public class AbstractScanningStrategyTest {
         // Then
         Assert.assertEquals("Should return results for all columns", 2, results.size());
         Assert.assertTrue("Should find result for column1", results.get(strategy.getColumnKey(column1)).isPresent());
-        Assert.assertFalse("Should not find result for column2", results.get(strategy.getColumnKey(column2)).isPresent());
+        Assert.assertFalse("Should not find result for column2",
+                results.get(strategy.getColumnKey(column2)).isPresent());
 
         // Verify that recognizeBatch was not called for multiple recognizers
         Mockito.verify(mockRecognizer1, Mockito.never()).recognizeBatch(Mockito.any());
@@ -205,28 +207,28 @@ public class AbstractScanningStrategyTest {
 
     private RecognitionResult createRecognitionResult(Long ruleId, SensitiveLevel level) {
         return RecognitionResult.builder()
-            .matched(true)
-            .matchedRuleId(ruleId)
-            .level(level)
-            .sourceRuleType(SensitiveRuleType.REGEX)
-            .build();
+                .matched(true)
+                .matchedRuleId(ruleId)
+                .level(level)
+                .sourceRuleType(SensitiveRuleType.REGEX)
+                .build();
     }
 
     // Testable implementation of AbstractScanningStrategy for testing protected methods
     private static class TestableAbstractScanningStrategy extends AbstractScanningStrategy {
         @Override
         public com.oceanbase.odc.service.datasecurity.model.ScanResult scan(
-            DBTableColumn column,
-            List<ColumnRecognizer> basicRecognizers,
-            List<ColumnRecognizer> aiRecognizers) {
+                DBTableColumn column,
+                List<ColumnRecognizer> basicRecognizers,
+                List<ColumnRecognizer> aiRecognizers) {
             return null; // Not used in these tests
         }
 
         @Override
         public Map<String, com.oceanbase.odc.service.datasecurity.model.ScanResult> scanBatch(
-            List<DBTableColumn> columns,
-            List<ColumnRecognizer> basicRecognizers,
-            List<ColumnRecognizer> aiRecognizers) {
+                List<DBTableColumn> columns,
+                List<ColumnRecognizer> basicRecognizers,
+                List<ColumnRecognizer> aiRecognizers) {
             return null; // Not used in these tests
         }
 
@@ -237,7 +239,8 @@ public class AbstractScanningStrategyTest {
         }
 
         @Override
-        public Map<String, Optional<RecognitionResult>> findAllFirstMatches(List<ColumnRecognizer> recognizers, List<DBTableColumn> columns) {
+        public Map<String, Optional<RecognitionResult>> findAllFirstMatches(List<ColumnRecognizer> recognizers,
+                List<DBTableColumn> columns) {
             return super.findAllFirstMatches(recognizers, columns);
         }
 

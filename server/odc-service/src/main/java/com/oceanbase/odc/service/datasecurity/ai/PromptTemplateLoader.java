@@ -29,18 +29,14 @@ import lombok.extern.slf4j.Slf4j;
 import lombok.var;
 
 /**
- * AI 提示词 (Prompt) 模板加载器和构建器（重构版）。
- * <p>
- * 该类负责加载结构化的 AI 提示词模板，并根据列元数据、指定的敏感类型和用户自定义提示来构建最终的提示词。
- * </p>
+ * @author fenyf
+ * @date 2025/8/10 12:41
  */
 @Slf4j
 @Component
 public class PromptTemplateLoader {
-
-    private static final String SYSTEM_TEMPLATE_PATH = "/ai-prompt-template/sensitive_column_recognize_system_prompt.txt";
-
-    // 定义占位符
+    private static final String SYSTEM_TEMPLATE_PATH =
+            "/ai-prompt-template/sensitive_column_recognize_system_prompt.txt";
     private static final String TYPES_PLACEHOLDER = "{sensitiveTypes}";
     private static final String PROMPT_PLACEHOLDER = "{customPrompt}";
 
@@ -56,38 +52,26 @@ public class PromptTemplateLoader {
                 this.systemTemplate = reader.lines().collect(Collectors.joining(System.lineSeparator()));
             }
         } catch (Exception e) {
-            // 在实际项目中，这里应该使用日志系统
-            e.printStackTrace();
             log.error("Failed to load AI system prompt template: {}", e.getMessage(), e);
             throw new IllegalStateException("Failed to load AI system prompt template", e);
         }
     }
 
-    /**
-     * 构建系统提示词
-     *
-     * @param sensitiveTypes 用户指定的敏感类型列表 (例如 ["联系方式", "身份信息"])
-     * @param customPrompt   用户为该规则自定义的补充说明提示
-     * @return 填充了敏感类型和自定义提示的系统提示词字符串
-     */
     public String buildSystemPrompt(List<String> sensitiveTypes, String customPrompt) {
         if (this.systemTemplate == null || this.systemTemplate.isEmpty()) {
             throw new IllegalStateException("System prompt template is not available. Check loading status.");
         }
 
-        // 1. 格式化敏感类型列表
         String formattedTypes = (sensitiveTypes == null || sensitiveTypes.isEmpty())
-            ? "No specified category."
-            : String.join(", ", sensitiveTypes);
+                ? "No specified category."
+                : String.join(", ", sensitiveTypes);
 
-        // 2. 格式化用户自定义提示
         String formattedPrompt = (customPrompt == null || customPrompt.trim().isEmpty())
-            ? "No supplementary rule."
-            : customPrompt;
+                ? "No supplementary rule."
+                : customPrompt;
 
-        // 3. 替换模板中的占位符
         return this.systemTemplate
-            .replace(TYPES_PLACEHOLDER, formattedTypes)
-            .replace(PROMPT_PLACEHOLDER, formattedPrompt);
+                .replace(TYPES_PLACEHOLDER, formattedTypes)
+                .replace(PROMPT_PLACEHOLDER, formattedPrompt);
     }
 }

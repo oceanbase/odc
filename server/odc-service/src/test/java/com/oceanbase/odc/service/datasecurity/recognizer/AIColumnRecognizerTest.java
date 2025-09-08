@@ -70,7 +70,8 @@ public class AIColumnRecognizerTest {
         // Given
         DBTableColumn column = createTestColumn("user_phone", "varchar", "user phone number");
         String systemPrompt = "System prompt for AI";
-        String aiResponse = "```json\n[{\"sensitive\": true, \"riskLevel\": \"HIGH\", \"sensitiveCategory\": \"contact_info\"}]\n```";
+        String aiResponse =
+                "```json\n[{\"sensitive\": true, \"riskLevel\": \"HIGH\", \"sensitiveCategory\": \"contact_info\"}]\n```";
 
         try (MockedStatic<SpringContextUtil> mockedSpringContext = Mockito.mockStatic(SpringContextUtil.class)) {
             setupMocks(mockedSpringContext, systemPrompt, aiResponse);
@@ -109,16 +110,15 @@ public class AIColumnRecognizerTest {
     public void test_recognizeBatch_multipleColumns_returnsMixedResults() {
         // Given
         List<DBTableColumn> columns = Arrays.asList(
-            createTestColumn("user_phone", "varchar", "user phone number"),
-            createTestColumn("id", "bigint", "primary key"),
-            createTestColumn("email", "varchar", "user email address")
-        );
+                createTestColumn("user_phone", "varchar", "user phone number"),
+                createTestColumn("id", "bigint", "primary key"),
+                createTestColumn("email", "varchar", "user email address"));
         String systemPrompt = "System prompt for AI";
         String aiResponse = "```json\n[" +
-                            "{\"sensitive\": true, \"riskLevel\": \"HIGH\", \"sensitiveCategory\": \"contact_info\"}," +
-                            "{\"sensitive\": false, \"riskLevel\": null, \"sensitiveCategory\": null}," +
-                            "{\"sensitive\": true, \"riskLevel\": \"MEDIUM\", \"sensitiveCategory\": \"contact_info\"}" +
-                            "]```";
+                "{\"sensitive\": true, \"riskLevel\": \"HIGH\", \"sensitiveCategory\": \"contact_info\"}," +
+                "{\"sensitive\": false, \"riskLevel\": null, \"sensitiveCategory\": null}," +
+                "{\"sensitive\": true, \"riskLevel\": \"MEDIUM\", \"sensitiveCategory\": \"contact_info\"}" +
+                "]```";
 
         try (MockedStatic<SpringContextUtil> mockedSpringContext = Mockito.mockStatic(SpringContextUtil.class)) {
             setupMocks(mockedSpringContext, systemPrompt, aiResponse);
@@ -171,14 +171,14 @@ public class AIColumnRecognizerTest {
 
         try (MockedStatic<SpringContextUtil> mockedSpringContext = Mockito.mockStatic(SpringContextUtil.class)) {
             mockedSpringContext.when(() -> SpringContextUtil.getBean(PromptTemplateLoader.class))
-                .thenReturn(promptTemplateLoader);
+                    .thenReturn(promptTemplateLoader);
             mockedSpringContext.when(() -> SpringContextUtil.getBean(AIInferenceService.class))
-                .thenReturn(aiInferenceService);
+                    .thenReturn(aiInferenceService);
 
             Mockito.when(promptTemplateLoader.buildSystemPrompt(Mockito.anyList(), Mockito.anyString()))
-                .thenReturn(systemPrompt);
+                    .thenReturn(systemPrompt);
             Mockito.when(aiInferenceService.chat(Mockito.anyString(), Mockito.anyString()))
-                .thenThrow(new RuntimeException("AI service error"));
+                    .thenThrow(new RuntimeException("AI service error"));
 
             // When
             Map<String, Optional<RecognitionResult>> results = recognizer.recognizeBatch(columns);
@@ -211,7 +211,10 @@ public class AIColumnRecognizerTest {
         // Given
         List<DBTableColumn> columns = Arrays.asList(createTestColumn("test", "varchar", "test"));
         String systemPrompt = "System prompt for AI";
-        String malformedResponse = "```json\n[{\"sensitive\": true, \"riskLevel\": \"HIGH\" missing_comma \"field\": \"value\"}]```"; // Invalid JSON syntax
+        String malformedResponse =
+                "```json\n[{\"sensitive\": true, \"riskLevel\": \"HIGH\" missing_comma \"field\": \"value\"}]```"; // Invalid
+                                                                                                                   // JSON
+                                                                                                                   // syntax
 
         try (MockedStatic<SpringContextUtil> mockedSpringContext = Mockito.mockStatic(SpringContextUtil.class)) {
             setupMocks(mockedSpringContext, systemPrompt, malformedResponse);
@@ -229,7 +232,9 @@ public class AIColumnRecognizerTest {
         // Given
         DBTableColumn column = createTestColumn("user_phone", "varchar", "user phone number");
         String systemPrompt = "System prompt for AI";
-        String aiResponse = "[{\"sensitive\": true, \"riskLevel\": \"HIGH\", \"sensitiveCategory\": \"contact_info\"}]"; // No ```json wrapper
+        String aiResponse = "[{\"sensitive\": true, \"riskLevel\": \"HIGH\", \"sensitiveCategory\": \"contact_info\"}]"; // No
+                                                                                                                         // ```json
+                                                                                                                         // wrapper
 
         try (MockedStatic<SpringContextUtil> mockedSpringContext = Mockito.mockStatic(SpringContextUtil.class)) {
             setupMocks(mockedSpringContext, systemPrompt, aiResponse);
@@ -248,16 +253,15 @@ public class AIColumnRecognizerTest {
     public void test_recognizeBatch_mismatchedResponseCount_handlesGracefully() {
         // Given
         List<DBTableColumn> columns = Arrays.asList(
-            createTestColumn("col1", "varchar", "test1"),
-            createTestColumn("col2", "varchar", "test2"),
-            createTestColumn("col3", "varchar", "test3")
-        );
+                createTestColumn("col1", "varchar", "test1"),
+                createTestColumn("col2", "varchar", "test2"),
+                createTestColumn("col3", "varchar", "test3"));
         String systemPrompt = "System prompt for AI";
         // AI returns only 2 results for 3 columns
         String aiResponse = "```json\n[" +
-                            "{\"sensitive\": true, \"riskLevel\": \"HIGH\", \"sensitiveCategory\": \"contact_info\"}," +
-                            "{\"sensitive\": false, \"riskLevel\": null, \"sensitiveCategory\": null}" +
-                            "]```";
+                "{\"sensitive\": true, \"riskLevel\": \"HIGH\", \"sensitiveCategory\": \"contact_info\"}," +
+                "{\"sensitive\": false, \"riskLevel\": null, \"sensitiveCategory\": null}" +
+                "]```";
 
         try (MockedStatic<SpringContextUtil> mockedSpringContext = Mockito.mockStatic(SpringContextUtil.class)) {
             setupMocks(mockedSpringContext, systemPrompt, aiResponse);
@@ -279,22 +283,23 @@ public class AIColumnRecognizerTest {
     }
 
     // Helper methods
-    private void setupMocks(MockedStatic<SpringContextUtil> mockedSpringContext, String systemPrompt, String aiResponse) {
+    private void setupMocks(MockedStatic<SpringContextUtil> mockedSpringContext, String systemPrompt,
+            String aiResponse) {
         mockedSpringContext.when(() -> SpringContextUtil.getBean(PromptTemplateLoader.class))
-            .thenReturn(promptTemplateLoader);
+                .thenReturn(promptTemplateLoader);
         mockedSpringContext.when(() -> SpringContextUtil.getBean(AIInferenceService.class))
-            .thenReturn(aiInferenceService);
+                .thenReturn(aiInferenceService);
 
         Mockito.when(promptTemplateLoader.buildSystemPrompt(Mockito.anyList(), Mockito.anyString()))
-            .thenReturn(systemPrompt);
+                .thenReturn(systemPrompt);
 
         // Mock the chain: completion.choices().get(0).message().content().orElse("[]")
         // Use Mockito's deep stubbing with RETURNS_DEEP_STUBS
         ChatCompletion mockCompletion = Mockito.mock(ChatCompletion.class, Mockito.RETURNS_DEEP_STUBS);
         Mockito.when(aiInferenceService.chat(Mockito.anyString(), Mockito.anyString()))
-            .thenReturn(mockCompletion);
+                .thenReturn(mockCompletion);
         Mockito.when(mockCompletion.choices().get(0).message().content())
-            .thenReturn(Optional.of(aiResponse));
+                .thenReturn(Optional.of(aiResponse));
     }
 
     private DBTableColumn createTestColumn(String columnName, String typeName, String comment) {

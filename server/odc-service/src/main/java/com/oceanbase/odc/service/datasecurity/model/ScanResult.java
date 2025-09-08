@@ -14,28 +14,23 @@
  * limitations under the License.
  */
 
-package com.oceanbase.odc.service.datasecurity.model; // 建议放在 model 包下
+package com.oceanbase.odc.service.datasecurity.model;
 
-import java.util.ArrayList;
-import java.util.List;
+
 import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+/**
+ * @author fenyf
+ * @date 2025/7/18 17:52
+ */
 @Getter
 @AllArgsConstructor
 public class ScanResult {
-    // 基础规则的识别结果 (如果有)
     private final Optional<RecognitionResult> basicRuleResult;
-    // AI 规则的识别结果 (如果有)
     private final Optional<RecognitionResult> aiRuleResult;
 
-    /**
-     * 根据扫描模式获取最终的识别结果
-     *
-     * @param scanningMode 扫描模式
-     * @return 最终的识别结果
-     */
     public Optional<RecognitionResult> getFinalResult(ScanningModeType scanningMode) {
         switch (scanningMode) {
             case RULES_ONLY:
@@ -43,7 +38,6 @@ public class ScanResult {
             case AI_ONLY:
                 return aiRuleResult;
             case JOINT_RECOGNITION:
-                // 对于联合识别，Scanner已经做过决策，直接返回存在的那个结果
                 return basicRuleResult.isPresent() ? basicRuleResult : aiRuleResult;
             default:
                 return Optional.empty();

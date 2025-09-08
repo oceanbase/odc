@@ -54,7 +54,6 @@ public class AIInferenceServiceTest {
     @Before
     public void setUp() {
         // Setup mock for openAIClient.chat().completions().create() call chain
-        // We'll mock this in individual test methods as needed
     }
 
     @Test
@@ -69,7 +68,6 @@ public class AIInferenceServiceTest {
         try {
             aiInferenceService.chat(systemPrompt, userPrompt);
         } catch (Exception e) {
-            // Expected - we can't mock the OpenAI client chain easily
         }
 
         // Then - Verify that config methods were called
@@ -179,7 +177,8 @@ public class AIInferenceServiceTest {
         // Given
         aiInferenceService = new AIInferenceService(aiConfig, Optional.of(openAIClient));
         Mockito.when(aiConfig.isEnabled()).thenReturn(false);
-        // Note: aiConfig.isAIAvailable() stubbing removed as it's not called due to short-circuit evaluation
+        // Note: aiConfig.isAIAvailable() stubbing removed as it's not called due to short-circuit
+        // evaluation
 
         // When
         boolean result = aiInferenceService.isAIAvailable();
@@ -221,7 +220,8 @@ public class AIInferenceServiceTest {
         // Given
         aiInferenceService = new AIInferenceService(aiConfig, Optional.empty());
         Mockito.when(aiConfig.isEnabled()).thenReturn(false);
-        // Note: aiConfig.isAIAvailable() stubbing removed as it's not called due to short-circuit evaluation
+        // Note: aiConfig.isAIAvailable() stubbing removed as it's not called due to short-circuit
+        // evaluation
 
         // When
         boolean result = aiInferenceService.isAIAvailable();
