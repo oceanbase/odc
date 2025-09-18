@@ -28,11 +28,9 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
-import com.oceanbase.odc.service.common.util.SpringContextUtil;
-
-import lombok.extern.slf4j.Slf4j;
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
+import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.datasecurity.ai.AIInferenceService;
 import com.oceanbase.odc.service.datasecurity.ai.AIParam;
 import com.oceanbase.odc.service.datasecurity.ai.PromptTemplateLoader;
@@ -42,7 +40,9 @@ import com.oceanbase.odc.service.datasecurity.model.SensitiveRule;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveRuleType;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.openai.models.chat.completions.ChatCompletion;
+
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author fenyf
