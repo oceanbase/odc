@@ -29,7 +29,6 @@ import com.oceanbase.odc.service.datasecurity.model.SensitiveRule;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveRuleType;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 
-
 public class GroovyColumnRecognizerTest {
 
 

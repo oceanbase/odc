@@ -28,8 +28,8 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.oceanbase.odc.core.shared.exception.BadRequestException;
@@ -42,7 +42,6 @@ import com.oceanbase.odc.service.datasecurity.model.SensitiveRule;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveRuleType;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 import com.openai.models.chat.completions.ChatCompletion;
-
 
 @RunWith(MockitoJUnitRunner.class)
 public class AIColumnRecognizerTest {

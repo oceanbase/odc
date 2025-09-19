@@ -210,14 +210,14 @@ public class MaskingAlgorithmService {
     @SkipAuthorize("odc internal usages")
     public Optional<Long> getAlgorithmIdByName(@NonNull String algorithmName, @NonNull Long organizationId) {
         List<MaskingAlgorithmEntity> entities =
-            algorithmRepository.findByNameAndOrganizationId(algorithmName, organizationId);
+                algorithmRepository.findByNameAndOrganizationId(algorithmName, organizationId);
         if (entities.isEmpty()) {
             log.warn("No masking algorithm found with name: {} for organization: {}", algorithmName, organizationId);
             return Optional.empty();
         }
         if (entities.size() > 1) {
             log.warn("Multiple masking algorithms found with name: {} for organization: {}, using the first one",
-                algorithmName, organizationId);
+                    algorithmName, organizationId);
         }
         return Optional.of(entities.get(0).getId());
     }

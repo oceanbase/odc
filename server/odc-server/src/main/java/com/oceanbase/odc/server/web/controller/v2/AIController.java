@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.oceanbase.odc.server.web.controller.v2;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,7 +47,7 @@ public class AIController {
 
 
     @ApiOperation(value = "Query the status of the AI function",
-        notes = "Return the status of whether the AI function is enabled and its configuration status")
+            notes = "Return the status of whether the AI function is enabled and its configuration status")
     @SkipAuthorize("AI status is safe to query for authenticated users")
     @GetMapping("/status")
     public SuccessResponse<AIStatusResponse> getAIStatus() {

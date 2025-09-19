@@ -28,8 +28,10 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
+import com.oceanbase.odc.service.common.util.SpringContextUtil;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.datasecurity.factory.ScanningStrategyFactory;
+import com.oceanbase.odc.service.datasecurity.model.DefaultSensitiveType;
 import com.oceanbase.odc.service.datasecurity.model.RecognitionResult;
 import com.oceanbase.odc.service.datasecurity.model.ScanResult;
 import com.oceanbase.odc.service.datasecurity.model.ScanningModeType;
@@ -40,9 +42,7 @@ import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnScanningTaskI
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnType;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveRule;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveRuleType;
-import com.oceanbase.odc.service.datasecurity.model.DefaultSensitiveType;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
-import com.oceanbase.odc.service.common.util.SpringContextUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
