@@ -148,20 +148,22 @@ public class SensitiveColumnController {
     @ApiOperation(value = "stopScanning", notes = "Stop a sensitive column scanning task")
     @RequestMapping(value = "/stopScanning", method = RequestMethod.POST)
     public SuccessResponse<Boolean> stopScanning(@PathVariable Long projectId,
-        @RequestParam String taskId) {
+            @RequestParam String taskId) {
         return Responses.success(service.stopScanning(projectId, taskId));
     }
 
     @ApiOperation(value = "getSingleTableScanResult", notes = "Get single table scan result")
     @RequestMapping(value = "/singleTableScan/{taskId}/result", method = RequestMethod.GET)
-    public SuccessResponse<SingleTableScanTaskManager.SingleTableScanTask> getSingleTableScanResult(@PathVariable Long projectId,
-        @PathVariable String taskId) {
+    public SuccessResponse<SingleTableScanTaskManager.SingleTableScanTask> getSingleTableScanResult(
+            @PathVariable Long projectId,
+            @PathVariable String taskId) {
         return Responses.success(service.getSingleTableScanResult(projectId, taskId));
     }
+
     @ApiOperation(value = "scanSingleTableAsync", notes = "Start an asynchronous single table scan")
     @RequestMapping(value = "/scanSingleTableAsync", method = RequestMethod.POST)
     public SuccessResponse<String> scanSingleTableAsync(@PathVariable Long projectId,
-        @RequestBody SingleTableScanReq req) {
+            @RequestBody SingleTableScanReq req) {
         return Responses.success(service.scanSingleTableAsync(projectId, req));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 OceanBase.
+ * Copyright (c) 2023 OceanBase.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,6 @@ import com.oceanbase.odc.service.datasecurity.model.SensitiveLevel;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveRuleType;
 import com.oceanbase.odc.service.datasecurity.recognizer.ColumnRecognizer;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
-
 
 @RunWith(MockitoJUnitRunner.class)
 public class RulesOnlyStrategyTest {

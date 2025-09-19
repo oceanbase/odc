@@ -44,7 +44,7 @@ public class SensitiveColumnScanningTaskInfo {
     private volatile boolean cancelled = false;
 
     public SensitiveColumnScanningTaskInfo(@NonNull String taskId, @NonNull Long projectId,
-        @NonNull Integer allTableCount) {
+            @NonNull Integer allTableCount) {
         this.taskId = taskId;
         this.projectId = projectId;
         this.status = ScanningTaskStatus.CREATED;
