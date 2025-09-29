@@ -160,6 +160,8 @@ public class SensitiveRuleService {
         entity.setLevel(rule.getLevel());
         entity.setMaskingAlgorithmId(algorithmId);
         entity.setDescription(rule.getDescription());
+        entity.setAiSensitiveTypes(rule.getAiSensitiveTypes());
+        entity.setAiCustomPrompt(rule.getAiCustomPrompt());
         ruleRepository.saveAndFlush(entity);
         log.info("Sensitive rule has been updated, id={}, name={}", entity.getId(), entity.getName());
         return detail(entity.getProjectId(), entity.getId());

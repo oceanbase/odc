@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.oceanbase.odc.service.datasecurity;
+package com.oceanbase.odc.service.datasecurity.factory;
 
 import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.exception.UnsupportedException;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveRule;
+import com.oceanbase.odc.service.datasecurity.recognizer.AIColumnRecognizer;
 import com.oceanbase.odc.service.datasecurity.recognizer.ColumnRecognizer;
 import com.oceanbase.odc.service.datasecurity.recognizer.GroovyColumnRecognizer;
 import com.oceanbase.odc.service.datasecurity.recognizer.PathColumnRecognizer;
@@ -34,16 +35,16 @@ public class ColumnRecognizerFactory {
     public static ColumnRecognizer create(@NonNull SensitiveRule rule) {
         switch (rule.getType()) {
             case REGEX:
-                return new RegexColumnRecognizer(rule.getDatabaseRegexExpression(), rule.getTableRegexExpression(),
-                        rule.getColumnRegexExpression(), rule.getColumnCommentRegexExpression());
+                return new RegexColumnRecognizer(rule);
             case PATH:
-                return new PathColumnRecognizer(rule.getPathIncludes(), rule.getPathExcludes());
+                return new PathColumnRecognizer(rule);
             case GROOVY:
-                return new GroovyColumnRecognizer(rule.getGroovyScript());
+                return new GroovyColumnRecognizer(rule);
+            case AI:
+                return new AIColumnRecognizer(rule);
             default:
                 String errorMsg = String.format("Unsupported sensitive rule type: %s", rule.getType().name());
                 throw new UnsupportedException(ErrorCodes.BadArgument, new Object[] {errorMsg}, errorMsg);
         }
     }
-
 }

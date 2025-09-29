@@ -23,7 +23,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import javax.validation.Valid;
@@ -61,15 +63,22 @@ import com.oceanbase.odc.service.connection.database.DatabaseService;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
 import com.oceanbase.odc.service.datasecurity.extractor.model.DBColumn;
+import com.oceanbase.odc.service.datasecurity.factory.ScanningStrategyFactory;
 import com.oceanbase.odc.service.datasecurity.model.DatabaseWithAllColumns;
 import com.oceanbase.odc.service.datasecurity.model.MaskingAlgorithm;
 import com.oceanbase.odc.service.datasecurity.model.QuerySensitiveColumnParams;
+import com.oceanbase.odc.service.datasecurity.model.RecognitionResult;
+import com.oceanbase.odc.service.datasecurity.model.ScanResult;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumn;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnMeta;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnScanningReq;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnScanningTaskInfo;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnStats;
+import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnType;
+import com.oceanbase.odc.service.datasecurity.model.SensitiveLevel;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveRule;
+import com.oceanbase.odc.service.datasecurity.model.SensitiveRuleType;
+import com.oceanbase.odc.service.datasecurity.model.SingleTableScanReq;
 import com.oceanbase.odc.service.datasecurity.util.SensitiveColumnMapper;
 import com.oceanbase.odc.service.db.browser.DBSchemaAccessors;
 import com.oceanbase.odc.service.feature.VersionDiffConfigService;
@@ -115,6 +124,8 @@ public class SensitiveColumnService {
     private HorizontalDataPermissionValidator permissionValidator;
     @Autowired
     private VersionDiffConfigService versionDiffConfigService;
+    @Autowired
+    private SingleTableScanTaskManager singleTableScanTaskManager;
 
     @Transactional(rollbackFor = Exception.class)
     @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"},
@@ -399,7 +410,8 @@ public class SensitiveColumnService {
         PreConditions.notEmpty(rules, "sensitiveRules");
         ConnectionConfig connectionConfig = databaseService.findDataSourceForConnectById(databases.get(0).getId());
         Map<Long, List<SensitiveColumnMeta>> databaseId2SensitiveColumns = listExistSensitiveColumns(databaseIds);
-        return scanningTaskManager.start(databases, rules, connectionConfig, databaseId2SensitiveColumns);
+        return scanningTaskManager.start(databases, rules, req.getScanningMode(), connectionConfig,
+                databaseId2SensitiveColumns);
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -415,6 +427,21 @@ public class SensitiveColumnService {
         }
         return taskInfo;
     }
+
+    @Transactional(rollbackFor = Exception.class)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"},
+            actions = {"OWNER", "DBA", "SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT",
+            indexOfIdParam = 0)
+    @StatefulRoute(stateName = StateName.UUID_STATEFUL_ID, stateIdExpression = "#taskId")
+    public Boolean stopScanning(@NotNull Long projectId, @NotBlank String taskId) {
+        SensitiveColumnScanningTaskInfo taskInfo = scanningTaskManager.get(taskId);
+        if (!Objects.equals(taskInfo.getProjectId(), projectId)) {
+            String errorMsg = String.format("Sensitive column scanning task not exists, taskId=%s", taskId);
+            throw new NotFoundException(ErrorCodes.IllegalArgument, new Object[] {"taskId", errorMsg}, null);
+        }
+        return scanningTaskManager.stop(taskId);
+    }
+
 
     @SkipAuthorize("odc internal usages")
     public SensitiveColumnEntity nullSafeGet(@NotNull Long id) {
@@ -527,4 +554,126 @@ public class SensitiveColumnService {
         return filtered;
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, actions = {"OWNER", "DBA",
+            "SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    public String scanSingleTableAsync(@NotNull Long projectId, @NotNull @Valid SingleTableScanReq req) {
+        final Long currentUserId = authenticationFacade.currentUserId();
+        final Long currentOrganizationId = authenticationFacade.currentOrganizationId();
+        final String currentUserAccountName = authenticationFacade.currentUserAccountName();
+        String taskId = UUID.randomUUID().toString();
+        singleTableScanTaskManager.startTask(taskId, () -> {
+            try {
+                com.oceanbase.odc.service.iam.util.SecurityContextUtils.setCurrentUser(
+                        currentUserId, currentOrganizationId, currentUserAccountName);
+
+                List<SensitiveColumn> result = performSingleTableScan(projectId, req);
+                singleTableScanTaskManager.setTaskResult(taskId, result);
+            } catch (Exception e) {
+                log.error("Single table scan failed for taskId: {}, projectId: {}, databaseId: {}, tableName: {}",
+                        taskId, projectId, req.getDatabaseId(), req.getTableName(), e);
+                String errorMessage = e.getMessage() != null ? e.getMessage()
+                        : "An unknown error occurred during the scanning process: " + e.getClass().getSimpleName();
+                singleTableScanTaskManager.setTaskError(taskId, errorMessage);
+            }
+        });
+        return taskId;
+    }
+
+    @PreAuthenticate(hasAnyResourceRole = {"OWNER, DBA, SECURITY_ADMINISTRATOR"}, actions = {"OWNER", "DBA",
+            "SECURITY_ADMINISTRATOR"}, resourceType = "ODC_PROJECT", indexOfIdParam = 0)
+    public SingleTableScanTaskManager.SingleTableScanTask getSingleTableScanResult(@NotNull Long projectId,
+            @NotBlank String taskId) {
+        return singleTableScanTaskManager.getTask(taskId);
+    }
+
+    private List<SensitiveColumn> performSingleTableScan(@NotNull Long projectId,
+            @NotNull @Valid SingleTableScanReq req) {
+        Database database = databaseService.detail(req.getDatabaseId());
+        PreConditions.notNull(database, "database");
+        checkProjectDatabases(projectId, Collections.singletonList(req.getDatabaseId()));
+        ConnectionConfig connectionConfig = connectionService
+                .getForConnectionSkipPermissionCheck(database.getDataSource().getId());
+        List<DBTableColumn> tableColumns = getTableColumns(connectionConfig, database.getName(), req.getTableName());
+        if (CollectionUtils.isEmpty(tableColumns)) {
+            return Collections.emptyList();
+        }
+        List<SensitiveRule> rules = getScanningRules(projectId, null);
+        if (CollectionUtils.isEmpty(rules)) {
+            return Collections.emptyList();
+        }
+        ScanningStrategyFactory strategyFactory = new ScanningStrategyFactory();
+        SensitiveColumnScanner scanner = new SensitiveColumnScanner(rules, strategyFactory);
+        Map<String, ScanResult> scanResults = scanner.scanBatch(tableColumns, req.getScanningMode());
+
+        List<SensitiveColumn> results = new ArrayList<>();
+        for (DBTableColumn column : tableColumns) {
+            String columnKey = String.format("%s.%s.%s",
+                    column.getSchemaName() != null ? column.getSchemaName() : "unknown_schema",
+                    column.getTableName() != null ? column.getTableName() : "unknown_table",
+                    column.getName() != null ? column.getName() : "unknown_column");
+
+            ScanResult scanResult = scanResults.get(columnKey);
+            if (scanResult != null) {
+                Optional<RecognitionResult> finalResult = scanResult.getFinalResult(req.getScanningMode());
+
+                if (finalResult.isPresent()) {
+                    RecognitionResult result = finalResult.get();
+                    SensitiveColumn sensitiveColumn = new SensitiveColumn();
+                    sensitiveColumn.setDatabase(database);
+                    sensitiveColumn.setTableName(column.getTableName());
+                    sensitiveColumn.setColumnName(column.getName());
+                    sensitiveColumn.setType(SensitiveColumnType.TABLE_COLUMN);
+                    sensitiveColumn.setEnabled(true);
+                    sensitiveColumn.setSensitiveRuleId(result.getMatchedRuleId());
+                    sensitiveColumn.setLevel(result.getLevel());
+                    SensitiveRule matchedRule = rules.stream()
+                            .filter(r -> r.getId().equals(result.getMatchedRuleId()))
+                            .findFirst()
+                            .orElse(null);
+                    if (matchedRule != null && matchedRule.getMaskingAlgorithmId() != null) {
+                        sensitiveColumn.setMaskingAlgorithmId(matchedRule.getMaskingAlgorithmId());
+                    } else {
+                        sensitiveColumn.setMaskingAlgorithmId(1L);
+                    }
+                    results.add(sensitiveColumn);
+                }
+            }
+        }
+
+        return results;
+    }
+
+    private List<DBTableColumn> getTableColumns(ConnectionConfig connectionConfig, String databaseName,
+            String tableName) {
+        ConnectionSession session = new DefaultConnectSessionFactory(connectionConfig).generateSession();
+        try {
+            DBSchemaAccessor accessor = DBSchemaAccessors.create(session);
+            return accessor.listTableColumns(databaseName, tableName);
+        } finally {
+            session.expire();
+        }
+    }
+
+    private List<SensitiveRule> getScanningRules(Long projectId, List<Long> sensitiveRuleIds) {
+        SensitiveRule defaultRule = createDefaultScanningRule();
+        return Collections.singletonList(defaultRule);
+    }
+
+    private SensitiveRule createDefaultScanningRule() {
+        SensitiveRule rule = new SensitiveRule();
+        rule.setId(-1L);
+        rule.setName("Single Table Scan Default Rule");
+        rule.setEnabled(true);
+        rule.setType(SensitiveRuleType.AI);
+        rule.setAiSensitiveTypes(null);
+        rule.setAiCustomPrompt(null);
+        Long organizationId = authenticationFacade.currentOrganizationId();
+        Long defaultAlgorithmId = algorithmService.getDefaultAlgorithmIdByOrganizationId(organizationId);
+        rule.setMaskingAlgorithmId(defaultAlgorithmId);
+        rule.setLevel(SensitiveLevel.MEDIUM);
+        rule.setBuiltin(true);
+        return rule;
+    }
 }
+

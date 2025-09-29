@@ -33,5 +33,10 @@ public enum SensitiveRuleType {
     /**
      * Path expression fuzzy match
      */
-    PATH
+    PATH,
+
+    /**
+     * AI-based sensitive data detection
+     */
+    AI
 }

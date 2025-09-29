@@ -37,6 +37,7 @@ import com.oceanbase.odc.core.shared.constant.ErrorCodes;
 import com.oceanbase.odc.core.shared.constant.ResourceType;
 import com.oceanbase.odc.service.connection.database.model.Database;
 import com.oceanbase.odc.service.connection.model.ConnectionConfig;
+import com.oceanbase.odc.service.datasecurity.model.ScanningModeType;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnMeta;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnScanningTaskInfo;
 import com.oceanbase.odc.service.datasecurity.model.SensitiveColumnScanningTaskInfo.ScanningTaskStatus;
@@ -65,6 +66,7 @@ public class SensitiveColumnScanningTaskManager {
     private StatefulUuidStateIdGenerator statefulUuidStateIdGenerator;
 
     public SensitiveColumnScanningTaskInfo start(List<Database> databases, List<SensitiveRule> rules,
+            ScanningModeType scanningMode,
             ConnectionConfig connectionConfig, Map<Long, List<SensitiveColumnMeta>> databaseId2SensitiveColumns) {
         ConnectionSession session = new DefaultConnectSessionFactory(connectionConfig).generateSession();
         try {
@@ -101,8 +103,8 @@ public class SensitiveColumnScanningTaskManager {
                     sensitiveColumns =
                             databaseId2SensitiveColumns.getOrDefault(database.getId(), Collections.emptyList());
                 }
-                SensitiveColumnScanningTask subTask = new SensitiveColumnScanningTask(database, rules, taskInfo,
-                        sensitiveColumns, database2Table2ColumnsList.getOrDefault(database, new HashMap<>()),
+                SensitiveColumnScanningTask subTask = new SensitiveColumnScanningTask(database, rules, scanningMode,
+                        taskInfo, sensitiveColumns, database2Table2ColumnsList.getOrDefault(database, new HashMap<>()),
                         database2View2ColumnsList.getOrDefault(database, new HashMap<>()));
                 try {
                     executor.submit(subTask);
@@ -132,4 +134,17 @@ public class SensitiveColumnScanningTaskManager {
         return taskInfo;
     }
 
+    public boolean stop(String taskId) {
+        SensitiveColumnScanningTaskInfo taskInfo = cache.get(taskId);
+        if (taskInfo != null && taskInfo.getStatus() == ScanningTaskStatus.RUNNING) {
+            taskInfo.setCancelled(true);
+            taskInfo.setStatus(ScanningTaskStatus.CANCELLED);
+            taskInfo.setCompleteTime(new Date());
+            log.info("Sensitive column scanning task stopped, taskId: {}", taskId);
+            return true;
+        }
+        return false;
+    }
+
 }
+

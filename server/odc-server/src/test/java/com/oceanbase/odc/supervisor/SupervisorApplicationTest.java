@@ -15,14 +15,6 @@
  */
 package com.oceanbase.odc.supervisor;
 
-/**
- * @author longpeng.zlp
- * @date 2024/12/9 15:59
- */
-/**
- * @author longpeng.zlp
- * @date 2024/12/9 15:59
- */
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
