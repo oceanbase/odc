@@ -17,12 +17,16 @@ package com.oceanbase.odc.service.datasecurity.recognizer;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOCase;
 
 import com.oceanbase.odc.core.shared.PreConditions;
+import com.oceanbase.odc.service.datasecurity.model.RecognitionResult;
+import com.oceanbase.odc.service.datasecurity.model.SensitiveRule;
+import com.oceanbase.odc.service.datasecurity.model.SensitiveRuleType;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 
 /**
@@ -31,33 +35,41 @@ import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
  */
 public class PathColumnRecognizer implements ColumnRecognizer {
 
+    private final SensitiveRule rule;
     private final List<FieldPathMatcher> pathIncludeMatchers;
     private final List<FieldPathMatcher> pathExcludeMatchers;
 
-    public PathColumnRecognizer(List<String> pathIncludes, List<String> pathExcludes) {
-        pathIncludeMatchers = pathIncludes.stream().map(FieldPathMatcher::new).collect(Collectors.toList());
-        pathExcludeMatchers = pathExcludes.stream().map(FieldPathMatcher::new).collect(Collectors.toList());
+    public PathColumnRecognizer(SensitiveRule rule) {
+        this.rule = rule;
+        pathIncludeMatchers = rule.getPathIncludes().stream().map(FieldPathMatcher::new).collect(Collectors.toList());
+        pathExcludeMatchers = rule.getPathExcludes().stream().map(FieldPathMatcher::new).collect(Collectors.toList());
     }
 
     @Override
-    public boolean recognize(DBTableColumn column) {
+    public Optional<RecognitionResult> recognize(DBTableColumn column) {
         try {
             String schemaName = column.getSchemaName();
             String tableName = column.getTableName();
             String columnName = column.getName();
             for (FieldPathMatcher matcher : pathExcludeMatchers) {
                 if (matcher.match(schemaName, tableName, columnName)) {
-                    return false;
+                    return Optional.empty();
                 }
             }
             for (FieldPathMatcher matcher : pathIncludeMatchers) {
                 if (matcher.match(schemaName, tableName, columnName)) {
-                    return true;
+                    RecognitionResult result = RecognitionResult.builder()
+                            .matched(true)
+                            .matchedRuleId(this.rule.getId())
+                            .level(this.rule.getLevel())
+                            .sourceRuleType(SensitiveRuleType.PATH)
+                            .build();
+                    return Optional.of(result);
                 }
             }
-            return false;
+            return Optional.empty();
         } catch (Exception e) {
-            return false;
+            return Optional.empty();
         }
     }
 

@@ -15,11 +15,18 @@
  */
 package com.oceanbase.odc.service.datasecurity.recognizer;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import com.oceanbase.odc.service.datasecurity.model.RecognitionResult;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 
 /**
- * @author gaoda.xy
- * @date 2023/5/30 10:32
+ * @author fenyf
+ * @date 2025/8/10 12:41
  */
 public interface ColumnRecognizer {
 
@@ -29,6 +36,38 @@ public interface ColumnRecognizer {
      * @param column column {@link DBTableColumn}
      * @return recognizing result
      */
-    boolean recognize(DBTableColumn column);
+    Optional<RecognitionResult> recognize(DBTableColumn column);
 
+    /**
+     * Batch recognizing the columns in database
+     *
+     * @param columns list of columns {@link DBTableColumn}
+     * @return map of recognizing results, key is column identifier, value is recognizing result
+     */
+    default Map<String, Optional<RecognitionResult>> recognizeBatch(List<DBTableColumn> columns) {
+        if (columns == null || columns.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Map<String, Optional<RecognitionResult>> results = new HashMap<>();
+        for (DBTableColumn column : columns) {
+            String columnKey = getColumnKey(column);
+            Optional<RecognitionResult> result = recognize(column);
+            results.put(columnKey, result);
+        }
+        return results;
+    }
+
+    /**
+     * Generate a unique key for the column
+     *
+     * @param column column {@link DBTableColumn}
+     * @return unique column key
+     */
+    default String getColumnKey(DBTableColumn column) {
+        return String.format("%s.%s.%s",
+                column.getSchemaName() != null ? column.getSchemaName() : "unknown_schema",
+                column.getTableName() != null ? column.getTableName() : "unknown_table",
+                column.getName() != null ? column.getName() : "unknown_column");
+    }
 }

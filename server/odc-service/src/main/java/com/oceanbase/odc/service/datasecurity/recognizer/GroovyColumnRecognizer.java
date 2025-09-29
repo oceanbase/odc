@@ -15,8 +15,13 @@
  */
 package com.oceanbase.odc.service.datasecurity.recognizer;
 
+import java.util.Optional;
+
 import org.codehaus.groovy.control.CompilerConfiguration;
 
+import com.oceanbase.odc.service.datasecurity.model.RecognitionResult;
+import com.oceanbase.odc.service.datasecurity.model.SensitiveRule;
+import com.oceanbase.odc.service.datasecurity.model.SensitiveRuleType;
 import com.oceanbase.odc.service.datasecurity.util.SecureAstCustomizerUtil;
 import com.oceanbase.tools.dbbrowser.model.DBTableColumn;
 
@@ -32,26 +37,39 @@ import lombok.Data;
  */
 public class GroovyColumnRecognizer implements ColumnRecognizer {
 
+    private final SensitiveRule rule;
     private final Script script;
     private static final String COLUMN_KEYWORD = "column";
 
-    public GroovyColumnRecognizer(String groovyScript) {
+    public GroovyColumnRecognizer(SensitiveRule rule) {
+        this.rule = rule;
         CompilerConfiguration config = new CompilerConfiguration();
         config.addCompilationCustomizers(SecureAstCustomizerUtil.buildSecureASTCustomizer());
         GroovyShell shell = new GroovyShell(config);
-        this.script = shell.parse(groovyScript);
+        this.script = shell.parse(rule.getGroovyScript());
     }
 
     @Override
-    public boolean recognize(DBTableColumn column) {
+    public Optional<RecognitionResult> recognize(DBTableColumn column) {
         try {
             GroovyColumnMeta groovyColumnMeta = new GroovyColumnMeta(column);
             Binding binding = new Binding();
             binding.setVariable(COLUMN_KEYWORD, groovyColumnMeta);
             script.setBinding(binding);
-            return (boolean) script.run();
+
+            boolean matched = (boolean) script.run();
+            if (matched) {
+                RecognitionResult result = RecognitionResult.builder()
+                        .matched(true)
+                        .matchedRuleId(this.rule.getId())
+                        .level(this.rule.getLevel())
+                        .sourceRuleType(SensitiveRuleType.GROOVY)
+                        .build();
+                return Optional.of(result);
+            }
+            return Optional.empty();
         } catch (Exception e) {
-            return false;
+            return Optional.empty();
         }
     }
 
