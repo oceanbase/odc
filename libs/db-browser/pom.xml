@@ -87,7 +87,7 @@
         <lombok.version>1.18.10</lombok.version>
         <java-validation.version>2.0.1.Final</java-validation.version>
         <commons-collections4.version>4.4</commons-collections4.version>
-        <log4j.version>2.18.0</log4j.version>
+        <log4j.version>2.25.3</log4j.version>
         <fastjson.version>1.2.83</fastjson.version>
         <ob-sql-parser.version>1.4.2</ob-sql-parser.version>
         <commons-cli.version>1.4</commons-cli.version>
