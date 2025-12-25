@@ -185,15 +185,15 @@ jobs:
         if: ${{ github.event.inputs.pull_flink_image == 'true'}}
         run: |
           echo "Start pull flink image"
-          docker pull kindest/node:v1.31.0
-          docker save -o kindest.tar.gz kindest/node:v1.31.0
+          docker pull datusai/datus-agent:0.2.2
+          docker save -o datus.tar.gz datusai/datus-agent:0.2.2
           echo "Pull flink image success"
       - name: Upload flink
         if: ${{ github.event.inputs.pull_flink_image == 'true'}}
         uses: actions/upload-artifact@v4
         with:
-          name: kindest.tar.gz
-          path: kindest.tar.gz
+          name: datus.tar.gz
+          path: datus.tar.gz
       - name: Install db-browser
         if: ${{ github.event.inputs.install_db_browser == 'true'}}
         run: |
