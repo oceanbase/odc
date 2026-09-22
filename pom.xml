@@ -24,6 +24,8 @@
         <module>server/odc-migrate</module>
     </modules>
 
+    
+
     <properties>
         <!-- jdk and encoding -->
         <java.version>1.8</java.version>
