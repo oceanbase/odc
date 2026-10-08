@@ -1,3 +1,7 @@
+> ## 公告
+>
+> 本仓库最后发布的开源版本为 **ODC 4.3.4_bp2**。后续版本将不再以开源形式发布，本仓库也不再同步后续代码更新，包括安全修复和缺陷修复。如需了解新版 ODC 或获取升级与技术支持，请访问 [OceanBase ODC 产品页面](https://www.oceanbase.com/product/odc)。
+
 ![image.png](docs/en-US/images/odc-head.png)
 
 中文 | [English](./README.md)

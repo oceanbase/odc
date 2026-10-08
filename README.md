@@ -1,3 +1,7 @@
+> ## Announcement
+>
+> **ODC 4.3.4_bp2** is the final open-source release published in this repository. Subsequent versions will no longer be released as open source, and this repository will no longer receive code updates, including security patches and bug fixes. For information about newer versions of ODC or assistance with upgrades and technical support, please visit the [OceanBase ODC product page](https://www.oceanbase.com/product/odc).
+
 ![image.png](docs/en-US/images/odc-head.png)
 
 English | [中文](./README-zh-CN.md)
